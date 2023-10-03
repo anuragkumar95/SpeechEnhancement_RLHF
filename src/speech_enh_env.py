@@ -18,11 +18,11 @@ class SpeechEnhancementAgent:
         self.state = batch
         self.clean = batch['clean']
         self.window = window
-        print(f"Noisy:{batch['noisy'].shape}")
+        #print(f"Noisy:{batch['noisy'].shape}")
         self.steps = batch['noisy'].shape[2]
         self.gpu_id = gpu_id
         self.exp_buffer = replay_buffer(buffer_size)
-        self.noise = OUNoise()
+        self.noise = OUNoise(action_dim=batch['noisy'].shape[-1])
 
     def get_state_input(self, state, t):
         """
@@ -157,13 +157,14 @@ class replay_buffer:
 
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
 class OUNoise(object):
-    def __init__(self, mu=0.0, theta=0.15, max_sigma=0.3, min_sigma=0.3, decay_period=100000):
+    def __init__(self, action_dim, mu=0.0, theta=0.15, max_sigma=0.3, min_sigma=0.3, decay_period=100000):
         self.mu           = mu
         self.theta        = theta
         self.sigma        = max_sigma
         self.max_sigma    = max_sigma
         self.min_sigma    = min_sigma
         self.decay_period = decay_period
+        self.action_dim = action_dim
         self.reset()
         
     def reset(self):

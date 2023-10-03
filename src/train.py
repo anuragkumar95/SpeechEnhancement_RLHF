@@ -259,7 +259,7 @@ class DDPGTrainer:
         actor_epoch_loss = 0
         critic_epoch_loss = 0
         self.actor.train()
-        self.critic.tain()
+        self.critic.train()
         self.target_actor.train()
         self.target_critic.train()
         for step, batch in enumerate(self.train_ds):
@@ -308,7 +308,7 @@ class DDPGTrainer:
                        "Critic_loss":epoch_critic_loss,
                        "PESQ":epoch_pesq,
                        "reward":re_map})
-            if epoch_pesq > best_pesq:
+            if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq
                 #TODO:Logic for savecheckpoint
                 checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"

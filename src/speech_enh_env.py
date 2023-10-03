@@ -101,6 +101,7 @@ class SpeechEnhancementAgent:
             window = window.to(self.gpu_id)
 
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
+        print(est_mag.shape, est_real.shape, est_imag.shape)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
         est_audio = torch.istft(
             est_spec_uncompress,

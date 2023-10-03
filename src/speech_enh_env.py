@@ -172,8 +172,9 @@ class OUNoise(object):
         
     def evolve_state(self, action):
         x  = self.state
-        action_dim = action[0].shape[2]
-        dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(action_dim)
+        action_dim = action.shape[-1]
+        print(f"X:{x.shape}, mu:{self.mu.shape}, sigma:{self.sigma.shape}, act_dim:{action_dim}")
+        dx = self.theta * (self.mu - x) + self.sigma * torch.randn(action_dim)
         self.state = x + dx
         return self.state
     

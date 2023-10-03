@@ -1,4 +1,4 @@
-from models.conformer import ConformerBlock
+from model.conformer import ConformerBlock
 import torch
 import torch.nn as nn
 

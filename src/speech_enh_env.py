@@ -95,14 +95,16 @@ class SpeechEnhancementAgent:
         mag_imag = out_mag * torch.sin(noisy_phase)
         est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
         est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
+        est_real = est_real.permute(0, 1, 3, 2)
+        est_imag = est_imag.permute(0, 1, 3, 2)
 
         window = torch.hamming_window(self.n_fft)
         if self.gpu_id is not None:
             window = window.to(self.gpu_id)
 
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
-        print(est_mag.shape, est_real.shape, est_imag.shape)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+        print(est_spec_uncompress.shape)
         est_audio = torch.istft(
             est_spec_uncompress,
             self.n_fft,

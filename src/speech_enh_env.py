@@ -75,6 +75,7 @@ class SpeechEnhancementAgent:
         mask_mag, complex_out = action
         
         #Output mask is for the 't'th frame of the window
+        print(mask.shape, mask_mag.shape, complex_mask.shape, complex_out.shape)
         mask[:, :, :, t] = mask_mag.squeeze(2)
         complex_mask[:, :, :, t] = complex_out.squeeze(-1)
 

@@ -63,9 +63,9 @@ class SpeechEnhancementAgent:
             Next state with 't'th frame enhanced by applying mask.
         """
         print(f"State:{state['noisy'].shape}")
-        b, _, t, f = state['noisy'].shape
-        mask = torch.ones(b, 1, f, t)
-        complex_mask = torch.ones(b, 2, f, t)
+        b, _, tm, f = state['noisy'].shape
+        mask = torch.ones(b, 1, f, tm)
+        complex_mask = torch.ones(b, 2, f, tm)
 
         if self.gpu_id is not None:
             mask = mask.to(self.gpu_id)

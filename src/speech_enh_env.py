@@ -157,7 +157,7 @@ class replay_buffer:
 
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
 class OUNoise(object):
-    def __init__(self, action_dim, mu=0.0, theta=0.15, max_sigma=0.3, min_sigma=0.3, decay_period=100000):
+    def __init__(self, action_dim, mu=0.0, theta=0.15, max_sigma=0.3, min_sigma=0.3, decay_period=100000, gpu_id=None):
         self.mu           = mu
         self.theta        = theta
         self.sigma        = max_sigma
@@ -166,9 +166,12 @@ class OUNoise(object):
         self.decay_period = decay_period
         self.action_dim = action_dim
         self.reset()
+        self.gpu_id = gpu_id
         
     def reset(self):
         self.state = torch.ones(self.action_dim) * self.mu
+        if self.gpu_id is not None:
+            self.state = self.state.to(self.gpu_id)
         
     def evolve_state(self, action):
         x  = self.state

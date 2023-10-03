@@ -21,7 +21,7 @@ class SpeechEnhancementAgent:
         self.steps = batch['noisy'].shape[2]
         self.gpu_id = gpu_id
         self.exp_buffer = replay_buffer(buffer_size)
-        self.noise = OUNoise(action_dim=batch['noisy'].shape[-1])
+        self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=gpu_id)
 
     def get_state_input(self, state, t):
         """
@@ -165,8 +165,9 @@ class OUNoise(object):
         self.min_sigma    = min_sigma
         self.decay_period = decay_period
         self.action_dim = action_dim
-        self.reset()
         self.gpu_id = gpu_id
+        self.reset()
+        
         
     def reset(self):
         self.state = torch.ones(self.action_dim) * self.mu

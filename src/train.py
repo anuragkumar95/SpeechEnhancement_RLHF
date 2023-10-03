@@ -127,7 +127,12 @@ class DDPGTrainer:
             Dict of spectrograms
         """
         clean, noisy, _ = batch
+        if self.gpu_id is not None:
+            clean = clean.to(self.gpu_id)
+            noisy = noisy.to(self.gpu_id)
+
         noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud = self.get_specs(clean, noisy)
+        
         ret_val = {'noisy':noisy_spec,
                    'clean':clean_spec,
                    'clean_real':clean_real,

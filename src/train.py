@@ -126,7 +126,7 @@ class DDPGTrainer:
         Returns:
             Dict of spectrograms
         """
-        clean, noisy = batch
+        clean, noisy, _ = batch
         noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud = self.get_specs(clean, noisy)
         ret_val = {'noisy':noisy_spec,
                    'clean':clean_spec,

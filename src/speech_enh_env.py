@@ -18,7 +18,8 @@ class SpeechEnhancementAgent:
         self.state = batch
         self.clean = batch['clean']
         self.window = window
-        self.steps = self.noisy.shape[2]
+        print(f"Noisy:{batch['noisy'].shape}")
+        self.steps = batch['noisy'].shape[2]
         self.gpu_id = gpu_id
         self.exp_buffer = replay_buffer(buffer_size)
         self.noise = OUNoise()

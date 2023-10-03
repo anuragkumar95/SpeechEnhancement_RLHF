@@ -147,11 +147,13 @@ class DDPGTrainer:
         """
         Runs an episode which takes input a batch and predicts masks
         sequentially over the time dimension
+        
+        actor : actor model that learns P(a|s, theta), where theta are the 
+                actor's weight parameters. In our use case it takes windows 
+                of spectrogram and predicts masks both in real and complex domain.
+        critic: critic model learns to predict the PESQ score. 
+
         ARGS:
-            actor : actor model that learns P(a|s, theta), where theta are the 
-                    actor's weight parameters. In our use case it takes windows 
-                    of spectrogram and predicts masks both in real and complex domain.
-            critic: critic model learns to predict the PESQ score. 
             batch : batch of spectrograms of shape (b * 2 * f * t)
         """
         env = SpeechEnhancementAgent(batch, window=args.win_len, buffer_size=args.cut_len // self.hop)

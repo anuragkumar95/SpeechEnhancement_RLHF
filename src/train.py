@@ -154,7 +154,7 @@ class DDPGTrainer:
             critic: critic model learns to predict the PESQ score. 
             batch : batch of spectrograms of shape (b * 2 * f * t)
         """
-        env = SpeechEnhancementAgent(batch, window=args.win_len)
+        env = SpeechEnhancementAgent(batch, window=args.win_len, buffer_size=args.cut_len // self.hop)
         rewards = []
         for step in range(env.steps):
             #get the window input

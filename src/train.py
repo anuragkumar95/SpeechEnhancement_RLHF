@@ -56,7 +56,7 @@ wandb.login()
 
 
 class DDPGTrainer:
-    def __init__(self, train_ds, test_ds, gpu_id: int):
+    def __init__(self, train_ds, test_ds, args, gpu_id: int):
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
@@ -352,7 +352,7 @@ def main(rank: int, world_size: int, args):
                                   1, 
                                   args.cut_len)
     #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
-    trainer = DDPGTrainer(train_ds, test_ds, rank)
+    trainer = DDPGTrainer(train_ds, test_ds, args, rank)
     trainer.train2()
     destroy_process_group()
 

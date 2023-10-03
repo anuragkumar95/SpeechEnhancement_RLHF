@@ -263,7 +263,7 @@ class DDPGTrainer:
         self.critic.train()
         self.target_actor.train()
         self.target_critic.train()
-        print(f"Running epoch: {epoch}+1")
+        print(f"Running epoch: {epoch+1}")
         for step, batch in enumerate(self.train_ds):
             #Preprocess batch
             batch = self.preprocess_batch(batch)

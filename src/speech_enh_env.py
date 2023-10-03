@@ -106,7 +106,7 @@ class SpeechEnhancementAgent:
             est_spec_uncompress,
             self.n_fft,
             self.hop,
-            window=window
+            window=window,
             onesided=True,
         )
 

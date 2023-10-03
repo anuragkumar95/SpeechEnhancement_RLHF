@@ -34,22 +34,22 @@ class SpeechEnhancementAgent:
             of shape (b, 2, f, w) 
         """
         state = state['noisy']
-        b, _, f, tm = state.shape
+        print(f"State:{state.shape}")
+        b, _, tm, f = state.shape
         left = t - self.window
         right = t + self.window + 1
         if t < self.window // 2 : 
-            pad = torch.zeros(b, 2, f, -left)
+            pad = torch.zeros(b, 2, -left, f)
             if self.gpu_id is not None:
                 pad = pad.to(self.gpu_id)
-            
-            windows = torch.cat([pad, state[:, :, left:right]], dim=2)
+            windows = torch.cat([pad, state[:, :, left:right, :]], dim=2)
         elif right > tm - 1:
-            pad = torch.zeros(b, 2, f, right - tm)
+            pad = torch.zeros(b, 2, right - tm, f)
             if self.gpu_id is not None:
                 pad = pad.to(self.gpu_id)
-            windows = torch.cat([state[:, :, :, left:right], pad], dim=2) 
+            windows = torch.cat([state[:, :, left:right, :], pad], dim=2) 
         else:
-            windows = state[:, :, :, left:right]
+            windows = state[:, :, left:right, :]
         return windows
 
     def get_next_state(self, state, action, t):

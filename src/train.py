@@ -61,13 +61,15 @@ class DDPGTrainer:
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
-        
+
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            win_len=args.win_len)
+                            win_len=args.win_len,
+                            gpu_id=gpu_id)
         self.target_actor = TSCNet(num_channel=64, 
                                    num_features=self.n_fft // 2 + 1, 
-                                   win_len=args.win_len)
+                                   win_len=args.win_len,
+                                   gpu_id=gpu_id)
         self.critic = QNet(ndf=16)
         self.target_critic = QNet(ndf=16)
         

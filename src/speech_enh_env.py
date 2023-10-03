@@ -137,10 +137,10 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
-        z = batch_pesq(state['clean'], state['noisy'])
-        z_hat = batch_pesq(next_state['clean'], next_state['noisy'])
+        z_mask, z = batch_pesq(state['clean'], state['noisy'])
+        z_hat_mask, z_hat = batch_pesq(next_state['clean'], next_state['noisy'])
 
-        pesq_reward = z_hat - z
+        pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
         loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
         loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
@@ -192,7 +192,6 @@ class OUNoise(object):
     def evolve_state(self, action):
         x  = self.state
         action_dim = action[0].shape[-1]
-        print(f"X:{x.shape}, act_dim:{action_dim}")
         rand = torch.randn(action_dim)
         if self.gpu_id is not None:
             rand = rand.to(self.gpu_id)
@@ -202,10 +201,7 @@ class OUNoise(object):
     
     def get_action(self, action, t=0):
         ou_state = self.evolve_state(action)
-        print(f"before noise:{action[0].shape}, {action[1].shape}")
         self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
-        print(f"Action:{action[0].get_device()}, state:{self.state.get_device()}")
         mag_mask = torch.clip(action[0] + ou_state, torch.min(action[0]), torch.max(action[0]))
         comp_mask = torch.clip(action[1] + ou_state.view(-1, 1), torch.min(action[1]), torch.max(action[1]))
-        print(f"after noise:{mag_mask.shape}, {comp_mask.shape}")
         return (mag_mask, comp_mask)

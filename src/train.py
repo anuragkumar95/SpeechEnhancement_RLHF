@@ -353,7 +353,7 @@ def main(rank: int, world_size: int, args):
                                   args.cut_len)
     #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
     trainer = DDPGTrainer(train_ds, test_ds, args, rank)
-    trainer.train2()
+    trainer.train(args)
     destroy_process_group()
 
 

@@ -310,7 +310,20 @@ class DDPGTrainer:
                        "reward":re_map})
             if epoch_pesq > best_pesq:
                 best_pesq = epoch_pesq
-                #TODO:Logic for savecheckpoint    
+                #TODO:Logic for savecheckpoint
+                checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
+                path = os.path.join(args.output, checkpoint_prefix)
+                save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                             'critic_state_dict':self.critic.state_dict(),
+                             'target_actor_state_dict':self.target_actor.state_dict(),
+                             'target_critic_state_dict':self.target_critic.state_dict(),
+                             'actor_optim_state_dict':self.a_optimizer.state_dict(),
+                             'critic_optim_state_dict':self.c_optimizer.state_dict(),
+                             #'scheduler_state_dict':scheduler.state_dict(),
+                             #'lr':scheduler.get_last_lr()
+                            }
+                torch.save(save_dict, path)
+                #TODO:May need a LR scheduler as well
 
     
 def ddp_setup(rank, world_size):
@@ -345,6 +358,10 @@ def main(rank: int, world_size: int, args):
 
 if __name__ == "__main__":
     ARGS = args().parse_args()
+
+    output = f"{ARGS.output}/{ARGS.exp}"
+    os.makedirs(output, exist_ok=True)
+
     world_size = torch.cuda.device_count()
     print(f"World size:{world_size}")
     mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)

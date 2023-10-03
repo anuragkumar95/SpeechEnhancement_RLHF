@@ -191,6 +191,6 @@ class OUNoise(object):
         self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
         print(f"Action:{action[0].get_device()}, state:{self.state.get_device()}")
         mag_mask = torch.clip(action[0] + ou_state, torch.min(action[0]), torch.max(action[0]))
-        comp_mask = torch.clip(action[1] + ou_state, torch.min(action[1]), torch.max(action[1]))
+        comp_mask = torch.clip(action[1] + ou_state.T, torch.min(action[1]), torch.max(action[1]))
         print(f"after noise:{mag_mask.shape}, {comp_mask.shape}")
         return (mag_mask, comp_mask)

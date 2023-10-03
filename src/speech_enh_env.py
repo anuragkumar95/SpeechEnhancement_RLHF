@@ -63,7 +63,7 @@ class SpeechEnhancementAgent:
             Next state with 't'th frame enhanced by applying mask.
         """
         print(f"State:{state['noisy'].shape}")
-        b, _, f, t = state['noisy'].shape
+        b, _, t, f = state['noisy'].shape
         mask = torch.ones(b, 1, f, t)
         complex_mask = torch.ones(b, 2, f, t)
 
@@ -75,7 +75,7 @@ class SpeechEnhancementAgent:
         mask_mag, complex_out = action
         
         #Output mask is for the 't'th frame of the window
-        mask[:, :, t, :] = mask_mag.squeeze(2)
+        mask[:, :, :, t] = mask_mag.squeeze(2)
         complex_mask[:, :, :, t] = complex_out.squeeze(-1)
 
         mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2 + state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)

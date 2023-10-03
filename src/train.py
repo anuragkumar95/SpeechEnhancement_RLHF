@@ -6,7 +6,7 @@
 from model.actor import TSCNet
 from model.critic import QNet
 import os
-from data.dataset import dataloader
+from data.dataset import load_data
 import torch.nn.functional as F
 import torch
 from utils import power_compress, power_uncompress, batch_pesq
@@ -347,9 +347,10 @@ def main(rank: int, world_size: int, args):
         print(f"Available gpus:{available_gpus}")
     #print("AAAA")
     
-    train_ds, test_ds = dataloader.load_data(
-        args.root, args.batchsize, 1, args.cut_len
-    )
+    train_ds, test_ds = load_data(args.root, 
+                                  args.batchsize, 
+                                  1, 
+                                  args.cut_len)
     #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
     trainer = DDPGTrainer(train_ds, test_ds, args.win_len, args.samples, rank)
     trainer.train2()

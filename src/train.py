@@ -149,7 +149,7 @@ class DDPGTrainer:
             critic: critic model learns to predict the PESQ score. 
             batch : batch of spectrograms of shape (b * 2 * f * t)
         """
-        env = SpeechEnhancementAgent(batch, window=args.window)
+        env = SpeechEnhancementAgent(batch, window=args.win_len)
         rewards = []
         for step in range(env.steps):
             #get the window input
@@ -352,7 +352,7 @@ def main(rank: int, world_size: int, args):
                                   1, 
                                   args.cut_len)
     #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
-    trainer = DDPGTrainer(train_ds, test_ds, args.win_len, args.samples, rank)
+    trainer = DDPGTrainer(train_ds, test_ds, rank)
     trainer.train2()
     destroy_process_group()
 

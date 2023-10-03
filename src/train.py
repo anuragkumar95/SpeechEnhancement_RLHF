@@ -234,6 +234,7 @@ class DDPGTrainer:
         and return pesq score of the enhances batch of 
         spectrograms.
         """
+        print("Running validation...")
         env = SpeechEnhancementAgent(batch, window=args.window)
         for step in range(env.steps):
             #get the window input
@@ -262,6 +263,7 @@ class DDPGTrainer:
         self.critic.train()
         self.target_actor.train()
         self.target_critic.train()
+        print(f"Running epoch: {epoch}+1")
         for step, batch in enumerate(self.train_ds):
             #Preprocess batch
             batch = self.preprocess_batch(batch)
@@ -300,6 +302,7 @@ class DDPGTrainer:
         Run epochs, collect validation results and save checkpoints. 
         """
         best_pesq = -1
+        print("Start training...")
         for epoch in range(args.epochs):
             re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, args)
             #TODO:Log these in wandb

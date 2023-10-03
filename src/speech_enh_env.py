@@ -11,15 +11,19 @@ import torch.nn.functional as F
 
 
 class SpeechEnhancementAgent:
-    def __init__(self, batch, window, buffer_size, gpu_id=None):
+    def __init__(self, batch, window, buffer_size, n_fft, hop, gpu_id=None):
         """
         State : Dict{noisy, clean, est_real, est_imag, cl_audio, est_audio}
         """
         self.state = batch
         self.clean = batch['clean']
-        self.window = window
         self.steps = batch['noisy'].shape[2]
+        
         self.gpu_id = gpu_id
+        self.window = window
+        self.n_fft = n_fft
+        self.hop = hop 
+        
         self.exp_buffer = replay_buffer(buffer_size)
         self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=gpu_id)
 
@@ -75,7 +79,7 @@ class SpeechEnhancementAgent:
         mask_mag, complex_out = action
         
         #Output mask is for the 't'th frame of the window
-        print(mask[:, :, t, :].shape, mask_mag.squeeze(2).shape, complex_mask[:, :, :, t].shape, complex_out.squeeze(-1).shape)
+        #print(mask[:, :, t, :].shape, mask_mag.squeeze(2).shape, complex_mask[:, :, :, t].shape, complex_out.squeeze(-1).shape)
         mask[:, :, t, :] = mask_mag.squeeze(2)
         complex_mask[:, :, t, :] = complex_out.squeeze(-1)
 
@@ -85,12 +89,16 @@ class SpeechEnhancementAgent:
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
         ).unsqueeze(1)
 
-        print(mask.shape,mag.shape)
+        #print(mask.shape,mag.shape)
         out_mag = mask * mag
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)
         est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
         est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
+
+        window = torch.hamming_window(self.n_fft)
+        if self.gpu_id is not None:
+            window = window.to(self.gpu_id)
 
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
@@ -98,7 +106,7 @@ class SpeechEnhancementAgent:
             est_spec_uncompress,
             self.n_fft,
             self.hop,
-            window=torch.hamming_window(self.n_fft),#.to(self.gpu_id),
+            window=window
             onesided=True,
         )
 

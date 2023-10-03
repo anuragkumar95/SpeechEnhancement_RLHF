@@ -166,6 +166,8 @@ class DDPGTrainer:
         env = SpeechEnhancementAgent(batch, 
                                      window=args.win_len, 
                                      buffer_size=args.cut_len // self.hop,
+                                     n_fft=self.n_fft,
+                                     hop=self.hop,
                                      gpu_id=self.gpu_id)
         rewards = []
         for step in range(env.steps):

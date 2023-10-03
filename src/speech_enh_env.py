@@ -168,7 +168,7 @@ class OUNoise(object):
         self.reset()
         
     def reset(self):
-        self.state = np.ones(self.action_dim) * self.mu
+        self.state = torch.ones(self.action_dim) * self.mu
         
     def evolve_state(self, action):
         x  = self.state

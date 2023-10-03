@@ -178,7 +178,10 @@ class OUNoise(object):
         x  = self.state
         action_dim = action[0].shape[-1]
         print(f"X:{x.shape}, act_dim:{action_dim}")
-        dx = self.theta * (self.mu - x) + self.sigma * torch.randn(action_dim)
+        rand = torch.randn(action_dim)
+        if self.gpu_id is not None:
+            rand = rand.to(self.gpu_id)
+        dx = self.theta * (self.mu - x) + self.sigma * rand
         self.state = x + dx
         return self.state
     

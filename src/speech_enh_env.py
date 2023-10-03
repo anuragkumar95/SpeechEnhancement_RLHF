@@ -75,7 +75,7 @@ class SpeechEnhancementAgent:
         mask_mag, complex_out = action
         
         #Output mask is for the 't'th frame of the window
-        print(mask[:, :, :, t].shape, mask_mag.squeeze(2).shape, complex_mask[:, :, :, t].shape, complex_out.squeeze(-1).shape)
+        #print(mask[:, :, :, t].shape, mask_mag.squeeze(2).shape, complex_mask[:, :, :, t].shape, complex_out.squeeze(-1).shape)
         mask[:, :, :, t] = mask_mag.squeeze(2)
         complex_mask[:, :, :, t] = complex_out.squeeze(-1)
 
@@ -85,6 +85,7 @@ class SpeechEnhancementAgent:
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
         ).unsqueeze(1)
 
+        print(mask.shape, mag.shape)
         out_mag = mask * mag
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)

@@ -142,7 +142,7 @@ class SpeechEnhancementAgent:
 
         pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
-        if self.gpu_is is not None:
+        if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
 
         loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   

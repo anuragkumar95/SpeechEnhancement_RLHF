@@ -156,7 +156,10 @@ class DDPGTrainer:
         ARGS:
             batch : batch of spectrograms of shape (b * 2 * f * t)
         """
-        env = SpeechEnhancementAgent(batch, window=args.win_len, buffer_size=args.cut_len // self.hop)
+        env = SpeechEnhancementAgent(batch, 
+                                     window=args.win_len, 
+                                     buffer_size=args.cut_len // self.hop,
+                                     gpu_id = self.gpu_id)
         rewards = []
         for step in range(env.steps):
             #get the window input

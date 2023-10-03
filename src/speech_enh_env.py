@@ -18,7 +18,6 @@ class SpeechEnhancementAgent:
         self.state = batch
         self.clean = batch['clean']
         self.window = window
-        #print(f"Noisy:{batch['noisy'].shape}")
         self.steps = batch['noisy'].shape[2]
         self.gpu_id = gpu_id
         self.exp_buffer = replay_buffer(buffer_size)
@@ -42,6 +41,7 @@ class SpeechEnhancementAgent:
             pad = torch.zeros(b, 2, f, -left)
             if self.gpu_id is not None:
                 pad = pad.to(self.gpu_id)
+            
             windows = torch.cat([pad, state[:, :, left:right]], dim=2)
         elif right > tm - 1:
             pad = torch.zeros(b, 2, f, right - tm)

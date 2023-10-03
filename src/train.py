@@ -3,10 +3,10 @@
 @author: Anurag Kumar
 """
 
-from models.actor import TSCNet
-from models.critic import QNet
+from model.actor import TSCNet
+from model.critic import QNet
 import os
-from data import dataloader
+from data.dataset import dataloader
 import torch.nn.functional as F
 import torch
 from utils import power_compress, power_uncompress, batch_pesq
@@ -348,7 +348,7 @@ def main(rank: int, world_size: int, args):
     #print("AAAA")
     
     train_ds, test_ds = dataloader.load_data(
-        args.data_dir, args.batch_size, 1, args.cut_len
+        args.root, args.batchsize, 1, args.cut_len
     )
     #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
     trainer = DDPGTrainer(train_ds, test_ds, args.win_len, args.samples, rank)

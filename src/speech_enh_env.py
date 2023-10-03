@@ -65,7 +65,7 @@ class SpeechEnhancementAgent:
         print(f"State:{state['noisy'].shape}")
         b, _, f, t = state['noisy'].shape
         mask = torch.ones(b, 1, f, t)
-        complex_mask = torch.ones(b, 1, f, t)
+        complex_mask = torch.ones(b, 2, f, t)
 
         if self.gpu_id is not None:
             mask = mask.to(self.gpu_id)
@@ -75,8 +75,8 @@ class SpeechEnhancementAgent:
         mask_mag, complex_out = action
         
         #Output mask is for the 't'th frame of the window
-        mask[:, :, t, :] = mask_mag.permute(0, 1, 3, 2)
-        complex_mask[:, :, :, t] = complex_out
+        mask[:, :, t, :] = mask_mag.squeeze(2)
+        complex_mask[:, :, :, t] = complex_out.squeeze(-1)
 
         mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2 + state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
         

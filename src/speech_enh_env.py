@@ -66,7 +66,7 @@ class SpeechEnhancementAgent:
         Returns:
             Next state with 't'th frame enhanced by applying mask.
         """
-        print(f"State:{state['noisy'].shape}")
+        #print(f"State:{state['noisy'].shape}")
         b, _, tm, f = state['noisy'].shape
         mask = torch.ones(b, 1, tm, f)
         complex_mask = torch.ones(b, 2, tm, f)
@@ -104,7 +104,7 @@ class SpeechEnhancementAgent:
 
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-        print(est_spec_uncompress.shape)
+        #print(est_spec_uncompress.shape)
         est_audio = torch.istft(
             est_spec_uncompress,
             self.n_fft,
@@ -117,6 +117,7 @@ class SpeechEnhancementAgent:
         clean_mag = torch.sqrt(state['clean_real']**2 + state['clean_imag']**2)
 
         retval = {'noisy':next_state,
+                  'clean':state['clean'], 
                   'clean_real':state['clean_real'],
                   'clean_imag':state['clean_imag'],
                   'clean_mag':clean_mag,

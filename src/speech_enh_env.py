@@ -172,7 +172,7 @@ class OUNoise(object):
         
     def evolve_state(self, action):
         x  = self.state
-        action_dim = action.shape[-1]
+        action_dim = action[0].shape[-1]
         print(f"X:{x.shape}, mu:{self.mu.shape}, sigma:{self.sigma.shape}, act_dim:{action_dim}")
         dx = self.theta * (self.mu - x) + self.sigma * torch.randn(action_dim)
         self.state = x + dx
@@ -180,6 +180,7 @@ class OUNoise(object):
     
     def get_action(self, action, t=0):
         ou_state = self.evolve_state(action)
+        print(f"ou_state:{ou_state.shape}")
         self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
         mag_mask = np.clip(action[0] + ou_state, torch.min(action[0]), torch.max(action[0]))
         comp_mask = np.clip(action[1] + ou_state, torch.min(action[1]), torch.max(action[1]))

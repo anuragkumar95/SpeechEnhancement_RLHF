@@ -206,7 +206,7 @@ class DDPGTrainer:
             #print(f"Actor next Inp:{next_inp.shape}")
             next_action = self.target_actor(next_inp)
             print(torch.isnan(next_action[0]).any(), torch.isnan(next_action[1]).any())
-            
+            print(torch.isinf(next_action[0]).any(), torch.isinf(next_action[1]).any())
             #Get value for next state with applied actions
             next_applied_state = env.get_next_state(state=experience['next'],
                                                     action=next_action,
@@ -228,6 +228,7 @@ class DDPGTrainer:
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)
             print(torch.isnan(a_action[0]).any(), torch.isnan(a_action[1]).any())
+            print(torch.isinf(a_action[0]).any(), torch.isinf(a_action[1]).any())
             a_next_state = env.get_next_state(state=experience['curr'],
                                               action=a_action,
                                               t=experience['t'])

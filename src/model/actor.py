@@ -205,6 +205,8 @@ class TSCNet(nn.Module):
         # print(f"IS_NAN:{torch.isnan(mag).any()}")
         #mag = x[:, 0, :, :]**2 + x[:, 1, :, :]**2
         #mag = mag.unsqueeze(1)
+        print(f"IS_NAN_x:{torch.isnan(mag).any()}")
+        print(f"IS_INF_x:{torch.isinf(mag).any()}")
         x_in = torch.cat([mag, x], dim=1)
 
         out_1 = self.dense_encoder(x_in)

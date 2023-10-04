@@ -199,14 +199,14 @@ class TSCNet(nn.Module):
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, signal_window=win_len, gpu_id=gpu_id)
 
     def forward(self, x):
-        print(f"IS_NAN_x:{torch.isnan(x).any()}")
-        print(f"IS_INF_x:{torch.isinf(x).any()}")
+        #print(f"IS_NAN_x:{torch.isnan(x).any()}")
+        #print(f"IS_INF_x:{torch.isinf(x).any()}")
         mag = torch.sqrt((x[:, 0, :, :] ** 2) + (x[:, 1, :, :] ** 2)).unsqueeze(1)
         # print(f"IS_NAN:{torch.isnan(mag).any()}")
         #mag = x[:, 0, :, :]**2 + x[:, 1, :, :]**2
         #mag = mag.unsqueeze(1)
-        print(f"IS_NAN_x:{torch.isnan(mag).any()}")
-        print(f"IS_INF_x:{torch.isinf(mag).any()}")
+        #print(f"IS_NAN_x:{torch.isnan(mag).any()}")
+        #print(f"IS_INF_x:{torch.isinf(mag).any()}")
         x_in = torch.cat([mag, x], dim=1)
 
         out_1 = self.dense_encoder(x_in)
@@ -217,7 +217,9 @@ class TSCNet(nn.Module):
 
         mask_mu, mask_sigma = self.mask_decoder(out_5)
         complex_mu, complex_sigma = self.complex_decoder(out_5)
-        
+
+        print("Mask:", torch.isnan(mask_mu).any(), torch.isinf(mask_sigma).any())
+        print("Complex:", torch.isnan(complex_mu).any(), torch.isinf(complex_sigma).any())
         mask = self.mask_decoder.sample(mask_mu, mask_sigma)
         complex_out = self.complex_decoder.sample(complex_mu, complex_sigma)
         return (mask, complex_out)

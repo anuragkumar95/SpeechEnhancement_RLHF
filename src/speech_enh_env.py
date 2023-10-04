@@ -209,6 +209,6 @@ class OUNoise(object):
     def get_action(self, action, t=0):
         ou_state = self.evolve_state(action)
         self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
-        mag_mask = torch.clip(action[0] + ou_state, 0, torch.max(action[0]))
+        mag_mask = torch.clip(action[0] + ou_state, torch.tensor(0.0), torch.max(action[0]))
         comp_mask = torch.clip(action[1] + ou_state.view(-1, 1), torch.min(action[1]), torch.max(action[1]))
         return (mag_mask, comp_mask)

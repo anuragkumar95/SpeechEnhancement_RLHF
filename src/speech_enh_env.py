@@ -85,7 +85,9 @@ class SpeechEnhancementAgent:
         mask[:, :, t, :] = mask_mag.squeeze(2)
         complex_mask[:, :, t, :] = complex_out.squeeze(-1)
 
-        mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2 + state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
+        mag = (state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2)
+        mag = torch.sqrt(mag)
+        mag = mag.unsqueeze(1)
         
         noisy_phase = torch.angle(
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])

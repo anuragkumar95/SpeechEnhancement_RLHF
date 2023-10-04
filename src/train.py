@@ -175,7 +175,7 @@ class DDPGTrainer:
             #get the window input
             inp = env.get_state_input(env.state, step)
             #Forward pas through actor to get the action(mask)
-            print(f"Actor Inp:{inp.shape}")
+            #print(f"Actor Inp:{inp.shape}")
             action = self.actor(inp)
             #print(f"Actor Out(Action):{action[0].shape, action[1].shape}")
             #Add noise to the action
@@ -218,7 +218,7 @@ class DDPGTrainer:
             #critic loss
             critic_loss = (y_t - value_curr)**2
             critic_loss = critic_loss.mean()
-            
+            print("Critic Loss:", critic_loss)
             #actor loss
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)

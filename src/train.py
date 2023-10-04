@@ -205,7 +205,7 @@ class DDPGTrainer:
             next_action = self.target_actor(next_inp)
             
             #Get value for next state with applied actions
-            next_applied_state = env.get_next_state(state=experience['next_state'],
+            next_applied_state = env.get_next_state(state=experience['next'],
                                                     action=next_action,
                                                     t=next_t)
             

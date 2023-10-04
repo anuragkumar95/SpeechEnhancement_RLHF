@@ -199,7 +199,8 @@ class TSCNet(nn.Module):
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, signal_window=win_len, gpu_id=gpu_id)
 
     def forward(self, x):
-        print(f"IS_NAN:{torch.isnan(x).any()}")
+        print(f"IS_NAN_x:{torch.isnan(x).any()}")
+        print(f"IS_INF_x:{torch.isinf(x).any()}")
         mag = torch.sqrt((x[:, 0, :, :] ** 2) + (x[:, 1, :, :] ** 2)).unsqueeze(1)
         # print(f"IS_NAN:{torch.isnan(mag).any()}")
         #mag = x[:, 0, :, :]**2 + x[:, 1, :, :]**2

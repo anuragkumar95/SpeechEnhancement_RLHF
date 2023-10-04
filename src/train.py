@@ -179,7 +179,7 @@ class DDPGTrainer:
             action = self.actor(inp)
             #print(f"Actor Out(Action):{action[0].shape, action[1].shape}")
             #Add noise to the action
-            action = env.noise.get_action(action)
+            #action = env.noise.get_action(action)
 
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 

@@ -199,9 +199,9 @@ class TSCNet(nn.Module):
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, signal_window=win_len, gpu_id=gpu_id)
 
     def forward(self, x, k=1):
-        #mag = torch.sqrt((x[:, 0, :, :].abs() ** 2) + (x[:, 1, :, :].abs() ** 2)).unsqueeze(1)
-        mag = x[:, 0, :, :].abs() ** 2 + x[:, 1, :, :].abs() ** 2
-        mag = mag.unsqueeze(1)
+        mag = torch.sqrt((x[:, 0, :, :].abs() ** 2) + (x[:, 1, :, :].abs() ** 2)).unsqueeze(1)
+        #mag = x[:, 0, :, :]**2 + x[:, 1, :, :]**2
+        #mag = mag.unsqueeze(1)
         x_in = torch.cat([mag, x], dim=1)
 
         out_1 = self.dense_encoder(x_in)

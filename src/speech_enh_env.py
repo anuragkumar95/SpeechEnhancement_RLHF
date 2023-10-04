@@ -115,7 +115,7 @@ class SpeechEnhancementAgent:
             onesided=True,
         )
 
-        next_state = torch.cat([est_real, est_imag], dim=1)
+        next_state = torch.cat([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
         clean_mag = torch.sqrt(state['clean_real']**2 + state['clean_imag']**2)
 
         retval = {'noisy':next_state,

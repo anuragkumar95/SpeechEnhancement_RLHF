@@ -45,10 +45,10 @@ class SpeechEnhancementAgent:
         print(left, right)
         if t < self.window // 2 : 
             pad = torch.zeros(b, 2, -left, f)
-            print("pad:",pad.shape,  state[:, :, left:right, :].shape, t)
+            print("pad:",pad.shape,  state[:, :, :right, :].shape, t)
             if self.gpu_id is not None:
                 pad = pad.to(self.gpu_id)
-            windows = torch.cat([pad, state[:, :, left:right, :]], dim=2)
+            windows = torch.cat([pad, state[:, :, left:, :]], dim=2)
         elif right > tm - 1:
             pad = torch.zeros(b, 2, right - tm, f)
             if self.gpu_id is not None:

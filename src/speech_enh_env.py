@@ -42,6 +42,7 @@ class SpeechEnhancementAgent:
         b, _, tm, f = state.shape
         left = t - self.window
         right = t + self.window + 1
+        print(left, right)
         if t < self.window // 2 : 
             pad = torch.zeros(b, 2, -left, f)
             print("pad:",pad.shape,  state[:, :, left:right, :].shape, t)

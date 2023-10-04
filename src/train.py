@@ -216,6 +216,9 @@ class DDPGTrainer:
             value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'])
             y_t = experience['reward'] + args.gamma * value_next
 
+            print(f"value_curr:{torch.isnan(value_curr).any()}")
+            print(f"value_curr:{torch.isnan(value_next).any()}")
+
             #critic loss
             critic_loss = (y_t - value_curr)**2
             critic_loss = critic_loss.mean()

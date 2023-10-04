@@ -38,7 +38,7 @@ class SpeechEnhancementAgent:
             of shape (b, 2, f, w) 
         """
         state = state['noisy']
-        #print(f"State:{state.shape}")
+        print(f"State:{state.shape}")
         b, _, tm, f = state.shape
         left = t - self.window
         right = t + self.window + 1

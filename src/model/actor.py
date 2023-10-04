@@ -201,7 +201,7 @@ class TSCNet(nn.Module):
     def forward(self, x):
         print(f"IS_NAN:{torch.isnan(x).any()}")
         mag = torch.sqrt((x[:, 0, :, :] ** 2) + (x[:, 1, :, :] ** 2)).unsqueeze(1)
-        print(f"IS_NAN:{torch.isnan(mag).any()}")
+        # print(f"IS_NAN:{torch.isnan(mag).any()}")
         #mag = x[:, 0, :, :]**2 + x[:, 1, :, :]**2
         #mag = mag.unsqueeze(1)
         x_in = torch.cat([mag, x], dim=1)

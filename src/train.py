@@ -203,9 +203,9 @@ class DDPGTrainer:
 
             next_t = experience['t'] + 1
             next_inp = env.get_state_input(experience['next'], next_t)
-            print(f"Actor next Inp:{next_inp.shape}")
+            #print(f"Actor next Inp:{next_inp.shape}")
             next_action = self.target_actor(next_inp)
-            print(torch.isnan(next_action).any())
+            print(torch.isnan(next_action[0]).any(), torch.isnan(next_action[1]).any())
             
             #Get value for next state with applied actions
             next_applied_state = env.get_next_state(state=experience['next'],
@@ -217,8 +217,8 @@ class DDPGTrainer:
             value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'])
             y_t = experience['reward'] + args.gamma * value_next
 
-            print(f"value_curr:{torch.isnan(value_curr).any()}")
-            print(f"value_curr:{torch.isnan(value_next).any()}")
+            #print(f"value_curr:{torch.isnan(value_curr).any()}")
+            #print(f"value_curr:{torch.isnan(value_next).any()}")
 
             #critic loss
             critic_loss = (y_t - value_curr)**2
@@ -227,7 +227,7 @@ class DDPGTrainer:
             #actor loss
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)
-            print(torch.isnan(a_action).any())
+            print(torch.isnan(a_action[0]).any(), torch.isnan(a_action[1]).any())
             a_next_state = env.get_next_state(state=experience['curr'],
                                               action=a_action,
                                               t=experience['t'])

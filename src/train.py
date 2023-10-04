@@ -164,7 +164,7 @@ class DDPGTrainer:
             batch : batch of spectrograms of shape (b * 2 * f * t)
         """
         env = SpeechEnhancementAgent(batch, 
-                                     window=args.win_len, 
+                                     window=args.win_len // 2, 
                                      buffer_size=args.cut_len // self.hop,
                                      n_fft=self.n_fft,
                                      hop=self.hop,

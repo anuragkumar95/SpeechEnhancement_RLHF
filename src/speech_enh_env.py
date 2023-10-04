@@ -149,17 +149,19 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
 
-        loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
-        loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
-        loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
-        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
+        print(f"PESQ:{pesq_reward}, {pesq_reward.dtype}")
+
+        #loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
+        #loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
+        #loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
+        #time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
 
         #print(f"IS_NAN:{torch.isnan(loss_mag).any()}")
         #print(f"IS_NAN:{torch.isnan(loss_real).any()}")
         #print(f"IS_NAN:{torch.isnan(loss_imag).any()}")
         #print(f"IS_NAN:{torch.isnan(time_loss).any()}")
 
-        r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
+        r_t = torch.tanh(pesq_reward)# - (loss_mag + loss_real + loss_imag + time_loss)) 
         return r_t    
     
 

@@ -137,7 +137,7 @@ class MaskDecoder(nn.Module):
         self.gpu_id = gpu_id
 
     def sample(self, mu, sigma):
-        print(f"Device, mu:{mu.get_device()}, sigma:{sigma.get_device()}, sample:{self.N.sample(mu.shape).to(self.gpu_id).get_device()}")
+        #print(f"Device, mu:{mu.get_device()}, sigma:{sigma.get_device()}, sample:{self.N.sample(mu.shape).to(self.gpu_id).get_device()}")
         x = mu + sigma * self.N.sample(mu.shape).to(self.gpu_id)
         x = self.prelu_out(x)
         return x.permute(0, 2, 1).unsqueeze(1)

@@ -38,14 +38,14 @@ class SpeechEnhancementAgent:
             of shape (b, 2, f, w) 
         """
         state = state['noisy']
-        print(f"State:{state.shape}")
+        #print(f"State:{state.shape}")
         b, _, tm, f = state.shape
         left = t - self.window
         right = t + self.window + 1
-        print(left, right)
+        #print(left, right)
         if t < self.window // 2 : 
             pad = torch.zeros(b, 2, -left, f)
-            print("pad:",pad.shape,  state[:, :, :right, :].shape, t)
+            #print("pad:",pad.shape,  state[:, :, :right, :].shape, t)
             if self.gpu_id is not None:
                 pad = pad.to(self.gpu_id)
             windows = torch.cat([pad, state[:, :, :right, :]], dim=2)

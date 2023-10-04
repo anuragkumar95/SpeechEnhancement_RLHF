@@ -170,6 +170,7 @@ class DDPGTrainer:
                                      hop=self.hop,
                                      gpu_id=self.gpu_id)
         rewards = []
+        torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):
             #get the window input
             inp = env.get_state_input(env.state, step)

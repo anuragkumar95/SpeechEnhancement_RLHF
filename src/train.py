@@ -187,6 +187,7 @@ class DDPGTrainer:
                                             t=step)
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
+            print(f"Reward:{reward}")
             rewards.append(reward.detach().cpu().numpy())
 
             #Store the experience in replay_buffer

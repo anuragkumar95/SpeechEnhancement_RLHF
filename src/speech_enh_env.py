@@ -185,7 +185,7 @@ class replay_buffer:
                       'action':(self.buffer[idx]['action'][0].to(self.gpu_id),
                                 self.buffer[idx]['action'][1].to(self.gpu_id)),
                       'reward':self.buffer[idx]['reward'].to(self.gpu_id),
-                      't':self.buffer_idx['t']
+                      't':self.buffer[idx]['t']
                      }
         return retval
 

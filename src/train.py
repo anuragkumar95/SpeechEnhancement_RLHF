@@ -154,7 +154,7 @@ class DDPGTrainer:
         
         return ret_val
     
-    def train_one_episode(self, batch, args):
+    def train_one_episode(self, batch, rewards, args):
         """
         Runs an episode which takes input a batch and predicts masks
         sequentially over the time dimension
@@ -173,7 +173,7 @@ class DDPGTrainer:
                                      n_fft=self.n_fft,
                                      hop=self.hop,
                                      gpu_id=self.gpu_id)
-        rewards = []
+
         torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):
             #get the window input
@@ -290,7 +290,7 @@ class DDPGTrainer:
         pesq = batch_pesq(env.state['clean'], env.state['noisy'])
         return pesq
     
-    def train_one_epoch(self, epoch, args):
+    def train_one_epoch(self, epoch, rewards, args):
         """
         Wrapper function to run one epoch of DDPG.
         One epoch is defined as running one episode of training
@@ -308,7 +308,7 @@ class DDPGTrainer:
             #Preprocess batch
             batch = self.preprocess_batch(batch)
             #Run episode
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(batch, args)
+            ep_rewards, actor_loss, critic_loss = self.train_one_episode(batch, rewards, args)
             
             #Collect reward and losses
             actor_epoch_loss += actor_epoch_loss
@@ -342,9 +342,10 @@ class DDPGTrainer:
         Run epochs, collect validation results and save checkpoints. 
         """
         best_pesq = -1
+        rewards = []
         print("Start training...")
         for epoch in range(args.epochs):
-            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, args)
+            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
             #TODO:Log these in wandb
             wandb.log({"Epoch":epoch,
                        "Actor_loss":epoch_actor_loss,

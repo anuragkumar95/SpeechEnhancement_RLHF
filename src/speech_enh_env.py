@@ -141,8 +141,8 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
-        z_mask, z = batch_pesq(state['clean'], state['noisy'])
-        z_hat_mask, z_hat = batch_pesq(next_state['clean'], next_state['noisy'])
+        z_mask, z = batch_pesq(state['cl_audio'], state['est_audio'])
+        z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'], next_state['est_audio'])
 
         pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 

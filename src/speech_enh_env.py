@@ -55,6 +55,7 @@ class SpeechEnhancementAgent:
                 pad = pad.to(self.gpu_id)
             windows = torch.cat([state[:, :, left:, :], pad], dim=2) 
         else:
+            print(f"c, left:{left}, right:{right}")
             windows = state[:, :, left:right, :]
         return windows
 

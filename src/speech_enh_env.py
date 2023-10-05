@@ -184,7 +184,7 @@ class replay_buffer:
                       'next':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['next'].items()},
                       'action':(self.buffer[idx]['action'][0].to(self.gpu_id),
                                 self.buffer[idx]['action'][1].to(self.gpu_id)),
-                      'reward':self.buffer[idx].to(self.gpu_id),
+                      'reward':self.buffer[idx]['reward'].to(self.gpu_id),
                       't':self.buffer_idx['t']
                      }
         return retval

@@ -180,9 +180,9 @@ class SpeechEnhancementAgent:
             loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
             time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio']).detach()
 
-            r_t = torch.tanh(pesq_reward - (self.args.loss_weights[0]*loss_real + 
+            r_t = pesq_reward - torch.tanh(self.args.loss_weights[0]*loss_real + 
                                             self.args.loss_weights[1]*loss_mag + 
-                                            self.args.loss_weights[2]*time_loss)) 
+                                            self.args.loss_weights[2]*time_loss) 
             return r_t     
     
 

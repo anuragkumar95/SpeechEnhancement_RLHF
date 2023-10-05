@@ -24,6 +24,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from speech_enh_env import SpeechEnhancementAgent
 
+
 def args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--root", type=str, required=True,
@@ -88,6 +89,7 @@ class DDPGTrainer:
             self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
+        wandb.init()
 
     def get_specs(self, clean, noisy):
         # Normalization
@@ -230,7 +232,10 @@ class DDPGTrainer:
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
 
             print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
-            
+            wandb.log({
+                'ep_step':step,
+                'reward':reward.mean()
+            })
             #Update networks
             actor_loss.backward()
             self.a_optimizer.step()

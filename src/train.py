@@ -231,13 +231,13 @@ class DDPGTrainer:
             print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
             
             #Update networks
-            self.a_optimizer.zero_grad()
             actor_loss.backward()
             self.a_optimizer.step()
+            self.a_optimizer.zero_grad()
 
-            self.c_optimizer.zero_grad()
             critic_loss.backward()
             self.c_optimizer.step()
+            self.c_optimizer.zero_grad()
 
             #update state
             env.state = next_state

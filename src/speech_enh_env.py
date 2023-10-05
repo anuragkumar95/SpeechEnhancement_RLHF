@@ -165,7 +165,7 @@ class SpeechEnhancementAgent:
 class replay_buffer:
     def __init__(self, max_size, gpu_id=None):
         self.buffer = deque(maxlen=max_size)
-        self.gpu_id
+        self.gpu_id = gpu_id
 
     def push(self, state, action, reward, next_state, t):
         experience = {'curr':state,

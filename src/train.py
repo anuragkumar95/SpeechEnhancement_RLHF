@@ -173,7 +173,6 @@ class DDPGTrainer:
         rewards = []
         torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):
-            torch.cuda.empty_cache()  
             #get the window input
             inp = env.get_state_input(env.state, step)
             #Forward pas through actor to get the action(mask)
@@ -251,7 +250,6 @@ class DDPGTrainer:
             for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
             
-            torch.cuda.empty_cache()  
         return rewards, actor_loss, critic_loss
     
     def run_validation(self, batch):

@@ -140,16 +140,17 @@ class SpeechEnhancementAgent:
         """
         if 'est_audio' not in state.keys():
             pesq_reward = torch.zeros(state['clean'].shape[0])
-            print("A")
+        
         else: 
             z_mask, z = batch_pesq(state['cl_audio'], state['est_audio'])
             z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'], next_state['est_audio'])
-
             pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
 
+        print("PESQ:", pesq_reward.mean())
+        
         loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
         loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
         loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag']).detach()

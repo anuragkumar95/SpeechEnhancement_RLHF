@@ -180,8 +180,8 @@ class replay_buffer:
         if self.gpu_id is None:
             retval = self.buffer[idx]
         else:
-            retval = {'curr':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items},
-                      'next':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['next'].items},
+            retval = {'curr':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items()},
+                      'next':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['next'].items()},
                       'action':(self.buffer[idx]['action'][0].to(self.gpu_id),
                                 self.buffer[idx]['action'][1].to(self.gpu_id)),
                       'reward':self.buffer[idx].to(self.gpu_id),

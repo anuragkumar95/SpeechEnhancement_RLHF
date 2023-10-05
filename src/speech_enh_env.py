@@ -141,22 +141,22 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
-        z_mask, z = batch_pesq(state['cl_audio'], state['est_audio'])
-        z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'], next_state['est_audio'])
+        if 'est_audio' not in state.keys():
+            pesq_reward = torch.zeros(state['clean'].shape[0])
+        else: 
+            z_mask, z = batch_pesq(state['cl_audio'], state['est_audio'])
+            z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'], next_state['est_audio'])
 
-        pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
+            pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
-
-     
 
         loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
         loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
         loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
         time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
 
-       
         #r_t = torch.tanh(pesq_reward )
         r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
         return r_t     

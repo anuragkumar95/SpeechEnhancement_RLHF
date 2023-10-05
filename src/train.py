@@ -186,16 +186,16 @@ class DDPGTrainer:
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
             rewards.append(reward.detach().cpu().numpy())
-
+            """
             #Store the experience in replay_buffer
             #TODO:Make sure buffer size <= max_size. 
-            env.exp_buffer.push(state=env.state, 
-                                action=action, 
-                                reward=reward, 
-                                next_state=next_state,
+            env.exp_buffer.push(state=env.state.detach().cpu(), 
+                                action=action.detach().cpu(), 
+                                reward=reward.detach().cpu(), 
+                                next_state=next_state.detach().cpu(),
                                 t=step)
             
-            """
+            
             
             #sample experience from buffer
             experience = env.exp_buffer.sample() 

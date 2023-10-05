@@ -38,11 +38,9 @@ class SpeechEnhancementAgent:
             of shape (b, 2, f, w) 
         """
         state = state['noisy']
-        #print(f"State:{state.shape}")
         b, _, tm, f = state.shape
         left = t - self.window
         right = t + self.window + 1
-        #print(left, right)
         print(f"t:{t}")
         if t < self.window: 
             pad = torch.zeros(b, 2, -left, f)

@@ -160,7 +160,7 @@ class SpeechEnhancementAgent:
         #print(f"IS_NAN:{torch.isnan(loss_real).any()}")
         #print(f"IS_NAN:{torch.isnan(loss_imag).any()}")
         #print(f"IS_NAN:{torch.isnan(time_loss).any()}")
-        r_t = torch.tanh(10)
+        r_t = torch.tanh(torch.FloatTensor(10.0))
         #r_t = torch.tanh(pesq_reward)# - (loss_mag + loss_real + loss_imag + time_loss)) 
         return r_t    
     

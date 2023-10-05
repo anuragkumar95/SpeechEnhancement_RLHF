@@ -81,11 +81,12 @@ class DDPGTrainer:
             self.critic = self.critic.to(gpu_id)
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
-            
+            """
             self.actor = DDP(self.actor, device_ids=[gpu_id])
             self.critic = DDP(self.critic, device_ids=[gpu_id])
             self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
             self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
+            """
         self.gpu_id = gpu_id
 
     def get_specs(self, clean, noisy):

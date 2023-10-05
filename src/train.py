@@ -227,7 +227,7 @@ class DDPGTrainer:
 
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
             """
-            actor_loss = -self.critic(env.state, next_state)
+            actor_loss = -self.critic(env.state['noisy'], next_state['noisy'])
             critic_loss = 0
             #Update networks
             #self.c_optimizer.zero_grad()

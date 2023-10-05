@@ -58,6 +58,10 @@ wandb.login()
 
 
 class DDPGTrainer:
+    """
+    Class which defines Deep Deterministic Policy Gradient (DDPG)
+    Performs Actor Critic training using DDPG method.
+    """
     def __init__(self, train_ds, test_ds, args, gpu_id: int):
         self.n_fft = 400
         self.hop = 100
@@ -93,6 +97,19 @@ class DDPGTrainer:
         wandb.init(project=args.exp)
 
     def get_specs(self, clean, noisy):
+        """
+        Create spectrograms from input waveform.
+        ARGS:
+            clean : clean waveform (batch * cut_len)
+            noisy : noisy waveform (batch * cut_len)
+
+        Return
+            noisy_spec : (b * 2 * f * t) noisy spectrogram
+            clean_spec : (b * 2 * f * t) clean spectrogram
+            clean_real : (b * 1 * f * t) real part of clean spectrogram
+            clean_imag : (b * 1 * f * t) imag part of clean spectrogram
+            clean_mag  : (b * 1 * f * t) mag of clean spectrogram
+        s"""
         # Normalization
         c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
         noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)

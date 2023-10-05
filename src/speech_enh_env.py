@@ -170,6 +170,11 @@ class SpeechEnhancementAgent:
             
             z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
                                            next_state['est_audio'].detach().cpu().numpy())
+            
+            pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
+
+            if self.gpu_id is not None:
+                pesq_reward = pesq_reward.to(self.gpu_id)
 
             loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
             loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()

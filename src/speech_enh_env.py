@@ -181,11 +181,11 @@ class replay_buffer:
         if self.gpu_id is None:
             retval = self.buffer[idx]
         else:
-            retval = {'curr':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items()},
-                      'next':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['next'].items()},
-                      'action':(self.buffer[idx]['action'][0].to(self.gpu_id),
-                                self.buffer[idx]['action'][1].to(self.gpu_id)),
-                      'reward':self.buffer[idx]['reward'].to(self.gpu_id),
+            retval = {'curr':{k:torch.FloatTensor(v).to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items()},
+                      'next':{k:torch.FloatTensor(v).to(self.gpu_id) for k, v in self.buffer[idx]['next'].items()},
+                      'action':(torch.FloatTensor(self.buffer[idx]['action'][0]).to(self.gpu_id),
+                                torch.FloatTensor(self.buffer[idx]['action'][1]).to(self.gpu_id)),
+                      'reward':torch.FloatTensor(self.buffer[idx]['reward']).to(self.gpu_id),
                       't':self.buffer[idx]['t']
                      }
         return retval

@@ -190,10 +190,10 @@ class DDPGTrainer:
             
             #Store the experience in replay_buffer
             #TODO:Make sure buffer size <= max_size. 
-            env.exp_buffer.push(state={k:v.detach().cpu() for k, v in env.state.items()}, 
-                                action=(action[0].detach().cpu(), action[1].detach().cpu()), 
-                                reward=reward.detach().cpu(), 
-                                next_state={k:v.detach().cpu() for k, v in next_state.items()},
+            env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
+                                action=(action[0].detach().cpu().numpy(), action[1].detach().cpu()), 
+                                reward=reward.detach().cpu().numpy(), 
+                                next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()},
                                 t=step)
             
             
@@ -366,6 +366,7 @@ def ddp_setup(rank, world_size):
 
 
 def main(rank: int, world_size: int, args):
+    """
     ddp_setup(rank, world_size)
     if rank == 0:
         print(args)
@@ -374,12 +375,13 @@ def main(rank: int, world_size: int, args):
         ]
         print(f"Available gpus:{available_gpus}")
     #print("AAAA")
-    
+    """
     train_ds, test_ds = load_data(args.root, 
                                   args.batchsize, 
                                   1, 
                                   args.cut_len)
     #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
+    
     trainer = DDPGTrainer(train_ds, test_ds, args, rank)
     trainer.train(args)
     destroy_process_group()
@@ -393,5 +395,5 @@ if __name__ == "__main__":
 
     world_size = torch.cuda.device_count()
     print(f"World size:{world_size}")
-    mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
-    #main(None, world_size, args)
+    #mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
+    main(0, world_size, args)

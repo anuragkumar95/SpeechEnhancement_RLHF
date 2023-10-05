@@ -190,10 +190,10 @@ class DDPGTrainer:
             
             #Store the experience in replay_buffer
             #TODO:Make sure buffer size <= max_size. 
-            env.exp_buffer.push(state=env.state.detach().cpu(), 
-                                action=action.detach().cpu(), 
+            env.exp_buffer.push(state={k:v.detach().cpu() for k, v in env.state.items()}, 
+                                action=(action[0].detach().cpu(), action[1].detach().cpu()), 
                                 reward=reward.detach().cpu(), 
-                                next_state=next_state.detach().cpu(),
+                                next_state={k:v.detach().cpu() for k, v in next_state.items()},
                                 t=step)
             
             
@@ -212,7 +212,7 @@ class DDPGTrainer:
             
             #Set TD target
             value_curr = self.critic(experience['curr']['clean_mag'], experience['next']['est_mag'])
-            value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'])
+            value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'].detach())
             y_t = experience['reward'] + args.gamma * value_next
 
             #critic loss
@@ -229,13 +229,13 @@ class DDPGTrainer:
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
             
             #Update networks
-            self.c_optimizer.zero_grad()
-            critic_loss.backward()
-            self.c_optimizer.step()
-
             self.a_optimizer.zero_grad()
             actor_loss.backward()
             self.a_optimizer.step()
+
+            self.c_optimizer.zero_grad()
+            critic_loss.backward()
+            self.c_optimizer.step()
 
             #update state
             env.state = next_state

@@ -122,7 +122,7 @@ class DDPGTrainer:
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
         clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
 
-        return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, clean
+        return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, clean, noisy
     
     def preprocess_batch(self, batch):
         """
@@ -139,14 +139,15 @@ class DDPGTrainer:
             clean = clean.to(self.gpu_id)
             noisy = noisy.to(self.gpu_id)
 
-        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud = self.get_specs(clean, noisy)
+        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud, est_audio = self.get_specs(clean, noisy)
         
         ret_val = {'noisy':noisy_spec,
                    'clean':clean_spec,
                    'clean_real':clean_real,
                    'clean_imag':clean_imag,
                    'clean_mag':clean_mag,
-                   'cl_audio':cl_aud 
+                   'cl_audio':cl_aud,
+                   'est_audio':est_audio, 
                   }
         
         return ret_val
@@ -175,11 +176,12 @@ class DDPGTrainer:
         for step in range(env.steps):
             #get the window input
             inp = env.get_state_input(env.state, step)
+
             #Forward pas through actor to get the action(mask)
-            print(f"inp:{inp.shape}")
             action = self.actor(inp)
             #Add noise to the action
-            
+            #action = env.noise.get_action(action)
+
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
                                             action=action, 
@@ -199,8 +201,6 @@ class DDPGTrainer:
             
             #sample experience from buffer
             experience = env.exp_buffer.sample()
-
-            _ = env.exp_buffer.buffer.pop() 
 
             next_t = experience['t'] + 1
             next_inp = env.get_state_input(experience['next'], next_t)
@@ -260,7 +260,12 @@ class DDPGTrainer:
         spectrograms.
         """
         print("Running validation...")
-        env = SpeechEnhancementAgent(batch, window=args.window)
+        env = SpeechEnhancementAgent(batch, 
+                                     window=args.win_len // 2, 
+                                     buffer_size=args.cut_len // self.hop,
+                                     n_fft=self.n_fft,
+                                     hop=self.hop,
+                                     gpu_id=self.gpu_id)
         for step in range(env.steps):
             #get the window input
             inp = env.get_state_input(env.state, step)

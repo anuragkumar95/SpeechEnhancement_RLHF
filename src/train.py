@@ -40,6 +40,7 @@ def args():
                         help="Training batchsize.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for gpu training.")
+    parser.add_argument("--reward", type=int, help="Type of reward")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
     parser.add_argument("--win_len", type=int, default=24, help="Context window length for input")
@@ -141,7 +142,7 @@ class DDPGTrainer:
             clean = clean.to(self.gpu_id)
             noisy = noisy.to(self.gpu_id)
 
-        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud, est_audio = self.get_specs(clean, noisy)
+        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud, noisy = self.get_specs(clean, noisy)
         
         ret_val = {'noisy':noisy_spec,
                    'clean':clean_spec,
@@ -149,7 +150,8 @@ class DDPGTrainer:
                    'clean_imag':clean_imag,
                    'clean_mag':clean_mag,
                    'cl_audio':cl_aud,
-                   'est_audio':est_audio, 
+                   'n_audio':noisy,
+                   'est_audio':noisy, 
                   }
         
         return ret_val
@@ -172,7 +174,8 @@ class DDPGTrainer:
                                      buffer_size=args.cut_len // self.hop,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
-                                     gpu_id=self.gpu_id)
+                                     gpu_id=self.gpu_id,
+                                     args=args)
 
         torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):

@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 
 class SpeechEnhancementAgent:
-    def __init__(self, batch, window, buffer_size, n_fft, hop, gpu_id=None):
+    def __init__(self, batch, window, buffer_size, n_fft, hop, args, gpu_id=None):
         """
         State : Dict{noisy, clean, est_real, est_imag, cl_audio, est_audio}
         """
@@ -22,7 +22,8 @@ class SpeechEnhancementAgent:
         self.gpu_id = gpu_id
         self.window = window
         self.n_fft = n_fft
-        self.hop = hop 
+        self.hop = hop
+        self.args = args
         
         self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
         self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=gpu_id)
@@ -123,6 +124,7 @@ class SpeechEnhancementAgent:
                   'clean_imag':state['clean_imag'].detach(),
                   'clean_mag':clean_mag.detach(),
                   'cl_audio':state['cl_audio'].detach(),
+                  'n_audio':state['n_audio'].detach(),
                   'est_mag':est_mag.detach(),
                   'est_real':est_real.detach(),
                   'est_imag':est_imag.detach(),
@@ -138,29 +140,45 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
-        if 'est_audio' not in state.keys():
-            pesq_reward = torch.zeros(state['clean'].shape[0])
-        
-        else: 
+        if self.args.reward == 1:
             z_mask, z = batch_pesq(state['cl_audio'].detach().cpu().numpy(), 
-                                   state['est_audio'].detach().cpu().numpy())
+                                state['est_audio'].detach().cpu().numpy())
             z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
-                                           next_state['est_audio'].detach().cpu().numpy())
+                                        next_state['est_audio'].detach().cpu().numpy())
             pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
-        if self.gpu_id is not None:
-            pesq_reward = pesq_reward.to(self.gpu_id)
-
-        #print("PESQ:", pesq_reward.mean())
+            if self.gpu_id is not None:
+                pesq_reward = pesq_reward.to(self.gpu_id)
+            return pesq_reward
         
-        #loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
-        #loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
-        #loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag']).detach()
-        #time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio']).detach()
+        if self.args.reward == 2:
+            z_mask, z = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(),
+                                   next_state['n_audio'].detach().cpu().numpy())
+            
+            z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
+                                           next_state['est_audio'].detach().cpu().numpy())
+            
+            pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
-        r_t = torch.tanh(pesq_reward)
-        #r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
-        return pesq_reward     
+            if self.gpu_id is not None:
+                pesq_reward = pesq_reward.to(self.gpu_id)
+            return pesq_reward
+        
+        if self.args.reward == 3:
+            z_mask, z = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(),
+                                   next_state['n_audio'].detach().cpu().numpy())
+            
+            z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
+                                           next_state['est_audio'].detach().cpu().numpy())
+
+            loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
+            loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
+            time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio']).detach()
+
+            r_t = torch.tanh(pesq_reward - (self.args.loss_weights[0]*loss_real + 
+                                            self.args.loss_weights[1]*loss_mag + 
+                                            self.args.loss_weights[2]*time_loss)) 
+            return r_t     
     
 
 class replay_buffer:

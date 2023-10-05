@@ -193,7 +193,7 @@ class DDPGTrainer:
             if len(rewards) >= 1:
                 rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
             else:
-                rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
+                rewards.append(reward.mean().detach().cpu().numpy())
             
             #Store the experience in replay_buffer
             #TODO:Make sure buffer size <= max_size. 

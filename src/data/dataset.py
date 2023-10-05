@@ -66,14 +66,14 @@ def load_data(ds_dir, batch_size, n_cpu, cut_len):
         pin_memory=True,
         shuffle=True,
         sampler=DistributedSampler(train_ds),
-        drop_last=True,
+        drop_last=False,
         num_workers=n_cpu,
     )
     test_dataset = torch.utils.data.DataLoader(
         dataset=test_ds,
         batch_size=batch_size,
         pin_memory=True,
-        shuffle=True,
+        shuffle=False,
         sampler=DistributedSampler(test_ds),
         drop_last=False,
         num_workers=n_cpu,

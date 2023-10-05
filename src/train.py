@@ -228,7 +228,7 @@ class DDPGTrainer:
 
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
 
-            print(f"Step:{step} Reward:{reward} A_Loss:{actor_loss} C_Loss:{critic_loss}")
+            print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
             
             #Update networks
             self.a_optimizer.zero_grad()

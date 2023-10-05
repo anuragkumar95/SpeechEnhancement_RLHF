@@ -172,7 +172,7 @@ class DDPGTrainer:
         rewards = []
         torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):
-            torch.cuda_empty_cache()  
+            #torch.cuda_empty_cache()  
             #get the window input
             inp = env.get_state_input(env.state, step)
             #Forward pas through actor to get the action(mask)
@@ -229,11 +229,11 @@ class DDPGTrainer:
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
             """
             actor_loss = -self.critic(env.state['clean_mag'], next_state['clean_mag']).mean()
-            critic_loss = 0
+            critic_loss = actor_loss
             #Update networks
-            #self.c_optimizer.zero_grad()
-            #critic_loss.backward()
-            #self.c_optimizer.step()
+            self.c_optimizer.zero_grad()
+            critic_loss.backward()
+            self.c_optimizer.step()
 
             self.a_optimizer.zero_grad()
             actor_loss.backward()

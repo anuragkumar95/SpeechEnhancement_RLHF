@@ -173,7 +173,7 @@ class DDPGTrainer:
         rewards = []
         torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):
-            #torch.cuda_empty_cache()  
+            torch.cuda.empty_cache()  
             #get the window input
             inp = env.get_state_input(env.state, step)
             #Forward pas through actor to get the action(mask)
@@ -197,11 +197,11 @@ class DDPGTrainer:
                                 next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()},
                                 t=step)
             
-            _ = env.exp_buffer.buffer.pop()
-            
             
             #sample experience from buffer
-            experience = env.exp_buffer.sample() 
+            experience = env.exp_buffer.sample()
+
+            _ = env.exp_buffer.buffer.pop() 
 
             next_t = experience['t'] + 1
             next_inp = env.get_state_input(experience['next'], next_t)

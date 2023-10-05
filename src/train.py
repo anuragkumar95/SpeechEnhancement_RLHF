@@ -190,7 +190,10 @@ class DDPGTrainer:
                                             t=step)
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
-            #rewards.append(reward.detach().cpu().numpy())
+            if len(rewards) >= 1:
+                rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
+            else:
+                rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
             
             #Store the experience in replay_buffer
             #TODO:Make sure buffer size <= max_size. 
@@ -234,7 +237,7 @@ class DDPGTrainer:
             print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
             wandb.log({
                 'ep_step':step,
-                'reward':reward.mean(),
+                'reward':rewards[-1],
                 'actor_loss':actor_loss,
                 'critic_loss':critic_loss
             })

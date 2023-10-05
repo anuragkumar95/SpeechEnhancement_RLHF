@@ -368,7 +368,7 @@ def ddp_setup(rank, world_size):
 
 
 def main(rank: int, world_size: int, args):
-    """
+    
     ddp_setup(rank, world_size)
     if rank == 0:
         print(args)
@@ -377,7 +377,7 @@ def main(rank: int, world_size: int, args):
         ]
         print(f"Available gpus:{available_gpus}")
     #print("AAAA")
-    """
+    
     train_ds, test_ds = load_data(args.root, 
                                   args.batchsize, 
                                   1, 

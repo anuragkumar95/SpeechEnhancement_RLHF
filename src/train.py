@@ -90,7 +90,7 @@ class DDPGTrainer:
             self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
-        wandb.init()
+        wandb.init(project=args.exp)
 
     def get_specs(self, clean, noisy):
         # Normalization
@@ -164,10 +164,12 @@ class DDPGTrainer:
         actor : actor model that learns P(a|s, theta), where theta are the 
                 actor's weight parameters. In our use case it takes windows 
                 of spectrogram and predicts masks both in real and complex domain.
-        critic: critic model learns to predict the PESQ score. 
+        critic: critic model learns to predict the quality of a (s_t, a_t) pair. 
 
         ARGS:
-            batch : batch of spectrograms of shape (b * 2 * f * t)
+            batch   : batch of spectrograms of shape (b * 2 * f * t)
+            rewards : global ist to store cummulative reward
+            args    : global args 
         """
         env = SpeechEnhancementAgent(batch, 
                                      window=args.win_len // 2, 
@@ -244,6 +246,7 @@ class DDPGTrainer:
                 'actor_loss':actor_loss,
                 'critic_loss':critic_loss
             })
+
             #Update networks
             actor_loss.backward()
             self.a_optimizer.step()
@@ -265,7 +268,7 @@ class DDPGTrainer:
             
         return rewards, actor_loss, critic_loss
     
-    def run_validation(self, batch):
+    def run_validation(self, batch, args):
         """
         Runs a vlidation loop for a batch.
         Predict mask for each frame one at a time 
@@ -278,7 +281,8 @@ class DDPGTrainer:
                                      buffer_size=args.cut_len // self.hop,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
-                                     gpu_id=self.gpu_id)
+                                     gpu_id=self.gpu_id,
+                                     args=args)
         for step in range(env.steps):
             #get the window input
             inp = env.get_state_input(env.state, step)
@@ -290,7 +294,8 @@ class DDPGTrainer:
                                             t=step)
             env.state = next_state
 
-        pesq = batch_pesq(env.state['clean'], env.state['noisy'])
+        pesq = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
+                          env.state['est_audio'].detach().cpu().numpy())
         return pesq
     
     def train_one_epoch(self, epoch, rewards, args):
@@ -306,8 +311,10 @@ class DDPGTrainer:
         self.critic.train()
         self.target_actor.train()
         self.target_critic.train()
-        print(f"Running epoch: {epoch+1}")
-        for step, batch in enumerate(self.train_ds):
+        
+        step = 0
+        
+        for i, batch in enumerate(self.train_ds):
             #Preprocess batch
             batch = self.preprocess_batch(batch)
             #Run episode
@@ -319,6 +326,7 @@ class DDPGTrainer:
             REWARD_MAP.update({step:np.mean(ep_rewards)})
             wandb.log({"Step":step,
                        "Reward":np.mean(ep_rewards)})
+            step = i
             print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
 
         actor_epoch_loss = actor_epoch_loss / step
@@ -327,14 +335,16 @@ class DDPGTrainer:
         self.actor.eval()
         self.critic.eval()
         pesq = 0
-
-        for step, batch in enumerate(self.test_ds):
+        step = 0
+        for i, batch in enumerate(self.test_ds):
             #Preprocess batch
             batch = self.preprocess_batch(batch)
 
             #Run validation episode
             val_pesq_score = self.run_validation(batch)
             pesq += val_pesq_score
+
+            step = i
 
         pesq /= step
 
@@ -355,6 +365,7 @@ class DDPGTrainer:
                        "Critic_loss":epoch_critic_loss,
                        "PESQ":epoch_pesq,
                        "reward":re_map})
+            
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq
                 #TODO:Logic for savecheckpoint
@@ -393,13 +404,11 @@ def main(rank: int, world_size: int, args):
             torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
         ]
         print(f"Available gpus:{available_gpus}")
-    #print("AAAA")
 
     train_ds, test_ds = load_data(args.root, 
                                   args.batchsize, 
                                   1, 
                                   args.cut_len)
-    #print(f"Train:{len(train_ds)}, Test:{len(test_ds)}")
     
     trainer = DDPGTrainer(train_ds, test_ds, args, rank)
     trainer.train(args)

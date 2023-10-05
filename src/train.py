@@ -187,7 +187,7 @@ class DDPGTrainer:
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
             #rewards.append(reward.detach().cpu().numpy())
-            """
+            
             #Store the experience in replay_buffer
             #TODO:Make sure buffer size <= max_size. 
             env.exp_buffer.push(state=env.state.detach().cpu(), 
@@ -216,7 +216,7 @@ class DDPGTrainer:
             y_t = experience['reward'] + args.gamma * value_next
 
             #critic loss
-            critic_loss = (y_t - value_curr)**2
+            critic_loss = F.mse_loss(y_t, value_curr)
             critic_loss = critic_loss.mean()
             
             #actor loss
@@ -227,9 +227,9 @@ class DDPGTrainer:
                                               t=experience['t'])
 
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
-            """
+            
             actor_loss = -self.critic(env.state['clean_mag'], next_state['clean_mag']).mean()
-            critic_loss = reward
+            
             #Update networks
             self.c_optimizer.zero_grad()
             critic_loss.backward()
@@ -241,7 +241,7 @@ class DDPGTrainer:
 
             #update state
             env.state = next_state
-            """
+            
             #update target networks
             for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))

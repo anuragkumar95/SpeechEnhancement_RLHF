@@ -141,30 +141,25 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
-        #z_mask, z = batch_pesq(state['clean'], state['noisy'])
-        #z_hat_mask, z_hat = batch_pesq(next_state['clean'], next_state['noisy'])
+        z_mask, z = batch_pesq(state['clean'], state['noisy'])
+        z_hat_mask, z_hat = batch_pesq(next_state['clean'], next_state['noisy'])
 
-        #pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
+        pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
-        #if self.gpu_id is not None:
-        #    pesq_reward = pesq_reward.to(self.gpu_id)
+        if self.gpu_id is not None:
+            pesq_reward = pesq_reward.to(self.gpu_id)
 
-        #print(f"PESQ:{pesq_reward}, {pesq_reward.dtype}")
+     
 
         #loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
         #loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
         #loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
         #time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
 
-        #print(f"IS_NAN:{torch.isnan(loss_mag).any()}")
-        #print(f"IS_NAN:{torch.isnan(loss_real).any()}")
-        #print(f"IS_NAN:{torch.isnan(loss_imag).any()}")
-        #print(f"IS_NAN:{torch.isnan(time_loss).any()}")
-        val = torch.FloatTensor([10.0, 10.0, 10.0, 10.0, 10.0]).to(self.gpu_id)
-        r_t = torch.tanh(val)
+       
         #r_t = - (loss_mag + loss_real + loss_imag + time_loss)
         #r_t = torch.tanh(pesq_reward)# - (loss_mag + loss_real + loss_imag + time_loss)) 
-        return r_t    
+        return torch.tanh(pesq_reward)     
     
 
 class replay_buffer:

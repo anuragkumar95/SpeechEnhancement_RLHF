@@ -197,6 +197,7 @@ class DDPGTrainer:
                                 next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()},
                                 t=step)
             
+            _ = env.exp_buffer.pop()
             
             
             #sample experience from buffer

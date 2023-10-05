@@ -151,15 +151,15 @@ class SpeechEnhancementAgent:
 
      
 
-        #loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
-        #loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
-        #loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
-        #time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
+        loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
+        loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
+        loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
+        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
 
        
-        #r_t = - (loss_mag + loss_real + loss_imag + time_loss)
-        #r_t = torch.tanh(pesq_reward)# - (loss_mag + loss_real + loss_imag + time_loss)) 
-        return torch.tanh(pesq_reward)     
+        #r_t = torch.tanh(pesq_reward )
+        r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
+        return r_t     
     
 
 class replay_buffer:

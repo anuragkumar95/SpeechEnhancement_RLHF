@@ -65,7 +65,7 @@ def load_data(ds_dir, batch_size, n_cpu, cut_len):
         batch_size=batch_size,
         pin_memory=True,
         shuffle=False,
-        #sampler=DistributedSampler(train_ds),
+        sampler=DistributedSampler(train_ds),
         drop_last=False,
         num_workers=n_cpu,
     )
@@ -74,7 +74,7 @@ def load_data(ds_dir, batch_size, n_cpu, cut_len):
         batch_size=batch_size,
         pin_memory=True,
         shuffle=False,
-        #sampler=DistributedSampler(test_ds),
+        sampler=DistributedSampler(test_ds),
         drop_last=False,
         num_workers=n_cpu,
     )

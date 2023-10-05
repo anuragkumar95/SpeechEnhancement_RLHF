@@ -158,7 +158,7 @@ class SpeechEnhancementAgent:
             z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
                                            next_state['est_audio'].detach().cpu().numpy())
             
-            print(f"Z:{z.mean()}, Z_hat:{z_hat.mean}, z_mask:{z_mask}, z_h mask:{z_hat_mask}")
+            print(f"Z:{z.mean()}, Z_hat:{z_hat.mean()}, z_mask:{z_mask}, z_h mask:{z_hat_mask}")
             
             pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 

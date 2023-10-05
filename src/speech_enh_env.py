@@ -143,6 +143,7 @@ class SpeechEnhancementAgent:
         """
         if 'est_audio' not in state.keys():
             pesq_reward = torch.zeros(state['clean'].shape[0])
+            print("A")
         else: 
             z_mask, z = batch_pesq(state['cl_audio'], state['est_audio'])
             z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'], next_state['est_audio'])

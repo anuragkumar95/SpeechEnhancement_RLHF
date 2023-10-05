@@ -27,7 +27,7 @@ def batch_pesq(clean, noisy):
     score_mask = np.array([1 if pqs > -1 else 0 for pqs in pesq_score])
     pesq_score = np.array(pesq_score)
     #pesq_score = (pesq_score - 1) / 3.5
-    print(pesq, score_mask)
+    #print(pesq, score_mask)
     return torch.FloatTensor(score_mask), torch.FloatTensor(pesq_score)
 
 def power_compress(x):

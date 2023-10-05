@@ -248,7 +248,7 @@ class DDPGTrainer:
         
             for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-            """
+            
             
         return rewards, actor_loss, critic_loss
     

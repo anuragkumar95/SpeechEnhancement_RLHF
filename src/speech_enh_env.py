@@ -24,7 +24,7 @@ class SpeechEnhancementAgent:
         self.n_fft = n_fft
         self.hop = hop 
         
-        self.exp_buffer = replay_buffer(buffer_size)
+        self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
         self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=gpu_id)
 
     def get_state_input(self, state, t):
@@ -163,8 +163,9 @@ class SpeechEnhancementAgent:
     
 
 class replay_buffer:
-    def __init__(self, max_size):
+    def __init__(self, max_size, gpu_id=None):
         self.buffer = deque(maxlen=max_size)
+        self.gpu_id
 
     def push(self, state, action, reward, next_state, t):
         experience = {'curr':state,
@@ -176,7 +177,17 @@ class replay_buffer:
 
     def sample(self):
         idx = np.random.choice(len(self.buffer), 1)[0]
-        return self.buffer[idx]
+        if self.gpu_id is None:
+            retval = self.buffer[idx]
+        else:
+            retval = {'curr':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items},
+                      'next':{k:v.to(self.gpu_id) for k, v in self.buffer[idx]['next'].items},
+                      'action':(self.buffer[idx]['action'][0].to(self.gpu_id),
+                                self.buffer[idx]['action'][1].to(self.gpu_id)),
+                      'reward':self.buffer[idx].to(self.gpu_id),
+                      't':self.buffer_idx['t']
+                     }
+        return retval
 
     def __len__(self):
         return len(self.buffer)

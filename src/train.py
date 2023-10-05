@@ -180,7 +180,7 @@ class DDPGTrainer:
             #Forward pas through actor to get the action(mask)
             action = self.actor(inp)
             #Add noise to the action
-            #action = env.noise.get_action(action)
+            action = env.noise.get_action(action)
 
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 

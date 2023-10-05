@@ -234,7 +234,9 @@ class DDPGTrainer:
             print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
             wandb.log({
                 'ep_step':step,
-                'reward':reward.mean()
+                'reward':reward.mean(),
+                'actor_loss':actor_loss,
+                'critic_loss':critic_loss
             })
             #Update networks
             actor_loss.backward()

@@ -175,19 +175,16 @@ class DDPGTrainer:
             #get the window input
             inp = env.get_state_input(env.state, step)
             #Forward pas through actor to get the action(mask)
-            #print(f"Actor Inp:{inp.shape}")
+            
             action = self.actor(inp)
-            #print(f"Actor Out(Action):{action[0].shape, action[1].shape}")
             #Add noise to the action
-            #action = env.noise.get_action(action)
-
+            
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
                                             action=action, 
                                             t=step)
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
-            print(f"Reward:{reward}")
             rewards.append(reward.detach().cpu().numpy())
 
             #Store the experience in replay_buffer
@@ -203,10 +200,8 @@ class DDPGTrainer:
 
             next_t = experience['t'] + 1
             next_inp = env.get_state_input(experience['next'], next_t)
-            #print(f"Actor next Inp:{next_inp.shape}")
             next_action = self.target_actor(next_inp)
-            print("next_action nan:",torch.isnan(next_action[0]).any(), torch.isnan(next_action[1]).any())
-            print("next_action inf:",torch.isinf(next_action[0]).any(), torch.isinf(next_action[1]).any())
+            
             #Get value for next state with applied actions
             next_applied_state = env.get_next_state(state=experience['next'],
                                                     action=next_action,
@@ -214,32 +209,22 @@ class DDPGTrainer:
             
             #Set TD target
             value_curr = self.critic(experience['curr']['clean_mag'], experience['next']['est_mag'])
-            print("critic output:", torch.isnan(value_curr))
-            print("critic output:", torch.isinf(value_curr))
             value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'])
-            print("critic target output:", torch.isnan(value_next))
-            print("critic target output:", torch.isinf(value_next))
             y_t = experience['reward'] + args.gamma * value_next
-
-            #print(f"value_curr:{torch.isnan(value_curr).any()}")
-            #print(f"value_curr:{torch.isnan(value_next).any()}")
 
             #critic loss
             critic_loss = (y_t - value_curr)**2
             critic_loss = critic_loss.mean()
-            print("Critic Loss:", critic_loss)
+            
             #actor loss
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)
-            print("a_action nan:", torch.isnan(a_action[0]).any(), torch.isnan(a_action[1]).any())
-            print("a_action inf:",torch.isinf(a_action[0]).any(), torch.isinf(a_action[1]).any())
             a_next_state = env.get_next_state(state=experience['curr'],
                                               action=a_action,
                                               t=experience['t'])
 
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
-            print("Actor loss nan:", torch.isnan(actor_loss))
-            print("Actor loss inf:", torch.isinf(actor_loss))
+            
             #Update networks
             self.c_optimizer.zero_grad()
             critic_loss.backward()

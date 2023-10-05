@@ -195,6 +195,8 @@ class DDPGTrainer:
                                 next_state=next_state,
                                 t=step)
             
+            """
+            
             #sample experience from buffer
             experience = env.exp_buffer.sample() 
 
@@ -224,11 +226,13 @@ class DDPGTrainer:
                                               t=experience['t'])
 
             actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
-            
+            """
+            actor_loss = -self.critic(env.state, next_state)
+            critic_loss = 0
             #Update networks
-            self.c_optimizer.zero_grad()
-            critic_loss.backward()
-            self.c_optimizer.step()
+            #self.c_optimizer.zero_grad()
+            #critic_loss.backward()
+            #self.c_optimizer.step()
 
             self.a_optimizer.zero_grad()
             actor_loss.backward()
@@ -236,14 +240,14 @@ class DDPGTrainer:
 
             #update state
             env.state = next_state
-
+            """
             #update target networks
             for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
         
             for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-
+            """
         return rewards, actor_loss, critic_loss
     
     def run_validation(self, batch):

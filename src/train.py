@@ -371,7 +371,7 @@ def ddp_setup(rank, world_size):
 
 
 def main(rank: int, world_size: int, args):
-    
+    """
     ddp_setup(rank, world_size)
     if rank == 0:
         print(args)
@@ -380,7 +380,7 @@ def main(rank: int, world_size: int, args):
         ]
         print(f"Available gpus:{available_gpus}")
     #print("AAAA")
-    
+    """
     train_ds, test_ds = load_data(args.root, 
                                   args.batchsize, 
                                   1, 
@@ -400,5 +400,5 @@ if __name__ == "__main__":
 
     world_size = torch.cuda.device_count()
     print(f"World size:{world_size}")
-    mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
-    #main(None, world_size, ARGS)
+    #mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
+    main(None, world_size, ARGS)

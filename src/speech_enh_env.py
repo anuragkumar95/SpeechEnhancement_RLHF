@@ -142,8 +142,10 @@ class SpeechEnhancementAgent:
             pesq_reward = torch.zeros(state['clean'].shape[0])
         
         else: 
-            z_mask, z = batch_pesq(state['cl_audio'], state['est_audio'])
-            z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'], next_state['est_audio'])
+            z_mask, z = batch_pesq(state['cl_audio'].detach().cpu().numpy(), 
+                                   state['est_audio'].detach().cpu().numpy())
+            z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
+                                           next_state['est_audio'].detach().cpu().numpy())
             pesq_reward = (z_hat_mask * z_hat) - (z_mask * z)
 
         if self.gpu_id is not None:
@@ -151,13 +153,13 @@ class SpeechEnhancementAgent:
 
         print("PESQ:", pesq_reward.mean())
         
-        loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
-        loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
-        loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag']).detach()
-        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio']).detach()
+        #loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
+        #loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
+        #loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag']).detach()
+        #time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio']).detach()
 
-        #r_t = torch.tanh(pesq_reward )
-        r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
+        r_t = torch.tanh(pesq_reward)
+        #r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
         return r_t     
     
 

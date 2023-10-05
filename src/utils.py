@@ -7,13 +7,14 @@ import torch
 import torch.nn as nn
 import numpy as np
 from pesq import pesq
+import matplotlib.pyplot as plt
 
 
 def pesq_loss(clean, noisy, sr=16000):
     try:
         pesq_score = pesq(sr, clean, noisy, "wb")
     except:
-    #    # error can happen due to silent period
+        # error can happen due to silent period
         pesq_score = -1
     return pesq_score
 

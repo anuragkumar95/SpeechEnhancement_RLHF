@@ -151,7 +151,7 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
 
-        print("PESQ:", pesq_reward.mean())
+        #print("PESQ:", pesq_reward.mean())
         
         #loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
         #loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
@@ -160,7 +160,7 @@ class SpeechEnhancementAgent:
 
         r_t = torch.tanh(pesq_reward)
         #r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
-        return r_t     
+        return pesq_reward     
     
 
 class replay_buffer:

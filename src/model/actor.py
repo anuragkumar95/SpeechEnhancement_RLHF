@@ -201,7 +201,7 @@ class TSCNet(nn.Module):
     def forward(self, x):
         mag = torch.sqrt((x[:, 0, :, :] ** 2) + (x[:, 1, :, :] ** 2)).unsqueeze(1)
         x_in = torch.cat([mag, x], dim=1)
-        print(f"Mag:{mag.dtype}, x_in:{x_in.dtype}")
+        #print(f"Mag:{mag.dtype}, x_in:{x_in.dtype}")
 
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
@@ -212,8 +212,8 @@ class TSCNet(nn.Module):
         mask_mu, mask_sigma = self.mask_decoder(out_5)
         complex_mu, complex_sigma = self.complex_decoder(out_5)
 
-        print("Mask:", torch.isnan(mask_mu).any(), torch.isinf(mask_sigma).any())
-        print("Complex:", torch.isnan(complex_mu).any(), torch.isinf(complex_sigma).any())
+        #print("Mask:", torch.isnan(mask_mu).any(), torch.isinf(mask_sigma).any())
+        #print("Complex:", torch.isnan(complex_mu).any(), torch.isinf(complex_sigma).any())
         mask = self.mask_decoder.sample(mask_mu, mask_sigma)
         complex_out = self.complex_decoder.sample(complex_mu, complex_sigma)
         return (mask, complex_out)

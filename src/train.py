@@ -175,7 +175,7 @@ class DDPGTrainer:
             #get the window input
             inp = env.get_state_input(env.state, step)
             #Forward pas through actor to get the action(mask)
-            
+            print(f"inp:{inp.shape}")
             action = self.actor(inp)
             #Add noise to the action
             

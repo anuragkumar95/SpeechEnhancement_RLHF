@@ -305,7 +305,7 @@ class DDPGTrainer:
             critic_epoch_loss += critic_epoch_loss
             REWARD_MAP.update({step:np.mean(ep_rewards)})
             wandb.log({"Step":step,
-                       "Reward":ep_rewards.mean()})
+                       "Reward":np.mean(ep_rewards)})
             print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
 
         actor_epoch_loss = actor_epoch_loss / step

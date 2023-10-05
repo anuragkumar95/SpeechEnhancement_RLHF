@@ -41,10 +41,8 @@ class SpeechEnhancementAgent:
         b, _, tm, f = state.shape
         left = t - self.window
         right = t + self.window + 1
-        print(f"t:{t}")
         if t < self.window: 
             pad = torch.zeros(b, 2, -left, f)
-            #print("pad:",pad.shape,  state[:, :, :right, :].shape, t)
             if self.gpu_id is not None:
                 pad = pad.to(self.gpu_id)
             windows = torch.cat([pad, state[:, :, :right, :]], dim=2)
@@ -54,7 +52,6 @@ class SpeechEnhancementAgent:
                 pad = pad.to(self.gpu_id)
             windows = torch.cat([state[:, :, left:, :], pad], dim=2) 
         else:
-            print(f"c, left:{left}, right:{right}")
             windows = state[:, :, left:right, :]
         return windows
 
@@ -120,16 +117,16 @@ class SpeechEnhancementAgent:
         next_state = torch.cat([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
         clean_mag = torch.sqrt(state['clean_real']**2 + state['clean_imag']**2)
 
-        retval = {'noisy':next_state,
-                  'clean':state['clean'], 
-                  'clean_real':state['clean_real'],
-                  'clean_imag':state['clean_imag'],
-                  'clean_mag':clean_mag,
-                  'cl_audio':state['cl_audio'],
-                  'est_mag':est_mag,
-                  'est_real':est_real,
-                  'est_imag':est_imag,
-                  'est_audio':est_audio
+        retval = {'noisy':next_state.detach(),
+                  'clean':state['clean'].detach(), 
+                  'clean_real':state['clean_real'].detach(),
+                  'clean_imag':state['clean_imag'].detach(),
+                  'clean_mag':clean_mag.detach(),
+                  'cl_audio':state['cl_audio'].detach(),
+                  'est_mag':est_mag.detach(),
+                  'est_real':est_real.detach(),
+                  'est_imag':est_imag.detach(),
+                  'est_audio':est_audio.detach()
                   }
         return retval
 
@@ -153,10 +150,10 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
 
-        loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])   
-        loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
-        loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag'])
-        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
+        loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag']).detach()
+        loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real']).detach()
+        loss_imag = F.mse_loss(next_state['clean_imag'], next_state['est_imag']).detach()
+        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio']).detach()
 
         #r_t = torch.tanh(pesq_reward )
         r_t = torch.tanh(pesq_reward - (loss_mag + loss_real + loss_imag + time_loss)) 
@@ -179,7 +176,13 @@ class replay_buffer:
     def sample(self):
         idx = np.random.choice(len(self.buffer), 1)[0]
         if self.gpu_id is None:
-            retval = self.buffer[idx]
+            retval = {'curr':{k:torch.FloatTensor(v) for k, v in self.buffer[idx]['curr'].items()},
+                      'next':{k:torch.FloatTensor(v) for k, v in self.buffer[idx]['next'].items()},
+                      'action':(torch.FloatTensor(self.buffer[idx]['action'][0]),
+                                torch.FloatTensor(self.buffer[idx]['action'][1])),
+                      'reward':torch.FloatTensor(self.buffer[idx]['reward']),
+                      't':self.buffer[idx]['t']
+                     }
         else:
             retval = {'curr':{k:torch.FloatTensor(v).to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items()},
                       'next':{k:torch.FloatTensor(v).to(self.gpu_id) for k, v in self.buffer[idx]['next'].items()},

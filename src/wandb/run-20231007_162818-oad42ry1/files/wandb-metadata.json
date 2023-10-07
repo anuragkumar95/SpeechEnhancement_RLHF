@@ -1,0 +1,58 @@
+{
+    "os": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.9.18",
+    "heartbeatAt": "2023-10-07T20:28:19.495670",
+    "startedAt": "2023-10-07T20:28:18.548423",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "-r",
+        "../../Voicebank-debug",
+        "-o",
+        "../../ActorCritic",
+        "--epochs",
+        "10",
+        "--batchsize",
+        "1",
+        "--win_len",
+        "25",
+        "--reward",
+        "0"
+    ],
+    "state": "running",
+    "program": "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py",
+    "codePathLocal": "train.py",
+    "codePath": "src/train.py",
+    "git": {
+        "remote": "git@github.com:anuragkumar95/SpeechEnhancement_RLHF.git",
+        "commit": "3284d6fbce6215aa39da2289991d3450b4747a8e"
+    },
+    "email": null,
+    "root": "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF",
+    "host": "Anurags-MBP.lan",
+    "username": "anuragkumar",
+    "executable": "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 2400,
+        "min": 2400,
+        "max": 2400
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2400,
+            "min": 2400,
+            "max": 2400
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 931.546989440918,
+            "used": 8.53677749633789
+        }
+    },
+    "memory": {
+        "total": 32.0
+    }
+}

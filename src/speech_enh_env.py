@@ -11,22 +11,23 @@ import torch.nn.functional as F
 
 
 class SpeechEnhancementAgent:
-    def __init__(self, batch, window, buffer_size, n_fft, hop, args, gpu_id=None):
+    def __init__(self, window, buffer_size, n_fft, hop, args, gpu_id=None):
         """
         State : Dict{noisy, clean, est_real, est_imag, cl_audio, est_audio}
         """
-        self.state = batch
-        self.clean = batch['clean']
-        self.steps = batch['noisy'].shape[2]
-        
         self.gpu_id = gpu_id
         self.window = window
         self.n_fft = n_fft
         self.hop = hop
         self.args = args
-        
         self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
-        self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=gpu_id)
+        
+
+    def set_batch(self, batch):
+        self.state = batch
+        self.clean = batch['clean']
+        self.steps = batch['noisy'].shape[2]
+        self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=self.gpu_id)
 
     def get_state_input(self, state, t):
         """
@@ -140,6 +141,15 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
+        if self.args.reward == 0:
+            z_hat_mask, z_hat = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
+                                        next_state['est_audio'].detach().cpu().numpy())
+            pesq_reward = (z_hat_mask * z_hat)
+
+            if self.gpu_id is not None:
+                pesq_reward = pesq_reward.to(self.gpu_id)
+            return pesq_reward
+        
         if self.args.reward == 1:
             z_mask, z = batch_pesq(state['cl_audio'].detach().cpu().numpy(), 
                                 state['est_audio'].detach().cpu().numpy())

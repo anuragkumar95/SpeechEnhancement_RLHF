@@ -76,8 +76,8 @@ class DDPGTrainer:
                                    num_features=self.n_fft // 2 + 1, 
                                    win_len=args.win_len,
                                    gpu_id=gpu_id)
-        self.critic = QNet(ndf=16)
-        self.target_critic = QNet(ndf=16)
+        self.critic = QNet(ndf=16, in_channel=3)
+        self.target_critic = QNet(ndf=16, in_channel=3)
         
         self.a_optimizer = torch.optim.AdamW(self.actor.parameters(), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(self.critic.parameters(), lr=2 * args.init_lr)
@@ -141,8 +141,11 @@ class DDPGTrainer:
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
         clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
+        est_real = noisy_spec[:, 0, :, :].unsqueeze(1)
+        est_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
+        est_mag = torch.sqrt(est_real**2 + est_imag**2)
 
-        return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, clean, noisy
+        return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, clean, noisy
     
     def preprocess_batch(self, batch):
         """
@@ -159,7 +162,7 @@ class DDPGTrainer:
             clean = clean.to(self.gpu_id)
             noisy = noisy.to(self.gpu_id)
 
-        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, cl_aud, noisy = self.get_specs(clean, noisy)
+        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, cl_aud, noisy = self.get_specs(clean, noisy)
         
         ret_val = {'noisy':noisy_spec,
                    'clean':clean_spec,
@@ -168,12 +171,15 @@ class DDPGTrainer:
                    'clean_mag':clean_mag,
                    'cl_audio':cl_aud,
                    'n_audio':noisy,
-                   'est_audio':noisy, 
+                   'est_audio':noisy,
+                   'est_real':est_real.permute(0, 1, 3, 2),
+                   'est_imag':est_imag.permute(0, 1, 3, 2),
+                   'est_mag':est_mag.permute(0, 1, 3, 2)
                   }
         
         return ret_val
     
-    def train_one_episode(self, batch, rewards, args):
+    def train_one_episode(self, env, rewards, args):
         """
         Runs an episode which takes input a batch and predicts masks
         sequentially over the time dimension
@@ -188,14 +194,6 @@ class DDPGTrainer:
             rewards : global ist to store cummulative reward
             args    : global args 
         """
-        env = SpeechEnhancementAgent(batch, 
-                                     window=args.win_len // 2, 
-                                     buffer_size=args.cut_len // self.hop,
-                                     n_fft=self.n_fft,
-                                     hop=self.hop,
-                                     gpu_id=self.gpu_id,
-                                     args=args)
-
         torch.autograd.set_detect_anomaly(True)
         for step in range(env.steps):
             #get the window input
@@ -234,13 +232,16 @@ class DDPGTrainer:
             next_action = self.target_actor(next_inp)
             
             #Get value for next state with applied actions
-            next_applied_state = env.get_next_state(state=experience['next'],
-                                                    action=next_action,
-                                                    t=next_t)
+            #next_applied_state = env.get_next_state(state=experience['next'],
+            #                                        action=next_action,
+            #                                        t=next_t)
             
             #Set TD target
-            value_curr = self.critic(experience['curr']['clean_mag'], experience['next']['est_mag'])
-            value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'].detach())
+            #value_curr = self.critic(experience['curr']['clean_mag'], experience['next']['est_mag'])
+            #value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'].detach())
+            value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
+            value_next = self.target_critic(experience['next'], next_action, next_t)
+            
             y_t = experience['reward'] + args.gamma * value_next
 
             #critic loss
@@ -250,11 +251,12 @@ class DDPGTrainer:
             #actor loss
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)
-            a_next_state = env.get_next_state(state=experience['curr'],
-                                              action=a_action,
-                                              t=experience['t'])
+            #a_next_state = env.get_next_state(state=experience['curr'],
+            #                                  action=a_action,
+            #                                  t=experience['t'])
 
-            actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
+            #actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
+            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
 
             #print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
             print(f"Step:{step} Reward:{reward.mean()}")
@@ -286,7 +288,7 @@ class DDPGTrainer:
             
         return rewards, actor_loss, critic_loss
     
-    def run_validation(self, batch, args):
+    def run_validation(self, env):
         """
         Runs a vlidation loop for a batch.
         Predict mask for each frame one at a time 
@@ -294,13 +296,6 @@ class DDPGTrainer:
         spectrograms.
         """
         print("Running validation...")
-        env = SpeechEnhancementAgent(batch, 
-                                     window=args.win_len // 2, 
-                                     buffer_size=args.cut_len // self.hop,
-                                     n_fft=self.n_fft,
-                                     hop=self.hop,
-                                     gpu_id=self.gpu_id,
-                                     args=args)
         for step in range(env.steps):
             #get the window input
             inp = env.get_state_input(env.state, step)
@@ -331,12 +326,18 @@ class DDPGTrainer:
         self.target_critic.train()
         
         step = 0
-        
+        env = SpeechEnhancementAgent(window=args.win_len // 2, 
+                                     buffer_size=3000,
+                                     n_fft=self.n_fft,
+                                     hop=self.hop,
+                                     gpu_id=self.gpu_id,
+                                     args=args)
         for i, batch in enumerate(self.train_ds):
             #Preprocess batch
             batch = self.preprocess_batch(batch)
             #Run episode
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(batch, rewards, args)
+            env.set_batch(batch)
+            ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
             
             #Collect reward and losses
             actor_epoch_loss += actor_epoch_loss
@@ -357,9 +358,9 @@ class DDPGTrainer:
         for i, batch in enumerate(self.test_ds):
             #Preprocess batch
             batch = self.preprocess_batch(batch)
-
+            env.set_batch(batch)
             #Run validation episode
-            val_pesq_score = self.run_validation(batch)
+            val_pesq_score = self.run_validation(env)
             pesq += val_pesq_score
 
             step = i
@@ -414,20 +415,27 @@ def ddp_setup(rank, world_size):
 
 
 def main(rank: int, world_size: int, args):
-  
-    ddp_setup(rank, world_size)
-    if rank == 0:
-        print(args)
-        available_gpus = [
-            torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
-        ]
-        print(f"Available gpus:{available_gpus}")
+    if args.gpu:
+        ddp_setup(rank, world_size)
+        if rank == 0:
+            print(args)
+            available_gpus = [
+                torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
+            ]
+            print(f"Available gpus:{available_gpus}")
 
-    train_ds, test_ds = load_data(args.root, 
-                                  args.batchsize, 
-                                  1, 
-                                  args.cut_len)
-    
+        train_ds, test_ds = load_data(args.root, 
+                                    args.batchsize, 
+                                    1, 
+                                    args.cut_len,
+                                    gpu = True)
+    else:
+        train_ds, test_ds = load_data(args.root, 
+                                    args.batchsize, 
+                                    1, 
+                                    args.cut_len,
+                                    gpu = False)
+        
     trainer = DDPGTrainer(train_ds, test_ds, args, rank)
     trainer.train(args)
     destroy_process_group()
@@ -441,5 +449,5 @@ if __name__ == "__main__":
 
     world_size = torch.cuda.device_count()
     print(f"World size:{world_size}")
-    mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
-    #main(None, world_size, ARGS)
+    #mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
+    main(None, world_size, ARGS)

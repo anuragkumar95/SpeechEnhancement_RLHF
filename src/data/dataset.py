@@ -52,31 +52,48 @@ class DemandDataset(torch.utils.data.Dataset):
     
 
 
-def load_data(ds_dir, batch_size, n_cpu, cut_len):
+def load_data(ds_dir, batch_size, n_cpu, cut_len, gpu=True):
     torchaudio.set_audio_backend("sox_io")  # in linux
     train_dir = os.path.join(ds_dir, "train")
     test_dir = os.path.join(ds_dir, "test")
 
     train_ds = DemandDataset(train_dir, cut_len)
     test_ds = DemandDataset(test_dir, cut_len)
-
-    train_dataset = torch.utils.data.DataLoader(
-        dataset=train_ds,
-        batch_size=batch_size,
-        pin_memory=True,
-        shuffle=False,
-        sampler=DistributedSampler(train_ds),
-        drop_last=False,
-        num_workers=n_cpu,
-    )
-    test_dataset = torch.utils.data.DataLoader(
-        dataset=test_ds,
-        batch_size=batch_size,
-        pin_memory=True,
-        shuffle=False,
-        sampler=DistributedSampler(test_ds),
-        drop_last=False,
-        num_workers=n_cpu,
-    )
+    if gpu:
+        train_dataset = torch.utils.data.DataLoader(
+            dataset=train_ds,
+            batch_size=batch_size,
+            pin_memory=True,
+            shuffle=False,
+            sampler=DistributedSampler(train_ds),
+            drop_last=False,
+            num_workers=n_cpu,
+        )
+        test_dataset = torch.utils.data.DataLoader(
+            dataset=test_ds,
+            batch_size=batch_size,
+            pin_memory=True,
+            shuffle=False,
+            sampler=DistributedSampler(test_ds),
+            drop_last=False,
+            num_workers=n_cpu,
+        )
+    else:
+        train_dataset = torch.utils.data.DataLoader(
+            dataset=train_ds,
+            batch_size=batch_size,
+            pin_memory=True,
+            shuffle=True,
+            drop_last=False,
+            num_workers=n_cpu,
+        )
+        test_dataset = torch.utils.data.DataLoader(
+            dataset=test_ds,
+            batch_size=batch_size,
+            pin_memory=True,
+            shuffle=True,
+            drop_last=False,
+            num_workers=n_cpu,
+        )
 
     return train_dataset, test_dataset

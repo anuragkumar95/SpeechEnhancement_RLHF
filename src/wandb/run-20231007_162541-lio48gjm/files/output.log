@@ -1,0 +1,24 @@
+
+Start training...
+X: torch.Size([1, 1, 321, 201]) torch.Size([1, 1, 321, 201]) torch.Size([1, 1, 321, 201])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:647: UserWarning: istft will require a complex-valued input tensor in a future PyTorch release. Matching the output from stft with return_complex=True.  (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:811.)
+  return _VF.istft(input, n_fft, hop_length, win_length, window, center,  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 453, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 440, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 380, in train
+    re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 340, in train_one_epoch
+    ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 242, in train_one_episode
+    value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/critic.py", line 51, in forward
+    x2 = torch.cat([x2, c_out[:, 0, :, :].unsqueeze(1)], dim=2)
+RuntimeError: Sizes of tensors must match except in dimension 2. Expected size 201 but got size 1 for tensor number 1 in the list.

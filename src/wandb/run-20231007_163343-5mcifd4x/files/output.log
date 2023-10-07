@@ -1,0 +1,117 @@
+
+Start training...
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:647: UserWarning: istft will require a complex-valued input tensor in a future PyTorch release. Matching the output from stft with return_complex=True.  (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:811.)
+  return _VF.istft(input, n_fft, hop_length, win_length, window, center,  # type: ignore[attr-defined]
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+Step:0 Reward:1.0441720485687256
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+Step:1 Reward:1.026907205581665
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+Step:2 Reward:1.023753046989441
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+Step:3 Reward:1.0224155187606812
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+Step:4 Reward:1.021704912185669
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+X: torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321]) torch.Size([1, 1, 201, 321])
+Y: torch.Size([1, 1, 1, 201]) torch.Size([1, 2, 201, 1])
+out: torch.Size([1, 3, 201, 2])
+Step:5 Reward:1.0211678743362427
+Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x7f7dd88cd1f0>
+Traceback (most recent call last):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1328, in __del__
+    self._shutdown_workers()
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1301, in _shutdown_workers
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 453, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 440, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 380, in train
+    re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 340, in train_one_epoch
+    ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 232, in train_one_episode
+    next_action = self.target_actor(next_inp)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 209, in forward
+    out_4 = self.TSCB_3(out_3)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 97, in forward
+    x_f = self.freq_conformer(x_f) + x_f
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 218, in forward
+    x = self.attn(x, mask=mask) + x
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 72, in forward
+    return self.fn(x, **kwargs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 103, in forward
+    dots = einsum("b h i d, b h j d -> b h i j", q, k) * self.scale
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py", line 327, in einsum
+    return _VF.einsum(equation, operands)  # type: ignore[attr-defined]
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 193, in format_stack
+    def format_stack(f=None, limit=None):
+KeyboardInterrupt

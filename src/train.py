@@ -449,5 +449,7 @@ if __name__ == "__main__":
 
     world_size = torch.cuda.device_count()
     print(f"World size:{world_size}")
-    #mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
-    main(None, world_size, ARGS)
+    if args.gpu:
+        mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
+    else:
+        main(None, world_size, ARGS)

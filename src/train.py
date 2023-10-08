@@ -316,7 +316,7 @@ class DDPGTrainer:
         
         step = 0
         env = SpeechEnhancementAgent(window=args.win_len // 2, 
-                                     buffer_size=3000,
+                                     buffer_size=1000,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,

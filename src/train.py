@@ -199,7 +199,7 @@ class DDPGTrainer:
             #get the window input
             inp = env.get_state_input(env.state, step)
 
-            #Forward pas through actor to get the action(mask)
+            #Forward pass through actor to get the action(mask)
             action = self.actor(inp)
             #Add noise to the action
             #action = env.noise.get_action(action)
@@ -208,6 +208,9 @@ class DDPGTrainer:
             next_state = env.get_next_state(state=env.state, 
                                             action=action, 
                                             t=step)
+            if next_state is None:
+                continue
+
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
             if len(rewards) >= 1:
@@ -231,17 +234,9 @@ class DDPGTrainer:
             next_inp = env.get_state_input(experience['next'], next_t)
             next_action = self.target_actor(next_inp)
             
-            #Get value for next state with applied actions
-            #next_applied_state = env.get_next_state(state=experience['next'],
-            #                                        action=next_action,
-            #                                        t=next_t)
-            
             #Set TD target
-            #value_curr = self.critic(experience['curr']['clean_mag'], experience['next']['est_mag'])
-            #value_next = self.target_critic(experience['next']['clean_mag'], next_applied_state['est_mag'].detach())
             value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
             value_next = self.target_critic(experience['next'], next_action, next_t)
-            
             y_t = experience['reward'] + args.gamma * value_next
 
             #critic loss
@@ -251,14 +246,8 @@ class DDPGTrainer:
             #actor loss
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)
-            #a_next_state = env.get_next_state(state=experience['curr'],
-            #                                  action=a_action,
-            #                                  t=experience['t'])
-
-            #actor_loss = -self.critic(experience['curr']['clean_mag'], a_next_state['est_mag']).mean()
             actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
 
-            #print(f"Step:{step} Reward:{reward.mean()} A_Loss:{actor_loss} C_Loss:{critic_loss}")
             print(f"Step:{step} Reward:{reward.mean()}")
             wandb.log({
                 'ep_step':step,

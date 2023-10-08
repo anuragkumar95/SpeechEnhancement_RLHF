@@ -195,86 +195,91 @@ class DDPGTrainer:
             args    : global args 
         """
         torch.autograd.set_detect_anomaly(True)
-        for step in range(env.steps):
-            #get the window input
-            inp = env.get_state_input(env.state, step)
+        for step in range(env.steps-1):
+            try:
+                #get the window input
+                inp = env.get_state_input(env.state, step)
 
-            #Forward pass through actor to get the action(mask)
-            action = self.actor(inp)
-            #Add noise to the action
-            #action = env.noise.get_action(action)
+                #Forward pass through actor to get the action(mask)
+                action = self.actor(inp)
+                #Add noise to the action
+                #action = env.noise.get_action(action)
 
-            #Apply mask to get the next state
-            next_state = env.get_next_state(state=env.state, 
-                                            action=action, 
-                                            t=step)
-            if next_state is None:
-                continue
+                #Apply mask to get the next state
+                next_state = env.get_next_state(state=env.state, 
+                                                action=action, 
+                                                t=step)
+                if next_state is None:
+                    continue
 
-            #Calculate the reward
-            reward = env.get_reward(env.state, next_state)
-            if len(rewards) >= 1:
-                rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
-            else:
-                rewards.append(reward.mean().detach().cpu().numpy())
+                #Calculate the reward
+                reward = env.get_reward(env.state, next_state)
+                if len(rewards) >= 1:
+                    rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
+                else:
+                    rewards.append(reward.mean().detach().cpu().numpy())
+                
+                #Store the experience in replay_buffer
+                #TODO:Make sure buffer size <= max_size. 
+                env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
+                                    action=(action[0].detach().cpu().numpy(), action[1].detach().cpu()), 
+                                    reward=reward.detach().cpu().numpy(), 
+                                    next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()},
+                                    t=step)
+                
+                
+                #sample experience from buffer
+                experience = env.exp_buffer.sample()
+
+                next_t = experience['t'] + 1
+                next_inp = env.get_state_input(experience['next'], next_t)
+                next_action = self.target_actor(next_inp)
+                
+                #Set TD target
+                value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
+                value_next = self.target_critic(experience['next'], next_action, next_t)
+                y_t = experience['reward'] + args.gamma * value_next
+
+                #critic loss
+                critic_loss = F.mse_loss(y_t, value_curr)
+                critic_loss = critic_loss.mean()
+                
+                #actor loss
+                a_inp = env.get_state_input(experience['curr'], experience['t'])
+                a_action = self.actor(a_inp)
+                actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
+
+                print(f"Step:{step} Reward:{reward.mean()}")
+                wandb.log({
+                    'ep_step':step,
+                    'reward':reward,
+                    'actor_loss':actor_loss,
+                    'critic_loss':critic_loss,
+                    'current': value_curr.mean().detach(),
+                    'y_t': y_t.mean().detach()
+                })
+
+                #Update networks
+                actor_loss.backward()
+                self.a_optimizer.step()
+                self.a_optimizer.zero_grad()
+
+                critic_loss.backward()
+                self.c_optimizer.step()
+                self.c_optimizer.zero_grad()
+
+                #update state
+                env.state = next_state
+                
+                #update target networks
+                for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+                    target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
             
-            #Store the experience in replay_buffer
-            #TODO:Make sure buffer size <= max_size. 
-            env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
-                                action=(action[0].detach().cpu().numpy(), action[1].detach().cpu()), 
-                                reward=reward.detach().cpu().numpy(), 
-                                next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()},
-                                t=step)
+                for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+                    target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
             
-            
-            #sample experience from buffer
-            experience = env.exp_buffer.sample()
-
-            next_t = experience['t'] + 1
-            next_inp = env.get_state_input(experience['next'], next_t)
-            next_action = self.target_actor(next_inp)
-            
-            #Set TD target
-            value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
-            value_next = self.target_critic(experience['next'], next_action, next_t)
-            y_t = experience['reward'] + args.gamma * value_next
-
-            #critic loss
-            critic_loss = F.mse_loss(y_t, value_curr)
-            critic_loss = critic_loss.mean()
-            
-            #actor loss
-            a_inp = env.get_state_input(experience['curr'], experience['t'])
-            a_action = self.actor(a_inp)
-            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
-
-            print(f"Step:{step} Reward:{reward.mean()}")
-            wandb.log({
-                'ep_step':step,
-                'reward':rewards[-1],
-                'actor_loss':actor_loss,
-                'critic_loss':critic_loss
-            })
-
-            #Update networks
-            actor_loss.backward()
-            self.a_optimizer.step()
-            self.a_optimizer.zero_grad()
-
-            critic_loss.backward()
-            self.c_optimizer.step()
-            self.c_optimizer.zero_grad()
-
-            #update state
-            env.state = next_state
-            
-            #update target networks
-            for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-        
-            for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-            
+            except Exception as e:
+                continue  
         return rewards, actor_loss, critic_loss
     
     def run_validation(self, env):

@@ -252,7 +252,7 @@ class DDPGTrainer:
                 print(f"Step:{step} Reward:{reward.mean()}")
                 wandb.log({
                     'ep_step':step,
-                    'reward':reward,
+                    'reward':reward.mean().detach(),
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),

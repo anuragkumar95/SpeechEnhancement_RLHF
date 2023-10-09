@@ -198,8 +198,6 @@ class DDPGTrainer:
         """
         torch.autograd.set_detect_anomaly(True)
         ACCUM_STEP = args.t_max
-        A_LOSS = 0
-        C_LOSS = 0
         for step in range(env.steps-1):
             try:
                 #get the window input
@@ -266,7 +264,7 @@ class DDPGTrainer:
 
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP
-                critic_loss = critic_loss /ACCUM_STEP
+                critic_loss = critic_loss / ACCUM_STEP
                 critic_loss.backward()
                 actor_loss.backward()
 

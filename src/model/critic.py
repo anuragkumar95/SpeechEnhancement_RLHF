@@ -41,15 +41,15 @@ class QNet(nn.Module):
 
     def forward(self, x, y, t):
         x1 = x['est_mag'][:, :, :, t].unsqueeze(-1)
-        x2 = x['est_real'][:, :, :, t].unsqueeze(-1)
-        x3 = x['est_imag'][:, :, :, t].unsqueeze(-1)
-        m_mask, c_out = y
-        m_mask = m_mask.permute(0, 1, 3, 2)
-
-        x1 = torch.cat([x1, m_mask], dim=-1)
-        x2 = torch.cat([x2, c_out[:, 0, :, :].unsqueeze(1)], dim=-1)
-        x3 = torch.cat([x3, c_out[:, 1, :, :].unsqueeze(1)], dim=-1)
-
-        x = torch.cat([x1, x2, x3], dim = 1)
-        #xy = torch.cat([x, y], dim=1)
+        x2 = x['clean_mag'][:, :, :, t].unsqueeze(-1)
+        
+        m_mask, _ = y
+        mask = torch.ones(x1.shape)
+        if self.gpu_is is not None:
+            mask = mask.to(self.gpu_id)
+        mask[:, :, :, t] = m_mask
+        
+        x1 = x1*mask
+        x = torch.cat([x1, x2], dim = 1)
+        
         return self.layers(x)

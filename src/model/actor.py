@@ -134,6 +134,9 @@ class MaskDecoder(nn.Module):
         self.mu = nn.Linear(signal_window, 1)
         self.var = nn.Linear(signal_window, 1)
         self.N = torch.distributions.Normal(0., 1.)
+        if gpu_id is not None:
+            self.N.loc = self.N.loc.to(gpu_id)
+            self.N.scale = self.N.scale.to(gpu_id)
         self.gpu_id = gpu_id
 
     def sample(self, mu, var):
@@ -204,7 +207,7 @@ class TSCNet(nn.Module):
     def forward(self, x):
         mag = torch.sqrt((x[:, 0, :, :] ** 2) + (x[:, 1, :, :] ** 2)).unsqueeze(1)
         x_in = torch.cat([mag, x], dim=1)
-        
+
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
         out_3 = self.TSCB_2(out_2)

@@ -45,7 +45,7 @@ class QNet(nn.Module):
         
         m_mask, _ = y
         mask = torch.ones(x1.shape)
-        if self.gpu_is is not None:
+        if self.gpu_id is not None:
             mask = mask.to(self.gpu_id)
         mask[:, :, :, t] = m_mask
         

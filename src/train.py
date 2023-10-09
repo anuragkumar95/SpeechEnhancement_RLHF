@@ -286,7 +286,9 @@ class DDPGTrainer:
                 env.state = next_state
             
             except Exception as e:
-                continue  
+                print("Exception:",e)
+                continue
+
         return rewards, actor_loss, critic_loss
     
     def run_validation(self, env):

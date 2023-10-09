@@ -152,7 +152,7 @@ class SpeechEnhancementAgent:
 
             if self.gpu_id is not None:
                 pesq_reward = pesq_reward.to(self.gpu_id)
-            return pesq_reward
+            return pesq_reward.mean()
         
         if self.args.reward == 1:
             z_mask, z = batch_pesq(state['cl_audio'].detach().cpu().numpy(), 
@@ -163,7 +163,7 @@ class SpeechEnhancementAgent:
 
             if self.gpu_id is not None:
                 pesq_reward = pesq_reward.to(self.gpu_id)
-            return pesq_reward
+            return pesq_reward.mean()
         
         if self.args.reward == 2:
             z_mask, z = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(),

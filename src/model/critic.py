@@ -7,7 +7,7 @@ from utils import LearnableSigmoid
 
 
 class QNet(nn.Module):
-    def __init__(self, ndf, in_channel=2):
+    def __init__(self, ndf, in_channel=2, gpu_id=None):
         super().__init__()
         self.layers = nn.Sequential(
             nn.utils.spectral_norm(
@@ -38,6 +38,7 @@ class QNet(nn.Module):
             nn.utils.spectral_norm(nn.Linear(ndf * 4, 1)),
             LearnableSigmoid(1),
         )
+        self.gpu_id = gpu_id
 
     def forward(self, x, y, t):
         x1 = x['est_mag'][:, :, :, t].unsqueeze(-1)

@@ -78,8 +78,8 @@ class DDPGTrainer:
                                    num_features=self.n_fft // 2 + 1, 
                                    win_len=args.win_len,
                                    gpu_id=gpu_id)
-        self.critic = QNet(ndf=16, in_channel=3)
-        self.target_critic = QNet(ndf=16, in_channel=3)
+        self.critic = QNet(ndf=16, in_channel=3, gpu_id=gpu_id)
+        self.target_critic = QNet(ndf=16, in_channel=3, gpu_id=gpu_id)
         
         self.a_optimizer = torch.optim.AdamW(self.actor.parameters(), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(self.critic.parameters(), lr=2 * args.init_lr)

@@ -38,6 +38,8 @@ def args():
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
+    parser.add_argument("--t_max", type=int, required=False, default=4,
+                        help="Backpropagate every t_max steps.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for gpu training.")
     parser.add_argument("--reward", type=int, help="Type of reward")
@@ -195,6 +197,7 @@ class DDPGTrainer:
             args    : global args 
         """
         torch.autograd.set_detect_anomaly(True)
+        ACCUM_STEP = args.t_max
         for step in range(env.steps-1):
             try:
                 #get the window input
@@ -260,23 +263,27 @@ class DDPGTrainer:
                 })
 
                 #Update networks
-                actor_loss.backward()
-                self.a_optimizer.step()
-                self.a_optimizer.zero_grad()
-
+                actor_loss = actor_loss / ACCUM_STEP
+                critic_loss = critic_loss /ACCUM_STEP
                 critic_loss.backward()
-                self.c_optimizer.step()
-                self.c_optimizer.zero_grad()
+                actor_loss.backward()
 
+                if (step+1) % ACCUM_STEP == 0 or (step == env.steps - 2):
+                    self.a_optimizer.step()
+                    self.a_optimizer.zero_grad()
+
+                    self.c_optimizer.step()
+                    self.c_optimizer.zero_grad()
+                    
+                    #update target networks
+                    for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+                        target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+                
+                    for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+                        target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+                
                 #update state
                 env.state = next_state
-                
-                #update target networks
-                for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-                    target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-            
-                for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-                    target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
             
             except Exception as e:
                 continue  

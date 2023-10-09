@@ -129,17 +129,16 @@ class MaskDecoder(nn.Module):
         self.prelu = nn.PReLU(out_channel)
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
-        self.relu = nn.ReLU()
+        self.relu = nn.Softplus()
         #Predict mask for the middle frame of window
-        self.out_mu = nn.Linear(signal_window, 1)
-        self.out_sigma = nn.Linear(signal_window, 1)
-        self.N = torch.distributions.Normal(0, 1)
+        self.mu = nn.Linear(signal_window, 1)
+        self.var = nn.Linear(signal_window, 1)
+        self.N = torch.distributions.Normal(0., 1.)
         self.gpu_id = gpu_id
 
-    def sample(self, mu, sigma):
+    def sample(self, mu, var):
         #print(f"Device, mu:{mu.get_device()}, sigma:{sigma.get_device()}, sample:{self.N.sample(mu.shape).to(self.gpu_id).get_device()}")
-        x = mu + sigma * self.N.sample(mu.shape).to(self.gpu_id)
-        x = self.prelu_out(x)
+        x = mu + torch.sqrt(var) * self.N.sample(mu.shape)
         return x.permute(0, 2, 1).unsqueeze(1)
 
     def forward(self, x):
@@ -150,9 +149,10 @@ class MaskDecoder(nn.Module):
         x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
         #Predict mask for the middle frame of the input window
         #as we learn a distribution
-        x_mu = self.out_mu(x)
-        x_sigma = self.relu(self.out_sigma(x))
-        return x_mu, x_sigma
+        x_mu = self.mu(x)
+        x_mu = self.prelu_out(x_mu)
+        x_var = self.relu(self.var(x))
+        return x_mu, x_var
 
 class ComplexDecoder(nn.Module):
     def __init__(self, num_channel=64, signal_window=51, gpu_id=None):
@@ -162,14 +162,17 @@ class ComplexDecoder(nn.Module):
         self.prelu = nn.PReLU(num_channel)
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
         self.conv = nn.Conv2d(num_channel, 2, (1, 2))
-        self.out_mu = nn.Linear(signal_window, 1)
-        self.out_sigma = nn.Linear(signal_window, 1)
-        self.N = torch.distributions.Normal(0, 1)
+        self.mu = nn.Linear(signal_window, 1)
+        self.var = nn.Linear(signal_window, 1)
+        self.N = torch.distributions.Normal(0., 1.)
+        if gpu_id is not None:
+            self.N.loc = self.N.loc.to(gpu_id)
+            self.N.scale = self.N.scale.to(gpu_id)
+        self.relu = nn.Softplus()
         self.gpu_id = gpu_id
-        self.relu = nn.ReLU()
 
-    def sample(self, mu, sigma):
-        x = mu + sigma * self.N.sample(mu.shape).to(self.gpu_id)
+    def sample(self, mu, var):
+        x = mu + torch.sqrt(var) * self.N.sample(mu.shape)
         return x
 
     def forward(self, x):
@@ -179,9 +182,9 @@ class ComplexDecoder(nn.Module):
         x = self.conv(x)
         #Predict mask for the middle frame of the input window
         #as we learn a distribution
-        x_mu = self.out_mu(x.permute(0,1,3,2))
-        x_sigma = self.relu(self.out_sigma(x.permute(0,1,3,2)))
-        return x_mu, x_sigma
+        x_mu = self.mu(x.permute(0,1,3,2))
+        x_var = self.relu(self.var(x.permute(0,1,3,2)))
+        return x_mu, x_var
 
 class TSCNet(nn.Module):
     def __init__(self, num_channel=64, num_features=201, win_len=51, gpu_id=None):
@@ -201,8 +204,7 @@ class TSCNet(nn.Module):
     def forward(self, x):
         mag = torch.sqrt((x[:, 0, :, :] ** 2) + (x[:, 1, :, :] ** 2)).unsqueeze(1)
         x_in = torch.cat([mag, x], dim=1)
-        #print(f"Mag:{mag.dtype}, x_in:{x_in.dtype}")
-
+        
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
         out_3 = self.TSCB_2(out_2)
@@ -212,11 +214,8 @@ class TSCNet(nn.Module):
         mask_mu, mask_sigma = self.mask_decoder(out_5)
         complex_mu, complex_sigma = self.complex_decoder(out_5)
 
-        #print("Mask:", torch.isnan(mask_mu).any(), torch.isinf(mask_sigma).any())
-        #print("Complex:", torch.isnan(complex_mu).any(), torch.isinf(complex_sigma).any())
         mask = self.mask_decoder.sample(mask_mu, mask_sigma)
         complex_out = self.complex_decoder.sample(complex_mu, complex_sigma)
         return (mask, complex_out)
         
-        #return final_real, final_imag
     

@@ -106,10 +106,6 @@ class SpeechEnhancementAgent:
 
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-        #Save estimated specs
-        file = f"step_{t}_est_spec"
-        path = f"/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/"
-        torch.save(est_spec_uncompress, f"{path}/specs/{file}.pt")
         est_audio = torch.istft(
             est_spec_uncompress,
             self.n_fft,

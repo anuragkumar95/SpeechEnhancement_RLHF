@@ -252,7 +252,6 @@ class DDPGTrainer:
                 a_inp = env.get_state_input(experience['curr'], experience['t'])
                 a_action = self.actor(a_inp)
                 actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
-                print(actor_loss, critic_loss)
                 
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP
@@ -290,7 +289,7 @@ class DDPGTrainer:
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),
                     'y_t': y_t.mean().detach(),
-                    'train_PESQ':train_pesq
+                    'train_PESQ':train_pesq.mean()
                 })
             except Exception as e:
                 print("Exception:",e)
@@ -330,11 +329,6 @@ class DDPGTrainer:
         REWARD_MAP={}
         actor_epoch_loss = 0
         critic_epoch_loss = 0
-        self.actor.train()
-        self.critic.train()
-        self.target_actor.train()
-        self.target_critic.train()
-        
         step = 0
         env = SpeechEnhancementAgent(window=args.win_len // 2, 
                                      buffer_size=1000,
@@ -342,7 +336,12 @@ class DDPGTrainer:
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,
                                      args=args)
+        VAL_STEP = args.val_step
         for i, batch in enumerate(self.train_ds):
+            self.actor.train()
+            self.critic.train()
+            self.target_actor.train()
+            self.target_critic.train()
             #Preprocess batch
             batch = self.preprocess_batch(batch)
             #Run episode
@@ -353,29 +352,30 @@ class DDPGTrainer:
             actor_epoch_loss += actor_epoch_loss
             critic_epoch_loss += critic_epoch_loss
             REWARD_MAP.update({step:np.mean(ep_rewards)})
-            wandb.log({"Step":step,
-                       "Reward":np.mean(ep_rewards)})
             step = i
             print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
 
-        actor_epoch_loss = actor_epoch_loss / step
-        critic_epoch_loss = critic_epoch_loss / step
+            actor_epoch_loss = actor_epoch_loss / step
+            critic_epoch_loss = critic_epoch_loss / step
 
-        self.actor.eval()
-        self.critic.eval()
-        pesq = 0
-        step = 0
-        for i, batch in enumerate(self.test_ds):
-            #Preprocess batch
-            batch = self.preprocess_batch(batch)
-            env.set_batch(batch)
-            #Run validation episode
-            val_pesq_score = self.run_validation(env)
-            pesq += val_pesq_score
+            if (i+1)%VAL_STEP == 0:
+                self.actor.eval()
+                self.critic.eval()
+                pesq = 0
+                step = 0
+                for i, batch in enumerate(self.test_ds):
+                    #Preprocess batch
+                    batch = self.preprocess_batch(batch)
+                    env.set_batch(batch)
+                    #Run validation episode
+                    val_pesq_score = self.run_validation(env)
+                    pesq += val_pesq_score
+                    step = i
+                pesq /= step
 
-            step = i
-
-        pesq /= step
+            wandb.log({"Step":step,
+                       "Reward":np.mean(ep_rewards)})
+            
 
         return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, pesq
     

@@ -253,22 +253,6 @@ class DDPGTrainer:
                 a_action = self.actor(a_inp)
                 actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
 
-                clean = next_state['cl_audio'].detach().cpu().numpy()
-                est = next_state['est_audio'].detach().cpu().numpy()
-                p_mask, p_score = batch_pesq(clean, est)
-                train_pesq = (p_mask * p_score)
-
-                print(f"Step:{step} Reward:{reward.mean()}")
-                wandb.log({
-                    'ep_step':step,
-                    'reward':rewards[-1],
-                    'actor_loss':actor_loss,
-                    'critic_loss':critic_loss,
-                    'current': value_curr.mean().detach(),
-                    'y_t': y_t.mean().detach(),
-                    'train_PESQ':train_pesq
-                })
-
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP
                 critic_loss = critic_loss / ACCUM_STEP
@@ -291,7 +275,21 @@ class DDPGTrainer:
                 
                 #update state
                 env.state = next_state
-            
+                
+                clean = next_state['cl_audio'].detach().cpu().numpy()
+                est = next_state['est_audio'].detach().cpu().numpy()
+                p_mask, p_score = batch_pesq(clean, est)
+                train_pesq = (p_mask * p_score)
+                print(f"Step:{step} Reward:{reward.mean()}")
+                wandb.log({
+                    'ep_step':step,
+                    'reward':rewards[-1],
+                    'actor_loss':actor_loss,
+                    'critic_loss':critic_loss,
+                    'current': value_curr.mean().detach(),
+                    'y_t': y_t.mean().detach(),
+                    'train_PESQ':train_pesq
+                })
             except Exception as e:
                 print("Exception:",e)
                 continue

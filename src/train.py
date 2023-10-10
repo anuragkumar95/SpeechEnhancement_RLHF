@@ -252,7 +252,7 @@ class DDPGTrainer:
                 a_inp = env.get_state_input(experience['curr'], experience['t'])
                 a_action = self.actor(a_inp)
                 actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
-
+                print(actor_loss, critic_loss)
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP
                 critic_loss = critic_loss / ACCUM_STEP
@@ -289,7 +289,7 @@ class DDPGTrainer:
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),
                     'y_t': y_t.mean().detach(),
-                    'train_PESQ':train_pesq
+                    #'train_PESQ':train_pesq
                 })
             except Exception as e:
                 print("Exception:",e)

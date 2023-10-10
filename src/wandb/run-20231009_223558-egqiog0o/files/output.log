@@ -1,0 +1,27 @@
+
+Start training...
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:647: UserWarning: istft will require a complex-valued input tensor in a future PyTorch release. Matching the output from stft with return_complex=True.  (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:811.)
+  return _VF.istft(input, n_fft, hop_length, win_length, window, center,  # type: ignore[attr-defined]
+Step:0 Reward:0.0004159212112426758
+Step:1 Reward:9.357929229736328e-05
+Step:2 Reward:-8.535385131835938e-05
+Step:3 Reward:0.0006096363067626953
+Step:4 Reward:0.0003199577331542969
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 464, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 449, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 389, in train
+    re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 349, in train_one_epoch
+    ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 259, in train_one_episode
+    critic_loss.backward()
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/_tensor.py", line 307, in backward
+    torch.autograd.backward(self, gradient, retain_graph, create_graph, inputs=inputs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/autograd/__init__.py", line 154, in backward
+    Variable._execution_engine.run_backward(
+KeyboardInterrupt

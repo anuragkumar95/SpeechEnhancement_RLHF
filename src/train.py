@@ -275,11 +275,12 @@ class DDPGTrainer:
                 
                 #update state
                 env.state = next_state
-                
+                """
                 clean = next_state['cl_audio'].detach().cpu().numpy()
                 est = next_state['est_audio'].detach().cpu().numpy()
                 p_mask, p_score = batch_pesq(clean, est)
                 train_pesq = (p_mask * p_score)
+                """
                 print(f"Step:{step} Reward:{reward.mean()}")
                 wandb.log({
                     'ep_step':step,

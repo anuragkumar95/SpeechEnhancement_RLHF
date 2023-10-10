@@ -1,0 +1,808 @@
+2023-10-09 22:03:17,395 INFO    StreamThr :7785 [internal.py:wandb_internal():86] W&B internal server running at pid: 7785, started at: 2023-10-09 22:03:17.394563
+2023-10-09 22:03:17,395 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status
+2023-10-09 22:03:17,397 INFO    WriterThread:7785 [datastore.py:open_for_write():85] open: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/run-qo97qz4q.wandb
+2023-10-09 22:03:17,398 DEBUG   SenderThread:7785 [sender.py:send():380] send: header
+2023-10-09 22:03:17,411 DEBUG   SenderThread:7785 [sender.py:send():380] send: run
+2023-10-09 22:03:17,691 INFO    SenderThread:7785 [dir_watcher.py:__init__():211] watching files in: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files
+2023-10-09 22:03:17,691 INFO    SenderThread:7785 [sender.py:_start_run_threads():1122] run started: qo97qz4q with start time 1696903397.395432
+2023-10-09 22:03:17,703 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: check_version
+2023-10-09 22:03:17,703 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: check_version
+2023-10-09 22:03:17,879 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: run_start
+2023-10-09 22:03:17,885 DEBUG   HandlerThread:7785 [system_info.py:__init__():32] System info init
+2023-10-09 22:03:17,885 DEBUG   HandlerThread:7785 [system_info.py:__init__():47] System info init done
+2023-10-09 22:03:17,886 INFO    HandlerThread:7785 [system_monitor.py:start():181] Starting system monitor
+2023-10-09 22:03:17,886 INFO    SystemMonitor:7785 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2023-10-09 22:03:17,886 INFO    HandlerThread:7785 [system_monitor.py:probe():201] Collecting system info
+2023-10-09 22:03:17,887 INFO    SystemMonitor:7785 [interfaces.py:start():190] Started cpu monitoring
+2023-10-09 22:03:17,887 INFO    SystemMonitor:7785 [interfaces.py:start():190] Started disk monitoring
+2023-10-09 22:03:17,887 INFO    SystemMonitor:7785 [interfaces.py:start():190] Started memory monitoring
+2023-10-09 22:03:17,890 DEBUG   HandlerThread:7785 [system_info.py:probe():196] Probing system
+2023-10-09 22:03:17,890 INFO    SystemMonitor:7785 [interfaces.py:start():190] Started network monitoring
+2023-10-09 22:03:17,895 DEBUG   HandlerThread:7785 [system_info.py:_probe_git():181] Probing git
+2023-10-09 22:03:17,914 DEBUG   HandlerThread:7785 [system_info.py:_probe_git():189] Probing git done
+2023-10-09 22:03:17,914 DEBUG   HandlerThread:7785 [system_info.py:probe():244] Probing system done
+2023-10-09 22:03:17,914 DEBUG   HandlerThread:7785 [system_monitor.py:probe():210] {'os': 'macOS-10.16-x86_64-i386-64bit', 'python': '3.9.18', 'heartbeatAt': '2023-10-10T02:03:17.890088', 'startedAt': '2023-10-10T02:03:17.389820', 'docker': None, 'cuda': None, 'args': ('-r', '../../Voicebank-debug', '-o', '../../ActorCritic', '--epochs', '10', '--batchsize', '1', '--win_len', '25', '--reward', '1', '--t_max', '25'), 'state': 'running', 'program': '/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py', 'codePathLocal': 'train.py', 'codePath': 'src/train.py', 'git': {'remote': 'git@github.com:anuragkumar95/SpeechEnhancement_RLHF.git', 'commit': '7e1d686029a8392adcebd5042813e58840c1fb7f'}, 'email': None, 'root': '/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF', 'host': 'Anurags-MBP.lan', 'username': 'anuragkumar', 'executable': '/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/bin/python', 'cpu_count': 8, 'cpu_count_logical': 16, 'cpu_freq': {'current': 2400, 'min': 2400, 'max': 2400}, 'cpu_freq_per_core': [{'current': 2400, 'min': 2400, 'max': 2400}], 'disk': {'/': {'total': 931.546989440918, 'used': 8.536766052246094}}, 'memory': {'total': 32.0}}
+2023-10-09 22:03:17,915 INFO    HandlerThread:7785 [system_monitor.py:probe():211] Finished collecting system info
+2023-10-09 22:03:17,915 INFO    HandlerThread:7785 [system_monitor.py:probe():214] Publishing system info
+2023-10-09 22:03:17,915 DEBUG   HandlerThread:7785 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2023-10-09 22:03:17,915 DEBUG   HandlerThread:7785 [system_info.py:_save_pip():68] Saving pip packages done
+2023-10-09 22:03:17,915 DEBUG   HandlerThread:7785 [system_info.py:_save_conda():75] Saving list of conda packages installed into the current environment
+2023-10-09 22:03:18,694 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/requirements.txt
+2023-10-09 22:03:18,695 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/conda-environment.yaml
+2023-10-09 22:03:20,529 DEBUG   HandlerThread:7785 [system_info.py:_save_conda():87] Saving conda packages done
+2023-10-09 22:03:20,530 INFO    HandlerThread:7785 [system_monitor.py:probe():216] Finished publishing system info
+2023-10-09 22:03:20,535 DEBUG   SenderThread:7785 [sender.py:send():380] send: files
+2023-10-09 22:03:20,535 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2023-10-09 22:03:20,541 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:03:20,542 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:03:20,547 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:03:20,702 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/conda-environment.yaml
+2023-10-09 22:03:20,702 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-metadata.json
+2023-10-09 22:03:20,766 DEBUG   SenderThread:7785 [sender.py:send():380] send: telemetry
+2023-10-09 22:03:20,984 INFO    wandb-upload_0:7785 [upload_job.py:push():131] Uploaded file /var/folders/h6/6w1fv4ks2hq54txlt9l2ygy00000gn/T/tmpu6vfovl3wandb/wakplobp-wandb-metadata.json
+2023-10-09 22:03:21,703 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:22,411 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:23,706 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:24,385 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:24,386 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:24,386 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:24,386 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:24,706 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:24,707 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:25,708 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:27,381 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:27,381 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:27,381 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:27,382 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:27,715 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:27,715 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:28,385 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:29,716 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:30,184 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:30,184 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:30,184 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:30,185 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:30,721 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:31,723 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:32,932 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:32,932 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:32,933 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:32,934 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:33,729 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:33,937 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:35,543 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:03:35,544 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:03:35,545 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:03:35,735 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:35,839 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:35,839 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:35,839 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:35,841 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:36,736 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:37,737 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:38,571 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:38,572 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:38,572 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:38,573 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:38,737 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:39,575 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:39,738 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:41,424 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:41,424 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:41,424 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:41,425 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:41,741 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:41,741 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:43,745 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:44,584 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:44,603 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:44,604 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:44,604 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:44,605 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:44,746 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:45,752 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:47,418 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:47,418 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:47,419 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:47,419 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:47,757 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:47,757 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:49,761 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:49,855 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:50,322 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:50,322 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:50,322 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:50,323 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:50,546 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:03:50,546 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:03:50,547 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:03:50,765 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:50,766 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/config.yaml
+2023-10-09 22:03:51,767 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:53,351 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:53,352 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:53,352 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:53,353 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:53,774 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:55,354 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:03:55,778 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:56,523 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:56,524 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:56,524 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:56,525 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:56,783 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:57,788 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:03:59,515 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:03:59,516 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:03:59,516 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:03:59,517 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:03:59,796 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:03:59,797 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:00,520 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:01,804 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:02,253 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:02,254 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:02,254 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:02,254 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:02,808 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:03,811 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:04,973 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:04,973 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:04,973 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:04,975 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:05,550 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:04:05,551 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:04:05,551 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:04:05,698 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:05,816 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:07,757 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:07,758 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:07,758 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:07,759 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:07,823 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:07,823 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:09,824 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:10,468 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:10,469 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:10,469 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:10,470 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:10,825 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:11,473 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:11,826 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:13,182 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:13,183 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:13,183 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:13,183 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:13,830 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:15,835 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:15,916 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:15,917 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:15,917 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:15,917 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:16,836 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:16,919 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:17,841 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:17,891 DEBUG   SystemMonitor:7785 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2023-10-09 22:04:17,892 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:04:18,629 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:18,630 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:18,630 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:18,630 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:18,842 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:19,842 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:20,553 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:04:20,553 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:04:20,553 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:04:21,358 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:21,359 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:21,359 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:21,360 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:21,850 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:21,850 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:22,361 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:23,858 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:24,042 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:24,043 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:24,043 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:24,044 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:24,858 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:25,863 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:26,763 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:26,763 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:26,764 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:26,764 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:26,866 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:27,767 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:27,866 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:29,467 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:29,467 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:29,468 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:29,468 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:29,875 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:29,875 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:31,879 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:32,186 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:32,187 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:32,187 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:32,187 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:32,884 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:33,188 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:33,886 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:34,927 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:34,927 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:34,927 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:34,928 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:35,554 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:04:35,555 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:04:35,555 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:04:35,887 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:35,887 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:37,686 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:37,686 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:37,686 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:37,687 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:37,890 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:37,890 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:38,687 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:39,895 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:40,406 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:40,407 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:40,407 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:40,407 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:40,897 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:41,902 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:43,115 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:43,115 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:43,115 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:43,116 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:43,903 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:43,903 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:44,116 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:44,909 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:45,813 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:45,813 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:45,814 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:45,814 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:45,913 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:46,917 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:47,895 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:04:48,554 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:48,555 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:48,555 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:48,556 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:48,925 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:48,925 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:49,556 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:50,557 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:04:50,557 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:04:50,557 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:04:51,303 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:51,304 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:51,304 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:51,305 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:51,930 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:52,936 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:54,003 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:54,004 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:54,004 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:54,004 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:54,937 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:54,937 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:55,009 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:04:56,731 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:56,731 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:56,731 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:56,731 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:56,946 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:04:56,946 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:58,953 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:04:59,491 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:04:59,492 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:04:59,492 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:04:59,493 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:04:59,955 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:00,497 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:00,960 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:02,217 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:02,217 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:02,218 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:02,218 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:02,967 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:02,967 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:04,941 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:04,942 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:04,942 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:04,942 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:04,972 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:04,972 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:05,559 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:05:05,559 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:05:05,560 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:05:05,628 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:06,977 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:07,662 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:07,663 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:07,663 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:07,664 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:07,980 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:08,984 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:10,360 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:10,361 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:10,361 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:10,361 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:10,993 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:10,993 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:11,362 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:12,999 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:13,043 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:13,044 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:13,044 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:13,045 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:14,002 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:15,004 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:15,730 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:15,731 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:15,731 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:15,731 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:16,005 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:16,735 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:17,010 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:17,898 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:05:18,425 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:18,426 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:18,426 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:18,426 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:19,015 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:19,015 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:20,563 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:05:20,564 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:05:20,564 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:05:21,022 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:21,137 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:21,137 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:21,138 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:21,138 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:22,023 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:22,142 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:23,026 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:23,838 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:23,838 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:23,838 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:23,839 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:24,028 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:25,031 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:26,513 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:26,514 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:26,514 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:26,514 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:27,036 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:27,037 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:27,518 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:29,042 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:29,205 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:29,206 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:29,206 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:29,207 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:30,044 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:31,047 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:31,894 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:31,894 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:31,894 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:31,895 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:32,052 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:32,898 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:33,054 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:34,709 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:34,710 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:34,710 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:34,711 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:35,057 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:35,057 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:35,564 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:05:35,564 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:05:35,565 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:05:37,424 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:37,425 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:37,425 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:37,426 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:38,061 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:38,428 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:39,062 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:40,165 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:40,166 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:40,166 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:40,166 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:41,066 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:41,077 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:42,881 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:42,881 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:42,882 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:42,882 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:43,076 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:43,076 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:43,886 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:45,601 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:45,602 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:45,602 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:45,602 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:46,087 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:47,090 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:47,903 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:05:48,292 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:48,292 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:48,293 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:48,293 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:49,097 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:49,097 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:49,294 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:50,564 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:05:50,564 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:05:50,564 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:05:51,019 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:51,019 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:51,019 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:51,020 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:51,103 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:51,103 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:53,106 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:53,723 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:53,723 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:53,723 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:53,724 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:54,109 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:54,726 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:05:55,111 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:56,442 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:56,443 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:56,443 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:56,443 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:05:57,118 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:05:57,118 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:59,127 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:05:59,160 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:05:59,160 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:05:59,161 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:05:59,161 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:00,127 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:00,162 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:01,128 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:01,871 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:01,872 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:01,872 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:01,872 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:02,130 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:03,135 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:04,567 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:04,568 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:04,568 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:04,569 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:05,138 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:05,138 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:05,563 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:06:05,564 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:06:05,564 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:06:05,741 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:07,143 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:07,342 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:07,342 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:07,342 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:07,343 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:08,146 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:09,148 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:10,077 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:10,077 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:10,077 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:10,078 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:10,153 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:11,081 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:11,153 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:12,770 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:12,771 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:12,771 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:12,771 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:13,155 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:13,155 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:15,159 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:15,492 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:15,492 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:15,493 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:15,493 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:16,162 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:16,493 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:17,166 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:17,906 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:06:18,209 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:18,210 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:18,210 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:18,211 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:19,173 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:19,174 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:20,567 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:06:20,568 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:06:20,569 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:06:20,963 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:20,964 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:20,964 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:20,964 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:21,180 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:21,180 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:21,965 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:23,186 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:23,653 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:23,653 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:23,654 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:23,654 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:24,189 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:25,190 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:26,333 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:26,333 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:26,333 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:26,334 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:27,196 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:27,197 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:27,338 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:29,030 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:29,030 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:29,030 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:29,031 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:29,202 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:29,203 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:31,210 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:31,737 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:31,737 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:31,737 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:31,738 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:32,210 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:32,739 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:33,212 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:34,424 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:34,425 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:34,425 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:34,425 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:35,219 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:35,219 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:35,569 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:06:35,569 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:06:35,573 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:06:37,134 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:37,135 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:37,135 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:37,135 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:37,224 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:37,224 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:38,136 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:39,228 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:40,184 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:40,185 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:40,185 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:40,186 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:40,231 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:41,236 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:42,972 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:42,973 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:42,973 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:42,973 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:43,238 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:43,239 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:43,976 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:45,243 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:45,730 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:45,730 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:45,730 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:45,731 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:46,244 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:47,248 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:47,910 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:06:49,013 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:49,029 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:49,029 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:49,029 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:49,030 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:49,253 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:49,253 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:50,575 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:06:50,575 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:06:50,575 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:06:51,258 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:51,875 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:51,875 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:51,876 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:51,876 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:52,259 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:53,260 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:54,408 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:06:54,857 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:54,857 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:54,857 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:54,858 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:55,266 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:55,266 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:57,274 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:57,729 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:06:57,729 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:06:57,729 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:06:57,730 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:06:58,276 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:06:59,281 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:06:59,736 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:07:00,699 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:07:00,699 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:07:00,699 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:07:00,700 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:01,288 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:01,288 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:03,406 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:07:03,407 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:07:03,407 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:07:03,407 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:04,296 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:05,297 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:05,409 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:07:05,577 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: stop_status
+2023-10-09 22:07:05,578 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: stop_status
+2023-10-09 22:07:05,579 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:07:06,122 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:07:06,135 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:07:06,154 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:07:06,154 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:06,297 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:07,302 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:08,871 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:07:08,871 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:07:08,871 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:07:08,872 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:09,306 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:09,307 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:10,881 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:07:11,313 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:11,613 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:07:11,613 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:07:11,614 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:07:11,614 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:12,314 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:13,319 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:14,294 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: partial_history
+2023-10-09 22:07:14,294 DEBUG   SenderThread:7785 [sender.py:send():380] send: history
+2023-10-09 22:07:14,294 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: summary_record
+2023-10-09 22:07:14,295 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:14,323 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:15,326 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:16,295 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:07:17,268 DEBUG   SenderThread:7785 [sender.py:send():380] send: exit
+2023-10-09 22:07:17,268 INFO    SenderThread:7785 [sender.py:send_exit():585] handling exit code: 255
+2023-10-09 22:07:17,268 INFO    SenderThread:7785 [sender.py:send_exit():587] handling runtime: 239
+2023-10-09 22:07:17,268 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:17,269 INFO    SenderThread:7785 [sender.py:send_exit():593] send defer
+2023-10-09 22:07:17,269 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,269 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 0
+2023-10-09 22:07:17,269 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,269 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 0
+2023-10-09 22:07:17,269 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 1
+2023-10-09 22:07:17,269 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,269 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 1
+2023-10-09 22:07:17,270 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,270 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 1
+2023-10-09 22:07:17,270 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 2
+2023-10-09 22:07:17,270 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,270 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 2
+2023-10-09 22:07:17,270 INFO    HandlerThread:7785 [system_monitor.py:finish():190] Stopping system monitor
+2023-10-09 22:07:17,270 INFO    HandlerThread:7785 [interfaces.py:finish():202] Joined cpu monitor
+2023-10-09 22:07:17,270 DEBUG   SystemMonitor:7785 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2023-10-09 22:07:17,270 INFO    HandlerThread:7785 [interfaces.py:finish():202] Joined disk monitor
+2023-10-09 22:07:17,271 DEBUG   SystemMonitor:7785 [system_monitor.py:_start():170] Publishing last batch of metrics
+2023-10-09 22:07:17,271 INFO    HandlerThread:7785 [interfaces.py:finish():202] Joined memory monitor
+2023-10-09 22:07:17,271 INFO    HandlerThread:7785 [interfaces.py:finish():202] Joined network monitor
+2023-10-09 22:07:17,272 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,272 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 2
+2023-10-09 22:07:17,272 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 3
+2023-10-09 22:07:17,272 DEBUG   SenderThread:7785 [sender.py:send():380] send: stats
+2023-10-09 22:07:17,272 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,272 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 3
+2023-10-09 22:07:17,273 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,273 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 3
+2023-10-09 22:07:17,273 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 4
+2023-10-09 22:07:17,273 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,273 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 4
+2023-10-09 22:07:17,273 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,273 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 4
+2023-10-09 22:07:17,273 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 5
+2023-10-09 22:07:17,273 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,273 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 5
+2023-10-09 22:07:17,274 DEBUG   SenderThread:7785 [sender.py:send():380] send: summary
+2023-10-09 22:07:17,274 INFO    SenderThread:7785 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-09 22:07:17,274 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,274 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 5
+2023-10-09 22:07:17,274 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 6
+2023-10-09 22:07:17,275 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,275 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 6
+2023-10-09 22:07:17,275 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,275 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 6
+2023-10-09 22:07:17,275 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 7
+2023-10-09 22:07:17,275 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: status_report
+2023-10-09 22:07:17,275 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:17,275 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 7
+2023-10-09 22:07:17,275 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:17,275 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 7
+2023-10-09 22:07:17,331 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:17,331 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:18,272 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: poll_exit
+2023-10-09 22:07:19,337 INFO    Thread-12 :7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:20,713 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 8
+2023-10-09 22:07:20,713 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: poll_exit
+2023-10-09 22:07:20,714 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:20,714 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 8
+2023-10-09 22:07:20,714 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:20,714 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 8
+2023-10-09 22:07:20,714 INFO    SenderThread:7785 [job_builder.py:build():281] Attempting to build job artifact
+2023-10-09 22:07:20,715 INFO    SenderThread:7785 [job_builder.py:_get_source_type():393] is repo sourced job
+2023-10-09 22:07:20,717 INFO    SenderThread:7785 [job_builder.py:build():369] adding wandb-job metadata file
+2023-10-09 22:07:20,720 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 9
+2023-10-09 22:07:20,720 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:20,720 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 9
+2023-10-09 22:07:20,721 DEBUG   SenderThread:7785 [sender.py:send():380] send: artifact
+2023-10-09 22:07:21,117 INFO    SenderThread:7785 [sender.py:send_artifact():1456] sent artifact job-git_github.com_anuragkumar95_SpeechEnhancement_RLHF.git_src_train.py - {'id': 'QXJ0aWZhY3Q6NTk5MDQwMjA5', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjEwNDk3MjY3Ng==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NTk5MDcxNDg5', 'versionIndex': 3}}}
+2023-10-09 22:07:21,117 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:21,117 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 9
+2023-10-09 22:07:21,117 INFO    SenderThread:7785 [dir_watcher.py:finish():358] shutting down directory watcher
+2023-10-09 22:07:21,341 INFO    SenderThread:7785 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:21,341 INFO    SenderThread:7785 [dir_watcher.py:finish():388] scan: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files
+2023-10-09 22:07:21,341 INFO    SenderThread:7785 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/requirements.txt requirements.txt
+2023-10-09 22:07:21,341 INFO    SenderThread:7785 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log output.log
+2023-10-09 22:07:21,343 INFO    SenderThread:7785 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/config.yaml config.yaml
+2023-10-09 22:07:21,345 INFO    SenderThread:7785 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json wandb-summary.json
+2023-10-09 22:07:21,348 INFO    SenderThread:7785 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/conda-environment.yaml conda-environment.yaml
+2023-10-09 22:07:21,350 INFO    SenderThread:7785 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-metadata.json wandb-metadata.json
+2023-10-09 22:07:21,350 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 10
+2023-10-09 22:07:21,352 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:21,352 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 10
+2023-10-09 22:07:21,352 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:21,353 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 10
+2023-10-09 22:07:21,353 INFO    SenderThread:7785 [file_pusher.py:finish():175] shutting down file pusher
+2023-10-09 22:07:21,780 INFO    wandb-upload_0:7785 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/requirements.txt
+2023-10-09 22:07:21,802 INFO    wandb-upload_1:7785 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/output.log
+2023-10-09 22:07:21,988 INFO    wandb-upload_3:7785 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/wandb-summary.json
+2023-10-09 22:07:22,012 INFO    wandb-upload_2:7785 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/config.yaml
+2023-10-09 22:07:22,128 INFO    wandb-upload_4:7785 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/files/conda-environment.yaml
+2023-10-09 22:07:22,328 INFO    Thread-11 :7785 [sender.py:transition_state():613] send defer: 11
+2023-10-09 22:07:22,329 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:22,329 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 11
+2023-10-09 22:07:22,329 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:22,329 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 11
+2023-10-09 22:07:22,329 INFO    SenderThread:7785 [file_pusher.py:join():181] waiting for file pusher
+2023-10-09 22:07:22,329 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 12
+2023-10-09 22:07:22,329 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:22,329 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 12
+2023-10-09 22:07:22,330 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:22,330 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 12
+2023-10-09 22:07:22,330 INFO    SenderThread:7785 [file_stream.py:finish():595] file stream finish called
+2023-10-09 22:07:22,420 INFO    SenderThread:7785 [file_stream.py:finish():599] file stream finish is done
+2023-10-09 22:07:22,420 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 13
+2023-10-09 22:07:22,420 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:22,421 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 13
+2023-10-09 22:07:22,421 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:22,421 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 13
+2023-10-09 22:07:22,421 INFO    SenderThread:7785 [sender.py:transition_state():613] send defer: 14
+2023-10-09 22:07:22,421 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: defer
+2023-10-09 22:07:22,422 INFO    HandlerThread:7785 [handler.py:handle_request_defer():170] handle defer: 14
+2023-10-09 22:07:22,422 DEBUG   SenderThread:7785 [sender.py:send():380] send: final
+2023-10-09 22:07:22,422 DEBUG   SenderThread:7785 [sender.py:send():380] send: footer
+2023-10-09 22:07:22,422 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: defer
+2023-10-09 22:07:22,422 INFO    SenderThread:7785 [sender.py:send_request_defer():609] handle sender defer: 14
+2023-10-09 22:07:22,423 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: poll_exit
+2023-10-09 22:07:22,424 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: poll_exit
+2023-10-09 22:07:22,424 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: server_info
+2023-10-09 22:07:22,425 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: server_info
+2023-10-09 22:07:22,426 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: get_summary
+2023-10-09 22:07:22,427 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: sampled_history
+2023-10-09 22:07:22,429 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: internal_messages
+2023-10-09 22:07:22,430 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: job_info
+2023-10-09 22:07:22,492 DEBUG   SenderThread:7785 [sender.py:send_request():407] send_request: job_info
+2023-10-09 22:07:22,493 INFO    MainThread:7785 [wandb_run.py:_footer_history_summary_info():3554] rendering history
+2023-10-09 22:07:22,493 INFO    MainThread:7785 [wandb_run.py:_footer_history_summary_info():3586] rendering summary
+2023-10-09 22:07:22,494 INFO    MainThread:7785 [wandb_run.py:_footer_sync_info():3513] logging synced files
+2023-10-09 22:07:22,494 DEBUG   HandlerThread:7785 [handler.py:handle_request():144] handle_request: shutdown
+2023-10-09 22:07:22,494 INFO    HandlerThread:7785 [handler.py:finish():844] shutting down handler
+2023-10-09 22:07:23,434 INFO    WriterThread:7785 [datastore.py:close():294] close: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231009_220317-qo97qz4q/run-qo97qz4q.wandb
+2023-10-09 22:07:23,497 INFO    SenderThread:7785 [sender.py:finish():1534] shutting down sender
+2023-10-09 22:07:23,497 INFO    SenderThread:7785 [file_pusher.py:finish():175] shutting down file pusher
+2023-10-09 22:07:23,497 INFO    SenderThread:7785 [file_pusher.py:join():181] waiting for file pusher

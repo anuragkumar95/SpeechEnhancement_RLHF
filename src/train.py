@@ -78,8 +78,8 @@ class DDPGTrainer:
                                    num_features=self.n_fft // 2 + 1, 
                                    win_len=args.win_len,
                                    gpu_id=gpu_id)
-        self.critic = QNet(ndf=16, in_channel=3, gpu_id=gpu_id)
-        self.target_critic = QNet(ndf=16, in_channel=3, gpu_id=gpu_id)
+        self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
+        self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
         
         self.a_optimizer = torch.optim.AdamW(self.actor.parameters(), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(self.critic.parameters(), lr=2 * args.init_lr)
@@ -199,7 +199,7 @@ class DDPGTrainer:
         torch.autograd.set_detect_anomaly(True)
         ACCUM_STEP = args.t_max
         for step in range(env.steps-1):
-            try:
+            #try:
                 #get the window input
                 inp = env.get_state_input(env.state, step)
 
@@ -252,14 +252,19 @@ class DDPGTrainer:
                 a_action = self.actor(a_inp)
                 actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
 
+                p_mask, p_score = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
+                                             next_state['est_audio'].detach().cpu().numpy())
+                train_pesq = (p_mask * p_score)
+
                 print(f"Step:{step} Reward:{reward.mean()}")
                 wandb.log({
                     'ep_step':step,
-                    'reward':reward.mean().detach(),
+                    'reward':rewards[-1],
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),
-                    'y_t': y_t.mean().detach()
+                    'y_t': y_t.mean().detach(),
+                    'train_PESQ':train_pesq
                 })
 
                 #Update networks
@@ -285,9 +290,9 @@ class DDPGTrainer:
                 #update state
                 env.state = next_state
             
-            except Exception as e:
-                print("Exception:",e)
-                continue
+            #except Exception as e:
+            #    print("Exception:",e)
+            #    continue
 
         return rewards, actor_loss, critic_loss
     

@@ -1,0 +1,131 @@
+
+Start training...
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:647: UserWarning: istft will require a complex-valued input tensor in a future PyTorch release. Matching the output from stft with return_complex=True.  (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:811.)
+  return _VF.istft(input, n_fft, hop_length, win_length, window, center,  # type: ignore[attr-defined]
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:0 Reward:2.229231119155884
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:1 Reward:2.229466676712036
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:2 Reward:2.226661205291748
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:3 Reward:2.222371816635132
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:4 Reward:2.2223963737487793
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:5 Reward:2.219862699508667
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:6 Reward:2.2198734283447266
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:7 Reward:2.2189972400665283
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:8 Reward:2.21882700920105
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:9 Reward:2.215038537979126
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:10 Reward:2.2149500846862793
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:11 Reward:2.216042995452881
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:12 Reward:2.21453595161438
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:13 Reward:2.2128775119781494
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:14 Reward:2.2123961448669434
+Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x7faf00251f70>
+Traceback (most recent call last):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1328, in __del__
+    self._shutdown_workers()
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1301, in _shutdown_workers
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 458, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 443, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 383, in train
+    re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 343, in train_one_epoch
+    ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 207, in train_one_episode
+    action = self.actor(inp)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 213, in forward
+    out_3 = self.TSCB_2(out_2)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 97, in forward
+    x_f = self.freq_conformer(x_f) + x_f
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 218, in forward
+    x = self.attn(x, mask=mask) + x
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 72, in forward
+    return self.fn(x, **kwargs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 101, in forward
+    q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q, k, v))
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 101, in <lambda>
+    q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q, k, v))
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/einops/einops.py", line 452, in rearrange
+    return reduce(tensor, pattern, reduction='rearrange', **axes_lengths)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/einops/einops.py", line 382, in reduce
+    return recipe.apply(tensor)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/einops/einops.py", line 206, in apply
+    tensor = backend.reshape(tensor, init_shapes)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/einops/_backends.py", line 84, in reshape
+    return x.reshape(shape)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 197, in format_stack
+    return format_list(extract_stack(f, limit=limit))
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 211, in extract_stack
+    stack = StackSummary.extract(walk_stack(f), limit=limit)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 362, in extract
+    linecache.checkcache(filename)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/linecache.py", line 72, in checkcache
+    stat = os.stat(fullname)
+KeyboardInterrupt

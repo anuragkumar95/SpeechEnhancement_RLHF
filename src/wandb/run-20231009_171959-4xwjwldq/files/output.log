@@ -1,0 +1,74 @@
+
+Start training...
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:647: UserWarning: istft will require a complex-valued input tensor in a future PyTorch release. Matching the output from stft with return_complex=True.  (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:811.)
+  return _VF.istft(input, n_fft, hop_length, win_length, window, center,  # type: ignore[attr-defined]
+Exception: Given groups=1, weight of size [16, 3, 3, 3], expected input[1, 2, 201, 1] to have 3 channels, but got 2 channels instead
+Exception: Given groups=1, weight of size [16, 3, 3, 3], expected input[1, 2, 201, 1] to have 3 channels, but got 2 channels instead
+Exception: index 2 is out of bounds for dimension 3 with size 1
+Exception: index 3 is out of bounds for dimension 3 with size 1
+Exception: Given groups=1, weight of size [16, 3, 3, 3], expected input[1, 2, 201, 1] to have 3 channels, but got 2 channels instead
+Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x7fa9f8f04f70>
+Traceback (most recent call last):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1328, in __del__
+    self._shutdown_workers()
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1301, in _shutdown_workers
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 458, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 443, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 383, in train
+    re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 343, in train_one_epoch
+    ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 207, in train_one_episode
+    action = self.actor(inp)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 213, in forward
+    out_3 = self.TSCB_2(out_2)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 97, in forward
+    x_f = self.freq_conformer(x_f) + x_f
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 217, in forward
+    x = self.ff1(x) + x
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 61, in forward
+    return self.fn(x, **kwargs) * self.scale
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 72, in forward
+    return self.fn(x, **kwargs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 148, in forward
+    return self.net(x)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/container.py", line 141, in forward
+    input = module(input)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/dropout.py", line 58, in forward
+    return F.dropout(input, self.p, self.training, self.inplace)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/functional.py", line 1169, in dropout
+    return _VF.dropout_(input, p, training) if inplace else _VF.dropout(input, p, training)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 193, in format_stack
+    def format_stack(f=None, limit=None):
+KeyboardInterrupt

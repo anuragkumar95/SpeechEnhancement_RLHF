@@ -1,0 +1,563 @@
+
+Start training...
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:647: UserWarning: istft will require a complex-valued input tensor in a future PyTorch release. Matching the output from stft with return_complex=True.  (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:811.)
+  return _VF.istft(input, n_fft, hop_length, win_length, window, center,  # type: ignore[attr-defined]
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:0 Reward:0.0003044605255126953
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:1 Reward:-1.7881393432617188e-06
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:2 Reward:-0.0002841949462890625
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:3 Reward:-0.00016808509826660156
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:4 Reward:-0.00022268295288085938
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:5 Reward:-1.609325408935547e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:6 Reward:0.0004298686981201172
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:7 Reward:-0.00020647048950195312
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:8 Reward:-0.00022172927856445312
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:9 Reward:-0.003057122230529785
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:10 Reward:-0.0007948875427246094
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:11 Reward:-0.000446319580078125
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:12 Reward:-0.0004203319549560547
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:13 Reward:0.0005706548690795898
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:14 Reward:0.00043714046478271484
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:15 Reward:0.0002636909484863281
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:16 Reward:0.0003445148468017578
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:17 Reward:-5.3882598876953125e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:18 Reward:0.0011444091796875
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:19 Reward:-0.0003726482391357422
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:20 Reward:0.00013256072998046875
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:21 Reward:-0.0002853870391845703
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:22 Reward:0.00023221969604492188
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:23 Reward:0.00025784969329833984
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:24 Reward:0.00013875961303710938
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:25 Reward:0.010666847229003906
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:26 Reward:0.0018606185913085938
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:27 Reward:0.010376811027526855
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:28 Reward:-0.0009139776229858398
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:29 Reward:-0.00015020370483398438
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:30 Reward:-0.00042247772216796875
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:31 Reward:0.0013132095336914062
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:32 Reward:0.00016009807586669922
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:33 Reward:0.001415848731994629
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:34 Reward:0.0015094280242919922
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:35 Reward:-0.0005176067352294922
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:36 Reward:0.0017837285995483398
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:37 Reward:-0.00042688846588134766
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:38 Reward:-5.936622619628906e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:39 Reward:0.0006387233734130859
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:40 Reward:5.900859832763672e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:41 Reward:0.0007696151733398438
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:42 Reward:0.0009250640869140625
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:43 Reward:0.00044286251068115234
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:44 Reward:-0.00025177001953125
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:45 Reward:0.00025534629821777344
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:46 Reward:-7.271766662597656e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:47 Reward:8.082389831542969e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:48 Reward:0.00010001659393310547
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:49 Reward:7.915496826171875e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:50 Reward:0.00014770030975341797
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:51 Reward:0.00032579898834228516
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:52 Reward:0.003103494644165039
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:53 Reward:0.00015676021575927734
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:54 Reward:0.0037707090377807617
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:55 Reward:0.0005241632461547852
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:56 Reward:-0.0001786947250366211
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:57 Reward:0.00044929981231689453
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:58 Reward:-8.630752563476562e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:59 Reward:0.0006296634674072266
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:60 Reward:0.0012183189392089844
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:61 Reward:0.0009469985961914062
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:62 Reward:0.0005501508712768555
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:63 Reward:2.658367156982422e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:64 Reward:-0.0031064748764038086
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:65 Reward:-0.000986933708190918
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:66 Reward:0.0006867647171020508
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:67 Reward:-0.003558516502380371
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:68 Reward:-0.00010585784912109375
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:69 Reward:-0.001157999038696289
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:70 Reward:0.0004999637603759766
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:71 Reward:-0.012534618377685547
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:72 Reward:-0.0025887489318847656
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:73 Reward:-0.00018775463104248047
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:74 Reward:-0.0011930465698242188
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:75 Reward:-0.0001367330551147461
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:76 Reward:0.0005843639373779297
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:77 Reward:-0.0060111284255981445
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:78 Reward:0.000790715217590332
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:79 Reward:4.7206878662109375e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:80 Reward:-0.0007138252258300781
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:81 Reward:-1.704692840576172e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:82 Reward:0.0001697540283203125
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:83 Reward:-4.5418739318847656e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:84 Reward:0.00024127960205078125
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:85 Reward:0.0006206035614013672
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:86 Reward:-0.0001201629638671875
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:87 Reward:0.0020869970321655273
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:88 Reward:-4.0531158447265625e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:89 Reward:-0.00019800662994384766
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:90 Reward:0.00017023086547851562
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:91 Reward:0.00015938282012939453
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:92 Reward:0.00013375282287597656
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:93 Reward:0.00010001659393310547
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:94 Reward:-7.092952728271484e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:95 Reward:-0.0014414787292480469
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:96 Reward:-0.007678985595703125
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:97 Reward:-0.011329293251037598
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:98 Reward:-0.00431513786315918
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:99 Reward:0.0015929937362670898
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:100 Reward:-0.010128140449523926
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:101 Reward:-0.004150986671447754
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:102 Reward:-0.00626981258392334
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:103 Reward:-0.0022202730178833008
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:104 Reward:-0.0063887834548950195
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:105 Reward:-0.0008198022842407227
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:106 Reward:0.0006749629974365234
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:107 Reward:-0.007933378219604492
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:108 Reward:0.0015197992324829102
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:109 Reward:-0.0006543397903442383
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:110 Reward:-0.05721259117126465
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:111 Reward:0.004029273986816406
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:112 Reward:0.00018739700317382812
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:113 Reward:2.5987625122070312e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:114 Reward:0.00047016143798828125
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:115 Reward:-0.0013239383697509766
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:116 Reward:-0.03462696075439453
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:117 Reward:0.00013720989227294922
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:118 Reward:0.00011146068572998047
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:119 Reward:-0.00024580955505371094
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:120 Reward:0.00014221668243408203
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:121 Reward:-0.00039768218994140625
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:122 Reward:4.5418739318847656e-05
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+mask:torch.Size([1, 1, 201]), x:torch.Size([1, 1, 201, 321])
+Step:123 Reward:0.0001251697540283203
+Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x7f8a090b50d0>
+Traceback (most recent call last):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1328, in __del__
+    self._shutdown_workers()
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1301, in _shutdown_workers
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 463, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 448, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 388, in train
+    re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 348, in train_one_epoch
+    ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train.py", line 207, in train_one_episode
+    action = self.actor(inp)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 214, in forward
+    out_4 = self.TSCB_3(out_3)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/actor.py", line 97, in forward
+    x_f = self.freq_conformer(x_f) + x_f
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 218, in forward
+    x = self.attn(x, mask=mask) + x
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 72, in forward
+    return self.fn(x, **kwargs)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/model/conformer.py", line 103, in forward
+    dots = einsum("b h i d, b h j d -> b h i j", q, k) * self.scale
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py", line 327, in einsum
+    return _VF.einsum(equation, operands)  # type: ignore[attr-defined]
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 197, in format_stack
+    return format_list(extract_stack(f, limit=limit))
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 211, in extract_stack
+    stack = StackSummary.extract(walk_stack(f), limit=limit)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 366, in extract
+    f.line
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/traceback.py", line 288, in line
+    self._line = linecache.getline(self.filename, self.lineno).strip()
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/linecache.py", line 30, in getline
+    lines = getlines(filename, module_globals)
+  File "/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/linecache.py", line 43, in getlines
+    return cache[filename][2]
+KeyboardInterrupt

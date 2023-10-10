@@ -212,6 +212,9 @@ class DDPGTrainer:
                 next_state = env.get_next_state(state=env.state, 
                                                 action=action, 
                                                 t=step)
+                
+                if next_state is None:
+                    continue
     
                 #Calculate the reward
                 reward = env.get_reward(env.state, next_state)

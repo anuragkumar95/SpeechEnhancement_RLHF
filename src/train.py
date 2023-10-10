@@ -199,7 +199,7 @@ class DDPGTrainer:
         torch.autograd.set_detect_anomaly(True)
         ACCUM_STEP = args.t_max
         for step in range(env.steps-1):
-            try:
+            #try:
                 #get the window input
                 inp = env.get_state_input(env.state, step)
 
@@ -291,9 +291,9 @@ class DDPGTrainer:
                     'y_t': y_t.mean().detach(),
                     #'train_PESQ':train_pesq
                 })
-            except Exception as e:
-                print("Exception:",e)
-                continue
+            #except Exception as e:
+            #    print("Exception:",e)
+            #   continue
 
         return rewards, actor_loss, critic_loss
     

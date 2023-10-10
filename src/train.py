@@ -90,9 +90,9 @@ class DDPGTrainer:
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
             
-            self.actor = DDP(self.actor, device_ids=[gpu_id])
+            self.actor = DDP(self.actor, device_ids=[gpu_id], find_unused_parameters=True)
             self.critic = DDP(self.critic, device_ids=[gpu_id])
-            self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
+            self.target_actor = DDP(self.target_actor, device_ids=[gpu_id], find_unused_parameters=True)
             self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
@@ -199,7 +199,7 @@ class DDPGTrainer:
         torch.autograd.set_detect_anomaly(True)
         ACCUM_STEP = args.t_max
         for step in range(env.steps-1):
-            #try:
+            try:
                 #get the window input
                 inp = env.get_state_input(env.state, step)
 
@@ -253,6 +253,7 @@ class DDPGTrainer:
                 a_action = self.actor(a_inp)
                 actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
                 print(actor_loss, critic_loss)
+                
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP
                 critic_loss = critic_loss / ACCUM_STEP
@@ -275,12 +276,12 @@ class DDPGTrainer:
                 
                 #update state
                 env.state = next_state
-                """
+                
                 clean = next_state['cl_audio'].detach().cpu().numpy()
                 est = next_state['est_audio'].detach().cpu().numpy()
                 p_mask, p_score = batch_pesq(clean, est)
                 train_pesq = (p_mask * p_score)
-                """
+                
                 print(f"Step:{step} Reward:{reward.mean()}")
                 wandb.log({
                     'ep_step':step,
@@ -289,11 +290,11 @@ class DDPGTrainer:
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),
                     'y_t': y_t.mean().detach(),
-                    #'train_PESQ':train_pesq
+                    'train_PESQ':train_pesq
                 })
-            #except Exception as e:
-            #    print("Exception:",e)
-            #   continue
+            except Exception as e:
+                print("Exception:",e)
+                continue
 
         return rewards, actor_loss, critic_loss
     

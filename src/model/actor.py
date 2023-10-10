@@ -186,7 +186,8 @@ class ComplexDecoder(nn.Module):
         #Predict mask for the middle frame of the input window
         #as we learn a distribution
         x_mu = self.mu(x.permute(0,1,3,2))
-        x_var = self.relu(self.var(x.permute(0,1,3,2)))
+        x_var = self.var(x.permute(0,1,3,2))
+        x_var = self.relu(x_var)
         return x_mu, x_var
 
 class TSCNet(nn.Module):

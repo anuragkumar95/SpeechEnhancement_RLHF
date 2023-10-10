@@ -44,15 +44,14 @@ class QNet(nn.Module):
         x1 = x['est_mag']
         x2 = x['clean_mag']
         
-        m_mask, _ = y
+        m_mask = y[0]
         m_mask = m_mask.permute(0, 1, 3, 2).squeeze(-1)
         mask = torch.ones(x1.shape)
         if self.gpu_id is not None:
             mask = mask.to(self.gpu_id)
-        print(f"mask:{m_mask.shape}, x:{x1.shape}")
         mask[:, :, :, t] = m_mask
         
         x1 = x1*mask
-        x = torch.cat([x1, x2], dim = 1)
+        xy = torch.cat([x1, x2], dim = 1)
         
-        return self.layers(x)
+        return self.layers(xy)

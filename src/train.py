@@ -253,8 +253,9 @@ class DDPGTrainer:
                 a_action = self.actor(a_inp)
                 actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
 
-                p_mask, p_score = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(), 
-                                             next_state['est_audio'].detach().cpu().numpy())
+                clean = next_state['cl_audio'].detach().cpu().numpy()
+                est = next_state['est_audio'].detach().cpu().numpy()
+                p_mask, p_score = batch_pesq(clean, est)
                 train_pesq = (p_mask * p_score)
 
                 print(f"Step:{step} Reward:{reward.mean()}")

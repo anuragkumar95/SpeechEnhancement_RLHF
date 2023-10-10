@@ -40,6 +40,8 @@ def args():
                         help="Training batchsize.")
     parser.add_argument("--t_max", type=int, required=False, default=4,
                         help="Backpropagate every t_max steps.")
+    parser.add_argument("--val_step", type=int, required=False, default=100,
+                        help="Run validation every val_step steps.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for gpu training.")
     parser.add_argument("--reward", type=int, help="Type of reward")
@@ -316,9 +318,9 @@ class DDPGTrainer:
                                             t=step)
             env.state = next_state
 
-        pesq = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
+        pesq, pesq_mask = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
                           env.state['est_audio'].detach().cpu().numpy())
-        return pesq
+        return (pesq*pesq_mask).mean()
     
     def train_one_epoch(self, epoch, rewards, args):
         """
@@ -353,8 +355,6 @@ class DDPGTrainer:
             critic_epoch_loss += critic_epoch_loss
             REWARD_MAP.update({step:np.mean(ep_rewards)})
             step = i
-            print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
-
             actor_epoch_loss = actor_epoch_loss / step
             critic_epoch_loss = critic_epoch_loss / step
 
@@ -372,9 +372,13 @@ class DDPGTrainer:
                     pesq += val_pesq_score
                     step = i
                 pesq /= step
+                wandb.log({"val_step":i,
+                           "val_pesq":pesq})
 
             wandb.log({"Step":step,
                        "Reward":np.mean(ep_rewards)})
+            print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
+
             
 
         return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, pesq

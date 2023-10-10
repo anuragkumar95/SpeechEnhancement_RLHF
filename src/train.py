@@ -199,7 +199,7 @@ class DDPGTrainer:
         torch.autograd.set_detect_anomaly(True)
         ACCUM_STEP = args.t_max
         for step in range(env.steps-1):
-            #try:
+            try:
                 #get the window input
                 inp = env.get_state_input(env.state, step)
 
@@ -212,9 +212,7 @@ class DDPGTrainer:
                 next_state = env.get_next_state(state=env.state, 
                                                 action=action, 
                                                 t=step)
-                if next_state is None:
-                    continue
-
+    
                 #Calculate the reward
                 reward = env.get_reward(env.state, next_state)
                 if len(rewards) >= 1:
@@ -290,9 +288,9 @@ class DDPGTrainer:
                 #update state
                 env.state = next_state
             
-            #except Exception as e:
-            #    print("Exception:",e)
-            #    continue
+            except Exception as e:
+                print("Exception:",e)
+                continue
 
         return rewards, actor_loss, critic_loss
     

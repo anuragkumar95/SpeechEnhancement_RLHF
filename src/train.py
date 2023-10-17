@@ -9,7 +9,7 @@ import os
 from data.dataset import load_data
 import torch.nn.functional as F
 import torch
-from utils import power_compress, power_uncompress, batch_pesq
+from utils import power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers
 import logging
 from torchinfo import summary
 import argparse
@@ -33,7 +33,7 @@ def args():
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False,
-                        help="Path to saved checkpoint for resuming training.")
+                        help="Path to saved cmgan checkpoint for resuming training.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
@@ -66,7 +66,7 @@ class DDPGTrainer:
     Class which defines Deep Deterministic Policy Gradient (DDPG)
     Performs Actor Critic training using DDPG method.
     """
-    def __init__(self, train_ds, test_ds, args, gpu_id: int):
+    def __init__(self, train_ds, test_ds, args, gpu_id, pretrain=False):
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
@@ -80,10 +80,22 @@ class DDPGTrainer:
                                    num_features=self.n_fft // 2 + 1, 
                                    win_len=args.win_len,
                                    gpu_id=gpu_id)
+        
+        if pretrain:
+            #Load checkpoint
+            cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
+            #Copy weights and freeze weights which are copied
+            keys, self.actor = copy_weights(cmgan_state_dict, self.actor)
+            self.actor = freeze_layers(self.actor, keys)
+            keys, self.actor = copy_weights(cmgan_state_dict, self.target_actor)
+            self.target_actor = freeze_layers(self.target_actor, keys)
+            #Free mem
+            del cmgan_state_dict
+
         self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
         self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
         
-        self.a_optimizer = torch.optim.AdamW(self.actor.parameters(), lr=args.init_lr)
+        self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(self.critic.parameters(), lr=2 * args.init_lr)
 
         if gpu_id is not None:
@@ -450,7 +462,8 @@ def main(rank: int, world_size: int, args):
                                     args.cut_len,
                                     gpu = False)
         
-    trainer = DDPGTrainer(train_ds, test_ds, args, rank)
+        
+    trainer = DDPGTrainer(train_ds, test_ds, args, rank, pretrain=True)
     trainer.train(args)
     destroy_process_group()
 

@@ -137,10 +137,8 @@ class MaskDecoder(nn.Module):
         if gpu_id is not None:
             self.N.loc = self.N.loc.to(gpu_id)
             self.N.scale = self.N.scale.to(gpu_id)
-        self.gpu_id = gpu_id
 
     def sample(self, mu, var):
-        #print(f"Device, mu:{mu.get_device()}, sigma:{sigma.get_device()}, sample:{self.N.sample(mu.shape).to(self.gpu_id).get_device()}")
         x = mu + torch.sqrt(var) * self.N.sample(mu.shape)
         return x.permute(0, 2, 1).unsqueeze(1)
 
@@ -172,7 +170,6 @@ class ComplexDecoder(nn.Module):
             self.N.loc = self.N.loc.to(gpu_id)
             self.N.scale = self.N.scale.to(gpu_id)
         self.relu = nn.Softplus()
-        self.gpu_id = gpu_id
 
     def sample(self, mu, var):
         x = mu + torch.sqrt(var) * self.N.sample(mu.shape)

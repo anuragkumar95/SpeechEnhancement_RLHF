@@ -105,10 +105,10 @@ class DDPGTrainer:
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
             
-            self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
-            self.critic = DDP(self.critic, device_ids=[gpu_id])
-            self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])#, find_unused_parameters=True)
-            self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
+            #self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
+            #self.critic = DDP(self.critic, device_ids=[gpu_id])
+            #self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])#, find_unused_parameters=True)
+            #self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
         wandb.init(project=args.exp)
@@ -428,6 +428,9 @@ class DDPGTrainer:
                             }
                 torch.save(save_dict, path)
                 #TODO:May need a LR scheduler as well
+
+class GANTrainer:
+    
 
     
 def ddp_setup(rank, world_size):

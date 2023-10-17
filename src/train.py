@@ -448,7 +448,7 @@ def ddp_setup(rank, world_size):
 
 
 def main(rank: int, world_size: int, args):
-    if args.gpu:
+    if args.parallel:
         ddp_setup(rank, world_size)
         if rank == 0:
             print(args)

@@ -43,7 +43,9 @@ def args():
     parser.add_argument("--val_step", type=int, required=False, default=100,
                         help="Run validation every val_step steps.")
     parser.add_argument("--gpu", action='store_true',
-                        help="Set this flag for gpu training.")
+                        help="Set this flag for single gpu training.")
+    parser.add_argument("--parallel", action='store_true',
+                        help="Set this flag for parallel gpu training.")
     parser.add_argument("--reward", type=int, help="Type of reward")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
@@ -105,10 +107,11 @@ class DDPGTrainer:
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
             
-            #self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
-            #self.critic = DDP(self.critic, device_ids=[gpu_id])
-            #self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])#, find_unused_parameters=True)
-            #self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
+            if args.parallel:
+                self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
+                self.critic = DDP(self.critic, device_ids=[gpu_id])
+                self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])#, find_unused_parameters=True)
+                self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
         wandb.init(project=args.exp)
@@ -484,7 +487,10 @@ if __name__ == "__main__":
 
     world_size = torch.cuda.device_count()
     print(f"World size:{world_size}")
-    if ARGS.gpu:
+    if ARGS.parallel:
         mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
     else:
-        main(None, world_size, ARGS)
+        if ARGS.gpu:
+            main(0, world_size, ARGS)
+        else:
+            main(None, world_size, ARGS)

@@ -299,10 +299,11 @@ class DDPGTrainer:
                 p_mask, p_score = batch_pesq(clean, est)
                 train_pesq = (p_mask * p_score)
                 
-                print(f"Step:{step} Reward:{reward.mean()}")
+                print(f"Step:{step} Reward:{reward.mean()}, PESQ:{train_pesq.mean()}")
+                R = reward.mean()
                 wandb.log({
                     'ep_step':step,
-                    'reward':rewards[-1],
+                    'reward':R,
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),
@@ -370,15 +371,13 @@ class DDPGTrainer:
             actor_epoch_loss += actor_epoch_loss
             critic_epoch_loss += critic_epoch_loss
             REWARD_MAP.update({step:np.mean(ep_rewards)})
-            step = i
-            actor_epoch_loss = actor_epoch_loss / step
-            critic_epoch_loss = critic_epoch_loss / step
+            step = i+1
 
-            if (i+1)%VAL_STEP == 0:
+            if step % VAL_STEP == 0:
                 self.actor.eval()
                 self.critic.eval()
                 pesq = 0
-                step = 0
+                v_step = 0
                 for i, batch in enumerate(self.test_ds):
                     #Preprocess batch
                     batch = self.preprocess_batch(batch)
@@ -386,14 +385,15 @@ class DDPGTrainer:
                     #Run validation episode
                     val_pesq_score = self.run_validation(env)
                     pesq += val_pesq_score
-                    step = i
-                pesq /= step
-                wandb.log({"val_step":i,
-                           "val_pesq":pesq})
+                    v_step += 1
+                pesq /= v_step
+                wandb.log({"val_step":v_step,
+                        "val_pesq":pesq})
 
             wandb.log({"Step":step,
                        "Reward":np.mean(ep_rewards)})
             print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
+        print(f"Epoch:{epoch}, ActorLoss:{actor_epoch_loss/step}, CriticLoss:{critic_epoch_loss/step}")
 
             
 

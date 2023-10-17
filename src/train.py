@@ -32,7 +32,7 @@ def args():
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
-    parser.add_argument("-pt", "--ckpt", type=str, required=False,
+    parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
@@ -83,6 +83,7 @@ class DDPGTrainer:
         
         if pretrain:
             #Load checkpoint
+            print(f"Loading checkpoint saved at {args.ckpt}...")
             cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
             #Copy weights and freeze weights which are copied
             keys, self.actor = copy_weights(cmgan_state_dict, self.actor)
@@ -461,9 +462,13 @@ def main(rank: int, world_size: int, args):
                                     1, 
                                     args.cut_len,
                                     gpu = False)
-        
-        
-    trainer = DDPGTrainer(train_ds, test_ds, args, rank, pretrain=True)
+    
+    pretrain=False
+    if args.ckpt is not None:
+        pretrain=True
+
+    trainer = DDPGTrainer(train_ds, test_ds, args, rank, pretrain=pretrain)
+    
     trainer.train(args)
     destroy_process_group()
 

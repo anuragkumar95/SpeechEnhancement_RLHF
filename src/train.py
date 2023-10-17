@@ -430,7 +430,7 @@ class DDPGTrainer:
                 #TODO:May need a LR scheduler as well
 
 class GANTrainer:
-    
+    pass
 
     
 def ddp_setup(rank, world_size):

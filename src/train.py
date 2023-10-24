@@ -129,7 +129,7 @@ class DDPGTrainer:
             clean_real : (b * 1 * f * t) real part of clean spectrogram
             clean_imag : (b * 1 * f * t) imag part of clean spectrogram
             clean_mag  : (b * 1 * f * t) mag of clean spectrogram
-        s"""
+        """
         # Normalization
         c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
         noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)
@@ -262,6 +262,8 @@ class DDPGTrainer:
                 value_next = self.target_critic(experience['next'], next_action, next_t)
                 y_t = experience['reward'] + args.gamma * value_next
 
+                mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, step, :], experience['next']['est_mag'][:, :, step, :])
+
                 #critic loss
                 critic_loss = F.mse_loss(y_t, value_curr)
                 critic_loss = critic_loss.mean()
@@ -269,7 +271,7 @@ class DDPGTrainer:
                 #actor loss
                 a_inp = env.get_state_input(experience['curr'], experience['t'])
                 a_action = self.actor(a_inp)
-                actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean()
+                actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() + mag_loss.mean()
                 
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP

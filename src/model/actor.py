@@ -140,6 +140,7 @@ class MaskDecoder(nn.Module):
         self.gpu_id = gpu_id
 
     def sample(self, mu, var):
+        var = torch.exp(0.5 * var)
         x = mu + torch.sqrt(var) * self.N.sample(mu.shape).to(self.gpu_id)
         x = self.prelu_out(x)
         return x.permute(0, 2, 1).unsqueeze(1)
@@ -175,6 +176,7 @@ class ComplexDecoder(nn.Module):
         self.gpu_id = gpu_id
 
     def sample(self, mu, var):
+        var = torch.exp(0.5 * var)
         x = mu + torch.sqrt(var) * self.N.sample(mu.shape).to(self.gpu_id)
         return x
 

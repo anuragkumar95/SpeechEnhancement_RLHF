@@ -264,6 +264,7 @@ class DDPGTrainer:
 
                 #Loss to bias actor
                 mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, experience['t'], :], experience['next']['est_mag'][:, :, experience['t'], :])
+                print(f"Mag_loss:{mag_loss}")
 
                 #critic loss
                 critic_loss = F.mse_loss(y_t, value_curr)

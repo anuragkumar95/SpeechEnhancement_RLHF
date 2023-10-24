@@ -310,6 +310,7 @@ class DDPGTrainer:
                     'reward':R,
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
+                    'mag_loss':mag_loss.mean(),
                     'current': value_curr.mean().detach(),
                     'y_t': y_t.mean().detach(),
                     'train_PESQ':train_pesq.mean()

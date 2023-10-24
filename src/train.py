@@ -262,7 +262,8 @@ class DDPGTrainer:
                 value_next = self.target_critic(experience['next'], next_action, next_t)
                 y_t = experience['reward'] + args.gamma * value_next
 
-                mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, step, :], experience['next']['est_mag'][:, :, step, :])
+                #Loss to bias actor
+                mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, experience['t'], :], experience['next']['est_mag'][:, :, experience['t'], :])
 
                 #critic loss
                 critic_loss = F.mse_loss(y_t, value_curr)

@@ -16,6 +16,7 @@ import argparse
 import wandb
 import psutil
 import numpy as np
+import traceback
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -310,13 +311,12 @@ class DDPGTrainer:
                     'reward':R,
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
-                    'mag_loss':mag_loss.mean(),
                     'current': value_curr.mean().detach(),
                     'y_t': y_t.mean().detach(),
                     'train_PESQ':train_pesq.mean()
                 })
             except Exception as e:
-                print("Exception:",e)
+                print(traceback.format_exc())
                 continue
 
         return rewards, actor_loss, critic_loss
@@ -423,22 +423,20 @@ class DDPGTrainer:
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq
                 #TODO:Logic for savecheckpoint
-                checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
-                path = os.path.join(args.output, checkpoint_prefix)
-                save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                             'critic_state_dict':self.critic.state_dict(),
-                             'target_actor_state_dict':self.target_actor.state_dict(),
-                             'target_critic_state_dict':self.target_critic.state_dict(),
-                             'actor_optim_state_dict':self.a_optimizer.state_dict(),
-                             'critic_optim_state_dict':self.c_optimizer.state_dict(),
-                             #'scheduler_state_dict':scheduler.state_dict(),
-                             #'lr':scheduler.get_last_lr()
-                            }
+                if self.gpu_id == 0:
+                    checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
+                    path = os.path.join(args.output, checkpoint_prefix)
+                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                                'critic_state_dict':self.critic.state_dict(),
+                                'target_actor_state_dict':self.target_actor.state_dict(),
+                                'target_critic_state_dict':self.target_critic.state_dict(),
+                                'actor_optim_state_dict':self.a_optimizer.state_dict(),
+                                'critic_optim_state_dict':self.c_optimizer.state_dict(),
+                                #'scheduler_state_dict':scheduler.state_dict(),
+                                #'lr':scheduler.get_last_lr()
+                                }
                 torch.save(save_dict, path)
                 #TODO:May need a LR scheduler as well
-
-class GANTrainer:
-    pass
 
     
 def ddp_setup(rank, world_size):

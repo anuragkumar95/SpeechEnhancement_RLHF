@@ -48,6 +48,7 @@ class QNet(nn.Module):
         complex_out = y[1]
         
         noisy_phase = torch.angle(torch.complex(x_real, x_imag)).unsqueeze(1)
+        print(f"x_real:{x_real.shape}, x_imag:{x_imag.shape}")
         print(f"Mag:{mag.shape}, mask:{mask.shape}, compl:{complex_out.shape}, phase:{noisy_phase.shape}")
         out_mag = mask * mag[:, :, t, :].unsqueeze(2)
         mag_real = (out_mag * torch.cos(noisy_phase[:, :, t, :].unsqueeze(2))).permute(0, 1, 3, 2)

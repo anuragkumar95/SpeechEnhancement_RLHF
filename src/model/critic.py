@@ -44,23 +44,23 @@ class QNet(nn.Module):
         x_real = x['est_real']
         x_imag = x['est_imag']
         mag = x['est_mag']
-        mask = y[0]
+        mask = y[0].permute(0, 1, 3, 2)
         complex_out = y[1]
         
-        noisy_phase = torch.angle(torch.complex(x_real, x_imag)).unsqueeze(1)
+        noisy_phase = torch.angle(torch.complex(x_real, x_imag))
         print(f"x_real:{x_real.shape}, x_imag:{x_imag.shape}")
         print(f"Mag:{mag.shape}, mask:{mask.shape}, compl:{complex_out.shape}, phase:{noisy_phase.shape}")
-        out_mag = mask * mag[:, :, t, :].unsqueeze(2)
-        mag_real = (out_mag * torch.cos(noisy_phase[:, :, t, :].unsqueeze(2))).permute(0, 1, 3, 2)
-        mag_imag = (out_mag * torch.sin(noisy_phase[:, :, t, :].unsqueeze(2))).permute(0, 1, 3, 2)
+        out_mag = mask * mag[:, :, :, t].unsqueeze(-1)
+        mag_real = (out_mag * torch.cos(noisy_phase[:, :, :, t].unsqueeze(-1)))#.permute(0, 1, 3, 2)
+        mag_imag = (out_mag * torch.sin(noisy_phase[:, :, :, t].unsqueeze(-1)))#.permute(0, 1, 3, 2)
 
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
         est_spec_uncompress = power_uncompress(final_real, final_imag).squeeze(1)
         final_mag = torch.sqrt(est_spec_uncompress[:, 0, :, :]**2 + est_spec_uncompress[:, 1, :, :]**2)
-        
-        mag[:, :, t, :] = final_mag.squeeze(2)
+        print(f"Final:{final_mag.shape}")
+        mag[:, :, :, t] = final_mag.squeeze(-1)
         clean_mag = x['clean_mag']
         
         xy = torch.cat([mag, clean_mag], dim = 1)

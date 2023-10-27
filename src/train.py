@@ -9,7 +9,7 @@ import os
 from data.dataset import load_data
 import torch.nn.functional as F
 import torch
-from utils import power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers
+from utils import power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
 import logging
 from torchinfo import summary
 import argparse
@@ -225,7 +225,7 @@ class DDPGTrainer:
                 #Forward pass through actor to get the action(mask)
                 action = self.actor(inp)
                 #Add noise to the action
-                #action = env.noise.get_action(action)
+                action = env.noise.get_action(action)
 
                 #Apply mask to get the next state
                 next_state = env.get_next_state(state=env.state, 
@@ -313,7 +313,7 @@ class DDPGTrainer:
                     'critic_loss':critic_loss,
                     'current': value_curr.mean().detach(),
                     'y_t': y_t.mean().detach(),
-                    'train_PESQ':train_pesq.mean()
+                    'train_PESQ':original_pesq(train_pesq.mean())
                 })
             #except Exception as e:
             #    print(traceback.format_exc())
@@ -393,7 +393,7 @@ class DDPGTrainer:
                     v_step += 1
                 pesq /= v_step
                 wandb.log({"val_step":v_step,
-                        "val_pesq":pesq})
+                           "val_pesq":original_pesq(pesq)})
 
             wandb.log({"Step":step,
                        "Reward":np.mean(ep_rewards)})

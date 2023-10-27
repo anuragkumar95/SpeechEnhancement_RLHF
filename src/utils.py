@@ -107,3 +107,6 @@ def freeze_layers(model, layers):
             if ((layer == name) or (layer in name)) and param.requires_grad:
                 param.requires_grad = False
     return model 
+
+def original_pesq(pesq):
+    return (pesq * 3.5) + 1

@@ -51,8 +51,9 @@ class QNet(nn.Module):
         print(f"x_real:{x_real.shape}, x_imag:{x_imag.shape}")
         print(f"Mag:{mag.shape}, mask:{mask.shape}, compl:{complex_out.shape}, phase:{noisy_phase.shape}")
         out_mag = mask * mag[:, :, :, t].unsqueeze(-1)
-        mag_real = (out_mag * torch.cos(noisy_phase[:, :, :, t].unsqueeze(-1)))#.permute(0, 1, 3, 2)
-        mag_imag = (out_mag * torch.sin(noisy_phase[:, :, :, t].unsqueeze(-1)))#.permute(0, 1, 3, 2)
+
+        mag_real = out_mag * torch.cos(noisy_phase[:, :, :, t].unsqueeze(-1))#.permute(0, 1, 3, 2)
+        mag_imag = out_mag * torch.sin(noisy_phase[:, :, :, t].unsqueeze(-1))#.permute(0, 1, 3, 2)
 
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)

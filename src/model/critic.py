@@ -62,7 +62,7 @@ class QNet(nn.Module):
         print(f"uncompressed:{est_spec_uncompress.shape}")
         final_mag = torch.sqrt(est_spec_uncompress[:, 0, :, :]**2 + est_spec_uncompress[:, 1, :, :]**2)
         print(f"Final:{final_mag.shape}")
-        mag[:, :, :, t] = final_mag.squeeze(-1)
+        mag[:, :, :, t] = final_mag.squeeze(-1).unsqueeze(1)
         clean_mag = x['clean_mag']
         
         xy = torch.cat([mag, clean_mag], dim = 1)

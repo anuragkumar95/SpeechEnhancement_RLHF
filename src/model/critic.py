@@ -58,6 +58,7 @@ class QNet(nn.Module):
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
         print(f"final_real:{final_real.shape}")
         est_spec_uncompress = power_uncompress(final_real, final_imag).squeeze(1)
+        print(f"uncompressed:{est_spec_uncompress.shape}")
         final_mag = torch.sqrt(est_spec_uncompress[:, 0, :, :]**2 + est_spec_uncompress[:, 1, :, :]**2)
         print(f"Final:{final_mag.shape}")
         mag[:, :, :, t] = final_mag.squeeze(-1)

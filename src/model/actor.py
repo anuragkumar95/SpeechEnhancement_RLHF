@@ -129,19 +129,14 @@ class MaskDecoder(nn.Module):
         self.prelu = nn.PReLU(out_channel)
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
-        self.relu = nn.Softplus()
-        #Predict mask for the middle frame of window
-        self.mu = nn.Linear(signal_window, 1)
-        self.var = nn.Linear(signal_window, 1)
-        self.N = torch.distributions.Normal(0., 1.)
-        if gpu_id is not None:
-            self.N.loc = self.N.loc.to(gpu_id)
-            self.N.scale = self.N.scale.to(gpu_id)
+        self.out_mu = nn.Linear(signal_window, 1)
+        self.out_var = nn.Linear(signal_window, 1)
+        self.N = torch.distributions.Normal(0, 1)
         self.gpu_id = gpu_id
 
-    def sample(self, mu, var):
-        var = torch.exp(0.5 * var)
-        x = mu + torch.sqrt(var) * self.N.sample(mu.shape).to(self.gpu_id)
+    def sample(self, mu, logvar):
+        sigma = torch.exp(0.5 * logvar)
+        x = mu + sigma * self.N.sample(mu.shape).to(self.gpu_id)
         x = self.prelu_out(x)
         return x.permute(0, 2, 1).unsqueeze(1)
 
@@ -151,11 +146,8 @@ class MaskDecoder(nn.Module):
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
         x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-        #Predict mask for the middle frame of the input window
-        #as we learn a distribution
-        x_mu = self.mu(x)
-        #x_mu = self.prelu_out(x_mu)
-        x_var = self.relu(self.var(x))
+        x_mu = self.out_mu(x)
+        x_var = self.out_var(x)
         return x_mu, x_var
 
 class ComplexDecoder(nn.Module):
@@ -166,18 +158,14 @@ class ComplexDecoder(nn.Module):
         self.prelu = nn.PReLU(num_channel)
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
         self.conv = nn.Conv2d(num_channel, 2, (1, 2))
-        self.mu = nn.Linear(signal_window, 1)
-        self.var = nn.Linear(signal_window, 1)
-        self.N = torch.distributions.Normal(0., 1.)
-        if gpu_id is not None:
-            self.N.loc = self.N.loc.to(gpu_id)
-            self.N.scale = self.N.scale.to(gpu_id)
-        self.relu = nn.Softplus()
+        self.out_mu = nn.Linear(signal_window, 1)
+        self.out_var = nn.Linear(signal_window, 1)
+        self.N = torch.distributions.Normal(0, 1)
         self.gpu_id = gpu_id
 
-    def sample(self, mu, var):
-        var = torch.exp(0.5 * var)
-        x = mu + torch.sqrt(var) * self.N.sample(mu.shape).to(self.gpu_id)
+    def sample(self, mu, logvar):
+        sigma = torch.exp(0.5 * logvar)
+        x = mu + sigma * self.N.sample(mu.shape).to(self.gpu_id)
         return x
 
     def forward(self, x):
@@ -185,10 +173,8 @@ class ComplexDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
         x = self.conv(x)
-        #Predict mask for the middle frame of the input window
-        #as we learn a distribution
-        x_mu = self.mu(x.permute(0,1,3,2))
-        x_var = self.relu(self.var(x.permute(0,1,3,2)))
+        x_mu = self.out_mu(x.permute(0,1,3,2))
+        x_var = self.out_var(x.permute(0,1,3,2))
         return x_mu, x_var
 
 class TSCNet(nn.Module):
@@ -216,11 +202,13 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        mask_mu, mask_sigma = self.mask_decoder(out_5)
-        complex_mu, complex_sigma = self.complex_decoder(out_5)
+        #Sample mask from the output distribution k times and take the average.
+        mask_mu, mask_var = self.mask_decoder(out_5)
+        mask = self.mask_decoder.sample(mask_mu, mask_var)
 
-        mask = self.mask_decoder.sample(mask_mu, mask_sigma)
-        complex_out = self.complex_decoder.sample(complex_mu, complex_sigma)
+        complex_mu, complex_var = self.complex_decoder(out_5)
+        complex_out = self.complex_decoder.sample(complex_mu, complex_var)
+        
         return (mask, complex_out)
         
     

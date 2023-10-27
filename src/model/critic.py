@@ -41,17 +41,25 @@ class QNet(nn.Module):
         self.gpu_id = gpu_id
 
     def forward(self, x, y, t):
-        x1 = x['est_mag']
-        x2 = x['clean_mag']
+        x_real = x['est_real']
+        x_imag = x['est_imag']
+        mag = x['est_mag']
+        mask = y[0]
+        complex_out = y[1]
         
-        m_mask = y[0]
-        m_mask = m_mask.permute(0, 1, 3, 2).squeeze(-1)
-        mask = torch.ones(x1.shape)
-        if self.gpu_id is not None:
-            mask = mask.to(self.gpu_id)
-        mask[:, :, :, t] = m_mask
+        noisy_phase = torch.angle(torch.complex(x_real, x_imag)).unsqueeze(1)
+
+        out_mag = mask * mag[:, :, t, :].unsqueeze(2)
+        mag_real = (out_mag * torch.cos(noisy_phase[:, :, t, :].unsqueeze(2))).permute(0, 1, 3, 2)
+        mag_imag = (out_mag * torch.sin(noisy_phase[:, :, t, :].unsqueeze(2))).permute(0, 1, 3, 2)
+
+        final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
+        final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
+
+        final_mag = torch.sqrt(final_real**2 + final_imag**2)
+
+        mag[:, :, t, :] = final_mag.squeeze(2)
+        clean_mag = x['clean_mag']
         
-        x1 = x1*mask
-        xy = torch.cat([x1, x2], dim = 1)
-        
+        xy = torch.cat([mag, clean_mag], dim = 1)
         return self.layers(xy)

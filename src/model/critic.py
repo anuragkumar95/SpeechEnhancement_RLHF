@@ -3,7 +3,7 @@ from joblib import Parallel, delayed
 from pesq import pesq
 import torch
 import torch.nn as nn
-from utils import LearnableSigmoid
+from utils import LearnableSigmoid, power_uncompress
 
 
 class QNet(nn.Module):
@@ -56,8 +56,9 @@ class QNet(nn.Module):
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
-        final_mag = torch.sqrt(final_real**2 + final_imag**2)
-
+        est_spec_uncompress = power_uncompress(final_real, final_imag).squeeze(1)
+        final_mag = torch.sqrt(est_spec_uncompress[:, 0, :, :]**2 + est_spec_uncompress[:, 1, :, :]**2)
+        
         mag[:, :, t, :] = final_mag.squeeze(2)
         clean_mag = x['clean_mag']
         

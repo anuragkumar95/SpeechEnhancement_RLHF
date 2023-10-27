@@ -263,8 +263,8 @@ class DDPGTrainer:
                 y_t = experience['reward'] + args.gamma * value_next
 
                 #Loss to bias actor
-                mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, experience['t'], :], experience['next']['est_mag'][:, :, experience['t'], :])
-                print(f"Mag_loss:{mag_loss}")
+                #mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, experience['t'], :], experience['next']['est_mag'][:, :, experience['t'], :])
+                #print(f"Mag_loss:{mag_loss}")
 
                 #critic loss
                 critic_loss = F.mse_loss(y_t, value_curr)
@@ -273,7 +273,7 @@ class DDPGTrainer:
                 #actor loss
                 a_inp = env.get_state_input(experience['curr'], experience['t'])
                 a_action = self.actor(a_inp)
-                actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() + mag_loss.mean()
+                actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() #+ mag_loss.mean()
                 
                 #Update networks
                 actor_loss = actor_loss / ACCUM_STEP

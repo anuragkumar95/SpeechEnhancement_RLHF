@@ -244,10 +244,10 @@ class DDPGTrainer:
                 
                 #Store the experience in replay_buffer
                 #TODO:Make sure buffer size <= max_size. 
-                env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
-                                    action=(action[0].detach().cpu().numpy(), action[1].detach().cpu()), 
-                                    reward=reward.detach().cpu().numpy(), 
-                                    next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()},
+                env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
+                                    action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
+                                    reward=reward.detach().clone().cpu().numpy(), 
+                                    next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()},
                                     t=step)
                 
                 

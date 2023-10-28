@@ -351,12 +351,12 @@ class DDPGTrainer:
         One epoch is defined as running one episode of training
         for all batches in the dataset.
         """
-        REWARD_MAP={}
+        REWARD_MAP=[]
         actor_epoch_loss = 0
         critic_epoch_loss = 0
         step = 0
         env = SpeechEnhancementAgent(window=args.win_len // 2, 
-                                     buffer_size=1000,
+                                     buffer_size=250,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,
@@ -376,7 +376,7 @@ class DDPGTrainer:
             #Collect reward and losses
             actor_epoch_loss += actor_epoch_loss
             critic_epoch_loss += critic_epoch_loss
-            REWARD_MAP.update({step:np.mean(ep_rewards)})
+            REWARD_MAP.append(np.mean(ep_rewards))
             step = i+1
 
             if step % VAL_STEP == 0:
@@ -418,7 +418,7 @@ class DDPGTrainer:
                        "Actor_loss":epoch_actor_loss,
                        "Critic_loss":epoch_critic_loss,
                        "PESQ":epoch_pesq,
-                       "reward":np.mean(re_map.values())})
+                       "reward":np.mean(re_map)})
             
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq

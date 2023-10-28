@@ -307,7 +307,7 @@ class DDPGTrainer:
 
                 wandb.log({
                     'episode_step':step,
-                    'train_pesq':train_pesq,
+                    'train_pesq':original_pesq(train_pesq).mean(),
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
                     'y_t':y_t,

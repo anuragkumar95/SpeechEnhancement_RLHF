@@ -238,10 +238,10 @@ class DDPGTrainer:
     
                 #Calculate the reward
                 reward = env.get_reward(env.state, next_state)
-                if len(rewards) >= 1:
-                    rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
-                else:
-                    rewards.append(reward.mean().detach().cpu().numpy())
+                #if len(rewards) >= 1:
+                #    rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
+                #else:
+                rewards.append(reward.mean().detach().cpu().numpy())
                 
                 #Store the experience in replay_buffer
                 #TODO:Make sure buffer size <= max_size. 
@@ -311,7 +311,8 @@ class DDPGTrainer:
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
                     'y_t':y_t,
-                    'current':value_curr
+                    'current':value_curr,
+                    'reward':reward.mean()
                 })
                 
                 
@@ -395,8 +396,8 @@ class DDPGTrainer:
                 wandb.log({"val_step":v_step,
                            "val_pesq":original_pesq(pesq)})
 
-            wandb.log({"Step":step,
-                       "Reward":np.mean(ep_rewards)})
+            wandb.log({"episode":step,
+                       "mean_episode_reward":np.mean(ep_rewards)})
             print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
         print(f"Epoch:{epoch}, ActorLoss:{actor_epoch_loss/step}, CriticLoss:{critic_epoch_loss/step}")
 

@@ -310,8 +310,8 @@ class DDPGTrainer:
                     'train_pesq':original_pesq(train_pesq).mean(),
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
-                    'y_t':y_t,
-                    'current':value_curr,
+                    'y_t':y_t.mean(),
+                    'current':value_curr.mean(),
                     'reward':reward.mean()
                 })
                 

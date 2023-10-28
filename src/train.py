@@ -410,10 +410,9 @@ class DDPGTrainer:
         Run epochs, collect validation results and save checkpoints. 
         """
         best_pesq = -1
-        rewards = []
         print("Start training...")
         for epoch in range(args.epochs):
-            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, rewards, args)
+            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, args)
             #TODO:Log these in wandb
             wandb.log({"Epoch":epoch,
                        "Actor_loss":epoch_actor_loss,

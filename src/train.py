@@ -200,7 +200,7 @@ class DDPGTrainer:
         
         return ret_val
     
-    def train_one_episode(self, env, rewards, args):
+    def train_one_episode(self, env, args):
         """
         Runs an episode which takes input a batch and predicts masks
         sequentially over the time dimension
@@ -215,6 +215,7 @@ class DDPGTrainer:
             rewards : global ist to store cummulative reward
             args    : global args 
         """
+        rewards = []
         torch.autograd.set_detect_anomaly(True)
         ACCUM_STEP = args.t_max
         for step in range(env.steps-1):
@@ -303,18 +304,17 @@ class DDPGTrainer:
                 est = next_state['est_audio'].detach().cpu().numpy()
                 p_mask, p_score = batch_pesq(clean, est)
                 train_pesq = (p_mask * p_score)
-                
-                print(f"Step:{step} Reward:{reward.mean()}, PESQ:{train_pesq.mean()}")
-                R = reward.mean()
+
                 wandb.log({
-                    'ep_step':step,
-                    'reward':R,
+                    'episode_step':step,
+                    'train_pesq':train_pesq,
                     'actor_loss':actor_loss,
                     'critic_loss':critic_loss,
-                    'current': value_curr.mean().detach(),
-                    'y_t': y_t.mean().detach(),
-                    'train_PESQ':original_pesq(train_pesq.mean())
+                    'y_t':y_t,
+                    'current':value_curr
                 })
+                
+                
             #except Exception as e:
             #    print(traceback.format_exc())
             #    continue
@@ -344,7 +344,7 @@ class DDPGTrainer:
                           env.state['est_audio'].detach().cpu().numpy())
         return (pesq*pesq_mask).mean()
     
-    def train_one_epoch(self, epoch, rewards, args):
+    def train_one_epoch(self, epoch, args):
         """
         Wrapper function to run one epoch of DDPG.
         One epoch is defined as running one episode of training
@@ -370,7 +370,7 @@ class DDPGTrainer:
             batch = self.preprocess_batch(batch)
             #Run episode
             env.set_batch(batch)
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, rewards, args)
+            ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, args)
             
             #Collect reward and losses
             actor_epoch_loss += actor_epoch_loss
@@ -418,7 +418,7 @@ class DDPGTrainer:
                        "Actor_loss":epoch_actor_loss,
                        "Critic_loss":epoch_critic_loss,
                        "PESQ":epoch_pesq,
-                       "reward":re_map})
+                       "reward":np.mean(re_map.values())})
             
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq

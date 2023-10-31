@@ -8,7 +8,34 @@ import numpy as np
 from utils import batch_pesq, power_uncompress
 from collections import deque
 import torch.nn.functional as F
+import gym
+from gym import Env, spaces
 
+
+class GymSpeechEnhancementEnv(Env):
+    def __init__(self, spec_shape, mask_shape, low, high, win_len, n_fft=400, hop=100):
+        super().__init__()
+        self.state_shape = spec_shape
+        self.observation_space = spaces.Box(low=low, 
+                                            high=high,
+                                            shape=self.state_shape)
+        
+        self.action_space = spaces.Box(low=low, 
+                                       high=high,
+                                       shape=mask_shape)
+        
+        self.agent = SpeechEnhancementAgent(window=win_len // 2, 
+                                            buffer_size=250,
+                                            n_fft=n_fft,
+                                            hop=hop)
+
+        pass
+
+    def step(self, action):
+        state = self.agent.get_next_state(self, state, action, t)
+
+    def reset(self):
+        pass
 
 class SpeechEnhancementAgent:
     def __init__(self, window, buffer_size, n_fft, hop, args, gpu_id=None):

@@ -269,8 +269,8 @@ class replay_buffer:
 
         ACTION = (torch.stack(ACTION[0]), torch.stack(ACTION[1]))
         REWARD = torch.stack(REWARD)
-        CURR = {k:torch.stack(v) for k, v in CURR.items()}
-        NEXT = {k:torch.stack(v) for k, v in NEXT.items()}
+        CURR = {k:torch.stack(v).squeeze(1) for k, v in CURR.items()}
+        NEXT = {k:torch.stack(v).squeeze(1) for k, v in NEXT.items()}
         T = np.array(T)
 
         return {'curr':CURR, 

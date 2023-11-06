@@ -8,10 +8,10 @@ import numpy as np
 from utils import batch_pesq, power_uncompress
 from collections import deque
 import torch.nn.functional as F
-import gym
-from gym import Env, spaces
+#import gym
+#from gym import Env, spaces
 
-
+"""
 class GymSpeechEnhancementEnv(Env):
     def __init__(self, spec_shape, mask_shape, low, high, win_len, n_fft=400, hop=100):
         super().__init__()
@@ -36,7 +36,7 @@ class GymSpeechEnhancementEnv(Env):
 
     def reset(self):
         pass
-
+"""
 class SpeechEnhancementAgent:
     def __init__(self, window, buffer_size, n_fft, hop, args, gpu_id=None):
         """
@@ -236,25 +236,47 @@ class replay_buffer:
                       't':t}
         self.buffer.append(experience)
 
-    def sample(self):
-        idx = np.random.choice(len(self.buffer), 1)[0]
-        if self.gpu_id is None:
-            retval = {'curr':{k:torch.FloatTensor(v) for k, v in self.buffer[idx]['curr'].items()},
-                      'next':{k:torch.FloatTensor(v) for k, v in self.buffer[idx]['next'].items()},
-                      'action':(torch.FloatTensor(self.buffer[idx]['action'][0]),
-                                torch.FloatTensor(self.buffer[idx]['action'][1])),
-                      'reward':torch.FloatTensor(self.buffer[idx]['reward']),
-                      't':self.buffer[idx]['t']
-                     }
-        else:
-            retval = {'curr':{k:torch.FloatTensor(v).to(self.gpu_id) for k, v in self.buffer[idx]['curr'].items()},
-                      'next':{k:torch.FloatTensor(v).to(self.gpu_id) for k, v in self.buffer[idx]['next'].items()},
-                      'action':(torch.FloatTensor(self.buffer[idx]['action'][0]).to(self.gpu_id),
-                                torch.FloatTensor(self.buffer[idx]['action'][1]).to(self.gpu_id)),
-                      'reward':torch.FloatTensor(self.buffer[idx]['reward']).to(self.gpu_id),
-                      't':self.buffer[idx]['t']
-                     }
-        return retval
+    def sample(self, batch_size):
+        CURR = {}
+        NEXT = {}
+        ACTION = []
+        REWARD = []
+        T = []
+        for _ in range(batch_size):
+            idx = np.random.choice(len(self.buffer), 1)[0]
+            
+            for k, v in self.buffer[idx]['curr'].items():
+                if k not in CURR:
+                    CURR[k] = []
+                v = torch.FloatTensor(v)
+                CURR[k].append(v)
+            
+            for k, v in self.buffer[idx]['next'].items():
+                if k not in NEXT:
+                    NEXT[k] = []
+                v = torch.FloatTensor(v)
+                NEXT[k].append(v)
+
+            r = torch.FloatTensor(self.buffer[idx]['reward'])
+            REWARD.append(r)
+
+            t = self.buffer[idx]['t']
+            T.append(t)
+
+            action = (torch.FloatTensor(self.buffer[idx]['action'][0]), torch.FloatTensor(self.buffer[idx]['action'][1]))
+            ACTION.append(action)
+
+        ACTION = torch.stack(ACTION)
+        REWARD = torch.stack(REWARD)
+        CURR = {k:torch.stack(v) for k, v in CURR.items()}
+        NEXT = {k:torch.stack(v) for k, v in NEXT.items()}
+
+        
+        return {'curr':CURR, 
+                'next':NEXT, 
+                'action':ACTION, 
+                'reward':REWARD, 
+                't':T}
 
     def __len__(self):
         return len(self.buffer)

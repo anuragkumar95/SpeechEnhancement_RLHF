@@ -217,108 +217,89 @@ class DDPGTrainer:
         """
         rewards = []
         torch.autograd.set_detect_anomaly(True)
-        ACCUM_STEP = args.t_max
+      
         for step in range(env.steps-1):
-            #try:
-                #get the window input
-                inp = env.get_state_input(env.state, step)
+            #get the window input
+            inp = env.get_state_input(env.state, step)
 
-                #Forward pass through actor to get the action(mask)
-                action = self.actor(inp)
-                #Add noise to the action
-                action = env.noise.get_action(action)
+            #Forward pass through actor to get the action(mask)
+            action = self.actor(inp)
+            #Add noise to the action
+            action = env.noise.get_action(action)
 
-                #Apply mask to get the next state
-                next_state = env.get_next_state(state=env.state, 
-                                                action=action, 
-                                                t=step)
-                
-                if next_state is None:
-                    continue
-    
-                #Calculate the reward
-                reward = env.get_reward(env.state, next_state)
-                #if len(rewards) >= 1:
-                #    rewards.append(rewards[-1] + reward.mean().detach().cpu().numpy())
-                #else:
-                rewards.append(reward.mean().detach().cpu().numpy())
-                
-                #Store the experience in replay_buffer
-                #TODO:Make sure buffer size <= max_size. 
-                env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
-                                    action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
-                                    reward=reward.detach().clone().cpu().numpy(), 
-                                    next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()},
-                                    t=step)
-                
-                
-                #sample experience from buffer
-                experience = env.exp_buffer.sample()
+            #Apply mask to get the next state
+            next_state = env.get_next_state(state=env.state, 
+                                            action=action, 
+                                            t=step)
+            
+            if next_state is None:
+                continue
 
-                next_t = experience['t'] + 1
-                next_inp = env.get_state_input(experience['next'], next_t)
-                next_action = self.target_actor(next_inp)
-                
-                #Set TD target
-                value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
-                value_next = self.target_critic(experience['next'], next_action, next_t)
-                y_t = experience['reward'] + args.gamma * value_next
+            #Calculate the reward
+            reward = env.get_reward(env.state, next_state)
+            rewards.append(reward.mean().detach().cpu().numpy())
+            
+            #Store the experience in replay_buffer 
+            env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
+                                action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
+                                reward=reward.detach().clone().cpu().numpy(), 
+                                next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()},
+                                t=step)
+            
+            if len(env.exp_buffer) < args.batchsize:
+                continue
 
-                #Loss to bias actor
-                #mag_loss = F.mse_loss(experience['curr']['clean_mag'][:, :, experience['t'], :], experience['next']['est_mag'][:, :, experience['t'], :])
-                #print(f"Mag_loss:{mag_loss}")
+            #sample experience from buffer
+            experience = env.exp_buffer.sample(args.batchsize)
 
-                #critic loss
-                critic_loss = F.mse_loss(y_t, value_curr)
-                critic_loss = critic_loss.mean()
-                
-                #actor loss
-                a_inp = env.get_state_input(experience['curr'], experience['t'])
-                a_action = self.actor(a_inp)
-                actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() #+ mag_loss.mean()
-                
-                #Update networks
-                actor_loss = actor_loss / ACCUM_STEP
-                critic_loss = critic_loss / ACCUM_STEP
-                critic_loss.backward()
-                actor_loss.backward()
+            #--------------------------- Update Critic ------------------------#
+            next_t = experience['t'] + 1
+            next_inp = env.get_state_input(experience['next'], next_t)
+            next_action = self.target_actor(next_inp).detach()
+            #Set TD target
+            value_next = self.target_critic(experience['next'], next_action, next_t).detach()
+            y_t = experience['reward'] + args.gamma * value_next
+            value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
+            #critic loss
+            critic_loss = F.mse_loss(y_t, value_curr).mean()
+            self.c_optimizer.zero_grad()
+            critic_loss.backward()
+            self.c_optimizer.step()
+            
+            #--------------------------- Update Actor ------------------------#
+            #actor loss
+            a_inp = env.get_state_input(experience['curr'], experience['t'])
+            a_action = self.actor(a_inp)
+            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).sum() #+ mag_loss.mean()
+            
+            self.a_optimizer.zero_grad()
+            actor_loss.backward()
+            self.a_optimizer.step()
 
-                if (step+1) % ACCUM_STEP == 0 or (step == env.steps - 2):
-                    self.a_optimizer.step()
-                    self.a_optimizer.zero_grad()
+            #update target networks
+            for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+        
+            for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+        
+            #update state
+            env.state = next_state
+            
+            clean = next_state['cl_audio'].detach().cpu().numpy()
+            est = next_state['est_audio'].detach().cpu().numpy()
+            p_mask, p_score = batch_pesq(clean, est)
+            train_pesq = (p_mask * p_score)
 
-                    self.c_optimizer.step()
-                    self.c_optimizer.zero_grad()
-                    
-                    #update target networks
-                    for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-                        target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-                
-                    for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-                        target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-                
-                #update state
-                env.state = next_state
-                
-                clean = next_state['cl_audio'].detach().cpu().numpy()
-                est = next_state['est_audio'].detach().cpu().numpy()
-                p_mask, p_score = batch_pesq(clean, est)
-                train_pesq = (p_mask * p_score)
-
-                wandb.log({
-                    'episode_step':step,
-                    'train_pesq':original_pesq(train_pesq).mean(),
-                    'actor_loss':actor_loss,
-                    'critic_loss':critic_loss,
-                    'y_t':y_t.mean(),
-                    'current':value_curr.mean(),
-                    'reward':reward.mean()
-                })
-                
-                
-            #except Exception as e:
-            #    print(traceback.format_exc())
-            #    continue
+            wandb.log({
+                'episode_step':step,
+                'train_pesq':original_pesq(train_pesq).mean(),
+                'actor_loss':actor_loss,
+                'critic_loss':critic_loss,
+                'y_t':y_t.mean(),
+                'current':value_curr.mean(),
+                'reward':reward.mean()
+            })
 
         return rewards, actor_loss, critic_loss
     
@@ -356,7 +337,7 @@ class DDPGTrainer:
         critic_epoch_loss = 0
         step = 0
         env = SpeechEnhancementAgent(window=args.win_len // 2, 
-                                     buffer_size=250,
+                                     buffer_size=1000000,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,
@@ -365,8 +346,8 @@ class DDPGTrainer:
         for i, batch in enumerate(self.train_ds):
             self.actor.train()
             self.critic.train()
-            self.target_actor.train()
-            self.target_critic.train()
+            self.target_actor.eval()
+            self.target_critic.eval()
             #Preprocess batch
             batch = self.preprocess_batch(batch)
             #Run episode
@@ -400,9 +381,6 @@ class DDPGTrainer:
                        "mean_episode_reward":np.mean(ep_rewards)})
             print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
         print(f"Epoch:{epoch}, ActorLoss:{actor_epoch_loss/step}, CriticLoss:{critic_epoch_loss/step}")
-
-            
-
         return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, pesq
     
     def train(self, args):
@@ -461,13 +439,13 @@ def main(rank: int, world_size: int, args):
             print(f"Available gpus:{available_gpus}")
 
         train_ds, test_ds = load_data(args.root, 
-                                    args.batchsize, 
+                                    1, 
                                     1, 
                                     args.cut_len,
                                     gpu = True)
     else:
         train_ds, test_ds = load_data(args.root, 
-                                    args.batchsize, 
+                                    1, 
                                     1, 
                                     args.cut_len,
                                     gpu = False)

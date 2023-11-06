@@ -261,7 +261,7 @@ class replay_buffer:
             REWARD.append(r)
 
             t = self.buffer[idx]['t']
-            T.append(torch.FloatTensor(t))
+            T.append(t)
 
             action = (torch.FloatTensor(self.buffer[idx]['action'][0]), torch.FloatTensor(self.buffer[idx]['action'][1]))
             ACTION[0].append(action[0])
@@ -271,7 +271,7 @@ class replay_buffer:
         REWARD = torch.stack(REWARD)
         CURR = {k:torch.stack(v) for k, v in CURR.items()}
         NEXT = {k:torch.stack(v) for k, v in NEXT.items()}
-        T = torch.stack(T)
+        T = np.array(T)
 
         return {'curr':CURR, 
                 'next':NEXT, 

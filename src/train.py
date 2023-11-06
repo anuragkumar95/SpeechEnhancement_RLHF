@@ -221,7 +221,6 @@ class DDPGTrainer:
         for step in range(env.steps-1):
             #get the window input
             inp = env.get_state_input(env.state, step)
-
             #Forward pass through actor to get the action(mask)
             action = self.actor(inp)
             #Add noise to the action
@@ -230,7 +229,7 @@ class DDPGTrainer:
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
                                             action=action, 
-                                            t=step)
+                                            t=np.array([step]))
             
             if next_state is None:
                 continue

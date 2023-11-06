@@ -261,7 +261,7 @@ class replay_buffer:
             REWARD.append(r)
 
             t = self.buffer[idx]['t']
-            T.append(t)
+            T.append(torch.FloatTensor(t))
 
             action = (torch.FloatTensor(self.buffer[idx]['action'][0]), torch.FloatTensor(self.buffer[idx]['action'][1]))
             ACTION[0].append(action[0])

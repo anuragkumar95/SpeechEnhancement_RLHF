@@ -229,7 +229,7 @@ class DDPGTrainer:
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
                                             action=action, 
-                                            t=np.array([step]))
+                                            t=step)
             
             if next_state is None:
                 continue
@@ -283,7 +283,8 @@ class DDPGTrainer:
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
         
             #update state
-            env.state = next_state
+            if reward > 0:
+                env.state = next_state
             
             clean = next_state['cl_audio'].detach().cpu().numpy()
             est = next_state['est_audio'].detach().cpu().numpy()

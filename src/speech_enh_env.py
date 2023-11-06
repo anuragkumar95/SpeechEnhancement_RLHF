@@ -71,7 +71,11 @@ class SpeechEnhancementAgent:
         left = t - self.window
         right = t + self.window + 1
         windows = []
-        for i in range(t.shape[0]):
+
+        if isinstance(t, int):
+            t = [t]
+            
+        for i in range(len(t)):
             if t[i] < self.window: 
                 pad = torch.zeros(b, 2, -left[i], f)
                 if self.gpu_id is not None:

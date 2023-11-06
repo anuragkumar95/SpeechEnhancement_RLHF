@@ -239,7 +239,7 @@ class replay_buffer:
     def sample(self, batch_size):
         CURR = {}
         NEXT = {}
-        ACTION = []
+        ACTION = [[], []]
         REWARD = []
         T = []
         for _ in range(batch_size):
@@ -264,14 +264,14 @@ class replay_buffer:
             T.append(t)
 
             action = (torch.FloatTensor(self.buffer[idx]['action'][0]), torch.FloatTensor(self.buffer[idx]['action'][1]))
-            ACTION.append(action)
+            ACTION[0].append(action[0])
+            ACTION[1].append(action[1])
 
-        ACTION = torch.stack(ACTION)
+        ACTION = (torch.stack(ACTION[0]), torch.stack(ACTION[1]))
         REWARD = torch.stack(REWARD)
         CURR = {k:torch.stack(v) for k, v in CURR.items()}
         NEXT = {k:torch.stack(v) for k, v in NEXT.items()}
 
-        
         return {'curr':CURR, 
                 'next':NEXT, 
                 'action':ACTION, 

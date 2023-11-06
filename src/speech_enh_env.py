@@ -74,6 +74,8 @@ class SpeechEnhancementAgent:
 
         if isinstance(t, int):
             t = [t]
+            left = [left]
+            right = [right]
             
         for i in range(len(t)):
             if t[i] < self.window: 

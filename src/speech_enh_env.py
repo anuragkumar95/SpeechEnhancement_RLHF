@@ -271,6 +271,7 @@ class replay_buffer:
         REWARD = torch.stack(REWARD)
         CURR = {k:torch.stack(v) for k, v in CURR.items()}
         NEXT = {k:torch.stack(v) for k, v in NEXT.items()}
+        T = torch.stack(T)
 
         return {'curr':CURR, 
                 'next':NEXT, 

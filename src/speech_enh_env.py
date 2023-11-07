@@ -105,8 +105,10 @@ class SpeechEnhancementAgent:
         Returns:
             Next state with 't'th frame enhanced by applying mask.
         """
-        
-        b, _, tm, f = state['noisy'].shape
+        if isinstance(t, int):
+            t = [t]
+
+        #b, _, tm, f = state['noisy'].shape
         #mask = torch.ones(b, 1, tm, f)
         #complex_mask = torch.zeros(b, 2, tm, f)
         

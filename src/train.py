@@ -256,7 +256,7 @@ class DDPGTrainer:
             if len(env.exp_buffer) < args.batchsize:
                 continue
             torch.cuda.empty_cache()
-            
+
             #sample experience from buffer
             experience = env.exp_buffer.sample(args.batchsize)
 
@@ -291,7 +291,9 @@ class DDPGTrainer:
         
             for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-        
+
+            torch.cuda.empty_cache()
+
             #update state
             if reward > 0:
                 env.state = next_state

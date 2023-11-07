@@ -207,7 +207,7 @@ class DDPGTrainer:
         
         return ret_val
     
-    def train_one_episode(self, env, args):
+    def train_one_episode(self, epoch, env, args):
         """
         Runs an episode which takes input a batch and predicts masks
         sequentially over the time dimension
@@ -309,6 +309,7 @@ class DDPGTrainer:
                 'current':value_curr.mean(),
                 'reward':reward.mean()
             })
+            print(f"EPOCH:{epoch} | STEP:{step} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
         return rewards, actor_loss, critic_loss
     
@@ -361,7 +362,7 @@ class DDPGTrainer:
             batch = self.preprocess_batch(batch)
             #Run episode
             env.set_batch(batch)
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(env, args)
+            ep_rewards, actor_loss, critic_loss = self.train_one_episode(epoch, env, args)
             
             #Collect reward and losses
             actor_epoch_loss += actor_epoch_loss

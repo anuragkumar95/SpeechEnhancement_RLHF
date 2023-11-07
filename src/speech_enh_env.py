@@ -126,7 +126,7 @@ class SpeechEnhancementAgent:
         out_mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
 
         for i in range(len(t)):
-            print(f"out_mag_frame:{out_mag[i, :, t[i], :].shape}, mask:{mask_mag[i].squeeze(0).shape}")
+            print(f"mag:{out_mag.shape} out_mag_frame:{out_mag[i, :, t[i], :].shape}, mask:{mask_mag[i].squeeze(0).shape}")
             out_mag[i, :, t[i], :] = out_mag[i, :, t[i], :] * mask_mag[i].squeeze(0)
              
         mag_real = out_mag * torch.cos(noisy_phase)

@@ -105,71 +105,71 @@ class SpeechEnhancementAgent:
         Returns:
             Next state with 't'th frame enhanced by applying mask.
         """
-        try:
-            b, _, tm, f = state['noisy'].shape
-            mask = torch.ones(b, 1, tm, f)
-            complex_mask = torch.zeros(b, 2, tm, f)
+        
+        b, _, tm, f = state['noisy'].shape
+        mask = torch.ones(b, 1, tm, f)
+        complex_mask = torch.zeros(b, 2, tm, f)
 
-            if self.gpu_id is not None:
-                mask = mask.to(self.gpu_id)
-                complex_mask = complex_mask.to(self.gpu_id)
-            
-            #action = self.noise.get_action(action)
-            mask_mag, complex_out = action
-            
-            #Output mask is for the 't'th frame of the window
-            mask[:, :, t, :] = mask_mag.squeeze(2)
-            complex_mask[:, :, t, :] = complex_out.squeeze(-1)
+        if self.gpu_id is not None:
+            mask = mask.to(self.gpu_id)
+            complex_mask = complex_mask.to(self.gpu_id)
+        
+        #action = self.noise.get_action(action)
+        mask_mag, complex_out = action
+        
+        #Output mask is for the 't'th frame of the window
+        mask[:, :, t, :] = mask_mag.squeeze(2)
+        complex_mask[:, :, t, :] = complex_out.squeeze(-1)
 
-            mag = (state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2)
-            mag = torch.sqrt(mag)
-            mag = mag.unsqueeze(1)
-            
-            noisy_phase = torch.angle(
-                torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
-            ).unsqueeze(1)
+        mag = (state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2)
+        mag = torch.sqrt(mag)
+        mag = mag.unsqueeze(1)
+        
+        noisy_phase = torch.angle(
+            torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
+        ).unsqueeze(1)
 
-            out_mag = mask * mag
-            mag_real = out_mag * torch.cos(noisy_phase)
-            mag_imag = out_mag * torch.sin(noisy_phase)
-            est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
-            est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
-            est_real = est_real.permute(0, 1, 3, 2)
-            est_imag = est_imag.permute(0, 1, 3, 2)
+        out_mag = mask * mag
+        mag_real = out_mag * torch.cos(noisy_phase)
+        mag_imag = out_mag * torch.sin(noisy_phase)
+        est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
+        est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
+        est_real = est_real.permute(0, 1, 3, 2)
+        est_imag = est_imag.permute(0, 1, 3, 2)
 
-            window = torch.hamming_window(self.n_fft)
-            if self.gpu_id is not None:
-                window = window.to(self.gpu_id)
+        window = torch.hamming_window(self.n_fft)
+        if self.gpu_id is not None:
+            window = window.to(self.gpu_id)
 
-            est_mag = torch.sqrt(est_real**2 + est_imag**2)
-            est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-            est_audio = torch.istft(
-                est_spec_uncompress,
-                self.n_fft,
-                self.hop,
-                window=window,
-                onesided=True,
-            )
+        est_mag = torch.sqrt(est_real**2 + est_imag**2)
+        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+        est_audio = torch.istft(
+            est_spec_uncompress,
+            self.n_fft,
+            self.hop,
+            window=window,
+            onesided=True,
+        )
 
-            next_state = torch.cat([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
-            clean_mag = torch.sqrt(state['clean_real']**2 + state['clean_imag']**2)
+        next_state = torch.cat([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
+        clean_mag = torch.sqrt(state['clean_real']**2 + state['clean_imag']**2)
 
-            retval = {'noisy':next_state.detach(),
-                    'clean':state['clean'].detach(), 
-                    'clean_real':state['clean_real'].detach(),
-                    'clean_imag':state['clean_imag'].detach(),
-                    'clean_mag':clean_mag.detach(),
-                    'cl_audio':state['cl_audio'].detach(),
-                    'n_audio':state['n_audio'].detach(),
-                    'est_mag':est_mag.detach(),
-                    'est_real':est_real.detach(),
-                    'est_imag':est_imag.detach(),
-                    'est_audio':est_audio.detach()
-                    }
-            return retval
+        retval = {'noisy':next_state.detach(),
+                'clean':state['clean'].detach(), 
+                'clean_real':state['clean_real'].detach(),
+                'clean_imag':state['clean_imag'].detach(),
+                'clean_mag':clean_mag.detach(),
+                'cl_audio':state['cl_audio'].detach(),
+                'n_audio':state['n_audio'].detach(),
+                'est_mag':est_mag.detach(),
+                'est_real':est_real.detach(),
+                'est_imag':est_imag.detach(),
+                'est_audio':est_audio.detach()
+                }
+        return retval
 
-        except Exception as e:
-            return None
+        #except Exception as e:
+        #    return None
 
     def get_reward(self, state, next_state):
         """

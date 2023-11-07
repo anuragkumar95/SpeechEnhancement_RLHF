@@ -133,9 +133,9 @@ class SpeechEnhancementAgent:
         mag_imag = out_mag * torch.sin(noisy_phase)
 
         for i in range(len(t)):
-            print(f"real:{mag_real[i, :, t[i], :].shape}, comp_mask:{complex_out[i, 0, :, :].unsqueeze(1).shape}")
-            mag_real[i, :, t[i], :] = mag_real[i, :, t[i], :] + complex_out[i, 0, :, :].unsqueeze(1)
-            mag_imag[i, :, t[i], :] = mag_imag[i, :, t[i], :] + complex_out[i, 1, :, :].unsqueeze(1)
+            print(f"real:{mag_real[i, :, t[i], :].shape}, comp_mask:{complex_out[i, 0, :, :].permute(1, 0).shape}")
+            mag_real[i, :, t[i], :] = mag_real[i, :, t[i], :] + complex_out[i, 0, :, :].permute(1, 0)
+            mag_imag[i, :, t[i], :] = mag_imag[i, :, t[i], :] + complex_out[i, 1, :, :].permute(1, 0)
              
             #est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
             #est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)

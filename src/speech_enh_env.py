@@ -282,14 +282,14 @@ class replay_buffer:
         CURR = {k:torch.stack(v).squeeze(1) for k, v in CURR.items()}
         NEXT = {k:torch.stack(v).squeeze(1) for k, v in NEXT.items()}
         if self.gpu_id is not None:
-            ACTION = (torch.stack(ACTION[0]).to(self.gpu_id), 
-                      torch.stack(ACTION[1]).to(self.gpu_id))
+            ACTION = (ACTION[0].to(self.gpu_id), 
+                      ACTION[1].to(self.gpu_id))
             REWARD = torch.stack(REWARD).to(self.gpu_id)
             CURR = {
-                k:torch.stack(v).squeeze(1).to(self.gpu_id) for k, v in CURR.items()
+                k:v.to(self.gpu_id) for k, v in CURR.items()
                 }
             NEXT = {
-                k:torch.stack(v).squeeze(1).to(self.gpu_id) for k, v in NEXT.items()
+                k:v.to(self.gpu_id) for k, v in NEXT.items()
                 }
             T = np.array(T)
 

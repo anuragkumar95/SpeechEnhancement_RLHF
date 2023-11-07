@@ -107,8 +107,8 @@ class SpeechEnhancementAgent:
         """
         
         b, _, tm, f = state['noisy'].shape
-        mask = torch.ones(b, 1, tm, f)
-        complex_mask = torch.zeros(b, 2, tm, f)
+        #mask = torch.ones(b, 1, tm, f)
+        #complex_mask = torch.zeros(b, 2, tm, f)
 
         if self.gpu_id is not None:
             mask = mask.to(self.gpu_id)
@@ -118,24 +118,30 @@ class SpeechEnhancementAgent:
         mask_mag, complex_out = action
         
         #Output mask is for the 't'th frame of the window
-        mask[:, :, t, :] = mask_mag.squeeze(2)
-        complex_mask[:, :, t, :] = complex_out.squeeze(-1)
+        #mask[:, :, t, :] = mask_mag.squeeze(2)
+        #complex_mask[:, :, t, :] = complex_out.squeeze(-1)
 
-        mag = (state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2)
-        mag = torch.sqrt(mag)
-        mag = mag.unsqueeze(1)
-        
         noisy_phase = torch.angle(
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
         ).unsqueeze(1)
 
-        out_mag = mask * mag
+        out_mag = torch.sqrt(state['noisy'][i, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
+
+        for i in range(len(t)):
+            masked_frame = out_mag[i, :, t[i], :] * mask_mag[i]
+            out_mag[i, :, t[i], :] = masked_frame
+
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)
-        est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
-        est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
-        est_real = est_real.permute(0, 1, 3, 2)
-        est_imag = est_imag.permute(0, 1, 3, 2)
+
+        for i in range(len(t)):
+            mag_real[i, :, t[i], :] = mag_real[i, :, t[i], :] + complex_out[i, 0, :, :].unsqueeze(1)
+            mag_imag[i, :, t[i], :] = mag_imag[i, :, t[i], :] + complex_out[i, 1, :, :].unsqueeze(1)
+             
+            #est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
+            #est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
+        est_real = mag_real.permute(0, 1, 3, 2)
+        est_imag = mag_imag.permute(0, 1, 3, 2)
 
         window = torch.hamming_window(self.n_fft)
         if self.gpu_id is not None:

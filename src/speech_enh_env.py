@@ -123,8 +123,9 @@ class SpeechEnhancementAgent:
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
         ).unsqueeze(1)
 
-        out_mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
 
+        out_mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2 + state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
+        
         for i in range(len(t)):
             print(f"mag:{out_mag.shape} out_mag_frame:{out_mag[i, :, t[i], :].shape}, mask:{mask_mag[i].squeeze(0).shape}")
             out_mag[i, :, t[i], :] = out_mag[i, :, t[i], :] * mask_mag[i].squeeze(0)
@@ -283,7 +284,7 @@ class replay_buffer:
             ACTION[0].append(action[0])
             ACTION[1].append(action[1])
 
-        ACTION = (torch.stack(ACTION[0]), torch.stack(ACTION[1]))
+        ACTION = (torch.stack(ACTION[0]).squeeze(1), torch.stack(ACTION[1]).squeeze(1))
         REWARD = torch.stack(REWARD)
         CURR = {k:torch.stack(v).squeeze(1) for k, v in CURR.items()}
         NEXT = {k:torch.stack(v).squeeze(1) for k, v in NEXT.items()}

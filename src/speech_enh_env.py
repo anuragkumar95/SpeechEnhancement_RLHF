@@ -284,7 +284,7 @@ class replay_buffer:
         if self.gpu_id is not None:
             ACTION = (ACTION[0].to(self.gpu_id), 
                       ACTION[1].to(self.gpu_id))
-            REWARD = torch.stack(REWARD).to(self.gpu_id)
+            REWARD = REWARD.to(self.gpu_id)
             CURR = {
                 k:v.to(self.gpu_id) for k, v in CURR.items()
                 }

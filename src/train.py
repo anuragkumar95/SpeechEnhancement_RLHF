@@ -208,7 +208,7 @@ class DDPGTrainer:
         
         return ret_val
     
-    def train_one_episode(self, epoch, env, args):
+    def train_one_episode(self, epoch, episode, env, args):
         """
         Runs an episode which takes input a batch and predicts masks
         sequentially over the time dimension
@@ -312,7 +312,7 @@ class DDPGTrainer:
                 'current':value_curr.mean(),
                 'reward':reward.mean()
             })
-            print(f"EPOCH:{epoch} | STEP:{step} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
+            print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{step} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
         return rewards, actor_loss, critic_loss
     
@@ -368,16 +368,18 @@ class DDPGTrainer:
             batch = self.preprocess_batch(batch)
             #Run episode
             env.set_batch(batch)
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(epoch, env, args)
+            step = i+1
+            ep_rewards, actor_loss, critic_loss = self.train_one_episode(epoch, step, env, args)
             
             #Collect reward and losses
-            actor_epoch_loss += actor_epoch_loss
-            critic_epoch_loss += critic_epoch_loss
+            actor_epoch_loss += actor_loss
+            critic_epoch_loss += critic_loss
             REWARD_MAP.append(np.mean(ep_rewards))
-            step = i+1
-
+            
             wandb.log({"episode":step,
                        "mean_episode_reward":np.mean(ep_rewards)})
+            
+            print(f"EPOCH:{epoch} | EPISODE:{step} | mean_reward:{np.mean(ep_rewards)}")
 
             if step > EPISODES_PER_EPOCH:
                 break
@@ -401,8 +403,7 @@ class DDPGTrainer:
             v_step += 1
         pesq /= v_step
         wandb.log({"val_step":v_step,
-                    "val_pesq":original_pesq(pesq)})
-        
+                    "val_pesq":original_pesq(pesq)})   
         
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
         return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, pesq

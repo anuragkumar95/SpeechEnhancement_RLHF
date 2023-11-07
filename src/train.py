@@ -225,7 +225,6 @@ class DDPGTrainer:
         """
         rewards = []
         torch.autograd.set_detect_anomaly(True)
-        torch.cuda.empty_cache()
       
         for step in range(env.steps-1):
             #get the window input
@@ -256,7 +255,8 @@ class DDPGTrainer:
             
             if len(env.exp_buffer) < args.batchsize:
                 continue
-
+            torch.cuda.empty_cache()
+            
             #sample experience from buffer
             experience = env.exp_buffer.sample(args.batchsize)
 

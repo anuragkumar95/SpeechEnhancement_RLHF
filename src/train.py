@@ -295,8 +295,8 @@ class DDPGTrainer:
             if reward > 0:
                 env.state = next_state
             
-            clean = next_state['cl_audio'].cpu().numpy()
-            est = next_state['est_audio'].cpu().numpy()
+            clean = env.state['cl_audio'].cpu().numpy()
+            est = env.state['est_audio'].cpu().numpy()
             p_mask, p_score = batch_pesq(clean, est)
             train_pesq = (p_mask * p_score)
 

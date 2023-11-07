@@ -104,6 +104,7 @@ class DDPGTrainer:
         if args.disc_pt is not None:
             state_dict = torch.load(args.disc_pt, map_location=torch.device('cpu'))
             self.critic.load_state_dict(state_dict['discriminator_state_dict'])
+            del state_dict
             #self.critic = freeze_layers(self.critic, 'all')            
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)

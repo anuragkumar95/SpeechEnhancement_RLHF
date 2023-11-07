@@ -109,10 +109,6 @@ class SpeechEnhancementAgent:
         b, _, tm, f = state['noisy'].shape
         #mask = torch.ones(b, 1, tm, f)
         #complex_mask = torch.zeros(b, 2, tm, f)
-
-        if self.gpu_id is not None:
-            mask = mask.to(self.gpu_id)
-            complex_mask = complex_mask.to(self.gpu_id)
         
         #action = self.noise.get_action(action)
         mask_mag, complex_out = action
@@ -128,13 +124,14 @@ class SpeechEnhancementAgent:
         out_mag = torch.sqrt(state['noisy'][i, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
 
         for i in range(len(t)):
-            masked_frame = out_mag[i, :, t[i], :] * mask_mag[i]
-            out_mag[i, :, t[i], :] = masked_frame
-
+            print(f"out_mag_frame:{out_mag[i, :, t[i], :].shape}, mask:{mask_mag[i].shape}")
+            out_mag[i, :, t[i], :] = out_mag[i, :, t[i], :] * mask_mag[i]
+             
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)
 
         for i in range(len(t)):
+            print(f"real:{mag_real[i, :, t[i], :].shape}, comp_mask:{complex_out[i, 0, :, :].unsqueeze(1).shape}")
             mag_real[i, :, t[i], :] = mag_real[i, :, t[i], :] + complex_out[i, 0, :, :].unsqueeze(1)
             mag_imag[i, :, t[i], :] = mag_imag[i, :, t[i], :] + complex_out[i, 1, :, :].unsqueeze(1)
              

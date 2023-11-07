@@ -76,7 +76,7 @@ class SpeechEnhancementAgent:
             t = [t]
             left = [left]
             right = [right]
-            
+
         for i in range(len(t)):
             if t[i] < self.window: 
                 pad = torch.zeros(b, 2, -left[i], f)
@@ -281,7 +281,17 @@ class replay_buffer:
         REWARD = torch.stack(REWARD)
         CURR = {k:torch.stack(v).squeeze(1) for k, v in CURR.items()}
         NEXT = {k:torch.stack(v).squeeze(1) for k, v in NEXT.items()}
-        T = np.array(T)
+        if self.gpu_id is not None:
+            ACTION = (torch.stack(ACTION[0]).to(self.gpu_id), 
+                      torch.stack(ACTION[1]).to(self.gpu_id))
+            REWARD = torch.stack(REWARD).to(self.gpu_id)
+            CURR = {
+                k:torch.stack(v).squeeze(1).to(self.gpu_id) for k, v in CURR.items()
+                }
+            NEXT = {
+                k:torch.stack(v).squeeze(1).to(self.gpu_id) for k, v in NEXT.items()
+                }
+            T = np.array(T)
 
         return {'curr':CURR, 
                 'next':NEXT, 

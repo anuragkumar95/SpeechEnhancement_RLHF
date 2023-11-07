@@ -121,7 +121,7 @@ class SpeechEnhancementAgent:
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
         ).unsqueeze(1)
 
-        out_mag = torch.sqrt(state['noisy'][i, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
+        out_mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2) + (state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
 
         for i in range(len(t)):
             print(f"out_mag_frame:{out_mag[i, :, t[i], :].shape}, mask:{mask_mag[i].shape}")

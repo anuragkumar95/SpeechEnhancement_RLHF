@@ -43,7 +43,7 @@ def args():
                         help="Training batchsize.")
     parser.add_argument("--t_max", type=int, required=False, default=4,
                         help="Backpropagate every t_max steps.")
-    parser.add_argument("--val_step", type=int, required=False, default=100,
+    parser.add_argument("--episodes_per_epoch", type=int, required=False, default=100,
                         help="Run validation every val_step steps.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
@@ -352,12 +352,14 @@ class DDPGTrainer:
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,
                                      args=args)
-        VAL_STEP = args.val_step
-        for i, batch in enumerate(self.train_ds):
+        
+        EPISODES_PER_EPOCH = args.episodes_per_epoch
+        for i, batch in enumerate(self.train_ds[:EPISODES_PER_EPOCH]):
             self.actor.train()
             self.critic.train()
             self.target_actor.eval()
             self.target_critic.eval()
+            
             #Preprocess batch
             batch = self.preprocess_batch(batch)
             #Run episode
@@ -370,7 +372,7 @@ class DDPGTrainer:
             REWARD_MAP.append(np.mean(ep_rewards))
             step = i+1
 
-            if step % VAL_STEP == 0:
+            if step % EPISODES_PER_EPOCH == 0:
                 self.actor.eval()
                 self.critic.eval()
                 pesq = 0

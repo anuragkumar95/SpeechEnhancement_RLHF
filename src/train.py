@@ -254,7 +254,8 @@ class DDPGTrainer:
             #--------------------------- Update Critic ------------------------#
             next_t = experience['t'] + 1
             next_inp = env.get_state_input(experience['next'], next_t)
-            next_action = self.target_actor(next_inp).detach()
+            next_action = self.target_actor(next_inp)
+            next_action = (next_action[0].detach(), next_action[1].detach())
             #Set TD target
             value_next = self.target_critic(experience['next'], next_action, next_t).detach()
             y_t = experience['reward'] + args.gamma * value_next

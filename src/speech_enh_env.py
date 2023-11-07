@@ -79,17 +79,18 @@ class SpeechEnhancementAgent:
 
         for i in range(len(t)):
             if t[i] < self.window: 
-                pad = torch.zeros(b, 2, -left[i], f)
+                pad = torch.zeros(1, 2, -left[i], f)
                 if self.gpu_id is not None:
                     pad = pad.to(self.gpu_id)
-                win = torch.cat([pad, state[:, :, :right[i], :]], dim=2)
+                win = torch.cat([pad, state[i, :, :right[i], :].unsqueeze(0)], dim=2)
             elif right[i] > tm - 1:
-                pad = torch.zeros(b, 2, right[i] - tm, f)
+                pad = torch.zeros(1, 2, right[i] - tm, f)
                 if self.gpu_id is not None:
                     pad = pad.to(self.gpu_id)
-                win = torch.cat([state[:, :, left[i]:, :], pad], dim=2) 
+                win = torch.cat([state[i, :, left[i]:, :].unsqueeze(0), pad], dim=2) 
             else:
-                win = state[:, :, left[i]:right[i], :]
+                win = state[i, :, left[i]:right[i], :].unsqueeze(0)
+            
             windows.append(win)
         windows = torch.stack(windows).squeeze(1)
         return windows

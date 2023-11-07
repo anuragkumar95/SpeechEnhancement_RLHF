@@ -353,8 +353,9 @@ class DDPGTrainer:
                                      gpu_id=self.gpu_id,
                                      args=args)
         
+        #Run train loop
         EPISODES_PER_EPOCH = args.episodes_per_epoch
-        for i, batch in enumerate(self.train_ds[:EPISODES_PER_EPOCH]):
+        for i, batch in enumerate(self.train_ds):
             self.actor.train()
             self.critic.train()
             self.target_actor.eval()
@@ -372,27 +373,35 @@ class DDPGTrainer:
             REWARD_MAP.append(np.mean(ep_rewards))
             step = i+1
 
-            if step % EPISODES_PER_EPOCH == 0:
-                self.actor.eval()
-                self.critic.eval()
-                pesq = 0
-                v_step = 0
-                for i, batch in enumerate(self.test_ds):
-                    #Preprocess batch
-                    batch = self.preprocess_batch(batch)
-                    env.set_batch(batch)
-                    #Run validation episode
-                    val_pesq_score = self.run_validation(env)
-                    pesq += val_pesq_score
-                    v_step += 1
-                pesq /= v_step
-                wandb.log({"val_step":v_step,
-                           "val_pesq":original_pesq(pesq)})
-
             wandb.log({"episode":step,
                        "mean_episode_reward":np.mean(ep_rewards)})
-            print(f"Epoch:{epoch} Step:{step+1}: ActorLoss:{actor_loss} CriticLoss:{critic_loss}")
-        print(f"Epoch:{epoch}, ActorLoss:{actor_epoch_loss/step}, CriticLoss:{critic_epoch_loss/step}")
+
+            if step > EPISODES_PER_EPOCH:
+                break
+
+        actor_epoch_loss = actor_epoch_loss / step
+        critic_epoch_loss = critic_epoch_loss / step
+        print(f"Epoch:{epoch} ActorLoss:{actor_epoch_loss} CriticLoss:{critic_loss}")
+
+        #Run validation
+        self.actor.eval()
+        self.critic.eval()
+        pesq = 0
+        v_step = 0
+        for i, batch in enumerate(self.test_ds):
+            #Preprocess batch
+            batch = self.preprocess_batch(batch)
+            env.set_batch(batch)
+            #Run validation episode
+            val_pesq_score = self.run_validation(env)
+            pesq += val_pesq_score
+            v_step += 1
+        pesq /= v_step
+        wandb.log({"val_step":v_step,
+                    "val_pesq":original_pesq(pesq)})
+        
+        
+        print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
         return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, pesq
     
     def train(self, args):

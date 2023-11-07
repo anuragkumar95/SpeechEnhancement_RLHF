@@ -35,6 +35,8 @@ def args():
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
+    parser.add_argument("--disc_pt", type=str, required=False, default=None,
+                        help="Path to saved cmgan checkpoint for discriminator.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
@@ -98,9 +100,14 @@ class DDPGTrainer:
 
         self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
         self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
-        
+
+        if args.disc_pt is not None:
+            state_dict = torch.load(args.disc_pt, map_location=torch.device('cpu'))
+            self.critic.load_state_dict(state_dict['discriminator_state_dict'])
+            self.critic = freeze_layers(self.critic, 'all')            
+
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
-        self.c_optimizer = torch.optim.AdamW(self.critic.parameters(), lr=2 * args.init_lr)
+        self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
@@ -217,6 +224,7 @@ class DDPGTrainer:
         """
         rewards = []
         torch.autograd.set_detect_anomaly(True)
+        torch.cuda.empty_cache()
       
         for step in range(env.steps-1):
             #get the window input
@@ -287,8 +295,8 @@ class DDPGTrainer:
             if reward > 0:
                 env.state = next_state
             
-            clean = next_state['cl_audio'].detach().cpu().numpy()
-            est = next_state['est_audio'].detach().cpu().numpy()
+            clean = next_state['cl_audio'].cpu().numpy()
+            est = next_state['est_audio'].cpu().numpy()
             p_mask, p_score = batch_pesq(clean, est)
             train_pesq = (p_mask * p_score)
 

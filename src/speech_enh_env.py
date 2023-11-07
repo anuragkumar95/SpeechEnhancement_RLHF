@@ -108,16 +108,7 @@ class SpeechEnhancementAgent:
         if isinstance(t, int):
             t = [t]
 
-        #b, _, tm, f = state['noisy'].shape
-        #mask = torch.ones(b, 1, tm, f)
-        #complex_mask = torch.zeros(b, 2, tm, f)
-        
-        #action = self.noise.get_action(action)
         mask_mag, complex_out = action
-        
-        #Output mask is for the 't'th frame of the window
-        #mask[:, :, t, :] = mask_mag.squeeze(2)
-        #complex_mask[:, :, t, :] = complex_out.squeeze(-1)
 
         noisy_phase = torch.angle(
             torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
@@ -127,19 +118,15 @@ class SpeechEnhancementAgent:
         out_mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2 + state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
         
         for i in range(len(t)):
-            print(f"mag:{out_mag.shape} out_mag_frame:{out_mag[i, :, t[i], :].shape}, mask:{mask_mag[i].squeeze(0).shape}")
             out_mag[i, :, t[i], :] = out_mag[i, :, t[i], :] * mask_mag[i].squeeze(0)
              
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)
 
         for i in range(len(t)):
-            print(f"real:{mag_real[i, :, t[i], :].shape}, comp_mask:{complex_out[i, 0, :, :].permute(1, 0).shape}")
             mag_real[i, :, t[i], :] = mag_real[i, :, t[i], :] + complex_out[i, 0, :, :].permute(1, 0)
             mag_imag[i, :, t[i], :] = mag_imag[i, :, t[i], :] + complex_out[i, 1, :, :].permute(1, 0)
              
-            #est_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
-            #est_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
         est_real = mag_real.permute(0, 1, 3, 2)
         est_imag = mag_imag.permute(0, 1, 3, 2)
 
@@ -173,9 +160,6 @@ class SpeechEnhancementAgent:
                 'est_audio':est_audio.detach()
                 }
         return retval
-
-        #except Exception as e:
-        #    return None
 
     def get_reward(self, state, next_state):
         """
@@ -259,9 +243,8 @@ class replay_buffer:
         ACTION = [[], []]
         REWARD = []
         T = []
-        for _ in range(batch_size):
-            idx = np.random.choice(len(self.buffer), 1)[0]
-            
+        indices = np.random.choice(len(self.buffer), batch_size, replace=False)
+        for idx in indices:
             for k, v in self.buffer[idx]['curr'].items():
                 if k not in CURR:
                     CURR[k] = []

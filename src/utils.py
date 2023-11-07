@@ -103,9 +103,13 @@ def freeze_layers(model, layers):
         Model instance with frozen parameters.
     """
     for name, param in model.named_parameters():
-        for layer in layers:
-            if ((layer == name) or (layer in name)) and param.requires_grad:
+        if layers == 'all':
+            if param.requires_grad:
                 param.requires_grad = False
+        else:
+            for layer in layers:
+                if ((layer == name) or (layer in name)) and param.requires_grad:
+                    param.requires_grad = False
     return model 
 
 def original_pesq(pesq):

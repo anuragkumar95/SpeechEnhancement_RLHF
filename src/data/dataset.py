@@ -50,6 +50,11 @@ class DemandDataset(torch.utils.data.Dataset):
 
         return clean_ds, noisy_ds, length
     
+def get_random_batch(ds, batch_size):
+    random_index = np.random.choice(len(ds), batch_size, replace=False)
+    batch = [ds.__getitem__(ind) for ind in random_index]
+    return batch
+    
 
 
 def load_data(ds_dir, batch_size, n_cpu, cut_len, gpu=True):

@@ -201,15 +201,17 @@ class SpeechEnhancementAgent:
             onesided=True,
         )
 
-        next_state = torch.stack([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
+        est_spec = torch.stack([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
 
-        state['noisy'] = next_state
-        state['est_mag'] = est_mag
-        state['est_real'] = est_real
-        state['est_imag'] = est_imag
-        state['est_audio'] = est_audio
+        next_state = {k:v for k, v in state.items()}
 
-        return state
+        next_state['noisy'] = est_spec
+        next_state['est_mag'] = est_mag
+        next_state['est_real'] = est_real
+        next_state['est_imag'] = est_imag
+        next_state['est_audio'] = est_audio
+
+        return next_state
 
 
     def get_reward(self, state, next_state):

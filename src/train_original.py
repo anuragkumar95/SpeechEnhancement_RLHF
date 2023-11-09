@@ -223,93 +223,108 @@ class DDPGTrainer:
             rewards : global ist to store cummulative reward
             args    : global args 
         """
-        
+        STEPS_PER_EPISODE = args.episode_len
         torch.autograd.set_detect_anomaly(True)
-      
-        
-        #get the window input
-        #inp = env.get_state_input(env.state, step)
-        inp = env.state['noisy']
-        #Forward pass through actor to get the action(mask)
-        action = self.actor(inp)
-        #Add noise to the action
-        action = env.noise.get_action(action)
-
-        #Apply mask to get the next state
-        next_state = env.get_next_state(state=env.state, 
-                                        action=action)
-        
-        #if next_state is None:
-        #    continue
-
-        #Calculate the reward
-        reward = env.get_reward(env.state, next_state)
-        
-        #Store the experience in replay_buffer 
-        env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
-                            action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
-                            reward=reward.detach().clone().cpu().numpy(), 
-                            next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()})
-        
-        #if len(env.exp_buffer) < args.batchsize:
-        #    continue
-
-        torch.cuda.empty_cache()
-
-        #sample experience from buffer
-        experience = env.exp_buffer.sample(args.batchsize)
-
-        #--------------------------- Update Critic ------------------------#
-        #next_t = experience['t'] + 1
-        #next_inp = env.get_state_input(experience['next'], next_t)
-        next_inp = experience['curr']['noisy']
-        next_action = self.target_actor(next_inp)
-        next_action = (next_action[0].detach(), next_action[1].detach())
-        
-        #Set TD target
-        value_next = self.target_critic(experience['next'], next_action).detach()
-        y_t = experience['reward'] + args.gamma * value_next
-        value_curr = self.critic(experience['curr'], experience['action'])
-        
-        #critic loss
-        critic_loss = F.mse_loss(y_t, value_curr).mean()
-        self.c_optimizer.zero_grad()
-        critic_loss.backward()
-        self.c_optimizer.step()
-        
-        #--------------------------- Update Actor ------------------------#
-        #actor loss
-        a_inp = env.get_state_input(experience['curr'], experience['t'])
-        a_action = self.actor(a_inp)
-        actor_loss = -self.critic(experience['curr'], a_action, experience['t']).sum() #+ mag_loss.mean()
-        
-        self.a_optimizer.zero_grad()
-        actor_loss.backward()
-        self.a_optimizer.step()
-
-        #update target networks
-        for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-            target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-    
-        for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-            target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-
-        torch.cuda.empty_cache()
-        
-        clean = env.state['cl_audio'].cpu().numpy()
-        est = env.state['est_audio'].cpu().numpy()
-        p_mask, p_score = batch_pesq(clean, est)
-        train_pesq = (p_mask * p_score)
 
         outputs = {
-            'reward':reward,
+            'reward':0,
+            'actor_loss':0,
+            'critic_loss':0,
+            'y_t':0,
+            'value_curr':0,
+            'value_next':0,
+            'pesq':0
+        }
+
+        for i in range(STEPS_PER_EPISODE):
+            #Forward pass through actor to get the action(mask)
+            action = self.actor(env.state['noisy'])
+            #Add noise to the action
+            action = env.noise.get_action(action)
+
+            #Apply mask to get the next state
+            next_state = env.get_next_state(state=env.state, 
+                                            action=action)
+            
+            if next_state is None:
+                continue
+
+            #Calculate the reward
+            reward = env.get_reward(env.state, next_state)
+            
+            #Store the experience in replay_buffer 
+            env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
+                                action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
+                                reward=reward.detach().clone().cpu().numpy(), 
+                                next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()})
+            
+            torch.cuda.empty_cache()
+
+            #sample experience from buffer
+            experience = env.exp_buffer.sample(args.batchsize)
+
+            #--------------------------- Update Critic ------------------------#
+            next_action = self.target_actor(experience['next']['noisy'])
+            next_action = (next_action[0].detach(), next_action[1].detach())
+            
+            #Set TD target
+            value_next = self.target_critic(experience['next'], next_action).detach()
+            y_t = experience['reward'] + args.gamma * value_next
+            value_curr = self.critic(experience['curr'], experience['action'])
+            
+            #critic loss
+            critic_loss = F.mse_loss(y_t, value_curr).mean()
+            self.c_optimizer.zero_grad()
+            critic_loss.backward()
+            self.c_optimizer.step()
+            
+            #--------------------------- Update Actor ------------------------#
+            #actor loss
+            a_action = self.actor(experience['curr'])
+            actor_loss = -self.critic(experience['curr'], a_action).sum()
+            
+            self.a_optimizer.zero_grad()
+            actor_loss.backward()
+            self.a_optimizer.step()
+
+            #--------------------- Update Target Networks --------------------#
+            for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+        
+            for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+
+            torch.cuda.empty_cache()
+            
+            clean = env.state['cl_audio'].cpu().numpy()
+            est = env.state['est_audio'].cpu().numpy()
+            p_mask, p_score = batch_pesq(clean, est)
+            train_pesq = (p_mask * p_score)
+
+            env.state = next_state
+
+            wandb.log({
+            'episode_step':i+1,
+            'train_pesq':original_pesq(train_pesq).mean(),
             'actor_loss':actor_loss,
             'critic_loss':critic_loss,
-            'y_t':y_t,
-            'value_curr':value_curr,
-            'value_next':value_next,
-            'pesq':train_pesq
-        }
+            'y_t':y_t.mean(),
+            'current':value_curr.mean(),
+            'reward':reward.mean()
+            })
+            
+            print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
+
+            outputs['reward'] += reward
+            outputs['actor_loss'] += actor_loss
+            outputs['critic_loss'] += critic_loss
+            outputs['y_t'] += y_t
+            outputs['value_curr'] += value_curr
+            outputs['value_next'] += value_next
+            outputs['pesq'] += train_pesq
+            
+        for k in outputs:
+            outputs[k] = outputs[k] / STEPS_PER_EPISODE
 
         return outputs
     
@@ -354,11 +369,16 @@ class DDPGTrainer:
         
         #Run train loop
         EPISODES_PER_EPOCH = args.episodes_per_epoch
-        for i, batch in enumerate(self.train_ds):
+
+        ds_iter = iter(self.train_ds)
+
+        for i in range(EPISODES_PER_EPOCH):
             self.actor.train()
             self.critic.train()
             self.target_actor.eval()
             self.target_critic.eval()
+
+            batch = next(ds_iter)
             
             #Preprocess batch
             batch = self.preprocess_batch(batch)
@@ -366,26 +386,17 @@ class DDPGTrainer:
             env.set_batch(batch)
             step = i+1
             outputs = self.train_one_episode(epoch, step, env, args)
-
-            wandb.log({
-                'episode_step':step,
-                'train_pesq':original_pesq(outputs['pesq']).mean(),
-                'actor_loss':outputs['actor_loss'],
-                'critic_loss':outputs['critic_loss'],
-                'y_t':outputs['y_t'].mean(),
-                'current':outputs['value_curr'].mean(),
-                'reward':outputs['reward'].mean()
-             })
-            
-            print(f"EPOCH:{epoch} | STEP:{step} | PESQ:{original_pesq(outputs['pesq']).mean()} | REWARD:{outputs['reward'].mean()}")
             
             #Collect reward and losses
             actor_epoch_loss += outputs['actor_loss']
             critic_epoch_loss += outputs['critic_loss']
             REWARD_MAP.append(outputs['reward'].mean())
+
+            wandb.log({
+                "episode":(epoch-1)*EPISODES_PER_EPOCH + i+1,
+                "mean_reward":outputs['reward'].mean()
+            })
             
-            if step > EPISODES_PER_EPOCH:
-                break
 
         actor_epoch_loss = actor_epoch_loss / step
         critic_epoch_loss = critic_epoch_loss / step
@@ -418,9 +429,9 @@ class DDPGTrainer:
         best_pesq = -1
         print("Start training...")
         for epoch in range(args.epochs):
-            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, args)
+            re_map, epoch_actor_loss, epoch_critic_loss, epoch_pesq = self.train_one_epoch(epoch+1, args)
             #TODO:Log these in wandb
-            wandb.log({"Epoch":epoch,
+            wandb.log({"Epoch":epoch+1,
                        "Actor_loss":epoch_actor_loss,
                        "Critic_loss":epoch_critic_loss,
                        "PESQ":epoch_pesq,
@@ -473,7 +484,7 @@ def main(rank: int, world_size: int, args):
                                     gpu = True)
     else:
         train_ds, test_ds = load_data(args.root, 
-                                    1, 
+                                    16, 
                                     1, 
                                     args.cut_len,
                                     gpu = False)

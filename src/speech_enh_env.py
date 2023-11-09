@@ -94,7 +94,7 @@ class SpeechEnhancementAgent:
             windows.append(win)
         windows = torch.stack(windows).squeeze(1)
         return windows
-
+    '''
     def get_next_state(self, state, action, t):
         """
         Apply mask to spectrogram on the i-th frame and return next state.
@@ -160,6 +160,57 @@ class SpeechEnhancementAgent:
                 'est_audio':est_audio.detach()
                 }
         return retval
+    '''
+    def get_next_state(self, state, action):
+        """
+        Apply mask to spectrogram on the i-th frame and return next state.
+        ARGS:
+            state : spectrograms of shape (b x 2 x f x t)
+            action: (mask, complex_mask) for frame at index 't' for entire batch, (b x f x 1)
+
+        Returns:
+            Next state with 't'th frame enhanced by applying mask.
+        """
+        x = state['noisy']
+        mask, complex_out = action
+
+        noisy_phase = torch.angle(
+            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+        ).unsqueeze(1)
+
+        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+    
+        out_mag = mask * mag
+        mag_real = out_mag * torch.cos(noisy_phase)
+        mag_imag = out_mag * torch.sin(noisy_phase)
+
+        est_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
+        est_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
+
+        window = torch.hamming_window(self.n_fft)
+        if self.gpu_id is not None:
+            window = window.to(self.gpu_id)
+
+        est_mag = torch.sqrt(est_real**2 + est_imag**2)
+        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+        est_audio = torch.istft(
+            est_spec_uncompress,
+            self.n_fft,
+            self.hop,
+            window=window,
+            onesided=True,
+        )
+
+        next_state = torch.stack([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
+
+        state['noisy'] = next_state
+        state['est_mag'] = est_mag
+        state['est_real'] = est_real
+        state['est_imag'] = est_imag
+        state['est_audio'] = est_audio
+
+        return state
+
 
     def get_reward(self, state, next_state):
         """
@@ -229,12 +280,13 @@ class replay_buffer:
         self.buffer = deque(maxlen=max_size)
         self.gpu_id = gpu_id
 
-    def push(self, state, action, reward, next_state, t):
-        experience = {'curr':state,
-                      'action':action,
-                      'reward':reward,
-                      'next':next_state, 
-                      't':t}
+    def push(self, state, action, reward, next_state):
+        experience = {
+            'curr':state,
+            'action':action,
+            'reward':reward,
+            'next':next_state
+        }
         self.buffer.append(experience)
 
     def sample(self, batch_size):
@@ -242,7 +294,7 @@ class replay_buffer:
         NEXT = {}
         ACTION = [[], []]
         REWARD = []
-        T = []
+        batch_size = min(batch_size, len(self.buffer))
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         for idx in indices:
             for k, v in self.buffer[idx]['curr'].items():
@@ -259,9 +311,6 @@ class replay_buffer:
 
             r = torch.FloatTensor(self.buffer[idx]['reward'])
             REWARD.append(r)
-
-            t = self.buffer[idx]['t']
-            T.append(t)
 
             action = (torch.FloatTensor(self.buffer[idx]['action'][0]), torch.FloatTensor(self.buffer[idx]['action'][1]))
             ACTION[0].append(action[0])
@@ -281,13 +330,13 @@ class replay_buffer:
             NEXT = {
                 k:v.to(self.gpu_id) for k, v in NEXT.items()
                 }
-            T = np.array(T)
 
-        return {'curr':CURR, 
-                'next':NEXT, 
-                'action':ACTION, 
-                'reward':REWARD, 
-                't':T}
+        return {
+            'curr':CURR, 
+            'next':NEXT, 
+            'action':ACTION, 
+            'reward':REWARD
+        }
 
     def __len__(self):
         return len(self.buffer)

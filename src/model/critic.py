@@ -47,8 +47,8 @@ class QNet(nn.Module):
                                             gpu_id=self.gpu_id,
                                             args=None)
 
-    def forward(self, state, action, t):
-        next_state = self.agent.get_next_state(state, action, t)
+    def forward(self, state, action):
+        next_state = self.agent.get_next_state(state, action)
         
         mag = next_state['est_mag']
         clean_mag = next_state['clean_mag']

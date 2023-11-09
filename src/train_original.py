@@ -41,6 +41,8 @@ def args():
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
+    parser.add_argument("--episode_len", type=int, required=False, default=50,
+                        help="No. of steps in one episode.")
     parser.add_argument("--t_max", type=int, required=False, default=4,
                         help="Backpropagate every t_max steps.")
     parser.add_argument("--episodes_per_epoch", type=int, required=False, default=100,
@@ -304,13 +306,13 @@ class DDPGTrainer:
             env.state = next_state
 
             wandb.log({
-            'episode_step':i+1,
-            'train_pesq':original_pesq(train_pesq).mean(),
-            'actor_loss':actor_loss,
-            'critic_loss':critic_loss,
-            'y_t':y_t.mean(),
-            'current':value_curr.mean(),
-            'reward':reward.mean()
+                'episode_step':i+1,
+                'train_pesq':original_pesq(train_pesq).mean(),
+                'actor_loss':actor_loss,
+                'critic_loss':critic_loss,
+                'y_t':y_t.mean(),
+                'current':value_curr.mean(),
+                'reward':reward.mean()
             })
             
             print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")

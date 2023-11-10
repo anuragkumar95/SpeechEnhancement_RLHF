@@ -81,11 +81,9 @@ class DDPGTrainer:
 
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            win_len=args.win_len,
                             gpu_id=gpu_id)
         self.target_actor = TSCNet(num_channel=64, 
-                                   num_features=self.n_fft // 2 + 1, 
-                                   win_len=args.win_len,
+                                   num_features=self.n_fft // 2 + 1,
                                    gpu_id=gpu_id)
         
         if pretrain:
@@ -240,6 +238,7 @@ class DDPGTrainer:
 
         for i in range(STEPS_PER_EPISODE):
             #Forward pass through actor to get the action(mask)
+            print(f"inp:{env.state['noisy'].shape}")
             action = self.actor(env.state['noisy'])
             #Add noise to the action
             action = env.noise.get_action(action)
@@ -266,6 +265,7 @@ class DDPGTrainer:
             experience = env.exp_buffer.sample(args.batchsize)
 
             #--------------------------- Update Critic ------------------------#
+            print(f"next_inp:{experience['next']['noisy'].shape}")
             next_action = self.target_actor(experience['next']['noisy'])
             next_action = (next_action[0].detach(), next_action[1].detach())
             

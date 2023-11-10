@@ -192,7 +192,7 @@ class SpeechEnhancementAgent:
             window = window.to(self.gpu_id)
 
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
-        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
         est_audio = torch.istft(
             est_spec_uncompress,
             self.n_fft,
@@ -200,9 +200,10 @@ class SpeechEnhancementAgent:
             window=window,
             onesided=True,
         )
+        
 
-        est_spec = torch.stack([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
-
+        est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2).permute(0, 1, 3, 2)
+        print(f"est_spec:{est_spec.shape}")
         next_state = {k:v for k, v in state.items()}
 
         next_state['noisy'] = est_spec
@@ -354,27 +355,38 @@ class OUNoise(object):
         self.decay_period = decay_period
         self.action_dim = action_dim
         self.gpu_id = gpu_id
-        self.reset()
+        self.state = {}
+        #self.reset(self.action_dim)
         
         
-    def reset(self):
-        self.state = torch.ones(self.action_dim) * self.mu
+    def reset(self, action_dim):
+        b, ch, t, f = action_dim
+        key = f"{b}_{ch}_{t}_{f}"
+        self.state[key] = torch.ones(action_dim) * self.mu
         if self.gpu_id is not None:
-            self.state = self.state.to(self.gpu_id)
+            self.state[key] = self.state[key].to(self.gpu_id)
         
     def evolve_state(self, action):
-        x  = self.state
-        action_dim = action[0].shape[-1]
+        action_dim = action.shape
+        b, ch, t, f = action_dim
+        key = f"{b}_{ch}_{t}_{f}"
+
+        if key not in self.state:
+            self.reset(action_dim)
+        
+        x = self.state[key]   
         rand = torch.randn(action_dim)
         if self.gpu_id is not None:
             rand = rand.to(self.gpu_id)
+        
         dx = self.theta * (self.mu - x) + self.sigma * rand
-        self.state = x + dx
-        return self.state
+        self.state[key] = x + dx
+        return self.state[key]
     
     def get_action(self, action, t=0):
-        ou_state = self.evolve_state(action)
+        ou_state_0 = self.evolve_state(action[0])
+        ou_state_1 = self.evolve_state(action[1])
         self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
-        mag_mask = torch.clip(action[0] + ou_state, torch.tensor(0.0).to(self.gpu_id), torch.max(action[0]))
-        comp_mask = torch.clip(action[1] + ou_state.view(-1, 1), torch.min(action[1]), torch.max(action[1]))
+        mag_mask = torch.clip(action[0] + ou_state_0, torch.tensor(0.0).to(self.gpu_id), torch.max(action[0]))
+        comp_mask = torch.clip(action[1] + ou_state_1, torch.min(action[1]), torch.max(action[1]))
         return (mag_mask, comp_mask)

@@ -1,0 +1,261 @@
+2023-11-09 12:04:55,879 INFO    StreamThr :19739 [internal.py:wandb_internal():86] W&B internal server running at pid: 19739, started at: 2023-11-09 12:04:55.879495
+2023-11-09 12:04:55,880 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status
+2023-11-09 12:04:55,883 INFO    WriterThread:19739 [datastore.py:open_for_write():85] open: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/run-vwz3e5dm.wandb
+2023-11-09 12:04:55,883 DEBUG   SenderThread:19739 [sender.py:send():380] send: header
+2023-11-09 12:04:55,895 DEBUG   SenderThread:19739 [sender.py:send():380] send: run
+2023-11-09 12:04:56,447 INFO    SenderThread:19739 [dir_watcher.py:__init__():211] watching files in: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files
+2023-11-09 12:04:56,448 INFO    SenderThread:19739 [sender.py:_start_run_threads():1122] run started: vwz3e5dm with start time 1699549495.880241
+2023-11-09 12:04:56,459 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: check_version
+2023-11-09 12:04:56,459 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: check_version
+2023-11-09 12:04:56,683 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: run_start
+2023-11-09 12:04:56,689 DEBUG   HandlerThread:19739 [system_info.py:__init__():32] System info init
+2023-11-09 12:04:56,689 DEBUG   HandlerThread:19739 [system_info.py:__init__():47] System info init done
+2023-11-09 12:04:56,689 INFO    HandlerThread:19739 [system_monitor.py:start():181] Starting system monitor
+2023-11-09 12:04:56,690 INFO    SystemMonitor:19739 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2023-11-09 12:04:56,690 INFO    HandlerThread:19739 [system_monitor.py:probe():201] Collecting system info
+2023-11-09 12:04:56,690 INFO    SystemMonitor:19739 [interfaces.py:start():190] Started cpu monitoring
+2023-11-09 12:04:56,691 INFO    SystemMonitor:19739 [interfaces.py:start():190] Started disk monitoring
+2023-11-09 12:04:56,691 DEBUG   HandlerThread:19739 [system_info.py:probe():196] Probing system
+2023-11-09 12:04:56,691 INFO    SystemMonitor:19739 [interfaces.py:start():190] Started memory monitoring
+2023-11-09 12:04:56,692 INFO    SystemMonitor:19739 [interfaces.py:start():190] Started network monitoring
+2023-11-09 12:04:56,699 DEBUG   HandlerThread:19739 [system_info.py:_probe_git():181] Probing git
+2023-11-09 12:04:56,717 DEBUG   HandlerThread:19739 [system_info.py:_probe_git():189] Probing git done
+2023-11-09 12:04:56,717 DEBUG   HandlerThread:19739 [system_info.py:probe():244] Probing system done
+2023-11-09 12:04:56,718 DEBUG   HandlerThread:19739 [system_monitor.py:probe():210] {'os': 'macOS-10.16-x86_64-i386-64bit', 'python': '3.9.18', 'heartbeatAt': '2023-11-09T17:04:56.691881', 'startedAt': '2023-11-09T17:04:55.874420', 'docker': None, 'cuda': None, 'args': ('-r', '/Users/anuragkumar/Anurag/Voicebank-debug', '--exp', 'A2C_reward1', '-o', '/Users/anuragkumar/Anurag/A2C_checkpoints', '--epochs', '200', '--batchsize', '2', '--episode_len', '50', '--episodes_per_epoch', '1000', '--reward', '1'), 'state': 'running', 'program': '/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train_original.py', 'codePathLocal': 'train_original.py', 'codePath': 'src/train_original.py', 'git': {'remote': 'git@github.com:anuragkumar95/SpeechEnhancement_RLHF.git', 'commit': '7ac1e83c28af5253c9c10b631478445eda338c42'}, 'email': None, 'root': '/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF', 'host': 'Anurags-MBP.lan', 'username': 'anuragkumar', 'executable': '/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/bin/python', 'cpu_count': 8, 'cpu_count_logical': 16, 'cpu_freq': {'current': 2400, 'min': 2400, 'max': 2400}, 'cpu_freq_per_core': [{'current': 2400, 'min': 2400, 'max': 2400}], 'disk': {'/': {'total': 931.546989440918, 'used': 8.53677749633789}}, 'memory': {'total': 32.0}}
+2023-11-09 12:04:56,718 INFO    HandlerThread:19739 [system_monitor.py:probe():211] Finished collecting system info
+2023-11-09 12:04:56,718 INFO    HandlerThread:19739 [system_monitor.py:probe():214] Publishing system info
+2023-11-09 12:04:56,718 DEBUG   HandlerThread:19739 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2023-11-09 12:04:56,718 DEBUG   HandlerThread:19739 [system_info.py:_save_pip():68] Saving pip packages done
+2023-11-09 12:04:56,718 DEBUG   HandlerThread:19739 [system_info.py:_save_conda():75] Saving list of conda packages installed into the current environment
+2023-11-09 12:04:57,454 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/requirements.txt
+2023-11-09 12:04:57,454 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/conda-environment.yaml
+2023-11-09 12:04:59,645 DEBUG   HandlerThread:19739 [system_info.py:_save_conda():87] Saving conda packages done
+2023-11-09 12:04:59,646 INFO    HandlerThread:19739 [system_monitor.py:probe():216] Finished publishing system info
+2023-11-09 12:04:59,651 DEBUG   SenderThread:19739 [sender.py:send():380] send: files
+2023-11-09 12:04:59,651 INFO    SenderThread:19739 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2023-11-09 12:04:59,657 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:04:59,671 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:04:59,672 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:04:59,899 DEBUG   SenderThread:19739 [sender.py:send():380] send: telemetry
+2023-11-09 12:05:00,106 INFO    wandb-upload_0:19739 [upload_job.py:push():131] Uploaded file /var/folders/h6/6w1fv4ks2hq54txlt9l2ygy00000gn/T/tmpujk3sqtmwandb/mn5dasde-wandb-metadata.json
+2023-11-09 12:05:00,461 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/conda-environment.yaml
+2023-11-09 12:05:00,471 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log
+2023-11-09 12:05:00,471 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/wandb-metadata.json
+2023-11-09 12:05:00,905 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:02,470 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log
+2023-11-09 12:05:04,473 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log
+2023-11-09 12:05:06,800 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:11,813 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:14,658 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:05:14,658 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:05:14,659 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:05:16,846 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:21,862 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:26,876 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:27,550 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/config.yaml
+2023-11-09 12:05:29,663 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:05:29,663 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:05:29,663 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:05:32,746 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:37,765 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:42,775 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:44,675 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:05:44,676 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:05:44,678 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:05:47,873 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:52,887 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:56,698 DEBUG   SystemMonitor:19739 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2023-11-09 12:05:56,701 DEBUG   SenderThread:19739 [sender.py:send():380] send: stats
+2023-11-09 12:05:58,703 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:05:59,801 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:05:59,808 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:05:59,811 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:06:04,277 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:09,298 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:14,308 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:14,672 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:06:14,673 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:06:14,743 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:06:19,847 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:24,872 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:26,715 DEBUG   SenderThread:19739 [sender.py:send():380] send: stats
+2023-11-09 12:06:29,674 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:06:29,675 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:06:29,745 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:06:30,847 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:35,856 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:40,880 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:44,686 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:06:44,701 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:06:44,748 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:06:45,906 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:50,935 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:55,952 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:06:56,727 DEBUG   SenderThread:19739 [sender.py:send():380] send: stats
+2023-11-09 12:06:59,678 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:06:59,679 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:06:59,749 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:07:01,780 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:06,798 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:11,818 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:14,730 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:07:14,734 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:07:14,766 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:07:17,056 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:22,061 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:26,742 DEBUG   SenderThread:19739 [sender.py:send():380] send: stats
+2023-11-09 12:07:27,748 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:29,694 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:07:29,695 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:07:29,756 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:07:32,838 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:37,853 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:42,867 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:44,760 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:07:44,767 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:07:44,783 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:07:48,170 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:53,180 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:56,726 DEBUG   SenderThread:19739 [sender.py:send():380] send: stats
+2023-11-09 12:07:58,735 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:07:59,700 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: stop_status
+2023-11-09 12:07:59,700 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: stop_status
+2023-11-09 12:07:59,770 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:08:03,978 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:08:07,565 DEBUG   SenderThread:19739 [sender.py:send():380] send: exit
+2023-11-09 12:08:07,580 INFO    SenderThread:19739 [sender.py:send_exit():585] handling exit code: 1
+2023-11-09 12:08:07,615 INFO    SenderThread:19739 [sender.py:send_exit():587] handling runtime: 190
+2023-11-09 12:08:07,622 INFO    SenderThread:19739 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-11-09 12:08:07,643 INFO    SenderThread:19739 [sender.py:send_exit():593] send defer
+2023-11-09 12:08:07,650 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,651 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 0
+2023-11-09 12:08:07,652 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,652 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 0
+2023-11-09 12:08:07,652 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 1
+2023-11-09 12:08:07,652 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,653 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 1
+2023-11-09 12:08:07,653 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,653 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 1
+2023-11-09 12:08:07,653 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 2
+2023-11-09 12:08:07,653 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,653 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 2
+2023-11-09 12:08:07,653 INFO    HandlerThread:19739 [system_monitor.py:finish():190] Stopping system monitor
+2023-11-09 12:08:07,654 DEBUG   SystemMonitor:19739 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2023-11-09 12:08:07,654 DEBUG   SystemMonitor:19739 [system_monitor.py:_start():170] Publishing last batch of metrics
+2023-11-09 12:08:07,656 INFO    HandlerThread:19739 [interfaces.py:finish():202] Joined cpu monitor
+2023-11-09 12:08:07,656 INFO    HandlerThread:19739 [interfaces.py:finish():202] Joined disk monitor
+2023-11-09 12:08:07,657 INFO    HandlerThread:19739 [interfaces.py:finish():202] Joined memory monitor
+2023-11-09 12:08:07,658 INFO    HandlerThread:19739 [interfaces.py:finish():202] Joined network monitor
+2023-11-09 12:08:07,658 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,658 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 2
+2023-11-09 12:08:07,658 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 3
+2023-11-09 12:08:07,658 DEBUG   SenderThread:19739 [sender.py:send():380] send: stats
+2023-11-09 12:08:07,659 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,659 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 3
+2023-11-09 12:08:07,659 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,659 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 3
+2023-11-09 12:08:07,659 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 4
+2023-11-09 12:08:07,659 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,660 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 4
+2023-11-09 12:08:07,660 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,660 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 4
+2023-11-09 12:08:07,660 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 5
+2023-11-09 12:08:07,660 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,660 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 5
+2023-11-09 12:08:07,661 DEBUG   SenderThread:19739 [sender.py:send():380] send: summary
+2023-11-09 12:08:07,661 INFO    SenderThread:19739 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-11-09 12:08:07,661 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,662 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 5
+2023-11-09 12:08:07,662 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 6
+2023-11-09 12:08:07,662 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,662 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 6
+2023-11-09 12:08:07,662 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,662 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 6
+2023-11-09 12:08:07,662 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 7
+2023-11-09 12:08:07,662 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: status_report
+2023-11-09 12:08:07,663 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:07,663 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 7
+2023-11-09 12:08:07,663 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:07,663 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 7
+2023-11-09 12:08:08,160 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log
+2023-11-09 12:08:08,176 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/wandb-summary.json
+2023-11-09 12:08:08,567 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: poll_exit
+2023-11-09 12:08:10,157 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 8
+2023-11-09 12:08:10,157 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: poll_exit
+2023-11-09 12:08:10,157 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:10,159 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 8
+2023-11-09 12:08:10,159 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:10,159 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 8
+2023-11-09 12:08:10,159 INFO    SenderThread:19739 [job_builder.py:build():281] Attempting to build job artifact
+2023-11-09 12:08:10,162 INFO    SenderThread:19739 [job_builder.py:_get_source_type():393] is repo sourced job
+2023-11-09 12:08:10,170 INFO    Thread-12 :19739 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log
+2023-11-09 12:08:10,173 INFO    SenderThread:19739 [job_builder.py:build():369] adding wandb-job metadata file
+2023-11-09 12:08:10,185 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 9
+2023-11-09 12:08:10,185 DEBUG   SenderThread:19739 [sender.py:send():380] send: artifact
+2023-11-09 12:08:10,185 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:10,188 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 9
+2023-11-09 12:08:10,652 INFO    SenderThread:19739 [sender.py:send_artifact():1456] sent artifact job-git_github.com_anuragkumar95_SpeechEnhancement_RLHF.git_src_train_original.py - {'id': 'QXJ0aWZhY3Q6NjMzMTA4ODkz', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjExNDI2Nzk1OA==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NjMzMTA4ODkz', 'versionIndex': 0}}}
+2023-11-09 12:08:10,652 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:10,652 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 9
+2023-11-09 12:08:10,653 INFO    SenderThread:19739 [dir_watcher.py:finish():358] shutting down directory watcher
+2023-11-09 12:08:11,176 INFO    SenderThread:19739 [dir_watcher.py:finish():388] scan: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files
+2023-11-09 12:08:11,184 INFO    SenderThread:19739 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/requirements.txt requirements.txt
+2023-11-09 12:08:11,185 INFO    SenderThread:19739 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log output.log
+2023-11-09 12:08:11,189 INFO    SenderThread:19739 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/config.yaml config.yaml
+2023-11-09 12:08:11,192 INFO    SenderThread:19739 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/wandb-summary.json wandb-summary.json
+2023-11-09 12:08:11,195 INFO    SenderThread:19739 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/conda-environment.yaml conda-environment.yaml
+2023-11-09 12:08:11,198 INFO    SenderThread:19739 [dir_watcher.py:finish():402] scan save: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/wandb-metadata.json wandb-metadata.json
+2023-11-09 12:08:11,198 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 10
+2023-11-09 12:08:11,199 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:11,201 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 10
+2023-11-09 12:08:11,201 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:11,202 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 10
+2023-11-09 12:08:11,202 INFO    SenderThread:19739 [file_pusher.py:finish():175] shutting down file pusher
+2023-11-09 12:08:11,620 INFO    wandb-upload_0:19739 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/requirements.txt
+2023-11-09 12:08:11,728 INFO    wandb-upload_1:19739 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/output.log
+2023-11-09 12:08:11,886 INFO    wandb-upload_2:19739 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/config.yaml
+2023-11-09 12:08:12,051 INFO    wandb-upload_4:19739 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/conda-environment.yaml
+2023-11-09 12:08:12,067 INFO    wandb-upload_3:19739 [upload_job.py:push():131] Uploaded file /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/files/wandb-summary.json
+2023-11-09 12:08:12,298 INFO    Thread-11 :19739 [sender.py:transition_state():613] send defer: 11
+2023-11-09 12:08:12,323 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:12,324 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 11
+2023-11-09 12:08:12,325 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:12,350 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 11
+2023-11-09 12:08:12,350 INFO    SenderThread:19739 [file_pusher.py:join():181] waiting for file pusher
+2023-11-09 12:08:12,350 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 12
+2023-11-09 12:08:12,351 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:12,351 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 12
+2023-11-09 12:08:12,351 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:12,351 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 12
+2023-11-09 12:08:12,351 INFO    SenderThread:19739 [file_stream.py:finish():595] file stream finish called
+2023-11-09 12:08:12,624 INFO    SenderThread:19739 [file_stream.py:finish():599] file stream finish is done
+2023-11-09 12:08:12,649 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 13
+2023-11-09 12:08:12,650 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:12,650 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 13
+2023-11-09 12:08:12,651 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:12,677 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 13
+2023-11-09 12:08:12,678 INFO    SenderThread:19739 [sender.py:transition_state():613] send defer: 14
+2023-11-09 12:08:12,678 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: defer
+2023-11-09 12:08:12,679 INFO    HandlerThread:19739 [handler.py:handle_request_defer():170] handle defer: 14
+2023-11-09 12:08:12,679 DEBUG   SenderThread:19739 [sender.py:send():380] send: final
+2023-11-09 12:08:12,679 DEBUG   SenderThread:19739 [sender.py:send():380] send: footer
+2023-11-09 12:08:12,679 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: defer
+2023-11-09 12:08:12,679 INFO    SenderThread:19739 [sender.py:send_request_defer():609] handle sender defer: 14
+2023-11-09 12:08:12,680 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: poll_exit
+2023-11-09 12:08:12,681 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: poll_exit
+2023-11-09 12:08:12,681 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: server_info
+2023-11-09 12:08:12,682 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: server_info
+2023-11-09 12:08:12,683 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: get_summary
+2023-11-09 12:08:12,684 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: sampled_history
+2023-11-09 12:08:12,685 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: internal_messages
+2023-11-09 12:08:12,686 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: job_info
+2023-11-09 12:08:12,749 DEBUG   SenderThread:19739 [sender.py:send_request():407] send_request: job_info
+2023-11-09 12:08:12,749 INFO    MainThread:19739 [wandb_run.py:_footer_history_summary_info():3554] rendering history
+2023-11-09 12:08:12,749 INFO    MainThread:19739 [wandb_run.py:_footer_history_summary_info():3586] rendering summary
+2023-11-09 12:08:12,749 INFO    MainThread:19739 [wandb_run.py:_footer_sync_info():3513] logging synced files
+2023-11-09 12:08:12,750 DEBUG   HandlerThread:19739 [handler.py:handle_request():144] handle_request: shutdown
+2023-11-09 12:08:12,750 INFO    HandlerThread:19739 [handler.py:finish():844] shutting down handler
+2023-11-09 12:08:13,687 INFO    WriterThread:19739 [datastore.py:close():294] close: /Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/wandb/run-20231109_120455-vwz3e5dm/run-vwz3e5dm.wandb
+2023-11-09 12:08:13,753 INFO    SenderThread:19739 [sender.py:finish():1534] shutting down sender
+2023-11-09 12:08:13,753 INFO    SenderThread:19739 [file_pusher.py:finish():175] shutting down file pusher
+2023-11-09 12:08:13,754 INFO    SenderThread:19739 [file_pusher.py:join():181] waiting for file pusher

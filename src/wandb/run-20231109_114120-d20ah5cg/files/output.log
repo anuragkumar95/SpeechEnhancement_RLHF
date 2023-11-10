@@ -1,0 +1,18 @@
+
+Start training...
+/Users/anuragkumar/opt/miniconda3/envs/rlhf-debug/lib/python3.9/site-packages/torch/functional.py:572: UserWarning: stft will soon require the return_complex parameter be given for real inputs, and will further require that return_complex=True in a future PyTorch release. (Triggered internally at  ../aten/src/ATen/native/SpectralOps.cpp:659.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train_original.py", line 516, in <module>
+    main(None, world_size, ARGS)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train_original.py", line 498, in main
+    trainer.train(args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train_original.py", line 432, in train
+    re_map, epoch_actor_loss, epoch_critic_loss, epoch_pesq = self.train_one_epoch(epoch+1, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train_original.py", line 388, in train_one_epoch
+    outputs = self.train_one_episode(epoch, step, env, args)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/train_original.py", line 243, in train_one_episode
+    action = env.noise.get_action(action)
+  File "/Users/anuragkumar/Anurag/SpeechEnhancement_RLHF/src/speech_enh_env.py", line 379, in get_action
+    comp_mask = torch.clip(action[1] + ou_state.view(-1, 1), torch.min(action[1]), torch.max(action[1]))
+RuntimeError: The size of tensor a (321) must match the size of tensor b (201) at non-singleton dimension 2

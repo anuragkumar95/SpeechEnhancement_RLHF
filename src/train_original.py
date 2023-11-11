@@ -246,11 +246,10 @@ class DDPGTrainer:
             action = (action[0].detach(), action[1].detach())
             #Add noise to the action
             action = env.noise.get_action(action)
-
-
+            
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
-                                            action=action.detach())
+                                            action=action)
             
             #print(f"After getting next state GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 

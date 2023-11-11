@@ -298,8 +298,8 @@ class DDPGTrainer:
 
             torch.cuda.empty_cache()
             
-            clean = env.state['cl_audio'].cpu().numpy()
-            est = env.state['est_audio'].cpu().numpy()
+            clean = env.state['cl_audio'].detach().cpu().numpy()
+            est = env.state['est_audio'].detach().cpu().numpy()
             p_mask, p_score = batch_pesq(clean, est)
             train_pesq = (p_mask * p_score)
 

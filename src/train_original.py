@@ -320,8 +320,10 @@ class DDPGTrainer:
                 'current':value_curr.mean(),
                 'reward':reward.mean()
             })
-            print(f"Episode end GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            
             print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
+
+            print(f"Before collecting outputs GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             outputs['reward'] += reward.mean()
             outputs['actor_loss'] += actor_loss.detach()
@@ -330,9 +332,13 @@ class DDPGTrainer:
             outputs['value_curr'] += value_curr.detach().mean()
             outputs['value_next'] += value_next.detach().mean()
             outputs['pesq'] += train_pesq.mean()
+
+            print(f"Episode end GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
         for k in outputs:
             outputs[k] = outputs[k] / STEPS_PER_EPISODE
+
+        
 
         return outputs
     

@@ -252,12 +252,16 @@ class DDPGTrainer:
 
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
+
+            print(f"Before buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
             #Store the experience in replay_buffer 
-            env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
-                                action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
-                                reward=reward.detach().clone().cpu().numpy(), 
-                                next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()})
+            env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
+                                action=(action[0].detach().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
+                                reward=reward.detach().cpu().numpy(), 
+                                next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()})
+            
+            print(f"After buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
             torch.cuda.empty_cache()
 
@@ -314,7 +318,7 @@ class DDPGTrainer:
                 'current':value_curr.mean(),
                 'reward':reward.mean()
             })
-            
+            print(f"Episode end GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
             outputs['reward'] += reward.mean()

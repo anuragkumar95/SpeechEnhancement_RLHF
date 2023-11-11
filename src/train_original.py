@@ -268,6 +268,8 @@ class DDPGTrainer:
             
             del(action)
             del(next_state)
+
+            torch.cuda.empty_cache()
             
             #print(f"After buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
@@ -323,7 +325,7 @@ class DDPGTrainer:
             p_mask, p_score = batch_pesq(clean, est)
             train_pesq = (p_mask * p_score)
 
-
+            torch.cuda.empty_cache()
 
             wandb.log({
                 'episode_step':i+1,

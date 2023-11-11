@@ -317,13 +317,13 @@ class DDPGTrainer:
             
             print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
-            outputs['reward'] += reward
+            outputs['reward'] += reward.mean()
             outputs['actor_loss'] += actor_loss
             outputs['critic_loss'] += critic_loss
-            outputs['y_t'] += y_t
-            outputs['value_curr'] += value_curr
-            outputs['value_next'] += value_next
-            outputs['pesq'] += train_pesq
+            outputs['y_t'] += y_t.mean()
+            outputs['value_curr'] += value_curr.mean()
+            outputs['value_next'] += value_next.mean()
+            outputs['pesq'] += train_pesq.mean()
             
         for k in outputs:
             outputs[k] = outputs[k] / STEPS_PER_EPISODE

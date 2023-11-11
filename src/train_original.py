@@ -123,6 +123,8 @@ class DDPGTrainer:
                 self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
+        self.target_actor.eval()
+        self.target_critic.eval()
         wandb.init(project=args.exp)
 
     def get_specs(self, clean, noisy):
@@ -238,7 +240,7 @@ class DDPGTrainer:
 
         for i in range(STEPS_PER_EPISODE):
             #Forward pass through actor to get the action(mask)
-            print(f"inp:{env.state['noisy'].shape}")
+            #print(f"inp:{env.state['noisy'].shape}")
             action = self.actor(env.state['noisy'])
             #Add noise to the action
             action = env.noise.get_action(action)
@@ -269,7 +271,7 @@ class DDPGTrainer:
             experience = env.exp_buffer.sample(args.batchsize)
 
             #--------------------------- Update Critic ------------------------#
-            print(f"next_inp:{experience['next']['noisy'].shape}")
+            #print(f"next_inp:{experience['next']['noisy'].shape}")
             next_action = self.target_actor(experience['next']['noisy'])
             next_action = (next_action[0].detach(), next_action[1].detach())
             
@@ -322,11 +324,11 @@ class DDPGTrainer:
             print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
             outputs['reward'] += reward.mean()
-            outputs['actor_loss'] += actor_loss
-            outputs['critic_loss'] += critic_loss
-            outputs['y_t'] += y_t.mean()
-            outputs['value_curr'] += value_curr.mean()
-            outputs['value_next'] += value_next.mean()
+            outputs['actor_loss'] += actor_loss.detach()
+            outputs['critic_loss'] += critic_loss.detach()
+            outputs['y_t'] += y_t.detach().mean()
+            outputs['value_curr'] += value_curr.detach().mean()
+            outputs['value_next'] += value_next.detach().mean()
             outputs['pesq'] += train_pesq.mean()
             
         for k in outputs:
@@ -381,8 +383,6 @@ class DDPGTrainer:
         for i in range(EPISODES_PER_EPOCH):
             self.actor.train()
             self.critic.train()
-            self.target_actor.eval()
-            self.target_critic.eval()
 
             batch = next(ds_iter)
             

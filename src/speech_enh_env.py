@@ -202,14 +202,14 @@ class SpeechEnhancementAgent:
         )
         
 
-        est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2).permute(0, 1, 3, 2)
-        print(f"est_spec:{est_spec.shape}")
+        est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
+        
         next_state = {k:v for k, v in state.items()}
 
         next_state['noisy'] = est_spec
-        next_state['est_mag'] = est_mag
-        next_state['est_real'] = est_real
-        next_state['est_imag'] = est_imag
+        next_state['est_mag'] = est_mag.permute(0, 1, 3, 2)
+        next_state['est_real'] = est_real.permute(0, 1, 3, 2)
+        next_state['est_imag'] = est_imag.permute(0, 1, 3, 2)
         next_state['est_audio'] = est_audio
 
         return next_state

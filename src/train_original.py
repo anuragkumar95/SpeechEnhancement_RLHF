@@ -282,7 +282,7 @@ class DDPGTrainer:
             
             #--------------------------- Update Actor ------------------------#
             #actor loss
-            a_action = self.actor(experience['curr'])
+            a_action = self.actor(experience['curr']['noisy'])
             actor_loss = -self.critic(experience['curr'], a_action).sum()
             
             self.a_optimizer.zero_grad()

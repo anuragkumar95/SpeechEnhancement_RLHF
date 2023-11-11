@@ -191,7 +191,7 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             window = window.to(self.gpu_id)
 
-        #est_mag = torch.sqrt(est_real**2 + est_imag**2)
+        est_mag = torch.sqrt(est_real**2 + est_imag**2)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
         est_audio = torch.istft(
             est_spec_uncompress,

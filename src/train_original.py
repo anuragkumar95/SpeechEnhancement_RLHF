@@ -272,6 +272,8 @@ class DDPGTrainer:
 
             #--------------------------- Update Critic ------------------------#
             #print(f"next_inp:{experience['next']['noisy'].shape}")
+            print(f"Before critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+
             next_action = self.target_actor(experience['next']['noisy'])
             next_action = (next_action[0].detach(), next_action[1].detach())
             
@@ -285,9 +287,12 @@ class DDPGTrainer:
             self.c_optimizer.zero_grad()
             critic_loss.backward()
             self.c_optimizer.step()
+
+            print(f"After critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
             #--------------------------- Update Actor ------------------------#
             #actor loss
+            print(f"Before actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             a_action = self.actor(experience['curr']['noisy'])
             actor_loss = -self.critic(experience['curr'], a_action).sum()
             
@@ -295,12 +300,17 @@ class DDPGTrainer:
             actor_loss.backward()
             self.a_optimizer.step()
 
+            print(f"After actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+
             #--------------------- Update Target Networks --------------------#
+            print(f"Before target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
         
             for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+
+            print(f"After target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             torch.cuda.empty_cache()
             

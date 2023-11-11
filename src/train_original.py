@@ -240,13 +240,12 @@ class DDPGTrainer:
 
         for i in range(STEPS_PER_EPISODE):
             #Forward pass through actor to get the action(mask)
-            #print(f"inp:{env.state['noisy'].shape}")
             #print(f"Epoch start GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             action = self.actor(env.state['noisy'])
             action = (action[0].detach(), action[1].detach())
             #Add noise to the action
             action = env.noise.get_action(action)
-            
+
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
                                             action=action)
@@ -265,8 +264,6 @@ class DDPGTrainer:
                                 next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()})
             
             #print(f"After buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-            
-            torch.cuda.empty_cache()
 
             #sample experience from buffer
             experience = env.exp_buffer.sample(args.batchsize)
@@ -313,7 +310,7 @@ class DDPGTrainer:
 
             #print(f"After target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
-            torch.cuda.empty_cache()
+    
             
             clean = env.state['cl_audio'].detach().cpu().numpy()
             est = env.state['est_audio'].detach().cpu().numpy()
@@ -322,7 +319,7 @@ class DDPGTrainer:
 
             env.state = next_state
 
-            del(next_state)
+
 
             wandb.log({
                 'episode_step':i+1,
@@ -336,7 +333,7 @@ class DDPGTrainer:
             
             print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
-            print(f"Before collecting outputs GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"Before collecting outputs GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             outputs['reward'] += reward.detach().mean()
             outputs['actor_loss'] += actor_loss.detach()
@@ -346,7 +343,7 @@ class DDPGTrainer:
             outputs['value_next'] += value_next.detach().mean()
             outputs['pesq'] += train_pesq.mean()
 
-            print(f"Episode end GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"Episode end GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
         for k in outputs:
             outputs[k] = outputs[k] / STEPS_PER_EPISODE

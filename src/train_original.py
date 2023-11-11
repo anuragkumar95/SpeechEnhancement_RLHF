@@ -241,6 +241,7 @@ class DDPGTrainer:
         for i in range(STEPS_PER_EPISODE):
             #Forward pass through actor to get the action(mask)
             #print(f"inp:{env.state['noisy'].shape}")
+            print(f"Epoch start GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             action = self.actor(env.state['noisy'])
             #Add noise to the action
             action = env.noise.get_action(action)
@@ -249,8 +250,7 @@ class DDPGTrainer:
             next_state = env.get_next_state(state=env.state, 
                                             action=action)
             
-            if next_state is None:
-                continue
+            print(f"After getting next state GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)

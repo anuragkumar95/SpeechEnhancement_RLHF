@@ -241,21 +241,23 @@ class DDPGTrainer:
         for i in range(STEPS_PER_EPISODE):
             #Forward pass through actor to get the action(mask)
             #print(f"inp:{env.state['noisy'].shape}")
-            print(f"Epoch start GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"Epoch start GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             action = self.actor(env.state['noisy'])
+            action = (action[0].detach(), action[1].detach())
             #Add noise to the action
             action = env.noise.get_action(action)
 
+
             #Apply mask to get the next state
             next_state = env.get_next_state(state=env.state, 
-                                            action=action)
+                                            action=action.detach())
             
-            print(f"After getting next state GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"After getting next state GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             #Calculate the reward
             reward = env.get_reward(env.state, next_state)
 
-            print(f"Before buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"Before buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
             #Store the experience in replay_buffer 
             env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
@@ -263,7 +265,7 @@ class DDPGTrainer:
                                 reward=reward.detach().cpu().numpy(), 
                                 next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()})
             
-            print(f"After buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"After buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
             torch.cuda.empty_cache()
 
@@ -272,7 +274,7 @@ class DDPGTrainer:
 
             #--------------------------- Update Critic ------------------------#
             #print(f"next_inp:{experience['next']['noisy'].shape}")
-            print(f"Before critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"Before critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             next_action = self.target_actor(experience['next']['noisy'])
             next_action = (next_action[0].detach(), next_action[1].detach())
@@ -288,11 +290,11 @@ class DDPGTrainer:
             critic_loss.backward()
             self.c_optimizer.step()
 
-            print(f"After critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"After critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             
             #--------------------------- Update Actor ------------------------#
             #actor loss
-            print(f"Before actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"Before actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
             a_action = self.actor(experience['curr']['noisy'])
             actor_loss = -self.critic(experience['curr'], a_action).sum()
             
@@ -300,7 +302,7 @@ class DDPGTrainer:
             actor_loss.backward()
             self.a_optimizer.step()
 
-            print(f"After actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"After actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             #--------------------- Update Target Networks --------------------#
             print(f"Before target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
@@ -310,7 +312,7 @@ class DDPGTrainer:
             for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
                 target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
 
-            print(f"After target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+            #print(f"After target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
             torch.cuda.empty_cache()
             
@@ -320,6 +322,8 @@ class DDPGTrainer:
             train_pesq = (p_mask * p_score)
 
             env.state = next_state
+
+            del(next_state)
 
             wandb.log({
                 'episode_step':i+1,
@@ -335,7 +339,7 @@ class DDPGTrainer:
 
             print(f"Before collecting outputs GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
 
-            outputs['reward'] += reward.mean()
+            outputs['reward'] += reward.detach().mean()
             outputs['actor_loss'] += actor_loss.detach()
             outputs['critic_loss'] += critic_loss.detach()
             outputs['y_t'] += y_t.detach().mean()

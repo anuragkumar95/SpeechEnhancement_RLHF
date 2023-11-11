@@ -191,7 +191,7 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             window = window.to(self.gpu_id)
 
-        est_mag = torch.sqrt(est_real**2 + est_imag**2)
+        #est_mag = torch.sqrt(est_real**2 + est_imag**2)
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
         est_audio = torch.istft(
             est_spec_uncompress,
@@ -207,9 +207,9 @@ class SpeechEnhancementAgent:
         next_state = {k:v.detach() for k, v in state.items()}
 
         next_state['noisy'] = est_spec
-        next_state['est_mag'] = est_mag.permute(0, 1, 3, 2)
-        next_state['est_real'] = est_real.permute(0, 1, 3, 2)
-        next_state['est_imag'] = est_imag.permute(0, 1, 3, 2)
+        #next_state['est_mag'] = est_mag.permute(0, 1, 3, 2)
+        #next_state['est_real'] = est_real.permute(0, 1, 3, 2)
+        #next_state['est_imag'] = est_imag.permute(0, 1, 3, 2)
         next_state['est_audio'] = est_audio
 
         return next_state

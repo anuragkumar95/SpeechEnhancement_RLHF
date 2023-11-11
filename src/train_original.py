@@ -319,7 +319,7 @@ class DDPGTrainer:
             p_mask, p_score = batch_pesq(clean, est)
             train_pesq = (p_mask * p_score)
 
-            env.state = next_state
+            env.state = next_state.detach()
 
             wandb.log({
                 'episode_step':i+1,

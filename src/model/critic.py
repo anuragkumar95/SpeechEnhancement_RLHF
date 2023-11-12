@@ -3,6 +3,7 @@ from joblib import Parallel, delayed
 from pesq import pesq
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from utils import LearnableSigmoid, power_uncompress
 from speech_enh_env import SpeechEnhancementAgent
 
@@ -56,4 +57,11 @@ class QNet(nn.Module):
         xy = torch.cat([mag, clean_mag], dim = 1)
         #yy = torch.cat([clean_mag, clean_mag], dim = 1)
         #return 1 - (self.layers(yy) - self.layers(xy))
-        return self.layers(xy)
+        #[0.1, 0.9, 0.2, 0.05]
+        loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])
+        loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
+        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
+
+        loss = 0.1 * loss_real + 0.9 * loss_mag + 0.2 * time_loss
+
+        return self.layers(xy) + (1 - loss.mean()) 

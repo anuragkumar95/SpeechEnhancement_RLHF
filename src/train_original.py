@@ -237,6 +237,11 @@ class DDPGTrainer:
             'value_next':0,
             'pesq':0
         }
+        
+        clean = env.state['cl_audio'].detach().cpu().numpy()
+        est = env.state['est_audio'].detach().cpu().numpy()
+        p_mask, p_score = batch_pesq(clean, est)
+        noisy_pesq = original_pesq((p_mask * p_score).mean())
 
         for i in range(STEPS_PER_EPISODE):
             try:
@@ -306,13 +311,13 @@ class DDPGTrainer:
                 clean = env.state['cl_audio'].detach().cpu().numpy()
                 est = env.state['est_audio'].detach().cpu().numpy()
                 p_mask, p_score = batch_pesq(clean, est)
-                train_pesq = (p_mask * p_score)
+                train_pesq = original_pesq((p_mask * p_score).mean())
 
                 torch.cuda.empty_cache()
 
                 wandb.log({
+                    'pesq_change':(train_pesq - noisy_pesq),
                     'episode_step':i+1,
-                    'train_pesq':original_pesq(train_pesq).mean(),
                     'actor_loss':actor_loss.detach(),
                     'critic_loss':critic_loss.detach(),
                     'y_t':y_t.detach().mean(),

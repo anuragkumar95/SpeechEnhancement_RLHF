@@ -279,7 +279,7 @@ class DDPGTrainer:
             #actor loss
             a_inp = env.get_state_input(experience['curr'], experience['t'])
             a_action = self.actor(a_inp)
-            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).sum() #+ mag_loss.mean()
+            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() #+ mag_loss.mean()
             
             self.a_optimizer.zero_grad()
             actor_loss.backward()

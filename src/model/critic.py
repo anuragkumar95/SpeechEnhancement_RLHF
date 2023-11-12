@@ -54,5 +54,6 @@ class QNet(nn.Module):
         clean_mag = next_state['clean_mag']
 
         xy = torch.cat([mag, clean_mag], dim = 1)
-        yy = torch.cat([clean_mag, clean_mag], dim = 1)
-        return 1 - (self.layers(yy) - self.layers(xy))
+        #yy = torch.cat([clean_mag, clean_mag], dim = 1)
+        #return 1 - (self.layers(yy) - self.layers(xy))
+        return self.layers(xy)

@@ -239,118 +239,100 @@ class DDPGTrainer:
         }
 
         for i in range(STEPS_PER_EPISODE):
-            #Forward pass through actor to get the action(mask)
-            print(f"Epoch start GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-            action = self.actor(env.state['noisy'])
-            action = (action[0].detach(), action[1].detach())
-            #Add noise to the action
-            action = env.noise.get_action(action)
+            try:
+                #Forward pass through actor to get the action(mask)
+                action = self.actor(env.state['noisy'])
+                action = (action[0].detach(), action[1].detach())
+                #Add noise to the action
+                action = env.noise.get_action(action)
 
-            #Apply mask to get the next state
-            next_state = env.get_next_state(state=env.state, 
-                                            action=action)
+                #Apply mask to get the next state
+                next_state = env.get_next_state(state=env.state, 
+                                                action=action)
+                
+                #Calculate the reward
+                reward = env.get_reward(env.state, next_state)
+
+                #Store the experience in replay_buffer 
+                env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
+                                    action=(action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy()), 
+                                    reward=reward.detach().cpu().numpy(), 
+                                    next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()})
+                
+                env.state = next_state
+                
+                del(action)
+                del(next_state)
+
+                torch.cuda.empty_cache()
+                
+                #sample experience from buffer
+                experience = env.exp_buffer.sample(args.batchsize)
+
+                #--------------------------- Update Critic ------------------------#
             
-            #print(f"After getting next state GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+                next_action = self.target_actor(experience['next']['noisy'])
+                next_action = (next_action[0].detach(), next_action[1].detach())
+                
+                #Set TD target
+                value_next = self.target_critic(experience['next'], next_action).detach()
+                y_t = experience['reward'] + args.gamma * value_next
+                value_curr = self.critic(experience['curr'], experience['action'])
+                
+                #critic loss
+                critic_loss = F.mse_loss(y_t, value_curr).mean()
+                self.c_optimizer.zero_grad()
+                critic_loss.backward()
+                self.c_optimizer.step()
 
-            #Calculate the reward
-            reward = env.get_reward(env.state, next_state)
+                #--------------------------- Update Actor ------------------------#
+                
+                #actor loss
+                a_action = self.actor(experience['curr']['noisy'])
+                actor_loss = -self.critic(experience['curr'], a_action).sum()
+                
+                self.a_optimizer.zero_grad()
+                actor_loss.backward()
+                self.a_optimizer.step()
 
-
-            #print(f"Before buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+                #--------------------- Update Target Networks --------------------#
+                
+                for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+                    target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
             
-            #Store the experience in replay_buffer 
-            env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
-                                action=(action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy()), 
-                                reward=reward.detach().cpu().numpy(), 
-                                next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()})
-            
-            env.state = next_state
-            
-            del(action)
-            del(next_state)
+                for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+                    target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
 
-            torch.cuda.empty_cache()
-            
-            #print(f"After buffer push GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+                clean = env.state['cl_audio'].detach().cpu().numpy()
+                est = env.state['est_audio'].detach().cpu().numpy()
+                p_mask, p_score = batch_pesq(clean, est)
+                train_pesq = (p_mask * p_score)
 
-            #sample experience from buffer
-            experience = env.exp_buffer.sample(args.batchsize)
+                torch.cuda.empty_cache()
 
-            #--------------------------- Update Critic ------------------------#
-            #print(f"next_inp:{experience['next']['noisy'].shape}")
-            #print(f"Before critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
+                wandb.log({
+                    'episode_step':i+1,
+                    'train_pesq':original_pesq(train_pesq).mean(),
+                    'actor_loss':actor_loss.detach(),
+                    'critic_loss':critic_loss.detach(),
+                    'y_t':y_t.detach().mean(),
+                    'current':value_curr.detach().mean(),
+                    'reward':reward.detach().mean()
+                })
+                
+                print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
 
-            next_action = self.target_actor(experience['next']['noisy'])
-            next_action = (next_action[0].detach(), next_action[1].detach())
-            
-            #Set TD target
-            value_next = self.target_critic(experience['next'], next_action).detach()
-            y_t = experience['reward'] + args.gamma * value_next
-            value_curr = self.critic(experience['curr'], experience['action'])
-            
-            #critic loss
-            critic_loss = F.mse_loss(y_t, value_curr).mean()
-            self.c_optimizer.zero_grad()
-            critic_loss.backward()
-            self.c_optimizer.step()
+                outputs['reward'] += reward.detach().mean()
+                outputs['actor_loss'] += actor_loss.detach()
+                outputs['critic_loss'] += critic_loss.detach()
+                outputs['y_t'] += y_t.detach().mean()
+                outputs['value_curr'] += value_curr.detach().mean()
+                outputs['value_next'] += value_next.detach().mean()
+                outputs['pesq'] += train_pesq.mean()
 
-            #print(f"After critic update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-            
-            #--------------------------- Update Actor ------------------------#
-            #actor loss
-            #print(f"Before actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-            a_action = self.actor(experience['curr']['noisy'])
-            actor_loss = -self.critic(experience['curr'], a_action).sum()
-            
-            self.a_optimizer.zero_grad()
-            actor_loss.backward()
-            self.a_optimizer.step()
+            except Exception as e:
+                continue
 
-            #print(f"After actor update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-
-            #--------------------- Update Target Networks --------------------#
-            #print(f"Before target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-            for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-        
-            for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-
-            print(f"After target soft update GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-
-    
-            
-            clean = env.state['cl_audio'].detach().cpu().numpy()
-            est = env.state['est_audio'].detach().cpu().numpy()
-            p_mask, p_score = batch_pesq(clean, est)
-            train_pesq = (p_mask * p_score)
-
-            torch.cuda.empty_cache()
-
-            wandb.log({
-                'episode_step':i+1,
-                'train_pesq':original_pesq(train_pesq).mean(),
-                'actor_loss':actor_loss.detach(),
-                'critic_loss':critic_loss.detach(),
-                'y_t':y_t.detach().mean(),
-                'current':value_curr.detach().mean(),
-                'reward':reward.detach().mean()
-            })
-            
-            print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
-
-            #print(f"Before collecting outputs GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-
-            outputs['reward'] += reward.detach().mean()
-            outputs['actor_loss'] += actor_loss.detach()
-            outputs['critic_loss'] += critic_loss.detach()
-            outputs['y_t'] += y_t.detach().mean()
-            outputs['value_curr'] += value_curr.detach().mean()
-            outputs['value_next'] += value_next.detach().mean()
-            outputs['pesq'] += train_pesq.mean()
-
-            #print(f"Episode end GPU Memory Usage:{(torch.cuda.memory_allocated(self.gpu_id))/(1024 * 1024):.2f}MB")
-            
         for k in outputs:
             outputs[k] = outputs[k] / STEPS_PER_EPISODE
 

@@ -380,7 +380,7 @@ class DDPGTrainer:
         critic_epoch_loss = 0
         step = 0
         env = SpeechEnhancementAgent(window=args.win_len // 2, 
-                                     buffer_size=1000000,
+                                     buffer_size=1200,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,

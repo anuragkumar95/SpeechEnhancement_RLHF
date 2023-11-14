@@ -407,12 +407,12 @@ class DDPGTrainer:
             #Collect reward and losses
             actor_epoch_loss += outputs['actor_loss']
             critic_epoch_loss += outputs['critic_loss']
-            REWARD_MAP.append(outputs['reward'])
+            REWARD_MAP.append(outputs['reward'].mean())
 
-            wandb.log({
-                "episode":(epoch-1)*EPISODES_PER_EPOCH + i+1,
-                "mean_reward":outputs['reward'].mean()
-            })
+        wandb.log({
+            "episode":(epoch-1)*EPISODES_PER_EPOCH + i+1,
+            "mean_reward":np.asarray(REWARD_MAP).mean()
+        })
             
 
         actor_epoch_loss = actor_epoch_loss / step

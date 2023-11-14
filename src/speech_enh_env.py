@@ -208,8 +208,8 @@ class SpeechEnhancementAgent:
 
         next_state['noisy'] = est_spec
         next_state['est_mag'] = est_mag.permute(0, 1, 3, 2)
-        #next_state['est_real'] = est_real.permute(0, 1, 3, 2)
-        #next_state['est_imag'] = est_imag.permute(0, 1, 3, 2)
+        next_state['est_real'] = est_real.permute(0, 1, 3, 2)
+        next_state['est_imag'] = est_imag.permute(0, 1, 3, 2)
         next_state['est_audio'] = est_audio
 
         return next_state

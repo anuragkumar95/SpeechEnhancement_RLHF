@@ -61,4 +61,4 @@ class QNet(nn.Module):
 
         loss = 0.1 * (loss_real + loss_imag) + 0.9 * loss_mag# + 0.2 * time_loss
 
-        return self.layers(xy) + (1 - loss.mean()) 
+        return self.layers(xy) + (1 - loss.mean())

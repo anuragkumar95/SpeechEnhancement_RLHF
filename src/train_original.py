@@ -318,7 +318,7 @@ class DDPGTrainer:
 
             wandb.log({
                 'pesq_change':(train_pesq - noisy_pesq),
-                'episode_step':i+1,
+                'step':episode,
                 'actor_loss':actor_loss.detach(),
                 'critic_loss':critic_loss.detach(),
                 'y_t':y_t.detach().mean(),

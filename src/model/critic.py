@@ -59,6 +59,6 @@ class QNet(nn.Module):
         loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
         loss_imag = F.mse_loss(next_state['clean_imag'],next_state['est_imag'])
 
-        loss = 0.1 * loss_real + 0.9 * loss_mag# + 0.2 * time_loss
+        loss = 0.1 * (loss_real + loss_imag) + 0.9 * loss_mag# + 0.2 * time_loss
 
         return self.layers(xy) + (1 - loss.mean()) 

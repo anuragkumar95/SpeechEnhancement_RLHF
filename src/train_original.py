@@ -352,7 +352,7 @@ class DDPGTrainer:
         and return pesq score of the enhances batch of 
         spectrograms.
         """
-        print("Running validation...")
+        #print("Running validation...")
         
         #get the window input
         #inp = env.get_state_input(env.state)
@@ -461,16 +461,14 @@ class DDPGTrainer:
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
                     path = os.path.join(args.output, checkpoint_prefix)
-                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                'critic_state_dict':self.critic.state_dict(),
-                                'target_actor_state_dict':self.target_actor.state_dict(),
-                                'target_critic_state_dict':self.target_critic.state_dict(),
+                    save_dict = {'actor_state_dict':self.actor.module.state_dict(), 
+                                'critic_state_dict':self.critic.module.state_dict(),
                                 'actor_optim_state_dict':self.a_optimizer.state_dict(),
                                 'critic_optim_state_dict':self.c_optimizer.state_dict(),
                                 #'scheduler_state_dict':scheduler.state_dict(),
                                 #'lr':scheduler.get_last_lr()
                                 }
-                torch.save(save_dict, path)
+                    torch.save(save_dict, path)
                 #TODO:May need a LR scheduler as well
 
     

@@ -60,8 +60,8 @@ class QNet(nn.Module):
         #[0.1, 0.9, 0.2, 0.05]
         loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])
         loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])
-        time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
+        #time_loss = F.mse_loss(next_state['cl_audio'], next_state['est_audio'])
 
-        loss = 0.1 * loss_real + 0.9 * loss_mag + 0.2 * time_loss
+        loss = 0.1 * loss_real + 0.9 * loss_mag# + 0.2 * time_loss
 
         return self.layers(xy) + (1 - loss.mean()) 

@@ -343,8 +343,6 @@ class DDPGTrainer:
         for k in outputs:
             outputs[k] = outputs[k] / STEPS_PER_EPISODE
 
-        
-
         return outputs
     
     def run_validation(self, env):
@@ -407,7 +405,7 @@ class DDPGTrainer:
             #Collect reward and losses
             actor_epoch_loss += outputs['actor_loss']
             critic_epoch_loss += outputs['critic_loss']
-            REWARD_MAP.append(outputs['reward'].mean())
+            REWARD_MAP.append(outputs['reward'])
 
             wandb.log({
                 "episode":(epoch-1)*EPISODES_PER_EPOCH + i+1,

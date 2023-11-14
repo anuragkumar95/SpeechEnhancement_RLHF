@@ -52,6 +52,7 @@ def args():
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--reward", type=int, help="Type of reward")
+    parser.add_argument("--no_loss_supervision", action='store_true', help="Pass this to not set loss supervision in critic output.")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
     parser.add_argument("--win_len", type=int, default=24, help="Context window length for input")
@@ -98,7 +99,7 @@ class DDPGTrainer:
             #Free mem
             del cmgan_state_dict
 
-        self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
+        self.critic = QNet(ndf=16, in_channel=2, no_supervision=args.no_loss_supervision, gpu_id=gpu_id)
         self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
 
         if args.disc_pt is not None:
@@ -396,7 +397,7 @@ class DDPGTrainer:
             
             #Preprocess batch
             batch = self.preprocess_batch(batch)
-            #Run episode
+            #Run episode  
             env.set_batch(batch)
             step = i+1
             

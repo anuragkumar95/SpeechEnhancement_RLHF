@@ -326,7 +326,7 @@ class DDPGTrainer:
                 'reward':reward.detach().mean()
             })
             
-            print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{i+1} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
+            print(f"EPOCH:{epoch} | EPISODE:{episode} | change in PESQ:{train_pesq - noisy_pesq} | REWARD:{reward.mean()}")
 
             outputs['reward'] += reward.detach().mean()
             outputs['actor_loss'] += actor_loss.detach()

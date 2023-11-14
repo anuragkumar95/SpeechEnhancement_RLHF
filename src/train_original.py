@@ -287,7 +287,7 @@ class DDPGTrainer:
             critic_loss = F.mse_loss(y_t, value_curr).mean()
             self.c_optimizer.zero_grad()
             critic_loss.backward()
-            torch.nn.utils.clip_grad_value(self.critic.parameters(), 5.0)
+            torch.nn.utils.clip_grad_value_(self.critic.parameters(), 5.0)
             self.c_optimizer.step()
 
             #--------------------------- Update Actor ------------------------#
@@ -298,7 +298,7 @@ class DDPGTrainer:
             
             self.a_optimizer.zero_grad()
             actor_loss.backward()
-            torch.nn.utils.clip_grad_value(self.actor.parameters(), 5.0)
+            torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
             self.a_optimizer.step()
 
             #--------------------- Update Target Networks --------------------#

@@ -213,18 +213,22 @@ class TSCNet(nn.Module):
 """
 
 class MaskDecoder(nn.Module):
-    def __init__(self, num_features, num_channel=64, out_channel=1, gpu_id=None):
+    def __init__(self, num_features, num_channel=64, out_channel=1, distribution=False, gpu_id=None):
         super(MaskDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.conv_1 = nn.Conv2d(num_channel, out_channel, (1, 2))
         self.norm = nn.InstanceNorm2d(out_channel, affine=True)
         self.prelu = nn.PReLU(out_channel)
-        self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
-        self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
+        if distribution:
+            self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
+            self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
+        else:
+            self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
         self.N = torch.distributions.Normal(0, 1)
         self.gpu_id = gpu_id
+        self.dist = distribution
 
     def sample(self, mu, logvar):
         sigma = torch.exp(0.5 * logvar)
@@ -236,9 +240,12 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
-        x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
-        x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-        x = self.sample(x_mu, x_var)
+        if self.dist:
+            x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
+            x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
+            x = self.sample(x_mu, x_var)
+        else:
+            x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
         return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
         
 
@@ -261,7 +268,7 @@ class ComplexDecoder(nn.Module):
 
 
 class TSCNet(nn.Module):
-    def __init__(self, num_channel=64, num_features=201, gpu_id=None):
+    def __init__(self, num_channel=64, num_features=201, distribution=False, gpu_id=None):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
@@ -271,7 +278,7 @@ class TSCNet(nn.Module):
         self.TSCB_4 = TSCB(num_channel=num_channel)
 
         self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, gpu_id=gpu_id
+            num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel)
 

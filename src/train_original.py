@@ -43,8 +43,8 @@ def args():
                         help="Training batchsize.")
     parser.add_argument("--episode_len", type=int, required=False, default=50,
                         help="No. of steps in one episode.")
-    parser.add_argument("--t_max", type=int, required=False, default=4,
-                        help="Backpropagate every t_max steps.")
+    parser.add_argument("--out_dist", action='store_true',
+                        help="Set this flag to predict action from N(mu, sigma) instead.")
     parser.add_argument("--episodes_per_epoch", type=int, required=False, default=100,
                         help="Run validation every val_step steps.")
     parser.add_argument("--gpu", action='store_true',
@@ -74,17 +74,19 @@ class DDPGTrainer:
     Class which defines Deep Deterministic Policy Gradient (DDPG)
     Performs Actor Critic training using DDPG method.
     """
-    def __init__(self, train_ds, test_ds, args, gpu_id, pretrain=False):
+    def __init__(self, train_ds, test_ds, args, gpu_id, out_distribution=False, pretrain=False):
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
 
         self.actor = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1, 
+                            num_features=self.n_fft // 2 + 1,
+                            distribution=out_distribution, 
                             gpu_id=gpu_id)
         self.target_actor = TSCNet(num_channel=64, 
                                    num_features=self.n_fft // 2 + 1,
+                                   distribution=out_distribution,
                                    gpu_id=gpu_id)
         
         if pretrain:
@@ -100,7 +102,7 @@ class DDPGTrainer:
             del cmgan_state_dict
 
         self.critic = QNet(ndf=16, in_channel=2, no_supervision=args.no_loss_supervision, gpu_id=gpu_id)
-        self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
+        self.target_critic = QNet(ndf=16, in_channel=2, no_supervision=args.no_loss_supervision, gpu_id=gpu_id)
 
         if args.disc_pt is not None:
             state_dict = torch.load(args.disc_pt, map_location=torch.device('cpu'))
@@ -453,7 +455,7 @@ class DDPGTrainer:
                        "Actor_loss":epoch_actor_loss,
                        "Critic_loss":epoch_critic_loss,
                        "PESQ":epoch_pesq,
-                       "reward":np.mean(re_map)})
+                       "Reward":np.mean(re_map)})
             
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq
@@ -509,7 +511,7 @@ def main(rank: int, world_size: int, args):
     if args.ckpt is not None:
         pretrain=True
 
-    trainer = DDPGTrainer(train_ds, test_ds, args, rank, pretrain=pretrain)
+    trainer = DDPGTrainer(train_ds, test_ds, args, rank, out_distribution=args.out_dist, pretrain=pretrain)
     
     trainer.train(args)
     destroy_process_group()

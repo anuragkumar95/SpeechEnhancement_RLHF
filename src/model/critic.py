@@ -56,6 +56,7 @@ class QNet(nn.Module):
         clean_mag = next_state['clean_mag']
 
         xy = torch.cat([mag, clean_mag], dim = 1)
+        
         if self.supervise:
             loss_mag = F.mse_loss(next_state['clean_mag'], next_state['est_mag'])
             loss_real = F.mse_loss(next_state['clean_real'],next_state['est_real'])

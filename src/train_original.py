@@ -454,7 +454,7 @@ class DDPGTrainer:
             wandb.log({"Epoch":epoch+1,
                        "Actor_loss":epoch_actor_loss,
                        "Critic_loss":epoch_critic_loss,
-                       "PESQ":epoch_pesq,
+                       "ValPESQ":original_pesq(epoch_pesq),
                        "Reward":np.mean(re_map)})
             
             if epoch_pesq >= best_pesq:

@@ -406,7 +406,7 @@ class DDPGTrainer:
                     "val_pesq":original_pesq(pesq)})   
         
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
-        return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, pesq
+        return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, original_pesq(pesq)
     
     def train(self, args):
         """

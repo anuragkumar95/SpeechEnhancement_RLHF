@@ -113,24 +113,24 @@ class DDPGTrainer:
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
-        if args.ckpt is not None:
-            state_dict = torch.load(args.ckpt, map_location=gpu_id)
-            self.actor.load_state_dict(state_dict['actor_state_dict'])
-            self.critic.load_state_dict(state_dict['critic_state_dict'])
-            self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
-            self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
-            _, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
-            _, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
-            del state_dict
-            print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
             self.critic = self.critic.to(gpu_id)
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
-           
-            
+
+            if args.ckpt is not None:
+                state_dict = torch.load(args.ckpt, map_location=gpu_id)
+                self.actor.load_state_dict(state_dict['actor_state_dict'])
+                self.critic.load_state_dict(state_dict['critic_state_dict'])
+                self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
+                self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
+                _, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
+                _, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
+                del state_dict
+                print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
+
             if args.parallel:
                 self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
                 self.critic = DDP(self.critic, device_ids=[gpu_id])

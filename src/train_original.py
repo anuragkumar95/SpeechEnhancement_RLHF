@@ -89,7 +89,7 @@ class DDPGTrainer:
                                    distribution=out_distribution,
                                    gpu_id=gpu_id)
         
-        if pretrain and args.ckpt is not None:
+        if pretrain and args.ckpt is None:
             #Load checkpoint
             print(f"Loading checkpoint saved at {args.ckpt}...")
             cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))

@@ -119,6 +119,9 @@ class DDPGTrainer:
             self.critic.load_state_dict(state_dict['critic_state_dict'])
             self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
             self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
+            _, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
+            _, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
+            del state_dict
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)

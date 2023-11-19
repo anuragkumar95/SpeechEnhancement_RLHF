@@ -122,6 +122,7 @@ class DDPGTrainer:
             _, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
             _, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
             del state_dict
+            print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)

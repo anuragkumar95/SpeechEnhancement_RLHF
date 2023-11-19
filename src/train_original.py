@@ -89,7 +89,7 @@ class DDPGTrainer:
                                    distribution=out_distribution,
                                    gpu_id=gpu_id)
         
-        if pretrain:
+        if pretrain and args.ckpt is not None:
             #Load checkpoint
             print(f"Loading checkpoint saved at {args.ckpt}...")
             cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
@@ -112,6 +112,13 @@ class DDPGTrainer:
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
+
+        if args.ckpt is not None:
+            state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
+            self.actor.load_state_dict(state_dict['actor_state_dict'])
+            self.critic.load_state_dict(state_dict['critic_state_dict'])
+            self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
+            self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)

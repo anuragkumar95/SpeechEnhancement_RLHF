@@ -472,7 +472,7 @@ class DDPGTrainer:
                 #TODO:Logic for savecheckpoint
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
-                    path = os.path.join(args.output, checkpoint_prefix)
+                    path = os.path.join(args.output, args.exp, checkpoint_prefix)
                     save_dict = {'actor_state_dict':self.actor.module.state_dict(), 
                                 'critic_state_dict':self.critic.module.state_dict(),
                                 'actor_optim_state_dict':self.a_optimizer.state_dict(),

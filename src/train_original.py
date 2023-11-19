@@ -121,7 +121,7 @@ class DDPGTrainer:
             self.target_critic = self.target_critic.to(gpu_id)
 
             if args.ckpt is not None:
-                state_dict = torch.load(args.ckpt, map_location=gpu_id)
+                state_dict = torch.load(args.ckpt, map_location=torch.device(gpu_id))
                 self.actor.load_state_dict(state_dict['actor_state_dict'])
                 self.critic.load_state_dict(state_dict['critic_state_dict'])
                 self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])

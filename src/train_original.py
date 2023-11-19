@@ -114,7 +114,7 @@ class DDPGTrainer:
         self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
         if args.ckpt is not None:
-            state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
+            state_dict = torch.load(args.ckpt, map_location=torch.device(gpu_id))
             self.actor.load_state_dict(state_dict['actor_state_dict'])
             self.critic.load_state_dict(state_dict['critic_state_dict'])
             self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])

@@ -129,7 +129,7 @@ class DDPGTrainer:
             self.critic = self.critic.to(gpu_id)
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
-            self.a_optimizer = 
+           
             
             if args.parallel:
                 self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)

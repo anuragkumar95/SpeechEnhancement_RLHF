@@ -94,73 +94,8 @@ class SpeechEnhancementAgent:
             windows.append(win)
         windows = torch.stack(windows).squeeze(1)
         return windows
-    '''
-    def get_next_state(self, state, action, t):
-        """
-        Apply mask to spectrogram on the i-th frame and return next state.
-        ARGS:
-            state : spectrograms of shape (b x 2 x f x t)
-            action: (mask, complex_mask) for frame at index 't' for entire batch, (b x f x 1)
-
-        Returns:
-            Next state with 't'th frame enhanced by applying mask.
-        """
-        if isinstance(t, int):
-            t = [t]
-
-        mask_mag, complex_out = action
-
-        noisy_phase = torch.angle(
-            torch.complex(state['noisy'][:, 0, :, :], state['noisy'][:, 1, :, :])
-        ).unsqueeze(1)
-
-
-        out_mag = torch.sqrt(state['noisy'][:, 0, :, :] ** 2 + state['noisy'][:, 1, :, :] ** 2).unsqueeze(1)
-        
-        for i in range(len(t)):
-            out_mag[i, :, t[i], :] = out_mag[i, :, t[i], :] * mask_mag[i].squeeze(0)
-             
-        mag_real = out_mag * torch.cos(noisy_phase)
-        mag_imag = out_mag * torch.sin(noisy_phase)
-
-        for i in range(len(t)):
-            mag_real[i, :, t[i], :] = mag_real[i, :, t[i], :] + complex_out[i, 0, :, :].permute(1, 0)
-            mag_imag[i, :, t[i], :] = mag_imag[i, :, t[i], :] + complex_out[i, 1, :, :].permute(1, 0)
-             
-        est_real = mag_real.permute(0, 1, 3, 2)
-        est_imag = mag_imag.permute(0, 1, 3, 2)
-
-        window = torch.hamming_window(self.n_fft)
-        if self.gpu_id is not None:
-            window = window.to(self.gpu_id)
-
-        est_mag = torch.sqrt(est_real**2 + est_imag**2)
-        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-        est_audio = torch.istft(
-            est_spec_uncompress,
-            self.n_fft,
-            self.hop,
-            window=window,
-            onesided=True,
-        )
-
-        next_state = torch.cat([est_real, est_imag], dim=1).permute(0, 1, 3, 2)
-        clean_mag = torch.sqrt(state['clean_real']**2 + state['clean_imag']**2)
-
-        retval = {'noisy':next_state.detach(),
-                'clean':state['clean'].detach(), 
-                'clean_real':state['clean_real'].detach(),
-                'clean_imag':state['clean_imag'].detach(),
-                'clean_mag':clean_mag.detach(),
-                'cl_audio':state['cl_audio'].detach(),
-                'n_audio':state['n_audio'].detach(),
-                'est_mag':est_mag.detach(),
-                'est_real':est_real.detach(),
-                'est_imag':est_imag.detach(),
-                'est_audio':est_audio.detach()
-                }
-        return retval
-    '''
+    
+       
     def get_next_state(self, state, action):
         """
         Apply mask to spectrogram on the i-th frame and return next state.

@@ -351,6 +351,8 @@ class DDPGTrainer:
             outputs['pesq'] += train_pesq.mean()
 
         except Exception as e:
+            import traceback
+            print(traceback.format_exc())
             return None
 
         for k in outputs:

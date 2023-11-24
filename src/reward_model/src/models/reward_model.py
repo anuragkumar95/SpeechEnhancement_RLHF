@@ -88,6 +88,7 @@ class RewardModel(nn.Module):
         #xy = torch.cat([wav_in, wav_out], dim = 1)
         xy = wav_in - wav_out
         dist = 1 - self.layers(xy)
+        print(f"dist:{dist.mean()}")
         logits = self.classification_head(dist)
         probs = self.softmax(logits)
 

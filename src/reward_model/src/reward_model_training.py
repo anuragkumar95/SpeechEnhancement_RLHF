@@ -60,7 +60,7 @@ def ARGS():
     
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
-        self.model = RewardModel(ndf=32, in_channel=2, disc_pt=args.disc_pt)
+        self.model = RewardModel(ndf=32, in_channel=2)
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds

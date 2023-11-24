@@ -71,6 +71,9 @@ class Trainer:
             state_dict = state_dict['discriminator_state_dict']
             #Copy weights and freeze weights which are copied
             keys, self.model = copy_weights(state_dict, self.model)
+            print("Copied weights for these layers...")
+            for key in keys:
+                print(f"{key}")
             self.model = freeze_layers(self.model, keys)
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)

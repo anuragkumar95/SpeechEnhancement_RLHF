@@ -205,15 +205,17 @@ class Trainer:
 def main(args):
     if args.parallel:
         train_ds, test_ds = load_data(args.root, 
-                                    1, 
+                                    16, 
                                     1, 
                                     args.cut_len,
+                                    resample=True,
                                     gpu = True)
     else:
         train_ds, test_ds = load_data(args.root, 
                                     16, 
                                     1, 
                                     args.cut_len,
+                                    resample=True,
                                     gpu = False)
 
     if args.gpu:

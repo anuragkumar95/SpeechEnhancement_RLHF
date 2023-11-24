@@ -111,7 +111,7 @@ class Trainer:
             onesided=True,
         )
 
-        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
+        noisy_spec = power_compress(noisy_spec)
         clean_spec = power_compress(clean_spec)
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
@@ -147,8 +147,9 @@ class Trainer:
                 wav_in = wav_in.to(self.gpu_id)
                 wav_out = wav_out.to(self.gpu_id)
                 labels = labels.to(self.gpu_id)
-                
+
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
+            print(f"wav_in:{wav_in.shape} wav_out:{wav_out.shape}")
             batch = (wav_in, wav_out, labels)
             
             batch_loss = self.forward_step(batch)

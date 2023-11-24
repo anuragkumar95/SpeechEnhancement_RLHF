@@ -204,19 +204,23 @@ class Trainer:
                                 
 def main(args):
     if args.parallel:
-        train_ds, test_ds = load_data(args.root, 
-                                    16, 
-                                    1, 
-                                    args.cut_len,
-                                    resample=True,
-                                    parallel=True)
+        train_ds, test_ds = load_data(root=args.root, 
+                                      path_root=args.comp,
+                                      batch_size=args.batchsize, 
+                                      n_cpu=1,
+                                      split_ratio=0.85, 
+                                      cut_len=args.cut_len,
+                                      resample=True,
+                                      parallel=True)
     else:
-        train_ds, test_ds = load_data(args.root, 
-                                    16, 
-                                    1, 
-                                    args.cut_len,
-                                    resample=True,
-                                    parallel=False)
+        train_ds, test_ds = load_data(root=args.root, 
+                                      path_root=args.comp,
+                                      batch_size=args.batchsize, 
+                                      n_cpu=1,
+                                      split_ratio=0.85, 
+                                      cut_len=args.cut_len,
+                                      resample=True,
+                                      parallel=False)
 
     if args.gpu:
         trainer = Trainer(train_ds, test_ds, args, 0)

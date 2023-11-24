@@ -209,14 +209,14 @@ def main(args):
                                     1, 
                                     args.cut_len,
                                     resample=True,
-                                    gpu = True)
+                                    parallel=True)
     else:
         train_ds, test_ds = load_data(args.root, 
                                     16, 
                                     1, 
                                     args.cut_len,
                                     resample=True,
-                                    gpu = False)
+                                    parallel=False)
 
     if args.gpu:
         trainer = Trainer(train_ds, test_ds, args, 0)

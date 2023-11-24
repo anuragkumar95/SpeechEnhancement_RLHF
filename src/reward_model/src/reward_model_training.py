@@ -183,9 +183,9 @@ class Trainer:
 
         #Run validation
         val_loss = 0
-        num_batches = len(self.val_ds)
+        num_batches = len(self.test_ds)
         self.model.eval()
-        for i, batch in enumerate(self.val_ds):
+        for i, batch in enumerate(self.test_ds):
             wav_in, wav_out, labels = batch
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
             batch = (wav_in, wav_out, labels)

@@ -81,7 +81,7 @@ class RewardModel(nn.Module):
             nn.Linear(32, 2),
         )
 
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, wav_in, wav_out):
         

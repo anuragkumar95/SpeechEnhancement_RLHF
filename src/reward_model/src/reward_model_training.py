@@ -131,11 +131,6 @@ class Trainer:
     
     def forward_step(self, batch):
         wav_in, wav_out, labels = batch
-        if self.gpu_id is not None:
-            wav_in = wav_in.to(self.gpu_id)
-            wav_out = wav_out.to(self.gpu_id)
-            labels = labels.to(self.gpu_id)
-
         class_probs = self.model(wav_in, wav_out)
         loss = self.criterion(class_probs, labels)
         return loss
@@ -148,6 +143,11 @@ class Trainer:
         self.model.train()
         for i, batch in enumerate(self.train_ds):
             wav_in, wav_out, labels = batch
+            if self.gpu_id is not None:
+                wav_in = wav_in.to(self.gpu_id)
+                wav_out = wav_out.to(self.gpu_id)
+                labels = labels.to(self.gpu_id)
+                
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
             batch = (wav_in, wav_out, labels)
             

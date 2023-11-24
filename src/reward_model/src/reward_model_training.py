@@ -149,7 +149,6 @@ class Trainer:
                 labels = labels.to(self.gpu_id)
 
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
-            print(f"wav_in:{wav_in.shape} wav_out:{wav_out.shape}")
             batch = (wav_in, wav_out, labels)
             
             batch_loss = self.forward_step(batch)

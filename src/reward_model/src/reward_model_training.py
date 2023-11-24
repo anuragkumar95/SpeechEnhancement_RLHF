@@ -187,9 +187,13 @@ class Trainer:
         self.model.eval()
         for i, batch in enumerate(self.test_ds):
             wav_in, wav_out, labels = batch
+            if self.gpu_id is not None:
+                wav_in = wav_in.to(self.gpu_id)
+                wav_out = wav_out.to(self.gpu_id)
+                labels = labels.to(self.gpu_id)
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
-            batch = (wav_in, wav_out, labels)
             
+            batch = (wav_in, wav_out, labels)
             batch_loss = self.forward_step(batch)
             
             val_loss += batch_loss.detach()

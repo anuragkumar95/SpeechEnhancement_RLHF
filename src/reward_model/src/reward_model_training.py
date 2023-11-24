@@ -14,6 +14,7 @@ Created on 23rd Nov, 2023
 """
 
 from models.reward_model import  RewardModel, power_compress, power_uncompress
+from utils import copy_weights, freeze_layers
 import os
 from dataset.dataset import load_data
 import torch.nn.functional as F
@@ -21,7 +22,6 @@ import torch
 import torch.nn as nn
 import argparse
 import wandb
-import psutil
 import numpy as np
 import traceback
 
@@ -43,6 +43,8 @@ def ARGS():
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
+    parser.add_argument("--disc_pt", type=str, required=False, default=None,
+                        help="Path to the discriminator checkpoint to init reward model.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
@@ -58,11 +60,18 @@ def ARGS():
     
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
-        self.model = RewardModel(ndf=32, in_channel=2)
+        self.model = RewardModel(ndf=32, in_channel=2, disc_pt=args.disc_pt)
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
+
+        if args.disc_pt is not None:
+            state_dict = self.load(args.disc_pt, device='cpu')
+            state_dict = state_dict['discriminator_state_dict']
+            #Copy weights and freeze weights which are copied
+            keys, self.model = copy_weights(state_dict, self.model)
+            self.model = freeze_layers(self.model, keys)
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
@@ -125,8 +134,10 @@ class Trainer:
     def save(self, path, state_dict):
         torch.save(state_dict, path)
     
-    def load(self, path):
-        state_dict = torch.load(path)
+    def load(self, path, device):
+        if device == 'cpu':
+            dev = torch.device('cpu')
+        state_dict = torch.load(path, map_location=dev)
         return state_dict
     
     def forward_step(self, batch):

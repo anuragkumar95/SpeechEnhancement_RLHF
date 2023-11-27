@@ -62,7 +62,7 @@ class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
         #self.model = RewardModel(ndf=16, in_channel=1)
         self.model = JNDModel(in_channels=2,
-                              out_dim=3, 
+                              out_dim=2, 
                               n_layers=14, 
                               keep_prob=0.7, 
                               norm_type='sbn', 
@@ -222,6 +222,7 @@ class Trainer:
             val_loss += batch_loss.detach()
             val_acc += acc.detach()
         val_loss = val_loss / num_batches
+        val_acc = val_acc / num_batches
         wandb.log({
                 'epoch':epoch+1, 
                 'val_loss':val_loss,

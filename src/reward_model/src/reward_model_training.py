@@ -176,6 +176,7 @@ class Trainer:
             
             batch_loss, probs = self.forward_step(batch)
             y_preds = torch.argmax(probs, dim=-1)
+            labels = torch.argmax(labels, dim=-1)
             acc = self.accuracy(y_preds.float(), labels.float())
 
             self.optimizer.zero_grad()
@@ -212,6 +213,7 @@ class Trainer:
             batch = (wav_in, wav_out, labels)
             batch_loss, probs = self.forward_step(batch)
             y_preds = torch.argmax(probs, dim=-1)
+            labels = torch.argmax(labels, dim=-1)
             acc = self.accuracy(y_preds.float(), labels.float())
   
             val_loss += batch_loss.detach()

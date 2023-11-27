@@ -151,6 +151,8 @@ class Trainer:
     
     def forward_step(self, batch):
         wav_in, wav_out, labels = batch
+        wav_in = wav_in.unsqueeze(1).unsqueeze(-1)
+        wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
         class_probs = self.model(wav_in, wav_out)
         loss = self.criterion(class_probs, labels)
         return loss

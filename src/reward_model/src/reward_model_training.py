@@ -61,7 +61,8 @@ def ARGS():
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
         #self.model = RewardModel(ndf=16, in_channel=1)
-        self.model = JNDModel(in_channels=2, 
+        self.model = JNDModel(in_channels=2,
+                              out_dim=3, 
                               n_layers=14, 
                               keep_prob=0.7, 
                               norm_type='sbn', 
@@ -177,6 +178,8 @@ class Trainer:
             batch_loss, probs = self.forward_step(batch)
             y_preds = torch.argmax(probs, dim=-1)
             labels = torch.argmax(labels, dim=-1)
+            print(f"PREDS:{y_preds}")
+            print(f"LABELS:{labels}")
             acc = self.accuracy(y_preds.float(), labels.float())
 
             self.optimizer.zero_grad()

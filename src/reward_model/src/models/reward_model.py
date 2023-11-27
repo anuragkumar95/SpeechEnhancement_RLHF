@@ -226,11 +226,11 @@ class FeatureLossBatch(nn.Module):
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
                 dist = e1 - e2
-                print(f"dist:{dist.shape}")
+                #print(f"dist:{dist.shape}")
                 dist = dist.permute(0, 3, 2, 1)
                 if self.weights is not None:
                     res = (self.weights[i] * dist)
-                    print(f"dist:{dist.shape}, w:{self.weights[i].shape}")
+                    #print(f"dist:{dist.shape}, w:{self.weights[i].shape}")
                 else:
                     res = dist
                 loss = torch.mean(res, dim=[1, 2, 3])
@@ -239,7 +239,7 @@ class FeatureLossBatch(nn.Module):
 
 
 class JNDModel(nn.Module):
-    def __init__(self, in_channels, n_layers=14, keep_prob=0.7, norm_type='sbn', sum_till=14, gpu_id=None):
+    def __init__(self, in_channels, out_dim=2, n_layers=14, keep_prob=0.7, norm_type='sbn', sum_till=14, gpu_id=None):
         super().__init__()
         self.loss_net = LossNet(in_channels=in_channels, 
                                 n_layers=n_layers, 
@@ -247,7 +247,7 @@ class JNDModel(nn.Module):
                                 keep_prob=keep_prob, 
                                 norm_type=norm_type)
 
-        self.classification_layer = ClassificationHead(in_dim=1, out_dim=2)
+        self.classification_layer = ClassificationHead(in_dim=1, out_dim=out_dim)
 
         self.feature_loss = FeatureLossBatch(n_layers=n_layers,
                                              base_channels=32,
@@ -257,7 +257,7 @@ class JNDModel(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, ref, inp):
-        print(f"inp:{ref.shape} {inp.shape}")
+        #print(f"inp:{ref.shape} {inp.shape}")
         ref = self.loss_net(ref)
         inp = self.loss_net(inp)
         dist = self.feature_loss(ref, inp)

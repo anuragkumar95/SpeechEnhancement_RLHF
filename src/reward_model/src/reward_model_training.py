@@ -66,7 +66,7 @@ class Trainer:
                               keep_prob=0.7, 
                               norm_type='sbn', 
                               sum_till=14, 
-                              gpu_id=None)
+                              gpu_id=gpu_id)
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds

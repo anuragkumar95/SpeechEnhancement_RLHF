@@ -193,7 +193,7 @@ class Trainer:
             print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss} | ACC :{acc}")
 
             epoch_loss += batch_loss.detach()
-            epoch_acc += epoch_acc.detach()
+            epoch_acc += acc.detach()
         epoch_loss = epoch_loss / num_batches
         epoch_acc = epoch_acc / num_batches
 

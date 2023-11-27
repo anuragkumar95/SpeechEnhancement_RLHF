@@ -226,9 +226,11 @@ class FeatureLossBatch(nn.Module):
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
                 dist = e1 - e2
+                print(f"dist:{dist.shape}")
                 dist = dist.permute(0, 3, 2, 1)
                 if self.weights is not None:
                     res = (self.weights[i] * dist)
+                    print(f"dist:{dist.shape}, w:{self.weights[i].shape}")
                 else:
                     res = dist
                 loss = torch.mean(res, dim=[2, 3])
@@ -254,7 +256,8 @@ class JNDModel(nn.Module):
                                              sum_till=sum_till)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, inp, ref):
+    def forward(self, ref, inp):
+        print(f"inp:{ref.shape} {inp.shape}")
         ref = self.loss_net(ref)
         inp = self.loss_net(inp)
         dist = self.feature_loss(ref, inp)

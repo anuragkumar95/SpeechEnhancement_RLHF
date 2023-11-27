@@ -155,12 +155,13 @@ class Trainer:
         #wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
         class_probs = self.model(wav_in, wav_out)
         loss = self.criterion(class_probs, labels)
-        return loss
+        return loss, class_probs
 
 
     def train_one_epoch(self, epoch):
         #Run train loop
         epoch_loss = 0
+        epoch_acc = 0
         num_batches = len(self.train_ds)
         self.model.train()
         for i, batch in enumerate(self.train_ds):
@@ -173,7 +174,10 @@ class Trainer:
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
             batch = (wav_in, wav_out, labels)
             
-            batch_loss = self.forward_step(batch)
+            batch_loss, probs = self.forward_step(batch)
+            y_preds = torch.argmax(probs, dim=-1)
+            acc = self.accuracy(y_preds.float(), labels.float())
+
             self.optimizer.zero_grad()
             batch_loss.backward()
             self.optimizer.step()
@@ -181,16 +185,20 @@ class Trainer:
             wandb.log({
                 'epoch':epoch+1, 
                 'step':i+1,
-                'step_loss':batch_loss.detach()
+                'step_loss':batch_loss.detach(),
+                'step_acc':acc.detach()
             })
 
-            print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss}")
+            print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss} | ACC :{acc}")
 
             epoch_loss += batch_loss.detach()
+            epoch_acc += epoch_acc.detach()
         epoch_loss = epoch_loss / num_batches
+        epoch_acc = epoch_acc / num_batches
 
         #Run validation
         val_loss = 0
+        val_acc = 0
         num_batches = len(self.test_ds)
         self.model.eval()
         for i, batch in enumerate(self.test_ds):
@@ -202,18 +210,27 @@ class Trainer:
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
             
             batch = (wav_in, wav_out, labels)
-            batch_loss = self.forward_step(batch)
-            
+            batch_loss, probs = self.forward_step(batch)
+            y_preds = torch.argmax(probs, dim=-1)
+            acc = self.accuracy(y_preds.float(), labels.float())
+  
             val_loss += batch_loss.detach()
+            val_acc += acc.detach()
         val_loss = val_loss / num_batches
         wandb.log({
                 'epoch':epoch+1, 
                 'val_loss':val_loss,
                 'train_loss':epoch_loss, 
+                'val_acc':val_acc,
+                'train_acc':epoch_acc,
             })
 
-        print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | VAL_LOSS: {val_loss}")
+        print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | VAL_LOSS: {val_loss} | TRAIN_ACC: {epoch_acc} | VAL_ACC: {val_acc}")
         return val_loss
+    
+    def accuracy(self, y_pred, y_true):
+        score = (y_pred == y_true).int()
+        return score.mean()
 
     def train(self):
         best_val_loss = 9999999999

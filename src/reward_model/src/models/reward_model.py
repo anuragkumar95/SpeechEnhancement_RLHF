@@ -258,8 +258,8 @@ class JNDModel(nn.Module):
         ref = self.loss_net(ref)
         inp = self.loss_net(inp)
         dist = self.feature_loss(ref, inp)
-        dist = self.sigmoid(dist).reshape(-1, 1)
-        logits = self.classification_layer(dist)
+        #dist = self.sigmoid(dist).reshape(-1, 1)
+        logits = self.classification_layer(dist.reshape(-1, 1))
         
         return logits
     

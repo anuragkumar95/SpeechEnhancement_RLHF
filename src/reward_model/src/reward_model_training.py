@@ -231,7 +231,7 @@ class Trainer:
         return val_loss
     
     def accuracy(self, y_pred, y_true):
-        score = (y_pred == y_true).int()
+        score = (y_pred == y_true).float()
         return score.mean()
 
     def train(self):

@@ -86,8 +86,6 @@ class RewardModel(nn.Module):
 
     def forward(self, wav_in, wav_out):
         
-        #xy = torch.cat([wav_in, wav_out], dim = 1)
-        #xy = wav_in - wav_out
         dist = self.batch_norm(self.layers(wav_in) - self.layers(wav_out))
         print(f"dist:{dist.mean()}, {dist.shape}")
         logits = self.classification_head(dist)

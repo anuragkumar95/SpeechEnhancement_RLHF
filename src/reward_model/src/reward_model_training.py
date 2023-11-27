@@ -61,7 +61,7 @@ def ARGS():
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
         #self.model = RewardModel(ndf=16, in_channel=1)
-        self.model = JNDModel(in_channels=1, 
+        self.model = JNDModel(in_channels=2, 
                               n_layers=14, 
                               keep_prob=0.7, 
                               norm_type='sbn', 
@@ -131,14 +131,14 @@ class Trainer:
 
         noisy_spec = power_compress(noisy_spec)
         clean_spec = power_compress(clean_spec)
-        clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
-        clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
-        clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
-        noisy_real = noisy_spec[:, 0, :, :].unsqueeze(1)
-        noisy_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
-        noisy_mag = torch.sqrt(noisy_real**2 + noisy_imag**2)
+        #clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
+        #clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
+        #clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
+        #noisy_real = noisy_spec[:, 0, :, :].unsqueeze(1)
+        #noisy_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
+        #noisy_mag = torch.sqrt(noisy_real**2 + noisy_imag**2)
 
-        return noisy_mag, clean_mag
+        return noisy_spec, clean_spec
     
     def save(self, path, state_dict):
         torch.save(state_dict, path)

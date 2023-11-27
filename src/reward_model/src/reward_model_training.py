@@ -151,8 +151,8 @@ class Trainer:
     
     def forward_step(self, batch):
         wav_in, wav_out, labels = batch
-        wav_in = wav_in.unsqueeze(1).unsqueeze(-1)
-        wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
+        #wav_in = wav_in.unsqueeze(1).unsqueeze(-1)
+        #wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
         class_probs = self.model(wav_in, wav_out)
         loss = self.criterion(class_probs, labels)
         return loss
@@ -170,7 +170,7 @@ class Trainer:
                 wav_out = wav_out.to(self.gpu_id)
                 labels = labels.to(self.gpu_id)
 
-            #wav_in, wav_out = self.get_specs(wav_in, wav_out)
+            wav_in, wav_out = self.get_specs(wav_in, wav_out)
             batch = (wav_in, wav_out, labels)
             
             batch_loss = self.forward_step(batch)
@@ -199,7 +199,7 @@ class Trainer:
                 wav_in = wav_in.to(self.gpu_id)
                 wav_out = wav_out.to(self.gpu_id)
                 labels = labels.to(self.gpu_id)
-            #wav_in, wav_out = self.get_specs(wav_in, wav_out)
+            wav_in, wav_out = self.get_specs(wav_in, wav_out)
             
             batch = (wav_in, wav_out, labels)
             batch_loss = self.forward_step(batch)

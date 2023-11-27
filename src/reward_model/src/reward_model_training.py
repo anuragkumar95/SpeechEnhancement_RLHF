@@ -13,7 +13,7 @@ Created on 23rd Nov, 2023
   ORIGINAL RLHF PAPER.
 """
 
-from models.reward_model import  RewardModel, power_compress, power_uncompress
+from models.reward_model import  RewardModel, JNDModel, power_compress, power_uncompress
 from utils import copy_weights, freeze_layers
 import os
 from dataset.dataset import load_data
@@ -60,7 +60,13 @@ def ARGS():
     
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
-        self.model = RewardModel(ndf=16, in_channel=1)
+        #self.model = RewardModel(ndf=16, in_channel=1)
+        self.model = JNDModel(in_channels=1, 
+                              n_layers=14, 
+                              keep_prob=0.7, 
+                              norm_type='sbn', 
+                              sum_till=14, 
+                              gpu_id=None)
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds

@@ -102,7 +102,7 @@ class JNDDataset(Dataset):
         out = out.reshape(-1)
 
         thresh = np.random.choice(10)
-        if self.paths['input'][idx] == 1:
+        if self.paths['labels'][idx] == 1:
             if thresh >= 5:
                 label = torch.tensor([1.0, 0.0, 0.0])
                 return inp, out, label

@@ -199,7 +199,7 @@ class ClassificationHead(nn.Module):
         out = self.dense2(out)
         if self.outputs == 1:
             scores = self.sigmoid(out)
-        if self.outputs == 2:
+        if self.outputs > 1:
             scores = self.softmax(out)
         return scores
 

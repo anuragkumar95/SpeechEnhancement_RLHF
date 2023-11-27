@@ -233,7 +233,7 @@ class FeatureLossBatch(nn.Module):
                     print(f"dist:{dist.shape}, w:{self.weights[i].shape}")
                 else:
                     res = dist
-                loss = torch.mean(res, dim=[2, 3])
+                loss = torch.mean(res, dim=[1, 2, 3])
                 loss_final += loss
         return loss_final
 

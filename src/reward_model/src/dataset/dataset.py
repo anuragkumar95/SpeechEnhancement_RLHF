@@ -103,11 +103,13 @@ class JNDDataset(Dataset):
 
         if self.paths['labels'][idx] == 1:
             label = torch.tensor([1.0, 0.0])
-            return out, inp, label
+            jnd_label = torch.tensor([0.0, 1.0])
+            return out, inp, label, jnd_label
         
         else:
             label = torch.tensor([0.0, 1.0])
-            return inp, out, label
+            jnd_label = torch.tensor([1.0, 0.0])
+            return inp, out, label, jnd_label
       
 
 def get_compression_ratio(path):

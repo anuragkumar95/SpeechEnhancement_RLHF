@@ -279,6 +279,7 @@ class JNDModel(nn.Module):
         dist_real = self.feature_loss(ref_real, inp_real)
         dist_imag = self.feature_loss(ref_imag, inp_imag)
         #dist = self.sigmoid(dist).reshape(-1, 1)
+        print(f"r:{dist_real.shape} i:{dist_imag.shape}")
         dist = torch.cat([dist_real, dist_imag], dim=1)
         logits = self.classification_layer(dist.reshape(-1, 2))
         

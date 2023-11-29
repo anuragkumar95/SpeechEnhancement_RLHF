@@ -205,6 +205,8 @@ class Trainer:
               batch_loss, probs = self.forward_step(batch)
               y_preds = torch.argmax(probs, dim=-1)
               labels = torch.argmax(labels, dim=-1)
+              print(f"PREDS:{y_preds}")
+              print(f"LABELS:{labels}")
               acc = self.accuracy(y_preds.float(), labels.float())
     
               val_loss += batch_loss.detach()

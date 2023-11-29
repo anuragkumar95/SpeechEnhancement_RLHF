@@ -121,7 +121,7 @@ class Evaluation:
                 labels = torch.argmax(labels, dim=-1)
                 print(f"PREDS:{y_preds}")
                 print(f"LABELS:{labels}")
-                print(self.accuracy(y_preds, labels))
+                print(f"ACC:{self.accuracy(y_preds, labels)}")
 
                 y_preds = y_preds.detach().cpu().numpy().tolist()
                 labels = labels.detach().cpu().numpy().tolist()

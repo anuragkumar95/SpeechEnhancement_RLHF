@@ -208,7 +208,7 @@ class Trainer:
               print(f"PREDS:{y_preds}")
               print(f"LABELS:{labels}")
               acc = self.accuracy(y_preds.float(), labels.float())
-    
+              print(f"ACC:{acc}")
               val_loss += batch_loss.detach()
               val_acc += acc.detach()
         val_loss = val_loss / num_batches

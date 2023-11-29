@@ -13,7 +13,7 @@ Created on 23rd Nov, 2023
   ORIGINAL RLHF PAPER.
 """
 
-from models.reward_model import  RewardModel, JNDModel, power_compress, power_uncompress
+from models.reward_model import  RewardModel, JNDModel, power_compress
 from utils import copy_weights, freeze_layers
 import os
 from dataset.dataset import load_data
@@ -195,25 +195,26 @@ class Trainer:
         val_acc = 0
         num_batches = len(self.test_ds)
         self.model.eval()
-        for i, batch in enumerate(self.test_ds):
-            if self.args.jnd:
-                wav_in, wav_out, _, labels = batch
-            else:
-                wav_in, wav_out, labels, _ = batch
-            if self.gpu_id is not None:
-                wav_in = wav_in.to(self.gpu_id)
-                wav_out = wav_out.to(self.gpu_id)
-                labels = labels.to(self.gpu_id)
-            wav_in, wav_out = self.get_specs(wav_in, wav_out)
-            
-            batch = (wav_in, wav_out, labels)
-            batch_loss, probs = self.forward_step(batch)
-            y_preds = torch.argmax(probs, dim=-1)
-            labels = torch.argmax(labels, dim=-1)
-            acc = self.accuracy(y_preds.float(), labels.float())
-  
-            val_loss += batch_loss.detach()
-            val_acc += acc.detach()
+        with torch.no_grad():
+          for i, batch in enumerate(self.test_ds):
+              if self.args.jnd:
+                  wav_in, wav_out, _, labels = batch
+              else:
+                  wav_in, wav_out, labels, _ = batch
+              if self.gpu_id is not None:
+                  wav_in = wav_in.to(self.gpu_id)
+                  wav_out = wav_out.to(self.gpu_id)
+                  labels = labels.to(self.gpu_id)
+              wav_in, wav_out = self.get_specs(wav_in, wav_out)
+              
+              batch = (wav_in, wav_out, labels)
+              batch_loss, probs = self.forward_step(batch)
+              y_preds = torch.argmax(probs, dim=-1)
+              labels = torch.argmax(labels, dim=-1)
+              acc = self.accuracy(y_preds.float(), labels.float())
+    
+              val_loss += batch_loss.detach()
+              val_acc += acc.detach()
         val_loss = val_loss / num_batches
         val_acc = val_acc / num_batches
         wandb.log({
@@ -242,7 +243,7 @@ class Trainer:
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:
-                    state_dict = self.model.state_dict()
+                    state_dict = self.model.state_dict()x
                 self.save(save_path, state_dict)
             if val_acc >= best_val_acc:
                 best_val_acc = val_acc

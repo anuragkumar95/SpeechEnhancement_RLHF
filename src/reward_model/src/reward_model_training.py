@@ -52,8 +52,6 @@ def ARGS():
                         help="Training batchsize.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
-    parser.add_argument("--jnd", action='store_true',
-                        help="Set this flag to train jnd model instead. Default training is for reward model.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
 
@@ -154,10 +152,7 @@ class Trainer:
         num_batches = len(self.train_ds)
         self.model.train()
         for i, batch in enumerate(self.train_ds):
-            if self.args.jnd:
-                wav_in, wav_out, _, labels = batch
-            else:
-                wav_in, wav_out, labels, _ = batch
+            wav_in, wav_out, labels = batch
             if self.gpu_id is not None:
                 wav_in = wav_in.to(self.gpu_id)
                 wav_out = wav_out.to(self.gpu_id)
@@ -198,10 +193,8 @@ class Trainer:
         self.model.eval()
         with torch.no_grad():
           for i, batch in enumerate(self.test_ds):
-              if self.args.jnd:
-                  wav_in, wav_out, _, labels = batch
-              else:
-                  wav_in, wav_out, labels, _ = batch
+              wav_in, wav_out, labels = batch
+             
               if self.gpu_id is not None:
                   wav_in = wav_in.to(self.gpu_id)
                   wav_out = wav_out.to(self.gpu_id)

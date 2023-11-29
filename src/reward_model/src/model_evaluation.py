@@ -40,12 +40,9 @@ class Evaluation:
             dev = gpu_id
             self.model = self.model.to(gpu_id)
         state_dict = self.load(checkpoint, dev)
-        self.model.load_state_dict(state_dict)
-        self.model.loss_net_imag.eval()
-        self.model.loss_net_real.eval()
-        self.model.classification_layer.eval()
-        self.model.feature_loss.eval()
-        
+        self.model.load_state_dict(state_dict['model_state_dict'])
+        print(f"Loaded save checkpoint at epoch:{state_dict['epoch']} with val_acc:{state_dict['val_acc']}")
+        self.model.eval()
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
         self.gpu_id=gpu_id
         
@@ -111,7 +108,7 @@ class Evaluation:
     
         with torch.no_grad():
             for batch in tqdm(dataset):
-                wav_in, wav_out, _, labels = batch
+                wav_in, wav_out, labels = batch
                 if self.gpu_id is not None:
                     wav_in = wav_in.to(self.gpu_id)
                     wav_out = wav_out.to(self.gpu_id)

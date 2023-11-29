@@ -102,56 +102,11 @@ class JNDDataset(Dataset):
         out = out.reshape(-1)
 
         if self.paths['labels'][idx] == 1:
-            label = torch.tensor([1.0, 0.0])
-            jnd_label = torch.tensor([0.0, 1.0])
-            return out, inp, label, jnd_label
-        
-        else:
             label = torch.tensor([0.0, 1.0])
-            jnd_label = torch.tensor([1.0, 0.0])
-            return inp, out, label, jnd_label
-      
-
-def get_compression_ratio(path):
-    
-    cr = 0
-    with tempfile.NamedTemporaryFile() as tmp:
-        with open(path, 'rb') as f_in, gzip.open(tmp, 'wb') as f_out:
-            f_out.write(f_in.read())
-        
-        #Calculate filesize
-        before_compression = os.path.getsize(path)
-        after_compression = os.path.getsize(tmp.name)
-        
-        #Compression ratio
-        cr = 1 - (after_compression / before_compression)
-    return cr
-
-
-def collate_fn(batch):
-    """
-    Batch is a list of samples of len batch_size.
-    Each sample is a tuple <inp_wav, out_wav, label>
-    """
-    max_len = 0
-    for sample in batch:
-        max_len = max(max_len, sample[0].shape[-1])
-   
-    final_dims = (len(batch), max_len)
-    new_inp = sample[0].data.new(*final_dims).fill_(0)
-    new_out = sample[1].data.new(*final_dims).fill_(0)
-
-    for i, sample in enumerate(batch):
-        new_inp[i, :sample[0].shape[-1]] = sample[0][0]
-        new_out[i, :sample[1].shape[-1]] = sample[1][0]
-
-    new_inp = new_inp.unsqueeze(1).unsqueeze(-1)
-    new_out = new_out.unsqueeze(1).unsqueeze(-1)
-    labels = torch.stack([sample[-1] for sample in batch])
-    
-    return new_inp, new_out, labels
-
-
+        else:
+            label = torch.tensor([1.0, 0.0])
+            
+        return inp, out, label
     
 def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000, resample=False, parallel=False):
     torchaudio.set_audio_backend("sox_io")  # in linux

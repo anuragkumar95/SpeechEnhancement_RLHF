@@ -24,6 +24,7 @@ import argparse
 import wandb
 import numpy as np
 import traceback
+from model_evaluation import Evaluation
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -62,7 +63,7 @@ def ARGS():
     
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
-        #self.model = RewardModel(ndf=16, in_channel=1)
+        
         self.model = JNDModel(in_channels=2,
                               out_dim=2, 
                               n_layers=14, 
@@ -236,6 +237,7 @@ class Trainer:
         best_val_loss = 9999999999
         best_val_acc = 0
         for epoch in range(self.args.epochs):
+            save_path = None
             val_loss, val_acc = self.train_one_epoch(epoch)
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
@@ -268,7 +270,13 @@ class Trainer:
                     'val_loss':val_loss
                 }
                 self.save(save_path, _dict_)
-                            
+
+            #Run validation after loading checkpoint
+            if save_path is not None:
+                eval = Evaluation(save_path, self.gpu_id)
+                preds, labels = eval.predict(self.test_ds)
+                eval.score(preds, labels)
+                              
 def main(args):
     if args.parallel:
         train_ds, test_ds = load_data(root=args.root, 

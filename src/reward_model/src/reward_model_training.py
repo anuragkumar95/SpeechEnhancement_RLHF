@@ -243,8 +243,16 @@ class Trainer:
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:
-                    state_dict = self.model.state_dict()x
-                self.save(save_path, state_dict)
+                    state_dict = self.model.state_dict()
+                _dict_ = {
+                    'model_state_dict':state_dict,
+                    'opt_state_dict':self.optimizer.state_dict(),
+                    'epoch':epoch+1,
+                    'val_acc':val_acc,
+                    'val_loss':val_loss
+                }
+                self.save(save_path, _dict_)
+               
             if val_acc >= best_val_acc:
                 best_val_acc = val_acc
                 save_path = os.path.join(self.args.output, self.args.exp, f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
@@ -252,8 +260,15 @@ class Trainer:
                     state_dict = self.model.module.state_dict()
                 else:
                     state_dict = self.model.state_dict()
-                self.save(save_path, state_dict)
-                                
+                _dict_ = {
+                    'model_state_dict':state_dict,
+                    'opt_state_dict':self.optimizer.state_dict(),
+                    'epoch':epoch+1,
+                    'val_acc':val_acc,
+                    'val_loss':val_loss
+                }
+                self.save(save_path, _dict_)
+                            
 def main(args):
     if args.parallel:
         train_ds, test_ds = load_data(root=args.root, 

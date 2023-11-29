@@ -40,9 +40,11 @@ class Evaluation:
             dev = gpu_id
             self.model = self.model.to(gpu_id)
         state_dict = self.load(checkpoint, dev)
-        #print(state_dict)
         self.model.load_state_dict(state_dict)
-        #self.model.eval()
+        self.model.loss_net_imag.eval()
+        self.model.loss_net_real.eval()
+        self.model.classification_layer.eval()
+        self.model.feature_loss.eval()
         
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
         self.gpu_id=gpu_id
@@ -106,7 +108,7 @@ class Evaluation:
     def predict(self, dataset):
         PREDS=[]
         LABELS=[]
-        self.model.eval()
+    
         with torch.no_grad():
             for batch in tqdm(dataset):
                 wav_in, wav_out, _, labels = batch

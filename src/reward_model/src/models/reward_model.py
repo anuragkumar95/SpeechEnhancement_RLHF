@@ -142,7 +142,7 @@ class LossNet(nn.Module):
                 
                 if norm_type == 'ln':
                     layer = nn.Sequential(
-                        nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
                         nn.LayerNorm([out_channels, f, t]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
@@ -163,7 +163,7 @@ class LossNet(nn.Module):
                     )
                 if norm_type == 'ln':
                     layer = nn.Sequential(
-                        nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
                         nn.LayerNorm([out_channels, f, t]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
@@ -180,9 +180,7 @@ class LossNet(nn.Module):
     def forward(self, x):
         outs = []
         for i, layer in enumerate(self.net):
-            print(f"{i+1} INP:{x.shape}")
             x = layer(x)
-            print(f"{i+1} OUT:{x.shape}")
             outs.append(x)
         return outs
 

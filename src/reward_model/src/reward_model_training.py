@@ -265,6 +265,7 @@ class Trainer:
                 self.save(save_path, _dict_)
 
             #Run validation after loading checkpoint
+            print(f"save_path:{save_path}")
             if save_path is not None:
                 eval = Evaluation(save_path, self.gpu_id)
                 preds, labels = eval.predict(self.test_ds)

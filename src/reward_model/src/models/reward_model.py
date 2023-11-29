@@ -101,11 +101,20 @@ class LossNet(nn.Module):
         for i in range(n_layers):
             out_channels = 32 * (2 ** (i // 5))
             prev_out = 32 * (2 ** ((i-1) // 5))
+            t = 401 // (2 ** i)
+            f = 201 // (2 ** i)
             if i == 0:
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
                         nn.BatchNorm2d(out_channels, track_running_stats=False),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1 - keep_prob),
+                    )
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, t, f]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )
@@ -124,6 +133,14 @@ class LossNet(nn.Module):
                         nn.LeakyReLU(0.2),
                     )
                 
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, t, f]),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1 - keep_prob),
+                    )
+                
                 if norm_type == 'none':
                     layer = nn.Sequential(
                         nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
@@ -134,6 +151,13 @@ class LossNet(nn.Module):
                     layer = nn.Sequential(
                         nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
                         nn.BatchNorm2d(out_channels, track_running_stats=False),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1 - keep_prob),
+                    )
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, t, f]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )

@@ -50,6 +50,8 @@ def ARGS():
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
+    parser.add_argument("--norm", type=str, required=False, default='sbn',
+                        help="option, choose between 'ln(layernorm) / sbn(batchnorm)'")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
@@ -66,7 +68,7 @@ class Trainer:
                               out_dim=2, 
                               n_layers=14, 
                               keep_prob=0.7, 
-                              norm_type='sbn', 
+                              norm_type=args.norm, 
                               sum_till=14, 
                               gpu_id=gpu_id)
         self.n_fft = 400

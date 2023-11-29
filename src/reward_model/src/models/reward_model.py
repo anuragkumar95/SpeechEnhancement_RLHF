@@ -101,8 +101,8 @@ class LossNet(nn.Module):
         for i in range(n_layers):
             out_channels = 32 * (2 ** (i // 5))
             prev_out = 32 * (2 ** ((i-1) // 5))
-            t = 401 // (2 ** i)
-            f = 201 // (2 ** i)
+            t = 401 // (2 ** (i+1))
+            f = 201 // (2 ** (i+1))
             if i == 0:
                 if norm_type == 'sbn':
                     layer = nn.Sequential(

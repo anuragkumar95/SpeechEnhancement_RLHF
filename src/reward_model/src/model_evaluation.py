@@ -15,8 +15,6 @@ def ARGS():
                         help="Root directory to JND Dataset.")
     parser.add_argument("-c", "--comp", type=str, required=True,
                         help="Root directory to JND Dataset comparision lists.")
-    parser.add_argument("-o", "--output", type=str, required=True,
-                        help="Output directory for results to stored. Will create the directory  if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
     parser.add_argument("--gpu", action='store_true',
@@ -159,6 +157,4 @@ def main(args):
 
 if __name__=='__main__':
     args = ARGS().parse_args()
-    output = f"{args.output}"
-    os.makedirs(output, exist_ok=True)
     main(args)

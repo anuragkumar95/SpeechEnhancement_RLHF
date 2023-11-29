@@ -117,7 +117,6 @@ class Evaluation:
                 wav_in, wav_out = self.get_specs(wav_in, wav_out)
                 batch = (wav_in, wav_out, labels)
                 _, probs = self.forward_step(batch)
-                print(probs)
                 y_preds = torch.argmax(probs, dim=-1)
                 labels = torch.argmax(labels, dim=-1)
                 print(f"PREDS:{y_preds}")

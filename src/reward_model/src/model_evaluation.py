@@ -93,7 +93,7 @@ class Evaluation:
     def load(self, path, device):
         if device == 'cpu':
             dev = torch.device('cpu')
-        state_dict = torch.load(path, map_location=dev)
+        state_dict = torch.load(path, map_location=device)
         return state_dict
     
     def forward_step(self, batch):

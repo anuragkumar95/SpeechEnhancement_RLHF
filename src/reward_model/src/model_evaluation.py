@@ -109,7 +109,7 @@ class Evaluation:
         self.model.eval()
         with torch.no_grad():
             for batch in tqdm(dataset):
-                wav_in, wav_out,labels,_ = batch
+                wav_in, wav_out, _, labels = batch
                 if self.gpu_id is not None:
                     wav_in = wav_in.to(self.gpu_id)
                     wav_out = wav_out.to(self.gpu_id)

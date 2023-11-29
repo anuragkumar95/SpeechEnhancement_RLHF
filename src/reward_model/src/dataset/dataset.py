@@ -162,7 +162,7 @@ def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000
     for key in train_indices:
         with open(os.path.join(path_root, f'dataset_{key}.txt'), 'r') as f:
             num_lines = len(f.readlines())
-            train_indxs = list(np.random.choice(num_lines, int(split_ratio * num_lines), replace=False))
+            train_indxs = [i for i in range(int(split_ratio * num_lines))]
             test_indxs = [i for i in range(num_lines) if i not in train_indxs]
             print(f"KEY:{key} | TRAIN:{len(train_indxs)} | VAL:{len(test_indxs)}")
         train_indices[key].extend(train_indxs)

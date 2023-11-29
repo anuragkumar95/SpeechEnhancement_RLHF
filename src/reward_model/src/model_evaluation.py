@@ -40,6 +40,7 @@ class Evaluation:
             dev = 'cpu'
         else:
             dev = gpu_id
+            self.model = self.model.to(gpu_id)
         state_dict = self.load(checkpoint, dev)
         #print(state_dict)
         self.model.load_state_dict(state_dict)

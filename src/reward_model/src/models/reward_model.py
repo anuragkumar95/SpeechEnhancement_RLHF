@@ -98,11 +98,18 @@ class LossNet(nn.Module):
         super().__init__()
         self.net = nn.ModuleList()
         self.n_layers = n_layers
+        t, f = 401, 201
         for i in range(n_layers):
             out_channels = 32 * (2 ** (i // 5))
             prev_out = 32 * (2 ** ((i-1) // 5))
-            t = 401 // (2 ** (i+1))
-            f = 201 // (2 ** (i+1))
+            if t%2 == 1:
+                t = t // 2 + 1
+            else:
+                t = t // 2
+            if f%2 == 1:
+                f = f // 2 + 1
+            else:
+                f = f // 2
             if i == 0:
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
@@ -114,7 +121,7 @@ class LossNet(nn.Module):
                 if norm_type == 'ln':
                     layer = nn.Sequential(
                         nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, t, f]),
+                        nn.LayerNorm([out_channels, f, t]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )
@@ -136,7 +143,7 @@ class LossNet(nn.Module):
                 if norm_type == 'ln':
                     layer = nn.Sequential(
                         nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, t, f]),
+                        nn.LayerNorm([out_channels, f, t]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )
@@ -157,7 +164,7 @@ class LossNet(nn.Module):
                 if norm_type == 'ln':
                     layer = nn.Sequential(
                         nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, t, f]),
+                        nn.LayerNorm([out_channels, f, t]),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )

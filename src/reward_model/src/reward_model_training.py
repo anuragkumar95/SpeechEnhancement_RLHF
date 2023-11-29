@@ -75,15 +75,6 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
 
-        if args.disc_pt is not None:
-            state_dict = self.load(args.disc_pt, device='cpu')
-            state_dict = state_dict['discriminator_state_dict']
-            #Copy weights and freeze weights which are copied
-            keys, self.model = copy_weights(state_dict, self.model)
-            print("Copied weights for these layers...")
-            for key in keys:
-                print(f"{key}")
-            self.model = freeze_layers(self.model, keys)
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
@@ -134,12 +125,6 @@ class Trainer:
 
         noisy_spec = power_compress(noisy_spec)
         clean_spec = power_compress(clean_spec)
-        #clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
-        #clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
-        #clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
-        #noisy_real = noisy_spec[:, 0, :, :].unsqueeze(1)
-        #noisy_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
-        #noisy_mag = torch.sqrt(noisy_real**2 + noisy_imag**2)
 
         return noisy_spec, clean_spec
     
@@ -240,7 +225,7 @@ class Trainer:
             })
 
         print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | VAL_LOSS: {val_loss} | TRAIN_ACC: {epoch_acc} | VAL_ACC: {val_acc}")
-        return val_loss
+        return val_loss, val_acc
     
     def accuracy(self, y_pred, y_true):
         score = (y_pred == y_true).float()
@@ -248,11 +233,20 @@ class Trainer:
 
     def train(self):
         best_val_loss = 9999999999
+        best_val_acc = 0
         for epoch in range(self.args.epochs):
-            val_loss = self.train_one_epoch(epoch)
+            val_loss, val_acc = self.train_one_epoch(epoch)
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
-                save_path = os.path.join(self.args.output, self.args.exp, f"best_checkpoint_{val_loss}_epoch_{epoch+1}.pt")
+                save_path = os.path.join(self.args.output, self.args.exp, f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
+                if args.parallel:
+                    state_dict = self.model.module.state_dict()
+                else:
+                    state_dict = self.model.state_dict()
+                self.save(save_path, state_dict)
+            if val_acc >= best_val_acc:
+                best_val_acc = val_acc
+                save_path = os.path.join(self.args.output, self.args.exp, f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:

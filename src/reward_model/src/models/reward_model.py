@@ -30,68 +30,105 @@ def power_uncompress(real, imag):
     return torch.stack([real_compress, imag_compress], -1)
 
 
-class LearnableSigmoid(nn.Module):
-    def __init__(self, in_features, beta=1):
+class TSLossNet(nn.Module):
+    def __init__(self, in_channels, n_layers, kernel_size, keep_prob, norm_type='sbn'):
         super().__init__()
-        self.beta = beta
-        self.slope = nn.Parameter(torch.ones(in_features))
-        self.slope.requiresGrad = True
+        self.net_time = nn.ModuleList()
+        self.net_freq = nn.ModuleList()
+        self.n_layers = n_layers
+    
+        t, f = 401, 201
+        for i in range(n_layers):
+            out_channels = 32 * (2 ** (i // 5))
+            
+            if t%2 == 1:
+                t = t // 2 + 1
+            else:
+                t = t // 2
+
+            if i < n_layers - 1:
+                if norm_type == 'sbn':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.BatchNorm1d(out_channels, track_running_stats=False),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1-keep_prob)
+                    )  
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, t]),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1-keep_prob)
+                    )
+            else:
+                if norm_type == 'sbn':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.BatchNorm1d(out_channels, track_running_stats=False),
+                        nn.Dropout(1-keep_prob)
+                    ) 
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, t]),
+                        nn.Dropout(1-keep_prob)
+                    )
+            in_channels = out_channels
+            self.net_time.append(layer)
+
+        for i in range(n_layers):
+            out_channels = 32 * (2 ** (i // 5))
+
+            if f%2 == 1:
+                f = f // 2 + 1
+            else:
+                f = f // 2
+
+            if i < n_layers - 1:
+                if norm_type == 'sbn':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.BatchNorm1d(out_channels, track_running_stats=False),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1-keep_prob)
+                    ) 
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, f]),
+                        nn.LeakyReLU(0.2),
+                        nn.Dropout(1-keep_prob)
+                    ) 
+            else:
+                if norm_type == 'sbn':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.BatchNorm1d(out_channels, track_running_stats=False),
+                        nn.Dropout(1-keep_prob)
+                    ) 
+                if norm_type == 'ln':
+                    layer = nn.Sequential(
+                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
+                        nn.LayerNorm([out_channels, f]),
+                        nn.Dropout(1-keep_prob)
+                    ) 
+            in_channels = out_channels
+            self.net_freq.append(layer)
 
     def forward(self, x):
-        return self.beta * torch.sigmoid(self.slope * x)
+        outs = []
+        b, c, t, f = x.shape
+        #reshape x (b, ch, t, f) --> x_time (b * f, t, ch)
+        x_t = x.permute(0, 3, 2, 1).contiguous().view(b * f, t, c)
+        #reshape x (b, ch, t, f) --> x_time (b * t, f, ch)
+        x_f = x.permute(0, 2, 3, 1).contiguous().view(b * t, f, c)
+        for i in range(self.n_layers):
+            x_t = self.net_time[i](x_t)
+            x_f = self.net_freq[i](x_f)
+            outs.append((x_t.view(b, f, t, c), x_f.view(b, t, f, c)))
+        return outs
 
-class RewardModel(nn.Module):
-    def __init__(self, ndf, in_channel=2, gpu_id=None):
-        super().__init__()
-        self.layers = nn.Sequential(
-            nn.utils.spectral_norm(
-                nn.Conv2d(in_channel, ndf, (4, 4), (2, 2), (1, 1), bias=False)
-            ),
-            nn.InstanceNorm2d(ndf, affine=True),
-            nn.PReLU(ndf),
-            nn.utils.spectral_norm(
-                nn.Conv2d(ndf, ndf * 2, (4, 4), (2, 2), (1, 1), bias=False)
-            ),
-            nn.InstanceNorm2d(ndf * 2, affine=True),
-            nn.PReLU(2 * ndf),
-            nn.utils.spectral_norm(
-                nn.Conv2d(ndf * 2, ndf * 4, (4, 4), (2, 2), (1, 1), bias=False)
-            ),
-            nn.InstanceNorm2d(ndf * 4, affine=True),
-            nn.PReLU(4 * ndf),
-            nn.utils.spectral_norm(
-                nn.Conv2d(ndf * 4, ndf * 8, (4, 4), (2, 2), (1, 1), bias=False)
-            ),
-            nn.InstanceNorm2d(ndf * 8, affine=True),
-            nn.PReLU(8 * ndf),
-            nn.AdaptiveMaxPool2d(1),
-            nn.Flatten(),
-            nn.utils.spectral_norm(nn.Linear(ndf * 8, ndf * 4)),
-            nn.Dropout(0.3),
-            nn.PReLU(4 * ndf),
-            nn.utils.spectral_norm(nn.Linear(ndf * 4, 1)),
-            LearnableSigmoid(1),
-        )
-
-        self.classification_head = nn.Sequential(
-            nn.Linear(1, 64),
-            nn.LeakyReLU(0.2),
-            nn.Linear(64, 32),
-            nn.LeakyReLU(0.2),
-            nn.Linear(32, 2),
-        )
-
-        self.softmax = nn.Softmax(dim=-1)
-        self.batch_norm = nn.BatchNorm1d(1)
-
-    def forward(self, wav_in, wav_out):
-        
-        dist = self.batch_norm(self.layers(wav_in) - self.layers(wav_out))
-        print(f"dist:{dist.mean()}, {dist.shape}")
-        logits = self.classification_head(dist)
-        probs = self.softmax(logits)
-
-        return probs
     
 class LossNet(nn.Module):
     def __init__(self, in_channels, n_layers, kernel_size, keep_prob, norm_type='sbn'):
@@ -226,18 +263,35 @@ class FeatureLossBatch(nn.Module):
         Both embeds1 and embeeds are outputs from each layer of
         loss_net. 
         """
-        loss_final = 0
-        for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
-            if i >= self.n_layers - self.sum_last_layers:
-                dist = e1 - e2
-                dist = dist.permute(0, 3, 2, 1)
-                if self.weights is not None:
-                    res = (self.weights[i] * dist)
-                else:
-                    res = dist
-                loss = torch.mean(res, dim=[1, 2, 3])
-                loss_final += loss
-        return loss_final
+        if isinstance(embeds1[0], tuple):
+            loss_final = 0
+            for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
+                if i >= self.n_layers - self.sum_last_layers:
+                    dist_t = e1[0] - e2[0]
+                    dist_f = e1[1] = e2[1]
+                    if self.weights is not None:
+                        res_t = (self.weights[i] * dist_t)
+                        res_f = (self.weights[i] * dist_f)
+                    else:
+                        res_t = dist_t
+                        res_f = dist_f
+                    loss = torch.mean(res_t, dim=[1, 2, 3]) + torch.mean(res_f, dim=[1, 2, 3])
+                    loss_final += loss
+            return loss_final
+        
+        else:
+            loss_final = 0
+            for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
+                if i >= self.n_layers - self.sum_last_layers:
+                    dist = e1 - e2
+                    dist = dist.permute(0, 3, 2, 1)
+                    if self.weights is not None:
+                        res = (self.weights[i] * dist)
+                    else:
+                        res = dist
+                    loss = torch.mean(res, dim=[1, 2, 3])
+                    loss_final += loss
+            return loss_final
 
 
 class JNDModel(nn.Module):

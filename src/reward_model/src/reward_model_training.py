@@ -13,7 +13,7 @@ Created on 23rd Nov, 2023
   ORIGINAL RLHF PAPER.
 """
 
-from models.reward_model import  RewardModel, JNDModel, power_compress
+from models.reward_model import JNDModel, power_compress
 from utils import copy_weights, freeze_layers
 import os
 from dataset.dataset import load_data

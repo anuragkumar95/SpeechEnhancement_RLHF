@@ -155,6 +155,8 @@ class Trainer:
         self.model.train()
         for i, batch in enumerate(self.train_ds):
             wav_in, wav_out, labels = batch
+            if wav_in.shape[0] <= 1:
+                continue
             if self.gpu_id is not None:
                 wav_in = wav_in.to(self.gpu_id)
                 wav_out = wav_out.to(self.gpu_id)

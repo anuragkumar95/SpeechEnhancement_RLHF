@@ -286,7 +286,7 @@ attn_output, attn_output_weights = multihead_attn(query, key, value)
 
 class AttentionFeatureLossBatch(nn.Module):
     def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
-        super().__int__()
+        super().__init__()
         self.sum_last_layers = sum_till
         out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
         bins = []

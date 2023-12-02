@@ -288,6 +288,7 @@ class AttentionFeatureLossBatch(nn.Module):
     def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
         super().__init__()
         self.sum_last_layers = sum_till
+        self.n_layers = n_layers
         out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
         bins = []
         for _ in range(n_layers):

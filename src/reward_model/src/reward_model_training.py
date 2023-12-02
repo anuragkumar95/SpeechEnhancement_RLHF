@@ -52,10 +52,16 @@ def ARGS():
                         help="Training batchsize.")
     parser.add_argument("--norm", type=str, required=False, default='sbn',
                         help="option, choose between 'ln(layernorm) / sbn(batchnorm)'")
+    parser.add_argument("--enc", type=int, required=False, default=1,
+                        help="encoding option, choose between 1 or 2")
+    parser.add_argument("--loss", type=str, required=False, default='featureloss',
+                        help="option, choose between featureloss/attentionloss")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
+    parser.add_argument("--suffix", type=str, default='', required=False,
+                        help="Experiment suffix to be added.")
 
     parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
     parser.add_argument("--cut_len", type=int, default=40000, help="cut length")
@@ -71,7 +77,8 @@ class Trainer:
                               norm_type=args.norm, 
                               sum_till=14, 
                               gpu_id=gpu_id,
-                              type=2)
+                              enc_type=args.enc,
+                              loss_type=args.loss)
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
@@ -242,7 +249,7 @@ class Trainer:
             val_loss, val_acc = self.train_one_epoch(epoch)
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
-                save_path = os.path.join(self.args.output, self.args.exp, f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
+                save_path = os.path.join(self.args.output, f"{self.args.exp}_{args.suffix}", f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:
@@ -258,7 +265,7 @@ class Trainer:
                
             if val_acc >= best_val_acc:
                 best_val_acc = val_acc
-                save_path = os.path.join(self.args.output, self.args.exp, f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
+                save_path = os.path.join(self.args.output, f"{self.args.exp}_{args.suffix}", f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:

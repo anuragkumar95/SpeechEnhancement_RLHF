@@ -321,6 +321,7 @@ class AttentionFeatureLossBatch(nn.Module):
         loss_final = 0
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
+                print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}")
                 #both e1 and e2 is of shape (b, ch, t, f)
                 b, ch, t, f = e1.shape
                 #diff is average difference across time and freq axis
@@ -341,9 +342,6 @@ class AttentionFeatureLossBatch(nn.Module):
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2]) + torch.mean(attn_freq_outputs, dim=[1, 2])
                 loss_final += attn_scores
         return loss_final
-
-
-
 
                 
 class FeatureLossBatch(nn.Module):

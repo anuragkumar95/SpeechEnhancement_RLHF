@@ -300,7 +300,10 @@ class AttentionFeatureLossBatch(nn.Module):
             else:
                 freq_bins = freq_bins // 2
             bins.append((time_bins, freq_bins))
-        self.attention_layers = nn.ModuleList()
+
+        self.time_attn = nn.ModuleList()
+        self.freq_attn = nn.ModuleList()
+
         for i in range(n_layers):
             ch, (t, f) = out_channels[i], bins[i]
             
@@ -310,7 +313,8 @@ class AttentionFeatureLossBatch(nn.Module):
             total_dim = f + f + ch
             freq_attn = nn.MultiheadAttention(total_dim, 1)
 
-            self.attention_layers.append((time_attn, freq_attn))
+            self.time_attn.append(time_attn)
+            self.freq_attn.append(freq_attn)
         
     def forward(self, embeds1, embeds2):
         loss_final = 0
@@ -325,12 +329,12 @@ class AttentionFeatureLossBatch(nn.Module):
                 #for time attn, reshape both to (b*f, ch, t)
                 e1_t = e1.permute(0, 3, 1, 2).contiguous().view(b * f, ch, t)
                 e2_t = e2.permute(0, 3, 1, 2).contiguous().view(b * f, ch, t)
-                attn_time_outputs, _ = self.attention_layers[i][0](e1_t, e2_t, diff)
+                attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff)
                 
                 #for freq attn, reshape both to (b*t, ch, f)
                 e1_f = e1.permute(0, 2, 1, 3).contiguous().view(b * t, ch, f)
                 e2_f = e2.permute(0, 2, 1, 3).contiguous().view(b * t, ch, f)
-                attn_freq_outputs, _ = self.attention_layers[i][1](e1_f, e2_f, diff)
+                attn_freq_outputs, _ = self.freq_attn[i](e1_f, e2_f, diff)
 
                 #Average attn outputs across ch and t/f dims
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2]) + torch.mean(attn_freq_outputs, dim=[1, 2])

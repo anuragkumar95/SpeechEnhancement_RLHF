@@ -322,20 +322,20 @@ class AttentionFeatureLossBatch(nn.Module):
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
                 print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}")
-                #both e1 and e2 is of shape (b, ch, t, f)
-                b, ch, t, f = e1.shape
+                #both e1 and e2 is of shape (b, ch, f, t)
+                b, ch, f, t = e1.shape
                 #diff is average difference across time and freq axis
                 #should be of shape (b, ch)
                 diff = torch.mean((e1 - e2), dim=[2, 3])
 
                 #for time attn, reshape both to (b*f, ch, t)
-                e1_t = e1.permute(0, 3, 1, 2).contiguous().view(b * f, ch, t)
-                e2_t = e2.permute(0, 3, 1, 2).contiguous().view(b * f, ch, t)
+                e1_t = e1.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
+                e2_t = e2.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
                 attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff)
                 
                 #for freq attn, reshape both to (b*t, ch, f)
-                e1_f = e1.permute(0, 2, 1, 3).contiguous().view(b * t, ch, f)
-                e2_f = e2.permute(0, 2, 1, 3).contiguous().view(b * t, ch, f)
+                e1_f = e1.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
+                e2_f = e2.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
                 attn_freq_outputs, _ = self.freq_attn[i](e1_f, e2_f, diff)
 
                 #Average attn outputs across ch and t/f dims
@@ -410,8 +410,8 @@ class JNDModel(nn.Module):
         if loss_type == 'attentionloss':
             self.feature_loss = AttentionFeatureLossBatch(n_layers=n_layers, 
                                                           base_channels=32, 
-                                                          time_bins=401, 
-                                                          freq_bins=201, 
+                                                          time_bins=201, 
+                                                          freq_bins=101, 
                                                           sum_till=sum_till)
 
 

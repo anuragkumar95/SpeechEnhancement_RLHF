@@ -297,7 +297,7 @@ class FeatureLossBatch(nn.Module):
 
 
 class JNDModel(nn.Module):
-    def __init__(self, in_channels, out_dim=2, n_layers=14, keep_prob=0.7, norm_type='sbn', sum_till=14, gpu_id=None):
+    def __init__(self, in_channels, out_dim=2, n_layers=14, keep_prob=0.7, norm_type='sbn', sum_till=14, type=1, gpu_id=None):
         super().__init__()
         self.loss_net_real = LossNet(in_channels=in_channels // 2, 
                                      n_layers=n_layers, 
@@ -305,13 +305,17 @@ class JNDModel(nn.Module):
                                      keep_prob=keep_prob, 
                                      norm_type=norm_type)
         
-        self.loss_net_imag = LossNet(in_channels=in_channels // 2, 
-                                     n_layers=n_layers, 
-                                     kernel_size=3, 
-                                     keep_prob=keep_prob, 
-                                     norm_type=norm_type)
+        if type == 1:
+            self.loss_net_imag = LossNet(in_channels=in_channels // 2, 
+                                        n_layers=n_layers, 
+                                        kernel_size=3, 
+                                        keep_prob=keep_prob, 
+                                        norm_type=norm_type)
 
-        self.classification_layer = ClassificationHead(in_dim=2, out_dim=out_dim)
+        if type == 1:
+            self.classification_layer = ClassificationHead(in_dim=2, out_dim=out_dim)
+        elif type == 2:
+            self.classification_layer = ClassificationHead(in_dim=1, out_dim=out_dim)
 
         self.feature_loss = FeatureLossBatch(n_layers=n_layers,
                                              base_channels=32,
@@ -319,26 +323,34 @@ class JNDModel(nn.Module):
                                              weights=True,
                                              sum_till=sum_till)
         self.sigmoid = nn.Sigmoid()
+        self.type = type
 
     def forward(self, ref, inp):
+        if self.type == 1:
+            ref_real = ref[:, 0, :, :].unsqueeze(1)
+            ref_imag = ref[:, 1, :, :].unsqueeze(1)
 
-        ref_real = ref[:, 0, :, :].unsqueeze(1)
-        ref_imag = ref[:, 1, :, :].unsqueeze(1)
+            inp_real = inp[:, 0, :, :].unsqueeze(1)
+            inp_imag = inp[:, 1, :, :].unsqueeze(1)
 
-        inp_real = inp[:, 0, :, :].unsqueeze(1)
-        inp_imag = inp[:, 1, :, :].unsqueeze(1)
+            ref_real = self.loss_net_real(ref_real)
+            inp_real = self.loss_net_real(inp_real)
 
-        ref_real = self.loss_net_real(ref_real)
-        inp_real = self.loss_net_real(inp_real)
+            ref_imag = self.loss_net_imag(ref_imag)
+            inp_imag = self.loss_net_imag(inp_imag)
 
-        ref_imag = self.loss_net_imag(ref_imag)
-        inp_imag = self.loss_net_imag(inp_imag)
+            dist_real = self.feature_loss(ref_real, inp_real).unsqueeze(-1)
+            dist_imag = self.feature_loss(ref_imag, inp_imag).unsqueeze(-1)
+            
+            dist = torch.cat([dist_real, dist_imag], dim=1)
+            logits = self.classification_layer(dist.reshape(-1, 2))
 
-        dist_real = self.feature_loss(ref_real, inp_real).unsqueeze(-1)
-        dist_imag = self.feature_loss(ref_imag, inp_imag).unsqueeze(-1)
-        
-        dist = torch.cat([dist_real, dist_imag], dim=1)
-        logits = self.classification_layer(dist.reshape(-1, 2))
+        if self.type == 2:
+            inp = self.loss_net_real(inp)
+            ref = self.loss_net_real(ref)
+
+            dist = self.feature_loss(ref, inp)
+            logits = self.classification_layer(dist.reshape(-1, 1))
         
         return logits
     

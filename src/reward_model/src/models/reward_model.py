@@ -151,7 +151,7 @@ class LossNet(nn.Module):
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm2d(out_channels, track_running_stats=False),
+                        nn.BatchNorm2d(out_channels),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )
@@ -173,7 +173,7 @@ class LossNet(nn.Module):
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm2d(out_channels, track_running_stats=False),
+                        nn.BatchNorm2d(out_channels),
                         nn.LeakyReLU(0.2),
                     )
                 
@@ -194,7 +194,7 @@ class LossNet(nn.Module):
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm2d(out_channels, track_running_stats=False),
+                        nn.BatchNorm2d(out_channels),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )
@@ -263,6 +263,7 @@ class FeatureLossBatch(nn.Module):
         Both embeds1 and embeeds are outputs from each layer of
         loss_net. 
         """
+        """
         if isinstance(embeds1[0], tuple):
             loss_final = 0
             for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
@@ -280,18 +281,19 @@ class FeatureLossBatch(nn.Module):
             return loss_final
         
         else:
-            loss_final = 0
-            for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
-                if i >= self.n_layers - self.sum_last_layers:
-                    dist = e1 - e2
-                    dist = dist.permute(0, 3, 2, 1)
-                    if self.weights is not None:
-                        res = (self.weights[i] * dist)
-                    else:
-                        res = dist
-                    loss = torch.mean(res, dim=[1, 2, 3])
-                    loss_final += loss
-            return loss_final
+        """
+        loss_final = 0
+        for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
+            if i >= self.n_layers - self.sum_last_layers:
+                dist = e1 - e2
+                dist = dist.permute(0, 3, 2, 1)
+                if self.weights is not None:
+                    res = (self.weights[i] * dist)
+                else:
+                    res = dist
+                loss = torch.mean(res, dim=[1, 2, 3])
+                loss_final += loss
+        return loss_final
 
 
 class JNDModel(nn.Module):

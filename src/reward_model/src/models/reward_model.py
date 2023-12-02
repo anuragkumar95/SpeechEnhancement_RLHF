@@ -305,6 +305,8 @@ class AttentionFeatureLossBatch(nn.Module):
         self.time_attn = nn.ModuleList()
         self.freq_attn = nn.ModuleList()
 
+        print(f"BINS:{bins}")
+
         for i in range(n_layers):
             ch, (t, f) = out_channels[i], bins[i]
             
@@ -316,6 +318,8 @@ class AttentionFeatureLossBatch(nn.Module):
 
             self.time_attn.append(time_attn)
             self.freq_attn.append(freq_attn)
+
+        
         
     def forward(self, embeds1, embeds2):
         loss_final = 0
@@ -410,8 +414,8 @@ class JNDModel(nn.Module):
         if loss_type == 'attentionloss':
             self.feature_loss = AttentionFeatureLossBatch(n_layers=n_layers, 
                                                           base_channels=32, 
-                                                          time_bins=201, 
-                                                          freq_bins=101, 
+                                                          time_bins=401, 
+                                                          freq_bins=201, 
                                                           sum_till=sum_till)
 
 

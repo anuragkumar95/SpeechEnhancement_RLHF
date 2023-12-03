@@ -19,6 +19,13 @@ def ARGS():
                         help="Path to saved cmgan checkpoint for resuming training.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
+    parser.add_argument("--norm", type=str, required=False, default='sbn',
+                        help="option, choose between 'ln(layernorm) / sbn(batchnorm)'")
+    parser.add_argument("--enc", type=int, required=False, default=1,
+                        help="encoding option, choose between 1 or 2")
+    parser.add_argument("--loss", type=str, required=False, default='featureloss',
+                        help="option, choose between featureloss/attentionloss")
+    parser.add_argument("--cut_len", type=int, default=40000, help="cut length")
     return parser
   
 
@@ -28,9 +35,11 @@ class Evaluation:
                               out_dim=2, 
                               n_layers=14, 
                               keep_prob=0.7, 
-                              norm_type='sbn', 
+                              norm_type=args.norm, 
                               sum_till=14, 
-                              gpu_id=gpu_id)
+                              gpu_id=gpu_id,
+                              enc_type=args.enc,
+                              loss_type=args.loss)
         self.n_fft = 400
         self.hop = 100
         
@@ -140,13 +149,13 @@ class Evaluation:
 
 def main(args):
     train_ds, test_ds = load_data(root=args.root, 
-                                  path_root=args.comp,
-                                  batch_size=16, 
-                                  n_cpu=1,
-                                  split_ratio=0.85, 
-                                  cut_len=40000,
-                                  resample=True,
-                                  parallel=False)
+                                      path_root=args.comp,
+                                      batch_size=args.batchsize, 
+                                      n_cpu=1,
+                                      split_ratio=0.85, 
+                                      cut_len=args.cut_len,
+                                      resample=True,
+                                      parallel=False)
 
     if args.gpu:
         eval = Evaluation(args.ckpt, 0)

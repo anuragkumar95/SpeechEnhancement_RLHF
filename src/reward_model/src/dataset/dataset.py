@@ -121,7 +121,7 @@ def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000
 
             train_indxs = np.random.choice(num_lines, int(split_ratio * num_lines), replace=False)
             test_indxs = [i for i in range(num_lines) if i not in train_indxs]
-            
+
             print(f"KEY:{key} | TRAIN:{len(train_indxs)} | VAL:{len(test_indxs)}")
         train_indices[key].extend(train_indxs)
         test_indices[key].extend(test_indxs)
@@ -156,7 +156,7 @@ def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000
             dataset=train_ds,
             batch_size=batch_size,
             pin_memory=True,
-            shuffle=False,
+            shuffle=True,
             drop_last=False,
             num_workers=n_cpu,
             #collate_fn=collate_fn,

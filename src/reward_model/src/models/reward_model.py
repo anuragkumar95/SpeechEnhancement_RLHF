@@ -338,18 +338,18 @@ class AttentionFeatureLossBatch(nn.Module):
                 attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff_t)
                 
                 #for freq attn, reshape both to (b*t, ch, f)
-                e1_f = e1.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
-                e2_f = e2.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
-                diff_f = diff.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                #e1_f = e1.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                #e2_f = e2.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                #diff_f = diff.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
                 #print(f"e1_f:{e1_f.shape} e2_f:{e2_f.shape} diff_f:{diff_f.shape}")
-                attn_freq_outputs, _ = self.time_attn[i](e1_f, e2_f, diff_f)
+                #attn_freq_outputs, _ = self.time_attn[i](e1_f, e2_f, diff_f)
 
-                attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch)
-                attn_freq_outputs = attn_freq_outputs.reshape(b, t, f, ch)
+                attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch).permute(0, 3, 2, 1)
+                #attn_freq_outputs = attn_freq_outputs.reshape(b, t, f, ch).permute(0, 3, 1, 2)
 
                 #Average attn outputs across ch and t/f dims
-                print(f"time:{attn_time_outputs.shape}, freq:{attn_freq_outputs.shape}")
-                attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3]) + torch.mean(attn_freq_outputs, dim=[1, 2, 3])
+                print(f"att_time:{attn_time_outputs.shape}")
+                attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
                 loss_final += attn_scores
         return loss_final
 

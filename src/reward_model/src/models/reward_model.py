@@ -322,12 +322,13 @@ class AttentionFeatureLossBatch(nn.Module):
         loss_final = 0
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
-                print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}")
+               
                 #both e1 and e2 is of shape (b, ch, f, t)
                 b, ch, f, t = e1.shape
                 #diff is average difference across time and freq axis
                 #should be of shape (b, ch)
                 diff = torch.mean((e1 - e2), dim=[2, 3])
+                print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}, diff:{diff.shape}")
 
                 #for time attn, reshape both to (b*f, ch, t)
                 e1_t = e1.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)

@@ -330,12 +330,13 @@ class AttentionFeatureLossBatch(nn.Module):
                 key = e1.contiguous().view(b, ch, t * f)
                 query = e2.contiguous().view(b, ch, t * f)
                 val = e1.contiguous().view(b, ch, t * f)
+                dist = (e1 - e2).contiguous().view(b, ch, t * f)
                 
                 attn_outs, _ = self.attn[i](key, query, val)
-                
+                scores = (dist * attn_outs).sum(1)
+
                 #Sum over the ch dim, (b, ch, t*f) -> (b, t*f)
-                attn_outs = attn_outs.sum(1)
-                scores = self.value[i](attn_outs)
+                scores = self.value[i](scores)
 
                 proj = self.relu(scores)
                 loss_final += proj

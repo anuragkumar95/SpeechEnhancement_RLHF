@@ -279,10 +279,6 @@ class TSFeatureLosBatch(nn.Module):
                 loss_final += loss
         return loss_final
 
-"""
-multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
-attn_output, attn_output_weights = multihead_attn(query, key, value)
-"""
 
 class AttentionFeatureLossBatch(nn.Module):
     def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
@@ -324,9 +320,10 @@ class AttentionFeatureLossBatch(nn.Module):
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
                 #both e1 and e2 is of shape (b, ch, f, t)
-                b, ch, f, t = embeds1[0].shape
+                b, ch, f, t = e1.shape
 
                 #for time attn, reshape both to (b, ch, t*f)
+                print(f"e1:{e1.shape} e2:{e2.shape}")
                 key = e1.contiguous().view(b, ch, t * f)
                 query = e2.contiguous().view(b, ch, t * f)
                 val = e1.contiguous().view(b, ch, t * f)

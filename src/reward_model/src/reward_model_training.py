@@ -64,7 +64,7 @@ def ARGS():
                         help="Experiment suffix to be added.")
 
     parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
-    
+    parser.add_argument("--cut_len", type=int, default=40000, help="cut length")
     return parser
     
 class Trainer:

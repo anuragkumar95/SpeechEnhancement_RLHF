@@ -305,7 +305,7 @@ class AttentionFeatureLossBatch(nn.Module):
         self.time_attn = nn.ModuleList()
         self.freq_attn = nn.ModuleList()
 
-        print(f"BINS:{bins}")
+        #print(f"BINS:{bins}")
 
         for i in range(n_layers):
             ch, (t, f) = out_channels[i], bins[i]
@@ -328,27 +328,27 @@ class AttentionFeatureLossBatch(nn.Module):
                 #diff is average difference across time and freq axis
                 #should be of shape (b, ch)
                 diff = (e1 - e2)
-                print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}, diff:{diff.shape}")
+                #print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}, diff:{diff.shape}")
 
                 #for time attn, reshape both to (b*f, ch, t)
                 e1_t = e1.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
                 e2_t = e2.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
                 diff_t = diff.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
-                print(f"e1_t:{e1_t.shape} e2_t:{e2_t.shape} diff_t:{diff_t.shape}")
+                #print(f"e1_t:{e1_t.shape} e2_t:{e2_t.shape} diff_t:{diff_t.shape}")
                 attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff_t)
                 
                 #for freq attn, reshape both to (b*t, ch, f)
                 e1_f = e1.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
                 e2_f = e2.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
                 diff_f = diff.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
-                print(f"e1_f:{e1_f.shape} e2_f:{e2_f.shape} diff_f:{diff_f.shape}")
+                #print(f"e1_f:{e1_f.shape} e2_f:{e2_f.shape} diff_f:{diff_f.shape}")
                 attn_freq_outputs, _ = self.freq_attn[i](e1_f, e2_f, diff_f)
 
                 attn_time_outputs = attn_time_outputs.reshape(b, f, ch, t)
                 attn_freq_outputs = attn_freq_outputs.reshape(b, t, ch, f)
 
                 #Average attn outputs across ch and t/f dims
-                print(f"time:{attn_time_outputs.shape}, freq:{attn_freq_outputs.shape}")
+                #print(f"time:{attn_time_outputs.shape}, freq:{attn_freq_outputs.shape}")
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3]) + torch.mean(attn_freq_outputs, dim=[1, 2, 3])
                 loss_final += attn_scores
         return loss_final

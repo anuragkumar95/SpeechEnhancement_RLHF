@@ -216,7 +216,7 @@ class LossNet(nn.Module):
         
     def forward(self, x):
         outs = []
-        for i, layer in enumerate(self.net):
+        for _, layer in enumerate(self.net):
             x = layer(x)
             outs.append(x)
         return outs
@@ -323,14 +323,14 @@ class AttentionFeatureLossBatch(nn.Module):
                 b, ch, f, t = e1.shape
 
                 #for time attn, reshape both to (b, ch, t*f)
-                #print(f"e1:{e1.shape} e2:{e2.shape}")
                 key = e1.contiguous().view(b, ch, t * f)
                 query = e2.contiguous().view(b, ch, t * f)
-                val = e1.contiguous().view(b, ch, t * f)
-                dist = (e1 - e2).contiguous().view(b, ch, t * f)
+                #val = e1.contiguous().view(b, ch, t * f)
+                val = (e1 - e2).contiguous().view(b, ch, t * f)
                 
                 attn_outs, _ = self.attn[i](key, query, val)
-                scores = (dist * attn_outs).sum(1)
+                #scores = (dist * attn_outs).sum(1)
+                attn_outs = attn_outs.sum(1)
 
                 #Sum over the ch dim, (b, ch, t*f) -> (b, t*f)
                 scores = self.value[i](scores)

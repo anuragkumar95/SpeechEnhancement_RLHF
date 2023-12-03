@@ -348,7 +348,7 @@ class AttentionFeatureLossBatch(nn.Module):
                 #attn_freq_outputs = attn_freq_outputs.reshape(b, t, f, ch).permute(0, 3, 1, 2)
 
                 #Average attn outputs across ch and t/f dims
-                print(f"att_time:{attn_time_outputs.shape}")
+                #print(f"att_time:{attn_time_outputs.shape}")
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
                 loss_final += attn_scores
         return loss_final

@@ -323,7 +323,7 @@ class AttentionFeatureLossBatch(nn.Module):
                 b, ch, f, t = e1.shape
 
                 #for time attn, reshape both to (b, ch, t*f)
-                print(f"e1:{e1.shape} e2:{e2.shape}")
+                #print(f"e1:{e1.shape} e2:{e2.shape}")
                 key = e1.contiguous().view(b, ch, t * f)
                 query = e2.contiguous().view(b, ch, t * f)
                 val = e1.contiguous().view(b, ch, t * f)

@@ -310,11 +310,11 @@ class AttentionFeatureLossBatch(nn.Module):
         for i in range(n_layers):
             ch, (t, f) = out_channels[i], bins[i]
             
-            time_attn = nn.MultiheadAttention(embed_dim=t, num_heads=1, kdim=t, vdim=t, batch_first=True)
-            freq_attn = nn.MultiheadAttention(embed_dim=f, num_heads=1, kdim=f, vdim=f, batch_first=True)
+            time_attn = nn.MultiheadAttention(embed_dim=ch, num_heads=1, kdim=ch, vdim=ch, batch_first=True)
+            #freq_attn = nn.MultiheadAttention(embed_dim=f, num_heads=1, kdim=f, vdim=f, batch_first=True)
 
             self.time_attn.append(time_attn)
-            self.freq_attn.append(freq_attn)
+            #self.freq_attn.append(freq_attn)
 
         
         
@@ -331,24 +331,24 @@ class AttentionFeatureLossBatch(nn.Module):
                 #print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}, diff:{diff.shape}")
 
                 #for time attn, reshape both to (b*f, ch, t)
-                e1_t = e1.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
-                e2_t = e2.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
-                diff_t = diff.permute(0, 2, 1, 3).contiguous().view(b * f, ch, t)
+                e1_t = e1.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+                e2_t = e2.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+                diff_t = diff.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
                 #print(f"e1_t:{e1_t.shape} e2_t:{e2_t.shape} diff_t:{diff_t.shape}")
                 attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff_t)
                 
                 #for freq attn, reshape both to (b*t, ch, f)
-                e1_f = e1.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
-                e2_f = e2.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
-                diff_f = diff.permute(0, 3, 1, 2).contiguous().view(b * t, ch, f)
+                e1_f = e1.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                e2_f = e2.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                diff_f = diff.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
                 #print(f"e1_f:{e1_f.shape} e2_f:{e2_f.shape} diff_f:{diff_f.shape}")
-                attn_freq_outputs, _ = self.freq_attn[i](e1_f, e2_f, diff_f)
+                attn_freq_outputs, _ = self.time_attn[i](e1_f, e2_f, diff_f)
 
-                attn_time_outputs = attn_time_outputs.reshape(b, f, ch, t)
-                attn_freq_outputs = attn_freq_outputs.reshape(b, t, ch, f)
+                attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch)
+                attn_freq_outputs = attn_freq_outputs.reshape(b, t, f, ch)
 
                 #Average attn outputs across ch and t/f dims
-                #print(f"time:{attn_time_outputs.shape}, freq:{attn_freq_outputs.shape}")
+                print(f"time:{attn_time_outputs.shape}, freq:{attn_freq_outputs.shape}")
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3]) + torch.mean(attn_freq_outputs, dim=[1, 2, 3])
                 loss_final += attn_scores
         return loss_final

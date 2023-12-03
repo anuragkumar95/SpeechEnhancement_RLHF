@@ -315,6 +315,6 @@ def main(args):
 
 if __name__=='__main__':
     args = ARGS().parse_args()
-    output = f"{args.output}/{args.exp}"
+    output = f"{args.output}/{args.exp}_{args.suffix}"
     os.makedirs(output, exist_ok=True)
     main(args)

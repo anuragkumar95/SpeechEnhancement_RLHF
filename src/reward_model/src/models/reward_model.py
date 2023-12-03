@@ -342,7 +342,77 @@ class AttentionFeatureLossBatch(nn.Module):
 
         return loss_final
 
-                
+
+class AttentionFeatureLossBatchOld(nn.Module):
+    def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
+        super().__init__()
+        self.sum_last_layers = sum_till
+        self.n_layers = n_layers
+        out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
+        bins = []
+        for _ in range(n_layers):
+            if time_bins % 2 == 1:
+                time_bins = (time_bins // 2) + 1
+            else:
+                time_bins = time_bins // 2
+            if freq_bins % 2 == 1:
+                freq_bins = (freq_bins // 2) + 1
+            else:
+                freq_bins = freq_bins // 2
+            bins.append((time_bins, freq_bins))
+
+        self.time_attn = nn.ModuleList()
+        self.freq_attn = nn.ModuleList()
+
+        #print(f"BINS:{bins}")
+
+        for i in range(n_layers):
+            ch, (t, f) = out_channels[i], bins[i]
+
+            time_attn = nn.MultiheadAttention(embed_dim=ch, num_heads=1, kdim=ch, vdim=ch, batch_first=True)
+            #freq_attn = nn.MultiheadAttention(embed_dim=f, num_heads=1, kdim=f, vdim=f, batch_first=True)
+
+            self.time_attn.append(time_attn)
+            #self.freq_attn.append(freq_attn)
+
+    def forward(self, embeds1, embeds2):
+        loss_final = 0
+        for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
+            if i >= self.n_layers - self.sum_last_layers:
+
+                #both e1 and e2 is of shape (b, ch, f, t)
+                b, ch, f, t = e1.shape
+                #diff is average difference across time and freq axis
+                #should be of shape (b, ch)
+                diff = (e1 - e2)
+                #print(f"Layer:{i}, e1:{e1.shape}, e2:{e2.shape}, diff:{diff.shape}")
+
+                #for time attn, reshape both to (b*f, ch, t)
+                e1_t = e1.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+                e2_t = e2.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+                diff_t = diff.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+                #print(f"e1_t:{e1_t.shape} e2_t:{e2_t.shape} diff_t:{diff_t.shape}")
+                attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff_t)
+
+                #for freq attn, reshape both to (b*t, ch, f)
+                #e1_f = e1.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                #e2_f = e2.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                #diff_f = diff.permute(0, 3, 2, 1).contiguous().view(b * t, f, ch)
+                #print(f"e1_f:{e1_f.shape} e2_f:{e2_f.shape} diff_f:{diff_f.shape}")
+                #attn_freq_outputs, _ = self.time_attn[i](e1_f, e2_f, diff_f)
+
+                attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch).permute(0, 3, 2, 1)
+                #attn_freq_outputs = attn_freq_outputs.reshape(b, t, f, ch).permute(0, 3, 1, 2)
+
+                #Average attn outputs across ch and t/f dims
+                #print(f"att_time:{attn_time_outputs.shape}")
+                attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
+                loss_final += attn_scores
+        return loss_final
+
+
+
+
 class FeatureLossBatch(nn.Module):
     def __init__(self, n_layers, base_channels, sum_till=14, weights=False, gpu_id=None):
         super().__init__()

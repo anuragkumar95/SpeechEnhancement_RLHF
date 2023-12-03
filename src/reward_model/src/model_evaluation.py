@@ -150,7 +150,7 @@ class Evaluation:
 def main(args):
     train_ds, test_ds = load_data(root=args.root, 
                                       path_root=args.comp,
-                                      batch_size=args.batchsize, 
+                                      batch_size=16, 
                                       n_cpu=1,
                                       split_ratio=0.85, 
                                       cut_len=args.cut_len,

@@ -310,8 +310,8 @@ class AttentionFeatureLossBatch(nn.Module):
         for i in range(n_layers):
             ch, (t, f) = out_channels[i], bins[i]
             
-            time_attn = nn.MultiheadAttention(embed_dim=t, num_heads=1, kdim=t, vdim=ch, batch_first=True)
-            freq_attn = nn.MultiheadAttention(embed_dim=t, num_heads=1, kdim=f, vdim=ch, batch_first=True)
+            time_attn = nn.MultiheadAttention(embed_dim=t, num_heads=1, kdim=t, vdim=t, batch_first=True)
+            freq_attn = nn.MultiheadAttention(embed_dim=t, num_heads=1, kdim=f, vdim=f, batch_first=True)
 
             self.time_attn.append(time_attn)
             self.freq_attn.append(freq_attn)

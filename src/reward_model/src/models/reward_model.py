@@ -300,7 +300,7 @@ class AttentionFeatureLossBatch(nn.Module):
         out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
 
         self.attn = nn.ModuleList()
-        self.value = nn.ModuleList()
+        self.value = []
 
         for i in range(n_layers):
             t, f = bins[i]

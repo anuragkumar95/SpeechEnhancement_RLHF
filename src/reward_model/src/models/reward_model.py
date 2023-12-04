@@ -281,7 +281,7 @@ class TSFeatureLosBatch(nn.Module):
 
 
 class AttentionFeatureLossBatch(nn.Module):
-    def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
+    def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14, gpu_id=None):
         super().__init__()
         self.sum_last_layers = sum_till
         self.n_layers = n_layers
@@ -310,12 +310,13 @@ class AttentionFeatureLossBatch(nn.Module):
                                          vdim=out_channels[i] * t, 
                                          batch_first=True)
             
-            #wt = nn.Linear(out_channels[i], 1)
             wt = nn.Parameter(torch.randn(out_channels[i]), requires_grad=True)
+            if gpu_id is not None:
+                wt = wt.to(gpu_id)
             self.attn.append(attn)
             self.value.append(wt)
 
-        self.relu = nn.LeakyReLU(0.2)
+        #self.relu = nn.LeakyReLU(0.2)
 
     def forward(self, embeds1, embeds2):
         loss_final = 0

@@ -329,13 +329,11 @@ class AttentionFeatureLossBatch(nn.Module):
                 #for time attn, reshape both to (b, f, t * ch)
                 key = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
                 query = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
-                #val = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
                 val = (e1 - e2).permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
          
                 attn_outs, _ = self.attn[i](key, query, val)
                 
                 #Sum over the f dim, (b, f, t*ch) -> (b, t*ch)
-                #attn_outs = (attn_outs * dist).sum(1)
                 attn_outs = attn_outs.view(b, f, t, ch)
                 scores = torch.mean(attn_outs, dim=[1, 2, 3])
 
@@ -518,7 +516,7 @@ class JNDModel(nn.Module):
             ref = self.loss_net_real(ref)
 
             dist = self.feature_loss(ref, inp)
-            logits = self.classification_layer(dist)
+            logits = self.classification_layer(dist.reshape(-1, 1))
         
         return logits
     

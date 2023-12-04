@@ -297,47 +297,49 @@ class AttentionFeatureLossBatch(nn.Module):
                 freq_bins = freq_bins // 2
             bins.append((time_bins, freq_bins))
 
+        out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
+
         self.attn = nn.ModuleList()
         self.value = nn.ModuleList()
 
         for i in range(n_layers):
             t, f = bins[i]
-            attn = nn.MultiheadAttention(embed_dim=t * f, 
+            attn = nn.MultiheadAttention(embed_dim=out_channels[i], 
                                          num_heads=1, 
-                                         kdim=t * f, 
-                                         vdim=t * f, 
+                                         kdim=out_channels[i], 
+                                         vdim=out_channels[i], 
                                          batch_first=True)
             
-            wt = nn.Linear(t * f, 1)
+            wt = nn.Linear(t * out_channels[i], 1)
             self.attn.append(attn)
             self.value.append(wt)
 
         self.relu = nn.LeakyReLU(0.2)
 
     def forward(self, embeds1, embeds2):
-        loss_final = 0
+        loss_final = []
 
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
                 #both e1 and e2 is of shape (b, ch, f, t)
                 b, ch, f, t = e1.shape
 
-                #for time attn, reshape both to (b, ch, t*f)
-                key = e1.contiguous().view(b, ch, t * f)
-                query = e2.contiguous().view(b, ch, t * f)
-                #val = e1.contiguous().view(b, ch, t * f)
-                val = (e1 - e2).contiguous().view(b, ch, t * f)
-                
+                #for time attn, reshape both to (b, f, t * ch)
+                key = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
+                query = e2.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
+                val = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
+                dist = (e1 - e2).permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
+         
                 attn_outs, _ = self.attn[i](key, query, val)
-                #scores = (dist * attn_outs).sum(1)
-                scores = attn_outs.sum(1)
-
-                #Sum over the ch dim, (b, ch, t*f) -> (b, t*f)
-                scores = self.value[i](scores)
+                
+                #Sum over the f dim, (b, f, t*ch) -> (b, t*ch)
+                attn_outs = (attn_outs * dist).sum(1)
+                scores = self.value[i](attn_outs)
 
                 proj = self.relu(scores)
-                loss_final += proj
+                loss_final.append(proj)
 
+        loss_final = torch.stack(loss_final, dim=-1)
         return loss_final
 
 
@@ -465,7 +467,7 @@ class JNDModel(nn.Module):
         if enc_type == 1:
             self.classification_layer = ClassificationHead(in_dim=2, out_dim=out_dim)
         elif enc_type == 2:
-            self.classification_layer = ClassificationHead(in_dim=1, out_dim=out_dim)
+            self.classification_layer = ClassificationHead(in_dim=n_layers, out_dim=out_dim)
 
         if loss_type == 'featureloss':
             self.feature_loss = FeatureLossBatch(n_layers=n_layers,

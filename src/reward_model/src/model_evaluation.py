@@ -33,7 +33,7 @@ class Evaluation:
     def __init__(self, checkpoint, gpu_id=None):
         self.model = JNDModel(in_channels=2,
                               out_dim=2, 
-                              n_layers=14, 
+                              n_layers=7, 
                               keep_prob=0.7, 
                               norm_type=args.norm, 
                               sum_till=14, 

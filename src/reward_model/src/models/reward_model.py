@@ -300,7 +300,7 @@ class AttentionFeatureLossBatch(nn.Module):
         out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
 
         self.attn = nn.ModuleList()
-        self.value = []
+        #self.value = []
 
         for i in range(n_layers):
             t, f = bins[i]
@@ -310,11 +310,11 @@ class AttentionFeatureLossBatch(nn.Module):
                                          vdim=out_channels[i] * t, 
                                          batch_first=True)
             
-            wt = nn.Parameter(torch.randn(out_channels[i]), requires_grad=True)
-            if gpu_id is not None:
-                wt = wt.to(gpu_id)
+            #wt = nn.Parameter(torch.randn(out_channels[i]), requires_grad=True)
+            #if gpu_id is not None:
+            #    wt = wt.to(gpu_id)
             self.attn.append(attn)
-            self.value.append(wt)
+            #self.value.append(wt)
 
         #self.relu = nn.LeakyReLU(0.2)
 
@@ -336,8 +336,8 @@ class AttentionFeatureLossBatch(nn.Module):
                 
                 #Sum over the f dim, (b, f, t*ch) -> (b, t*ch)
                 #attn_outs = (attn_outs * dist).sum(1)
-                attn_outs = torch.mean(attn_outs.view(b, f, t, ch), dim=[1, 2])
-                scores = torch.mean(self.value[i] * attn_outs, dim=-1).view(-1, 1)
+                attn_outs = attn_outs.view(b, f, t, ch)
+                scores = torch.mean(attn_outs, dim=[1, 2, 3])
 
                 #loss_final.append(scores)
                 loss_final += scores

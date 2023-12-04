@@ -330,7 +330,7 @@ class AttentionFeatureLossBatch(nn.Module):
                 
                 attn_outs, _ = self.attn[i](key, query, val)
                 #scores = (dist * attn_outs).sum(1)
-                attn_outs = attn_outs.sum(1)
+                scores = attn_outs.sum(1)
 
                 #Sum over the ch dim, (b, ch, t*f) -> (b, t*f)
                 scores = self.value[i](scores)

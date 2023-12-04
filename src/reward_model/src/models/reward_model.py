@@ -514,7 +514,7 @@ class JNDModel(nn.Module):
             ref = self.loss_net_real(ref)
 
             dist = self.feature_loss(ref, inp)
-            logits = self.classification_layer(dist.reshape(-1, 1))
+            logits = self.classification_layer(dist)
         
         return logits
     

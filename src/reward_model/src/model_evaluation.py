@@ -36,7 +36,7 @@ class Evaluation:
                               n_layers=7, 
                               keep_prob=0.7, 
                               norm_type=args.norm, 
-                              sum_till=14, 
+                              sum_till=7, 
                               gpu_id=gpu_id,
                               enc_type=args.enc,
                               loss_type=args.loss)

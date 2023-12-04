@@ -339,8 +339,8 @@ class AttentionFeatureLossBatch(nn.Module):
                 proj = self.relu(scores)
                 loss_final.append(proj)
 
-        loss_final = torch.stack(loss_final, dim=-1)
-        print(f"loss_final:{loss_final.shape}")
+        loss_final = torch.stack(loss_final, dim=-1).squeeze(1)
+        #print(f"loss_final:{loss_final.shape}")
         return loss_final
 
 

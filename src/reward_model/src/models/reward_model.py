@@ -485,7 +485,8 @@ class JNDModel(nn.Module):
                                                           base_channels=32, 
                                                           time_bins=401, 
                                                           freq_bins=201, 
-                                                          sum_till=sum_till)
+                                                          sum_till=sum_till,
+                                                          gpu_id=gpu_id)
 
 
         self.sigmoid = nn.Sigmoid()

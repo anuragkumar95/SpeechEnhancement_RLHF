@@ -49,6 +49,8 @@ class Evaluation:
             dev = gpu_id
             self.model = self.model.to(gpu_id)
         state_dict = self.load(checkpoint, dev)
+        print(self.model)
+        print(state_dict['model_state_dict'])
         self.model.load_state_dict(state_dict['model_state_dict'])
         print(f"Loaded save checkpoint at epoch:{state_dict['epoch']} with val_acc:{state_dict['val_acc']}")
         self.model.eval()

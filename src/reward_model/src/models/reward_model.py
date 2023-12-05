@@ -428,7 +428,7 @@ class FeatureLossBatch(nn.Module):
 
 
 class JNDModel(nn.Module):
-    def __init__(self, in_channels, out_dim=2, n_layers=14, keep_prob=0.7, loss_type='featureloss', norm_type='sbn', sum_till=14, enc_type=1, gpu_id=None):
+    def __init__(self, in_channels, out_dim=2, n_heads=1, n_layers=14, keep_prob=0.7, loss_type='featureloss', norm_type='sbn', sum_till=14, enc_type=1, gpu_id=None):
         super().__init__()
         if enc_type == 1:
             self.loss_net_real = LossNet(in_channels=in_channels // 2, 
@@ -467,6 +467,7 @@ class JNDModel(nn.Module):
                                                           base_channels=32, 
                                                           time_bins=401, 
                                                           freq_bins=201, 
+                                                          n_heads=n_heads, 
                                                           sum_till=sum_till,
                                                           gpu_id=gpu_id)
 

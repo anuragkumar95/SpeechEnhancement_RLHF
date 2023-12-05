@@ -54,6 +54,8 @@ def ARGS():
                         help="option, choose between 'ln(layernorm) / sbn(batchnorm)'")
     parser.add_argument("--enc", type=int, required=False, default=1,
                         help="encoding option, choose between 1 or 2")
+    parser.add_argument("--heads", type=int, required=False, default=1,
+                        help="No of attention heads")
     parser.add_argument("--loss", type=str, required=False, default='featureloss',
                         help="option, choose between featureloss/attentionloss")
     parser.add_argument("--gpu", action='store_true',
@@ -76,6 +78,7 @@ class Trainer:
                               keep_prob=0.7, 
                               norm_type=args.norm, 
                               sum_till=7, 
+                              n_heads=args.heads,
                               gpu_id=gpu_id,
                               enc_type=args.enc,
                               loss_type=args.loss)

@@ -286,6 +286,7 @@ class AttentionFeatureLossBatch(nn.Module):
         self.sum_last_layers = sum_till
         self.n_layers = n_layers
         bins = []
+        self.heads = n_heads
         for _ in range(n_layers):
             if time_bins % 2 == 1:
                 time_bins = (time_bins // 2) + 1
@@ -303,7 +304,7 @@ class AttentionFeatureLossBatch(nn.Module):
 
         for i in range(n_layers):
             t, f = bins[i]
-            attn = nn.MultiheadAttention(embed_dim=out_channels[i] * t, 
+            attn = nn.MultiheadAttention(embed_dim=n_heads * out_channels[i] * t, 
                                          num_heads=n_heads, 
                                          batch_first=True)
             
@@ -322,6 +323,14 @@ class AttentionFeatureLossBatch(nn.Module):
                 key = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
                 query = e2.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
                 val = (e1 - e2).permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
+
+                if self.heads > 1:
+                    k_list = [key for i in range(self.heads)]
+                    q_list = [query for i in range(self.heads)]
+                    v_list = [query for i in range(self.heads)]
+                    key = torch.cat(k_list, dim=-1)
+                    query = torch.cat(q_list, dim=-1)
+                    val = torch.cat(v_list, dim=-1)
          
                 attn_outs, _ = self.attn[i](key, query, val)
                 scores = torch.mean(attn_outs.view(b, f, t, ch), dim=[1, 2, 3])

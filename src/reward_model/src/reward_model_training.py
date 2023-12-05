@@ -100,7 +100,7 @@ class Trainer:
             self.start_epoch = state_dict['epoch'] - 1
             self.model.load_state_dict(state_dict['model_state_dict'])
             self.optimizer.load_state_dict(state_dict['opt_state_dict'])
-            print(f"Loaded checkpoint stored at {args.ckpt} with val_acc {state_dict['val_acc']} at epoch {self.start.epoch}")
+            print(f"Loaded checkpoint stored at {args.ckpt} with val_acc {state_dict['val_acc']} at epoch {self.start_epoch}")
 
         self.gpu_id = gpu_id
         self.args = args

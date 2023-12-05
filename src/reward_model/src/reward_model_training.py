@@ -154,6 +154,8 @@ class Trainer:
     def load(self, path, device):
         if device == 'cpu':
             dev = torch.device('cpu')
+        else:
+            dev = torch.device(f'cuda:{device}')
         state_dict = torch.load(path, map_location=dev)
         return state_dict
     

@@ -333,6 +333,8 @@ class AttentionFeatureLossBatch(nn.Module):
                     val = torch.cat(v_list, dim=-1)
          
                 attn_outs, _ = self.attn[i](key, query, val)
+                if self.heads > 1:
+                    attn_outs = torch.mean(attn_outs.view(b, f, t*ch, self.heads), dim=-1)
                 scores = torch.mean(attn_outs.view(b, f, t, ch), dim=[1, 2, 3])
                 loss_final += scores
         return loss_final

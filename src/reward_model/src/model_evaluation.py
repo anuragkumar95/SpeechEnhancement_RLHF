@@ -49,8 +49,6 @@ class Evaluation:
             dev = gpu_id
             self.model = self.model.to(gpu_id)
         state_dict = self.load(checkpoint, dev)
-        print(self.model)
-        print(state_dict['model_state_dict'])
         self.model.load_state_dict(state_dict['model_state_dict'])
         print(f"Loaded save checkpoint at epoch:{state_dict['epoch']} with val_acc:{state_dict['val_acc']}")
         self.model.eval()
@@ -151,13 +149,13 @@ class Evaluation:
 
 def main(args):
     train_ds, test_ds = load_data(root=args.root, 
-                                      path_root=args.comp,
-                                      batch_size=16, 
-                                      n_cpu=1,
-                                      split_ratio=0.85, 
-                                      cut_len=args.cut_len,
-                                      resample=True,
-                                      parallel=False)
+                                path_root=args.comp,
+                                batch_size=16, 
+                                n_cpu=1,
+                                split_ratio=0.85, 
+                                cut_len=args.cut_len,
+                                resample=True,
+                                parallel=False)
 
     if args.gpu:
         eval = Evaluation(args.ckpt, 0)

@@ -43,7 +43,7 @@ def ARGS():
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
-                        help="Path to saved cmgan checkpoint for resuming training.")
+                        help="Path to saved checkpoint for resuming training.")
     parser.add_argument("--disc_pt", type=str, required=False, default=None,
                         help="Path to the discriminator checkpoint to init reward model.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
@@ -86,6 +86,7 @@ class Trainer:
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
+        self.start_epoch = 0
 
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)
@@ -93,6 +94,13 @@ class Trainer:
 
         if gpu_id is not None:
             self.model = self.model.to(gpu_id)
+
+        if args.ckpt is not None:
+            state_dict = self.load(args.ckpt, gpu_id)
+            self.start_epoch = state_dict['epoch'] - 1
+            self.model.load_state_dict(state_dict['model_state_dict'])
+            self.optimizer.load_state_dict(state_dict['opt_state_dict'])
+            print(f"Loaded checkpoint stored at {args.ckpt} with val_acc {state_dict['val_acc']} at epoch {self.start.epoch}")
 
         self.gpu_id = gpu_id
         self.args = args
@@ -247,7 +255,7 @@ class Trainer:
     def train(self):
         best_val_loss = 9999999999
         best_val_acc = 0
-        for epoch in range(self.args.epochs):
+        for epoch in range(self.start_epoch, self.args.epochs):
             save_path = None
             val_loss, val_acc = self.train_one_epoch(epoch)
             if val_loss <= best_val_loss:

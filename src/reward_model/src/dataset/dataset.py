@@ -125,6 +125,7 @@ def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000
             print(f"KEY:{key} | TRAIN:{len(train_indxs)} | VAL:{len(test_indxs)}")
         train_indices[key].extend(train_indxs)
         test_indices[key].extend(test_indxs)
+        
     if resample:
         resample = 16000
     train_ds = JNDDataset(root, path_root, train_indices, cut_len=cut_len, resample=resample)

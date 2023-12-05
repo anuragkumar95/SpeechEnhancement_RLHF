@@ -108,7 +108,7 @@ class JNDDataset(Dataset):
             
         return inp, out, label
     
-def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000, resample=False, parallel=False):
+def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
     torchaudio.set_audio_backend("sox_io")  # in linux
     
     train_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
@@ -165,7 +165,7 @@ def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000
             dataset=test_ds,
             batch_size=batch_size,
             pin_memory=True,
-            shuffle=False,
+            shuffle=shuffle,
             drop_last=False,
             num_workers=n_cpu,
             #collate_fn=collate_fn,

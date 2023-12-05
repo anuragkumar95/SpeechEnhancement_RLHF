@@ -155,7 +155,8 @@ def main(args):
                                 split_ratio=0.85, 
                                 cut_len=args.cut_len,
                                 resample=True,
-                                parallel=False)
+                                parallel=False,
+                                shuffle=True)
 
     if args.gpu:
         eval = Evaluation(args.ckpt, 0)

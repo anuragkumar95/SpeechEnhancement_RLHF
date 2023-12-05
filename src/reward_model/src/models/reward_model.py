@@ -281,7 +281,7 @@ class TSFeatureLosBatch(nn.Module):
 
 
 class AttentionFeatureLossBatch(nn.Module):
-    def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14, gpu_id=None):
+    def __init__(self, n_layers, base_channels, n_heads=1, time_bins=401, freq_bins=201, sum_till=14, gpu_id=None):
         super().__init__()
         self.sum_last_layers = sum_till
         self.n_layers = n_layers
@@ -300,23 +300,15 @@ class AttentionFeatureLossBatch(nn.Module):
         out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
 
         self.attn = nn.ModuleList()
-        #self.value = []
 
         for i in range(n_layers):
             t, f = bins[i]
             attn = nn.MultiheadAttention(embed_dim=out_channels[i] * t, 
-                                         num_heads=1, 
-                                         kdim=out_channels[i] * t, 
-                                         vdim=out_channels[i] * t, 
+                                         num_heads=n_heads, 
                                          batch_first=True)
             
-            #wt = nn.Parameter(torch.randn(out_channels[i]), requires_grad=True)
-            #if gpu_id is not None:
-            #    wt = wt.to(gpu_id)
             self.attn.append(attn)
-            #self.value.append(wt)
-
-        #self.relu = nn.LeakyReLU(0.2)
+    
 
     def forward(self, embeds1, embeds2):
         loss_final = 0
@@ -328,20 +320,12 @@ class AttentionFeatureLossBatch(nn.Module):
 
                 #for time attn, reshape both to (b, f, t * ch)
                 key = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
-                query = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
+                query = e2.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
                 val = (e1 - e2).permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
          
                 attn_outs, _ = self.attn[i](key, query, val)
-                
-                #Sum over the f dim, (b, f, t*ch) -> (b, t*ch)
-                attn_outs = attn_outs.view(b, f, t, ch)
-                scores = torch.mean(attn_outs, dim=[1, 2, 3])
-
-                #loss_final.append(scores)
+                scores = torch.mean(attn_outs.view(b, f, t, ch), dim=[1, 2, 3])
                 loss_final += scores
-
-        #loss_final = torch.stack(loss_final, dim=-1).squeeze(1)
-        #print(f"loss_final:{loss_final.shape}")
         return loss_final
 
 

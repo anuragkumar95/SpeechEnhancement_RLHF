@@ -18,9 +18,9 @@ class ContrastiveLoss(nn.Module):
     def forward(self, distances, labels):
         if labels.shape[-1] > 1:
             labels = torch.argmax(labels, dim=-1).reshape(-1, 1)
-        print(f"dist:{distances.shape} labels:{labels.shape}")
-        loss = (labels) * (distances ** 2) \
-             + (1 - labels) * (torch.clamp(self.eps - distances, min=0.0) ** 2 )
+       
+        loss = (1 - labels) * (distances ** 2) \
+             + (labels) * (torch.clamp(self.eps - distances, min=0.0) ** 2 )
         if self.reduction == 'mean':
             return loss.mean()
         if self.reduction == 'sum':

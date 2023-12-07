@@ -166,14 +166,16 @@ class Trainer:
         #wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
         class_probs, distances = self.model(wav_in, wav_out)
         loss_ce = self.criterion(class_probs, labels)
-        loss_contrastive = self.contrastive_loss(distances, labels)
-        loss = loss_ce + loss_contrastive
-        return loss, class_probs
+        loss_co = self.contrastive_loss(distances, labels)
+        #loss = loss_ce + loss_contrastive
+        return loss_ce, loss_co, class_probs
 
 
     def train_one_epoch(self, epoch):
         #Run train loop
         epoch_loss = 0
+        epoch_loss_ce = 0
+        epoch_loss_co = 0
         epoch_acc = 0
         num_batches = len(self.train_ds)
         self.model.train()
@@ -189,7 +191,8 @@ class Trainer:
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
             batch = (wav_in, wav_out, labels)
             
-            batch_loss, probs = self.forward_step(batch)
+            batch_loss_ce, batch_loss_co, probs = self.forward_step(batch)
+            batch_loss = batch_loss_ce + batch_loss_co
             y_preds = torch.argmax(probs, dim=-1)
             labels = torch.argmax(labels, dim=-1)
             print(f"PREDS:{y_preds}")
@@ -204,18 +207,27 @@ class Trainer:
                 'epoch':epoch+1, 
                 'step':i+1,
                 'step_loss':batch_loss.detach(),
+                'step_loss_ce':batch_loss_ce.detach(),
+                'step_loss_co':batch_loss_co.detach(),
                 'step_acc':acc.detach()
             })
 
-            print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss} | ACC :{acc}")
+            print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss} | CE_LOSS: {batch_loss_ce} | CO_LOSS: {batch_loss_co} | ACC :{acc}")
 
             epoch_loss += batch_loss.detach()
+            epoch_loss_ce += batch_loss_ce.detach()
+            epoch_loss_co += batch_loss_co.detach()
             epoch_acc += acc.detach()
+
         epoch_loss = epoch_loss / num_batches
+        epoch_loss_ce = epoch_loss_ce / num_batches
+        epoch_loss_co = epoch_loss_co / num_batches
         epoch_acc = epoch_acc / num_batches
 
         #Run validation
         val_loss = 0
+        val_loss_ce = 0
+        val_loss_co = 0
         val_acc = 0
         num_batches = len(self.test_ds)
         self.model.eval()
@@ -231,7 +243,8 @@ class Trainer:
               wav_in, wav_out = self.get_specs(wav_in, wav_out)
               
               batch = (wav_in, wav_out, labels)
-              batch_loss, probs = self.forward_step(batch)
+              batch_loss_ce, batch_loss_co, probs = self.forward_step(batch)
+              batch_loss = batch_loss_ce + batch_loss_co
               y_preds = torch.argmax(probs, dim=-1)
               labels = torch.argmax(labels, dim=-1)
               print(f"PREDS:{y_preds}")
@@ -239,18 +252,26 @@ class Trainer:
               acc = self.accuracy(y_preds.float(), labels.float())
               print(f"ACC:{acc}")
               val_loss += batch_loss.detach()
+              val_loss_ce += batch_loss_ce.detach()
+              val_loss_co += batch_loss_co.detach()
               val_acc += acc.detach()
         val_loss = val_loss / num_batches
+        val_loss_ce = val_loss_ce / num_batches
+        val_loss_co = val_loss_co / num_batches
         val_acc = val_acc / num_batches
         wandb.log({
                 'epoch':epoch+1, 
                 'val_loss':val_loss,
-                'train_loss':epoch_loss, 
+                'val_loss_ce':val_loss_ce,
+                'val_loss_co':val_loss_co,
+                'train_loss':epoch_loss,
+                'train_loss_ce':epoch_loss_ce,
+                'train_loss_co':epoch_loss_co, 
                 'val_acc':val_acc,
                 'train_acc':epoch_acc,
             })
 
-        print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | VAL_LOSS: {val_loss} | TRAIN_ACC: {epoch_acc} | VAL_ACC: {val_acc}")
+        print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | TRAIN_LOSS_CE: {epoch_loss_ce} | TRAIN_LOSS_CO: {epoch_loss_co} | VAL_LOSS: {val_loss} | VAL_LOSS_CE: {val_loss_ce} | VAL_LOSS_CO: {val_loss_co} | TRAIN_ACC: {epoch_acc} | VAL_ACC: {val_acc}")
         return val_loss, val_acc
     
     def accuracy(self, y_pred, y_true):

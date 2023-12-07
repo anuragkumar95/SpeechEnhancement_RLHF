@@ -425,6 +425,7 @@ class JNDModel(nn.Module):
             
             dist = torch.cat([dist_real, dist_imag], dim=1)
             logits = self.classification_layer(dist.reshape(-1, 2))
+            dist = torch.sqrt((dist ** 2).sum(-1))
 
         if self.type == 2:
             inp = self.loss_net_real(inp)

@@ -16,7 +16,7 @@ class ContrastiveLoss(nn.Module):
         self.eps = eps
 
     def forward(self, distances, labels):
-
+        print(f"dist:{distances.shape} labels:{labels.shape}")
         loss = (labels) * (distances ** 2) \
              + (1 - labels) * (torch.clamp(self.eps - distances, min=0.0) ** 2 )
         if self.reduction == 'mean':

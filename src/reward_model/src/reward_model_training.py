@@ -87,6 +87,7 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.start_epoch = 0
+        self.alpha = 0.2
 
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)
@@ -192,7 +193,7 @@ class Trainer:
             batch = (wav_in, wav_out, labels)
             
             batch_loss_ce, batch_loss_co, probs = self.forward_step(batch)
-            batch_loss = batch_loss_ce + batch_loss_co
+            batch_loss = batch_loss_ce + self.alpha * batch_loss_co
             y_preds = torch.argmax(probs, dim=-1)
             labels = torch.argmax(labels, dim=-1)
             print(f"PREDS:{y_preds}")
@@ -244,7 +245,7 @@ class Trainer:
               
               batch = (wav_in, wav_out, labels)
               batch_loss_ce, batch_loss_co, probs = self.forward_step(batch)
-              batch_loss = batch_loss_ce + batch_loss_co
+              batch_loss = batch_loss_ce + self.alpha * batch_loss_co
               y_preds = torch.argmax(probs, dim=-1)
               labels = torch.argmax(labels, dim=-1)
               print(f"PREDS:{y_preds}")

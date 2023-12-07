@@ -91,7 +91,7 @@ class Trainer:
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
-        self.contrastive_loss = ContrastiveLoss(reduction='mean', eps=0.0005)
+        self.contrastive_loss = ContrastiveLoss(reduction='mean', eps=10.0)
 
         if gpu_id is not None:
             self.model = self.model.to(gpu_id)

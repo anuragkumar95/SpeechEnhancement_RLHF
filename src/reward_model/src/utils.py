@@ -9,6 +9,21 @@ import numpy as np
 from pesq import pesq
 import matplotlib.pyplot as plt
 
+class ContrastiveLoss(nn.Module):
+    def __init__(self, reduction='mean', eps=0.0001):
+        super().__init__()
+        self.reduction = reduction
+        self.eps = eps
+
+    def forward(self, distances, labels):
+
+        loss = (labels) * (distances ** 2) \
+             + (1 - labels) * (torch.clamp(self.eps - distances, min=0.0) ** 2 )
+        if self.reduction == 'mean':
+            return loss.mean()
+        if self.reduction == 'sum':
+            return loss.sum()
+
 
 def copy_weights(src_state_dict, target):
     """

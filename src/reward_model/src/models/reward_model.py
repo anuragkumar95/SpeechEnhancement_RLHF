@@ -279,68 +279,7 @@ class TSFeatureLosBatch(nn.Module):
                 loss_final += loss
         return loss_final
 
-
 class AttentionFeatureLossBatch(nn.Module):
-    def __init__(self, n_layers, base_channels, n_heads=1, time_bins=401, freq_bins=201, sum_till=14, gpu_id=None):
-        super().__init__()
-        self.sum_last_layers = sum_till
-        self.n_layers = n_layers
-        bins = []
-        self.heads = n_heads
-        for _ in range(n_layers):
-            if time_bins % 2 == 1:
-                time_bins = (time_bins // 2) + 1
-            else:
-                time_bins = time_bins // 2
-            if freq_bins % 2 == 1:
-                freq_bins = (freq_bins // 2) + 1
-            else:
-                freq_bins = freq_bins // 2
-            bins.append((time_bins, freq_bins))
-
-        out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
-
-        self.attn = nn.ModuleList()
-
-        for i in range(n_layers):
-            t, f = bins[i]
-            attn = nn.MultiheadAttention(embed_dim=n_heads * out_channels[i] * t, 
-                                         num_heads=n_heads, 
-                                         batch_first=True)
-            
-            self.attn.append(attn)
-    
-
-    def forward(self, embeds1, embeds2):
-        loss_final = 0
-
-        for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
-            if i >= self.n_layers - self.sum_last_layers:
-                #both e1 and e2 is of shape (b, ch, f, t)
-                b, ch, f, t = e1.shape
-
-                #for time attn, reshape both to (b, f, t * ch)
-                key = e1.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
-                query = e2.permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
-                val = (e1 - e2).permute(0, 2, 3, 1).contiguous().view(b, f, t * ch)
-
-                if self.heads > 1:
-                    k_list = [key for i in range(self.heads)]
-                    q_list = [query for i in range(self.heads)]
-                    v_list = [query for i in range(self.heads)]
-                    key = torch.cat(k_list, dim=-1)
-                    query = torch.cat(q_list, dim=-1)
-                    val = torch.cat(v_list, dim=-1)
-         
-                attn_outs, _ = self.attn[i](key, query, val)
-                if self.heads > 1:
-                    attn_outs = torch.mean(attn_outs.view(b, f, t*ch, self.heads), dim=-1)
-                scores = torch.mean(attn_outs.view(b, f, t, ch), dim=[1, 2, 3])
-                loss_final += scores
-        return loss_final
-
-
-class AttentionFeatureLossBatchOld(nn.Module):
     def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
         super().__init__()
         self.sum_last_layers = sum_till
@@ -359,16 +298,15 @@ class AttentionFeatureLossBatchOld(nn.Module):
             bins.append((time_bins, freq_bins))
 
         self.time_attn = nn.ModuleList()
-        self.freq_attn = nn.ModuleList()
 
         for i in range(n_layers):
             ch, (t, f) = out_channels[i], bins[i]
             time_attn = nn.MultiheadAttention(embed_dim=ch, num_heads=1, kdim=ch, vdim=ch, batch_first=True)
             self.time_attn.append(time_attn)
            
-
     def forward(self, embeds1, embeds2):
         loss_final = 0
+   
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
 
@@ -388,9 +326,8 @@ class AttentionFeatureLossBatchOld(nn.Module):
                 attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch).permute(0, 3, 2, 1)
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
                 loss_final += attn_scores
+        
         return loss_final
-
-
 
 
 class FeatureLossBatch(nn.Module):
@@ -426,10 +363,10 @@ class JNDModel(nn.Module):
         super().__init__()
         if enc_type == 1:
             self.loss_net_real = LossNet(in_channels=in_channels // 2, 
-                                     n_layers=n_layers, 
-                                     kernel_size=3, 
-                                     keep_prob=keep_prob, 
-                                     norm_type=norm_type)
+                                         n_layers=n_layers, 
+                                         kernel_size=3, 
+                                         keep_prob=keep_prob, 
+                                         norm_type=norm_type)
         
             self.loss_net_imag = LossNet(in_channels=in_channels // 2, 
                                          n_layers=n_layers, 
@@ -457,7 +394,7 @@ class JNDModel(nn.Module):
                                                 sum_till=sum_till)
         
         if loss_type == 'attentionloss':
-            self.feature_loss = AttentionFeatureLossBatchOld(n_layers=n_layers, 
+            self.feature_loss = AttentionFeatureLossBatch(n_layers=n_layers, 
                                                             base_channels=32, 
                                                             time_bins=401, 
                                                             freq_bins=201, 
@@ -496,5 +433,5 @@ class JNDModel(nn.Module):
             dist = self.feature_loss(ref, inp)
             logits = self.classification_layer(dist.reshape(-1, 1))
         
-        return logits
+        return logits, dist
     

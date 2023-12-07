@@ -14,7 +14,7 @@ Created on 23rd Nov, 2023
 """
 
 from models.reward_model import JNDModel, power_compress
-from utils import copy_weights, freeze_layers
+from utils import copy_weights, freeze_layers, ContrastiveLoss
 import os
 from dataset.dataset import load_data
 import torch.nn.functional as F
@@ -91,6 +91,7 @@ class Trainer:
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
+        self.contrastive_loss = ContrastiveLoss(reduction='mean', eps=0.0005)
 
         if gpu_id is not None:
             self.model = self.model.to(gpu_id)
@@ -163,8 +164,10 @@ class Trainer:
         wav_in, wav_out, labels = batch
         #wav_in = wav_in.unsqueeze(1).unsqueeze(-1)
         #wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
-        class_probs = self.model(wav_in, wav_out)
-        loss = self.criterion(class_probs, labels)
+        class_probs, distances = self.model(wav_in, wav_out)
+        loss_ce = self.criterion(class_probs, labels)
+        loss_contrastive = self.contrastive_loss(distances, labels)
+        loss = loss_ce + loss_contrastive
         return loss, class_probs
 
 
@@ -291,13 +294,6 @@ class Trainer:
                     'val_loss':val_loss
                 }
                 self.save(save_path, _dict_)
-
-            #Run validation after loading checkpoint
-            #print(f"save_path:{save_path}")
-            #if save_path is not None:
-            #    eval = Evaluation(save_path, self.gpu_id)
-            #    preds, labels = eval.predict(self.test_ds)
-            #    eval.score(preds, labels)
                               
 def main(args):
     if args.parallel:

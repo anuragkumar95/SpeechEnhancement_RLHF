@@ -209,15 +209,15 @@ class Trainer:
                 'step':i+1,
                 'step_loss':batch_loss.detach(),
                 'step_loss_ce':batch_loss_ce.detach(),
-                'step_loss_co':batch_loss_co.detach(),
+                'step_loss_co':self.alpha * batch_loss_co.detach(),
                 'step_acc':acc.detach()
             })
 
-            print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss} | CE_LOSS: {batch_loss_ce} | CO_LOSS: {batch_loss_co} | ACC :{acc}")
+            print(f"EPOCH: {epoch+1} | STEP: {i+1} | LOSS: {batch_loss} | CE_LOSS: {batch_loss_ce} | CO_LOSS: {self.alpha * batch_loss_co} | ACC :{acc}")
 
             epoch_loss += batch_loss.detach()
             epoch_loss_ce += batch_loss_ce.detach()
-            epoch_loss_co += batch_loss_co.detach()
+            epoch_loss_co += self.alpha * batch_loss_co.detach()
             epoch_acc += acc.detach()
 
         epoch_loss = epoch_loss / num_batches
@@ -254,7 +254,7 @@ class Trainer:
               print(f"ACC:{acc}")
               val_loss += batch_loss.detach()
               val_loss_ce += batch_loss_ce.detach()
-              val_loss_co += batch_loss_co.detach()
+              val_loss_co += self.alpha * batch_loss_co.detach()
               val_acc += acc.detach()
         val_loss = val_loss / num_batches
         val_loss_ce = val_loss_ce / num_batches

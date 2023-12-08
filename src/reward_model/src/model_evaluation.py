@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from dataset.dataset import load_data
 from models.reward_model import JNDModel, power_compress
+from utils import ContrastiveLoss
 import argparse
 import os
 from tqdm import tqdm
@@ -42,6 +43,7 @@ class Evaluation:
                               loss_type=args.loss)
         self.n_fft = 400
         self.hop = 100
+        self.alpha = 0.0097
         
         if gpu_id == None:
             dev = 'cpu'
@@ -53,6 +55,7 @@ class Evaluation:
         print(f"Loaded save checkpoint at epoch:{state_dict['epoch']} with val_acc:{state_dict['val_acc']}")
         self.model.eval()
         self.criterion = nn.CrossEntropyLoss(reduction='mean')
+        self.contrastive_loss = ContrastiveLoss(reduction='mean', eps=10.0)
         self.gpu_id=gpu_id
         
     def get_specs(self, clean, noisy):
@@ -107,9 +110,10 @@ class Evaluation:
     
     def forward_step(self, batch):
         wav_in, wav_out, labels = batch
-        class_probs = self.model(wav_in, wav_out)
-        loss = self.criterion(class_probs, labels)
-        return loss, class_probs
+        class_probs, distances = self.model(wav_in, wav_out)
+        loss_ce = self.criterion(class_probs, labels)
+        loss_co = self.contrastive_loss(distances, labels)
+        return loss_ce, loss_co, class_probs, distances
         
     def predict(self, dataset):
         PREDS=[]
@@ -125,7 +129,7 @@ class Evaluation:
 
                 wav_in, wav_out = self.get_specs(wav_in, wav_out)
                 batch = (wav_in, wav_out, labels)
-                _, probs = self.forward_step(batch)
+                _, _, probs, _ = self.forward_step(batch)
                 y_preds = torch.argmax(probs, dim=-1)
                 labels = torch.argmax(labels, dim=-1)
                 print(f"PREDS:{y_preds}")
@@ -138,6 +142,12 @@ class Evaluation:
                 LABELS.extend(labels)
             
         return PREDS, LABELS
+    
+    def get_distance(self, ref, inp):
+        ref, inp = self.get_specs(ref, inp)
+        input = (ref, inp, 0)
+        _, _, _, dist = self.forward_step(input)
+        return dist
     
     def accuracy(self, y_pred, y_true):
         score = (y_pred == y_true).float()

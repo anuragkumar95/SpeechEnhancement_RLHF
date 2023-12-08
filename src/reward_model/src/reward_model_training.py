@@ -58,6 +58,8 @@ def ARGS():
                         help="No of attention heads")
     parser.add_argument("--loss", type=str, required=False, default='featureloss',
                         help="option, choose between featureloss/attentionloss")
+    parser.add_argument("--alpha", type=float, required=False, default=1.0,
+                        help="reg factor to be multiplied to the contrastive loss.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
@@ -87,7 +89,7 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.start_epoch = 0
-        self.alpha = 0.2
+        self.alpha = args.alpha
 
 
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=args.init_lr)

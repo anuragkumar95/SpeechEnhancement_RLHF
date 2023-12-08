@@ -424,7 +424,7 @@ class JNDModel(nn.Module):
             dist_imag = self.feature_loss(ref_imag, inp_imag).unsqueeze(-1)
             
             dist = torch.cat([dist_real, dist_imag], dim=1)
-            logits = self.classification_layer(dist.reshape(-1, 2))
+            logits = self.classification_layer(dist.reshape(-1, 2).detach())
             dist = torch.sqrt((dist ** 2).sum(-1)).reshape(-1, 1)
 
         if self.type == 2:
@@ -432,8 +432,8 @@ class JNDModel(nn.Module):
             ref = self.loss_net_real(ref)
 
             dist = self.feature_loss(ref, inp).reshape(-1, 1)
-            dist = (dist ** 2)
-            logits = self.classification_layer(dist)
+            dist = torch.abs(dist)
+            logits = self.classification_layer(dist.detach())
         
         return logits, dist
     

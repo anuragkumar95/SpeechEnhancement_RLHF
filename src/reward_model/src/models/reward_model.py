@@ -268,7 +268,7 @@ class TSFeatureLosBatch(nn.Module):
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
                 dist_t = e1[0] - e2[0]
-                dist_f = e1[1] = e2[1]
+                dist_f = e1[1] - e2[1]
                 if self.weights is not None:
                     res_t = (self.weights[i] * dist_t)
                     res_f = (self.weights[i] * dist_f)
@@ -325,7 +325,7 @@ class AttentionFeatureLossBatch(nn.Module):
 
                 attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch).permute(0, 3, 2, 1)
                 attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
-                loss_final += attn_scores
+                loss_final += attn_scores 
         
         return loss_final
 

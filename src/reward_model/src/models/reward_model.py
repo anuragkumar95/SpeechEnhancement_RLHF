@@ -347,13 +347,13 @@ class FeatureLossBatch(nn.Module):
         loss_final = 0
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
-                dist = e1 - e2
-                dist = dist.permute(0, 3, 2, 1)
+                dist = torch.sqrt(torch.sum((e1 - e2)**2, dim=[3,2]))
+                #dist = dist.permute(0, 3, 2, 1)
                 if self.weights is not None:
                     res = (self.weights[i] * dist)
                 else:
                     res = dist
-                loss = torch.mean(res, dim=[1, 2, 3])
+                loss = torch.mean(res, dim=1)
                 loss_final += loss
         return loss_final
 

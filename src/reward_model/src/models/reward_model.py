@@ -339,7 +339,7 @@ class FeatureLossBatch(nn.Module):
         if weights:
             self.weights = nn.ParameterList([nn.Parameter(torch.randn(features), requires_grad=True) for features in self.out_channels])
             if gpu_id is not None:
-                self.weights = [param.to(gpu_id) for param in self.weights]
+                self.weights = self.weights.to(gpu_id)
         else:
             self.weights = None
 

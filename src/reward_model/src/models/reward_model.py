@@ -347,8 +347,8 @@ class FeatureLossBatch(nn.Module):
         loss_final = 0
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
             if i >= self.n_layers - self.sum_last_layers:
-                dist = torch.sqrt(torch.sum((e1 - e2)**2, dim=[3,2]))
-                #dist = dist.permute(0, 3, 2, 1)
+                dist = e1 - e2
+                dist = dist.permute(0, 3, 2, 1)
                 if self.weights is not None:
                     res = (self.weights[i] * dist)
                 else:
@@ -424,7 +424,7 @@ class JNDModel(nn.Module):
             dist_imag = self.feature_loss(ref_imag, inp_imag).unsqueeze(-1)
             
             dist = torch.cat([dist_real, dist_imag], dim=1)
-            logits = self.classification_layer(dist.reshape(-1, 2).detach())
+            logits = self.classification_layer(dist.reshape(-1, 2))
             dist = torch.sqrt((dist ** 2).sum(-1)).reshape(-1, 1)
 
         if self.type == 2:

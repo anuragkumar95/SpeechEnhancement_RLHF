@@ -81,7 +81,10 @@ class JNDDataset(Dataset):
         return paths
 
     def __len__(self):
-        return len(self.paths['input'])
+        if self.data is None:
+            return len(self.paths['input'])
+        else:
+            return self.data.shape[0]
  
     def __getitem__(self, idx):
         if self.data is None:

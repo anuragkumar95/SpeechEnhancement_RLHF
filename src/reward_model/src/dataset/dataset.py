@@ -152,8 +152,8 @@ def load_data(root=None, data=None, path_root=None, batch_size=4, n_cpu=1, split
         np.random.shuffle(data)
         train_indices = [idx for idx in range(0, int(split_ratio * data.shape[0]))]
         test_indices = [idx for idx in range(int(split_ratio * data.shape[0]), data.shape[0])]
-        train_ds = JNDDataset(data, train_indices)
-        test_ds = JNDDataset(data, train_indices)
+        train_ds = JNDDataset(data=data, indices=train_indices)
+        test_ds = JNDDataset(data=data, indices=test_indices)
 
     if parallel:
         train_dataset = DataLoader(

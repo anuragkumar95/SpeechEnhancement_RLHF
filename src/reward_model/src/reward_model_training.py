@@ -194,8 +194,7 @@ class Trainer:
             wav_in, wav_out = self.get_specs(wav_in, wav_out)
             batch = (wav_in, wav_out, labels)
             
-            batch_loss_ce, probs = self.forward_step(batch)
-            batch_loss = batch_loss_ce
+            batch_loss, probs = self.forward_step(batch)
             if torch.isnan(batch_loss).any():
                 continue
             y_preds = torch.argmax(probs, dim=-1)
@@ -224,8 +223,6 @@ class Trainer:
             epoch_acc += acc.detach()
 
         epoch_loss = epoch_loss / num_batches
-        epoch_loss_ce = epoch_loss_ce / num_batches
-        epoch_loss_co = epoch_loss_co / num_batches
         epoch_acc = epoch_acc / num_batches
 
         #Run validation
@@ -245,8 +242,7 @@ class Trainer:
               wav_in, wav_out = self.get_specs(wav_in, wav_out)
               
               batch = (wav_in, wav_out, labels)
-              batch_loss_ce, probs = self.forward_step(batch)
-              batch_loss = batch_loss_ce 
+              batch_loss, probs = self.forward_step(batch)
               y_preds = torch.argmax(probs, dim=-1)
               labels = torch.argmax(labels, dim=-1)
               print(f"PREDS:{y_preds}")
@@ -256,8 +252,6 @@ class Trainer:
               val_loss += batch_loss.detach()
               val_acc += acc.detach()
         val_loss = val_loss / num_batches
-        val_loss_ce = val_loss_ce / num_batches
-        val_loss_co = val_loss_co / num_batches
         val_acc = val_acc / num_batches
         wandb.log({
                 'epoch':epoch+1, 

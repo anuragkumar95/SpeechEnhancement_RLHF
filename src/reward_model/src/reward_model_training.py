@@ -314,7 +314,7 @@ def main(args):
                                       resample=True,
                                       parallel=True)
     else:
-        if args.root.endswith('.npz'):
+        if args.root.endswith('.npy'):
             train_ds, test_ds = load_data(data=args.root, 
                                           batch_size=args.batchsize, 
                                           n_cpu=1,

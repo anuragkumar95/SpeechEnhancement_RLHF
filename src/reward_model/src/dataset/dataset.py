@@ -117,6 +117,7 @@ class JNDDataset(Dataset):
         else:
             inp = torch.FloatTensor(self.data[idx, 0])
             out = torch.FloatTensor(self.data[idx, 1])
+            print(f"inp:{inp.shape}, out:{out.shape}")
             label = self.data[idx, 2]
             if label == 0:
                 label = torch.tensor([0.0, 1.0])

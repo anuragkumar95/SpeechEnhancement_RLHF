@@ -196,6 +196,8 @@ class Trainer:
             
             batch_loss_ce, probs = self.forward_step(batch)
             batch_loss = batch_loss_ce
+            if torch.isnan(batch_loss).any():
+                continue
             y_preds = torch.argmax(probs, dim=-1)
             labels = torch.argmax(labels, dim=-1)
             print(f"PREDS:{y_preds}")
@@ -206,7 +208,7 @@ class Trainer:
             batch_loss.backward()
 
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5.0)
-            
+
             self.optimizer.step()
             
             wandb.log({

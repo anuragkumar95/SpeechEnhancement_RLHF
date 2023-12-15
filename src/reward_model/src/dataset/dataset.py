@@ -115,8 +115,21 @@ class JNDDataset(Dataset):
                 label = torch.tensor([1.0, 0.0])
         
         else:
-            inp = torch.FloatTensor(self.data[idx, 0])
-            out = torch.FloatTensor(self.data[idx, 1])
+            inp = torch.FloatTensor(self.data[idx, 0]).reshape(1, -1)
+            out = torch.FloatTensor(self.data[idx, 1]).reshape(1, -1)
+
+            if inp.shape[-1] > self.cut_len:
+                inp = inp[:, :self.cut_len]
+                out = out[:, :self.cut_len]
+
+            if inp.shape[-1] < self.cut_len: 
+                pad = torch.zeros(1, self.cut_len - inp.shape[-1])
+                inp = torch.cat([pad, inp], dim=-1)
+                out = torch.cat([pad, out], dim=-1)
+
+            inp = inp.reshape(-1)
+            out = out.reshape(-1)
+
             print(f"inp:{inp.shape}, out:{out.shape}")
             label = self.data[idx, 2]
             if label == 0:

@@ -37,7 +37,7 @@ def ARGS():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--root", type=str, required=True,
                         help="Root directory to JND Dataset.")
-    parser.add_argument("-c", "--comp", type=str, required=True,
+    parser.add_argument("-c", "--comp", type=str, required=False,
                         help="Root directory to JND Dataset comparision lists.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("-o", "--output", type=str, required=True,

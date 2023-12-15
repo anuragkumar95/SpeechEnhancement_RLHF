@@ -122,7 +122,7 @@ class JNDDataset(Dataset):
         return inp, out, label
 
     
-def load_data(root, path_root, batch_size, n_cpu, data=None, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
+def load_data(root=None, data=None, path_root=None, batch_size=4, n_cpu=1, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
     torchaudio.set_audio_backend("sox_io")  # in linux
     #For reproducing results
     np.random.seed(4)

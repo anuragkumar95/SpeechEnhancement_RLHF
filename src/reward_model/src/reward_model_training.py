@@ -314,14 +314,24 @@ def main(args):
                                       resample=True,
                                       parallel=True)
     else:
-        train_ds, test_ds = load_data(root=args.root, 
-                                      path_root=args.comp,
-                                      batch_size=args.batchsize, 
-                                      n_cpu=1,
-                                      split_ratio=0.85, 
-                                      cut_len=args.cut_len,
-                                      resample=True,
-                                      parallel=False)
+        if args.root.endswith('.npz'):
+            train_ds, test_ds = load_data(data=args.root, 
+                                          batch_size=args.batchsize, 
+                                          n_cpu=1,
+                                          split_ratio=0.85, 
+                                          cut_len=args.cut_len,
+                                          resample=True,
+                                          parallel=False)
+        else:
+            train_ds, test_ds = load_data(root=args.root, 
+                                          path_root=args.comp,
+                                          batch_size=args.batchsize, 
+                                          n_cpu=1,
+                                          split_ratio=0.85, 
+                                          cut_len=args.cut_len,
+                                          resample=True,
+                                          parallel=False)
+            
 
     if args.gpu:
         trainer = Trainer(train_ds, test_ds, args, 0)

@@ -129,7 +129,6 @@ class JNDDataset(Dataset):
             inp = inp.reshape(-1)
             out = out.reshape(-1)
 
-            print(f"inp:{inp.shape}, out:{out.shape}")
             label = self.data[idx, 2]
             if label == 0:
                 label = torch.tensor([0.0, 1.0])

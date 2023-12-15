@@ -118,6 +118,9 @@ class JNDDataset(Dataset):
             inp = torch.FloatTensor(self.data[idx, 0]).reshape(1, -1)
             out = torch.FloatTensor(self.data[idx, 1]).reshape(1, -1)
 
+            inp = inp[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+            out = out[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+
             if inp.shape[-1] < self.cut_len: 
                 pad = torch.zeros(1, self.cut_len - inp.shape[-1])
                 inp = torch.cat([pad, inp], dim=-1)

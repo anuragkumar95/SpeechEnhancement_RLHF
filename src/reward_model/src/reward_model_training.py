@@ -204,6 +204,9 @@ class Trainer:
 
             self.optimizer.zero_grad()
             batch_loss.backward()
+
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5.0)
+            
             self.optimizer.step()
             
             wandb.log({

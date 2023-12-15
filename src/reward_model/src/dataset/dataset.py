@@ -118,10 +118,6 @@ class JNDDataset(Dataset):
             inp = torch.FloatTensor(self.data[idx, 0]).reshape(1, -1)
             out = torch.FloatTensor(self.data[idx, 1]).reshape(1, -1)
 
-            if inp.shape[-1] > self.cut_len:
-                inp = inp[:, :self.cut_len]
-                out = out[:, :self.cut_len]
-
             if inp.shape[-1] < self.cut_len: 
                 pad = torch.zeros(1, self.cut_len - inp.shape[-1])
                 inp = torch.cat([pad, inp], dim=-1)
@@ -136,7 +132,7 @@ class JNDDataset(Dataset):
                 label = torch.tensor([0.0, 1.0])
             else:
                 label = torch.tensor([1.0, 0.0])
-        return inp, out, label
+        return inp[:self.cut_len], out[:self.cut_len], label
 
     
 def load_data(root=None, data=None, path_root=None, batch_size=4, n_cpu=1, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):

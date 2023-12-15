@@ -20,11 +20,16 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 from torch.utils.data.distributed import DistributedSampler
 
 class JNDDataset(Dataset):
-    def __init__(self, root, path_root, indices, cut_len=40000, resample=False, shift=False):
-        self.data_root = root
-        self.indices = indices
-        self.resample = resample
-        self.paths = self.collect_paths(path_root)
+    def __init__(self, root=None, path_root=None, data=None, indices=None, cut_len=40000, resample=False, shift=False):
+        if root is not None:
+            self.data_root = root
+            self.indices = indices
+            self.resample = resample
+            self.paths = self.collect_paths(path_root)
+            self.data = None
+
+        if data is not None:
+            self.data = data[indices, :]
         self.cut_len = cut_len
         self.rand_shift = shift
 
@@ -79,57 +84,73 @@ class JNDDataset(Dataset):
         return len(self.paths['input'])
  
     def __getitem__(self, idx):
-     
-        inp_file = self.paths['input'][idx]
-        out_file = self.paths['output'][idx]
+        if self.data is None:
+            inp_file = self.paths['input'][idx]
+            out_file = self.paths['output'][idx]
 
-        inp, i_sr = torchaudio.load(inp_file)
-        out, o_sr = torchaudio.load(out_file)
+            inp, i_sr = torchaudio.load(inp_file)
+            out, o_sr = torchaudio.load(out_file)
 
-        if self.resample:
-            inp = F.resample(inp, orig_freq=i_sr, new_freq=self.resample)
-            out = F.resample(out, orig_freq=o_sr, new_freq=self.resample)
-    
-        inp = inp[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
-        out = out[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+            if self.resample:
+                inp = F.resample(inp, orig_freq=i_sr, new_freq=self.resample)
+                out = F.resample(out, orig_freq=o_sr, new_freq=self.resample)
+        
+            inp = inp[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+            out = out[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
 
-        if inp.shape[-1] < self.cut_len: 
-            pad = torch.zeros(1, self.cut_len - inp.shape[-1])
-            inp = torch.cat([pad, inp], dim=-1)
-            out = torch.cat([pad, out], dim=-1)
+            if inp.shape[-1] < self.cut_len: 
+                pad = torch.zeros(1, self.cut_len - inp.shape[-1])
+                inp = torch.cat([pad, inp], dim=-1)
+                out = torch.cat([pad, out], dim=-1)
 
-        inp = inp.reshape(-1)
-        out = out.reshape(-1)
+            inp = inp.reshape(-1)
+            out = out.reshape(-1)
 
-        if self.paths['labels'][idx] == 1:
-            label = torch.tensor([0.0, 1.0])
+            if self.paths['labels'][idx] == 1:
+                label = torch.tensor([0.0, 1.0])
+            else:
+                label = torch.tensor([1.0, 0.0])
+        
         else:
-            label = torch.tensor([1.0, 0.0])
-            
+            inp = torch.FloatTensor(self.data[idx, 0])
+            out = torch.FloatTensor(self.data[idx, 1])
+            label = self.data[idx, 2]
+            if label == 0:
+                label = torch.tensor([0.0, 1.0])
+            else:
+                label = torch.tensor([1.0, 0.0])
         return inp, out, label
+
     
-def load_data(root, path_root, batch_size, n_cpu, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
+def load_data(root, path_root, batch_size, n_cpu, data=None, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
     torchaudio.set_audio_backend("sox_io")  # in linux
-    
-    train_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
-    test_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
     #For reproducing results
     np.random.seed(0)
-    for key in train_indices:
-        with open(os.path.join(path_root, f'dataset_{key}.txt'), 'r') as f:
-            num_lines = len(f.readlines())
-
-            train_indxs = np.random.choice(num_lines, int(split_ratio * num_lines), replace=False)
-            test_indxs = [i for i in range(num_lines) if i not in train_indxs]
-
-            print(f"KEY:{key} | TRAIN:{len(train_indxs)} | VAL:{len(test_indxs)}")
-        train_indices[key].extend(train_indxs)
-        test_indices[key].extend(test_indxs)
+    if data is None:
+        train_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
+        test_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
         
-    if resample:
-        resample = 16000
-    train_ds = JNDDataset(root, path_root, train_indices, cut_len=cut_len, resample=resample)
-    test_ds = JNDDataset(root, path_root, test_indices, cut_len=cut_len, resample=resample)
+        for key in train_indices:
+            with open(os.path.join(path_root, f'dataset_{key}.txt'), 'r') as f:
+                num_lines = len(f.readlines())
+
+                train_indxs = np.random.choice(num_lines, int(split_ratio * num_lines), replace=False)
+                test_indxs = [i for i in range(num_lines) if i not in train_indxs]
+
+                print(f"KEY:{key} | TRAIN:{len(train_indxs)} | VAL:{len(test_indxs)}")
+            train_indices[key].extend(train_indxs)
+            test_indices[key].extend(test_indxs)
+
+        if resample:
+            resample = 16000
+        train_ds = JNDDataset(root, path_root, train_indices, cut_len=cut_len, resample=resample)
+        test_ds = JNDDataset(root, path_root, test_indices, cut_len=cut_len, resample=resample)
+
+    else:
+        train_indices = np.random.choice(data.shape[0], int(split_ratio * data.shape[0]), replace=False)
+        test_indices = [idx for idx in range(data.shape[0]) if idx not in train_indices]
+        train_ds = JNDDataset(data, train_indices)
+        test_ds = JNDDataset(data, train_indices)
 
     if parallel:
         train_dataset = DataLoader(

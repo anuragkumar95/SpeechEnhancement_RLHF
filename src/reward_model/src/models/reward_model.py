@@ -433,7 +433,7 @@ class JNDModel(nn.Module):
 
             dist = self.feature_loss(ref, inp).reshape(-1, 1)
             dist = torch.abs(dist)
-            logits = self.classification_layer(dist.detach())
+            logits = self.classification_layer(dist)
         
         return logits, dist
     

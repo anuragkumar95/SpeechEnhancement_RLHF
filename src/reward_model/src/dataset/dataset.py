@@ -125,7 +125,7 @@ class JNDDataset(Dataset):
 def load_data(root, path_root, batch_size, n_cpu, data=None, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
     torchaudio.set_audio_backend("sox_io")  # in linux
     #For reproducing results
-    np.random.seed(0)
+    np.random.seed(4)
     if data is None:
         train_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
         test_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
@@ -147,8 +147,9 @@ def load_data(root, path_root, batch_size, n_cpu, data=None, split_ratio=0.7, cu
         test_ds = JNDDataset(root, path_root, test_indices, cut_len=cut_len, resample=resample)
 
     else:
-        train_indices = np.random.choice(data.shape[0], int(split_ratio * data.shape[0]), replace=False)
-        test_indices = [idx for idx in range(data.shape[0]) if idx not in train_indices]
+        np.random.shuffle(data)
+        train_indices = [idx for idx in range(0, int(split_ratio * data.shape[0]))]
+        test_indices = [idx for idx in range(int(split_ratio * data.shape[0]), data.shape[0])]
         train_ds = JNDDataset(data, train_indices)
         test_ds = JNDDataset(data, train_indices)
 

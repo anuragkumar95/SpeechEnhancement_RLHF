@@ -318,7 +318,7 @@ def main(args):
             train_ds, test_ds = load_data(data=args.root, 
                                           batch_size=args.batchsize, 
                                           n_cpu=1,
-                                          split_ratio=0.85, 
+                                          split_ratio=0.8, 
                                           cut_len=args.cut_len,
                                           resample=True,
                                           parallel=False)

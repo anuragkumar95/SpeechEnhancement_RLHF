@@ -52,6 +52,8 @@ def ARGS():
                         help="Training batchsize.")
     parser.add_argument("--norm", type=str, required=False, default='sbn',
                         help="option, choose between 'ln(layernorm) / sbn(batchnorm)'")
+    parser.add_argument("--inp", type=str, required=False, default='stft',
+                        help="option, type of input to the model 'wav / stft)'")
     parser.add_argument("--enc", type=int, required=False, default=1,
                         help="encoding option, choose between 1 or 2")
     parser.add_argument("--heads", type=int, required=False, default=1,
@@ -165,8 +167,9 @@ class Trainer:
     
     def forward_step(self, batch):
         wav_in, wav_out, labels = batch
-        #wav_in = wav_in.unsqueeze(1).unsqueeze(-1)
-        #wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
+        if self.args.inp == 'wav':
+            wav_in = wav_in.unsqueeze(1).unsqueeze(-1)
+            wav_out = wav_out.unsqueeze(1).unsqueeze(-1)
         class_probs, distances = self.model(wav_in, wav_out)
         loss_ce = self.criterion(class_probs, labels)
         return loss_ce, class_probs
@@ -176,6 +179,7 @@ class Trainer:
         #Run train loop
         epoch_loss = 0
         epoch_acc = 0
+        nan_batches = 0
         num_batches = len(self.train_ds)
         self.model.train()
         for i, batch in enumerate(self.train_ds):
@@ -191,11 +195,14 @@ class Trainer:
                 wav_out = wav_out.to(self.gpu_id)
                 labels = labels.to(self.gpu_id)
 
-            wav_in, wav_out = self.get_specs(wav_in, wav_out)
+            if self.args.inp == 'stft':
+                wav_in, wav_out = self.get_specs(wav_in, wav_out)
+            
             batch = (wav_in, wav_out, labels)
             
             batch_loss, probs = self.forward_step(batch)
             if torch.isnan(batch_loss).any():
+                nan_batches += 1
                 continue
             y_preds = torch.argmax(probs, dim=-1)
             labels = torch.argmax(labels, dim=-1)
@@ -222,19 +229,24 @@ class Trainer:
             epoch_loss += batch_loss.detach()
             epoch_acc += acc.detach()
 
-        epoch_loss = epoch_loss / num_batches
-        epoch_acc = epoch_acc / num_batches
+        epoch_loss = epoch_loss / (num_batches - nan_batches)
+        epoch_acc = epoch_acc / (num_batches - nan_batches)
 
         #Run validation
         val_loss = 0
         val_acc = 0
+        nan_batches = 0
         num_batches = len(self.test_ds)
         self.model.eval()
         with torch.no_grad():
           for i, batch in enumerate(self.test_ds):
               wav_in, wav_out, labels = batch
-              if wav_in.shape[0] <= 1:
+              if torch.isnan(wav_in).any():
                 continue
+              if torch.isnan(wav_out).any():
+                  continue
+              if wav_in.shape[0] <= 1:
+                  continue
               if self.gpu_id is not None:
                   wav_in = wav_in.to(self.gpu_id)
                   wav_out = wav_out.to(self.gpu_id)
@@ -243,6 +255,9 @@ class Trainer:
               
               batch = (wav_in, wav_out, labels)
               batch_loss, probs = self.forward_step(batch)
+              if torch.isnan(batch_loss).any():
+                nan_batches += 1
+                continue
               y_preds = torch.argmax(probs, dim=-1)
               labels = torch.argmax(labels, dim=-1)
               print(f"PREDS:{y_preds}")
@@ -251,8 +266,8 @@ class Trainer:
               print(f"ACC:{acc}")
               val_loss += batch_loss.detach()
               val_acc += acc.detach()
-        val_loss = val_loss / num_batches
-        val_acc = val_acc / num_batches
+        val_loss = val_loss / (num_batches - nan_batches)
+        val_acc = val_acc / (num_batches - nan_batches)
         wandb.log({
                 'epoch':epoch+1, 
                 'val_loss':val_loss,
@@ -312,7 +327,7 @@ def main(args):
                                       path_root=args.comp,
                                       batch_size=args.batchsize, 
                                       n_cpu=1,
-                                      split_ratio=0.85, 
+                                      split_ratio=0.8, 
                                       cut_len=args.cut_len,
                                       resample=True,
                                       parallel=True)
@@ -330,7 +345,7 @@ def main(args):
                                           path_root=args.comp,
                                           batch_size=args.batchsize, 
                                           n_cpu=1,
-                                          split_ratio=0.85, 
+                                          split_ratio=0.8, 
                                           cut_len=args.cut_len,
                                           resample=True,
                                           parallel=False)

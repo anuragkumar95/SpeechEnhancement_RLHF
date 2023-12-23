@@ -276,7 +276,7 @@ class Trainer:
                 'train_acc':epoch_acc,
             })
 
-        print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | VAL_LOSS: {val_loss} | TRAIN_ACC: {epoch_acc} | VAL_ACC: {val_acc}")
+        print(f"EPOCH: {epoch+1} | TRAIN_LOSS: {epoch_loss} | VAL_LOSS: {val_loss} | TRAIN_ACC: {epoch_acc} | VAL_ACC: {val_acc} | NAN_BATCHES:{nan_batches} | TOTAL:{num_batches}")
         return val_loss, val_acc
     
     def accuracy(self, y_pred, y_true):

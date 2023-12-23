@@ -336,12 +336,13 @@ class FeatureLossBatch(nn.Module):
         self.out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
         self.sum_last_layers=sum_till
         self.n_layers = n_layers
+        self.weights = None
         if weights:
-            self.weights = nn.ParameterList([nn.Parameter(torch.randn(features), requires_grad=True) for features in self.out_channels])
+            self.weights = nn.ParameterList()
+            for features in self.out_channels:
+                self.weights.append(nn.Parameter(torch.randn(features), requires_grad=True))
             if gpu_id is not None:
                 self.weights = self.weights.to(gpu_id)
-        else:
-            self.weights = None
 
     def forward(self, embeds1, embeds2):
         loss_final = 0

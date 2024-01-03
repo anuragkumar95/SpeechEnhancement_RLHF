@@ -237,37 +237,37 @@ class Trainer:
         val_acc = 0
         nan_batches = 0
         num_batches = len(self.test_ds)
-        #self.model.eval()
-        with torch.no_grad():
-          for i, batch in enumerate(self.test_ds):
-              wav_in, wav_out, labels = batch
-              if torch.isnan(wav_in).any():
+        self.model.eval()
+        #with torch.no_grad():
+        for i, batch in enumerate(self.test_ds):
+            wav_in, wav_out, labels = batch
+            if torch.isnan(wav_in).any():
                 continue
-              if torch.isnan(wav_out).any():
-                  continue
-              if wav_in.shape[0] <= 1:
-                  continue
+            if torch.isnan(wav_out).any():
+                continue
+            if wav_in.shape[0] <= 1:
+                continue
+        
+            if self.gpu_id is not None:
+                wav_in = wav_in.to(self.gpu_id)
+                wav_out = wav_out.to(self.gpu_id)
+                labels = labels.to(self.gpu_id)
+            wav_in, wav_out = self.get_specs(wav_in, wav_out)
             
-              if self.gpu_id is not None:
-                  wav_in = wav_in.to(self.gpu_id)
-                  wav_out = wav_out.to(self.gpu_id)
-                  labels = labels.to(self.gpu_id)
-              wav_in, wav_out = self.get_specs(wav_in, wav_out)
-              
-              batch = (wav_in, wav_out, labels)
-              batch_loss, probs = self.forward_step(batch)
-              if torch.isnan(batch_loss).any():
+            batch = (wav_in, wav_out, labels)
+            batch_loss, probs = self.forward_step(batch)
+            if torch.isnan(batch_loss).any():
                 nan_batches += 1
                 continue
-              
-              y_preds = torch.argmax(probs, dim=-1)
-              labels = torch.argmax(labels, dim=-1)
-              print(f"PREDS:{y_preds}")
-              print(f"LABELS:{labels}")
-              acc = self.accuracy(y_preds.float(), labels.float())
-              print(f"ACC:{acc}")
-              val_loss += batch_loss.detach()
-              val_acc += acc.detach()
+            
+            y_preds = torch.argmax(probs, dim=-1)
+            labels = torch.argmax(labels, dim=-1)
+            print(f"PREDS:{y_preds}")
+            print(f"LABELS:{labels}")
+            acc = self.accuracy(y_preds.float(), labels.float())
+            print(f"ACC:{acc}")
+            val_loss += batch_loss.detach()
+            val_acc += acc.detach()
         val_loss = val_loss / (num_batches - nan_batches)
         val_acc = val_acc / (num_batches - nan_batches)
         wandb.log({
@@ -293,7 +293,7 @@ class Trainer:
             val_loss, val_acc = self.train_one_epoch(epoch)
             if val_loss <= best_val_loss:
                 best_val_loss = val_loss
-                save_path = os.path.join(self.args.output, f"{self.args.exp}_{args.suffix}", f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
+                save_path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:
@@ -309,7 +309,7 @@ class Trainer:
                
             if val_acc >= best_val_acc:
                 best_val_acc = val_acc
-                save_path = os.path.join(self.args.output, f"{self.args.exp}_{args.suffix}", f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
+                save_path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", f"best_checkpoint_{val_loss}_epoch_{epoch+1}_acc_{val_acc}.pt")
                 if args.parallel:
                     state_dict = self.model.module.state_dict()
                 else:

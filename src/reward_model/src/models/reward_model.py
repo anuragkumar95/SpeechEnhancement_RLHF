@@ -151,7 +151,7 @@ class LossNet(nn.Module):
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm2d(out_channels, momentum=0.01),
+                        nn.BatchNorm2d(out_channels, track_running_stats=False),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )
@@ -173,7 +173,7 @@ class LossNet(nn.Module):
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm2d(out_channels, momentum=0.01),
+                        nn.BatchNorm2d(out_channels, track_running_stats=False),
                         nn.LeakyReLU(0.2),
                     )
                 
@@ -194,7 +194,7 @@ class LossNet(nn.Module):
                 if norm_type == 'sbn':
                     layer = nn.Sequential(
                         nn.Conv2d(prev_out, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm2d(out_channels, momentum=0.01),
+                        nn.BatchNorm2d(out_channels, track_running_stats=False),
                         nn.LeakyReLU(0.2),
                         nn.Dropout(1 - keep_prob),
                     )

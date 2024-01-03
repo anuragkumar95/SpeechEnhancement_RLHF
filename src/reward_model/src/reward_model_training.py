@@ -237,7 +237,7 @@ class Trainer:
         val_acc = 0
         nan_batches = 0
         num_batches = len(self.test_ds)
-        self.model.eval()
+        #self.model.eval()
         with torch.no_grad():
           for i, batch in enumerate(self.test_ds):
               wav_in, wav_out, labels = batch
@@ -247,6 +247,7 @@ class Trainer:
                   continue
               if wav_in.shape[0] <= 1:
                   continue
+            
               if self.gpu_id is not None:
                   wav_in = wav_in.to(self.gpu_id)
                   wav_out = wav_out.to(self.gpu_id)
@@ -258,6 +259,7 @@ class Trainer:
               if torch.isnan(batch_loss).any():
                 nan_batches += 1
                 continue
+              
               y_preds = torch.argmax(probs, dim=-1)
               labels = torch.argmax(labels, dim=-1)
               print(f"PREDS:{y_preds}")

@@ -256,7 +256,9 @@ class Trainer:
                 wav_in = wav_in.to(self.gpu_id)
                 wav_out = wav_out.to(self.gpu_id)
                 labels = labels.to(self.gpu_id)
-            wav_in, wav_out = self.get_specs(wav_in, wav_out)
+
+            if self.args.inp == 'stft':
+                wav_in, wav_out = self.get_specs(wav_in, wav_out)
             
             batch = (wav_in, wav_out, labels)
             batch_loss, probs = self.forward_step(batch)

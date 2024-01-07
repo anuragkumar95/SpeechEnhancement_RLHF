@@ -75,8 +75,12 @@ def ARGS():
     
 class Trainer:
     def __init__(self, train_ds, test_ds, args, gpu_id):
-        
-        self.model = JNDModel(in_channels=2,
+        self.args = args
+        if self.args.inp == 'wav':
+            in_channels = 1
+        else:
+            in_channels = 2
+        self.model = JNDModel(in_channels=in_channels,
                               out_dim=2, 
                               n_layers=7, 
                               keep_prob=0.7, 
@@ -109,7 +113,7 @@ class Trainer:
             print(f"Loaded checkpoint stored at {args.ckpt} with val_acc {state_dict['val_acc']} at epoch {self.start_epoch}")
 
         self.gpu_id = gpu_id
-        self.args = args
+        
         wandb.init(project=args.exp)
 
     def get_specs(self, clean, noisy):

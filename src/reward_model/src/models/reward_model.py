@@ -246,14 +246,14 @@ class ClassificationHead(nn.Module):
 
 
 
-class TSFeatureLosBatch(nn.Module):
+class TSFeatureLossBatch(nn.Module):
     def __init__(self, n_layers, base_channels, sum_till=14, weights=False, gpu_id=None):
         super().__init__()
         self.out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
         self.sum_last_layers=sum_till
         self.n_layers = n_layers
         if weights:
-            self.weights = [nn.Parameter(torch.randn(features), requires_grad=True) for features in self.out_channels]
+            self.weights = nn.ParameterList([nn.Parameter(torch.randn(features), requires_grad=True) for features in self.out_channels])
             if gpu_id is not None:
                 self.weights = [param.to(gpu_id) for param in self.weights]
         else:

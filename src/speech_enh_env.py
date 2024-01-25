@@ -98,13 +98,13 @@ class SpeechEnhancementAgent:
        
     def get_next_state(self, state, action):
         """
-        Apply mask to spectrogram on the i-th frame and return next state.
+        Apply mask to spectrogram and return next (enhanced) state.
         ARGS:
             state : spectrograms of shape (b x 2 x f x t)
-            action: (mask, complex_mask) for frame at index 't' for entire batch, (b x f x 1)
+            action: (mask, complex_mask) for spectrogram.
 
         Returns:
-            Next state with 't'th frame enhanced by applying mask.
+            Next state enhanced by applying mask.
         """
         x = state['noisy']
         mask, complex_out = action

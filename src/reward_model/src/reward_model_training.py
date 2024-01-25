@@ -44,8 +44,6 @@ def ARGS():
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved checkpoint for resuming training.")
-    parser.add_argument("--disc_pt", type=str, required=False, default=None,
-                        help="Path to the discriminator checkpoint to init reward model.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,

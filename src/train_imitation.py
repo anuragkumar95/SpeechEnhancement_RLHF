@@ -5,6 +5,8 @@
 
 from model.actor import TSCNet
 from model.critic import QNet
+from model.cmgan import TSCNetExpert
+
 import os
 from data.dataset import load_data
 import torch.nn.functional as F
@@ -34,15 +36,13 @@ def args():
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
-                        help="Path to saved cmgan checkpoint for resuming training.")
-    parser.add_argument("--disc_pt", type=str, required=False, default=None,
-                        help="Path to saved cmgan checkpoint for discriminator.")
+                        help="Path to saved checkpoint for resuming training.")
+    parser.add_argument("--expert_pt", type=str, required=True,
+                        help="Path to saved cmgan expert checkpoint.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
-    parser.add_argument("--t_max", type=int, required=False, default=4,
-                        help="Backpropagate every t_max steps.")
     parser.add_argument("--episodes_per_epoch", type=int, required=False, default=100,
                         help="Run validation every val_step steps.")
     parser.add_argument("--gpu", action='store_true',
@@ -53,7 +53,6 @@ def args():
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
     parser.add_argument("--win_len", type=int, default=24, help="Context window length for input")
-    parser.add_argument("--samples", type=int, default=24)
     parser.add_argument("--gamma", type=float, default=0.99, help="Reward discount factor")
     parser.add_argument("--tau", type=float, default=0.99, help="target critic soft update factor")
     parser.add_argument("--log_interval", type=int, default=500)
@@ -66,35 +65,33 @@ def args():
 wandb.login()
 
 
-class DDPGTrainer:
+class Trainer:
     """
-    Class which defines Deep Deterministic Policy Gradient (DDPG)
-    Performs Actor Critic training using DDPG method.
+    Starting with reinforce algorithm.
     """
-    def __init__(self, train_ds, test_ds, args, gpu_id, pretrain=False):
+    def __init__(self, train_ds, test_ds, args, gpu_id, out_distribution=False, pretrain=False):
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
 
         self.actor = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1, 
-                            win_len=args.win_len,
+                            num_features=self.n_fft // 2 + 1,
+                            distribution=out_distribution, 
                             gpu_id=gpu_id)
         self.target_actor = TSCNet(num_channel=64, 
-                                   num_features=self.n_fft // 2 + 1, 
-                                   win_len=args.win_len,
+                                   num_features=self.n_fft // 2 + 1,
+                                   distribution=out_distribution,
                                    gpu_id=gpu_id)
-        self.expert = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1, 
-                            win_len=args.win_len,
-                            gpu_id=gpu_id)
         
-        if args.expert_pt:
-            expert_pt = torch.load(args.expert_pt, map_location=torch.device('cpu'))
-            self.expert.load_state_dict(expert_pt)
+        self.expert = TSCNetExpert(num_channel=64, 
+                                   num_features=self.n_fft // 2 + 1,
+                                   gpu_id=gpu_id)
+        
+        cmgan_expert_checkpoint = torch.load(args.expert_pt, map_location=torch.device(gpu_id))
+        self.expert.load_state_dict(cmgan_expert_checkpoint)
 
-        if pretrain:
+        if pretrain and args.ckpt is None:
             #Load checkpoint
             print(f"Loading checkpoint saved at {args.ckpt}...")
             cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
@@ -107,13 +104,7 @@ class DDPGTrainer:
             del cmgan_state_dict
 
         self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
-        self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
-
-        if args.disc_pt is not None:
-            state_dict = torch.load(args.disc_pt, map_location=torch.device('cpu'))
-            self.critic.load_state_dict(state_dict['discriminator_state_dict'])
-            del state_dict
-            #self.critic = freeze_layers(self.critic, 'all')            
+        self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)          
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
@@ -123,14 +114,28 @@ class DDPGTrainer:
             self.critic = self.critic.to(gpu_id)
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
-            
+
+            if args.ckpt is not None:
+                state_dict = torch.load(args.ckpt, map_location=torch.device(gpu_id))
+                self.actor.load_state_dict(state_dict['actor_state_dict'])
+                self.critic.load_state_dict(state_dict['critic_state_dict'])
+                self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
+                self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
+                _, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
+                _, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
+                del state_dict
+                print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
+
             if args.parallel:
-                self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
+                self.actor = DDP(self.actor, device_ids=[gpu_id])
                 self.critic = DDP(self.critic, device_ids=[gpu_id])
-                self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])#, find_unused_parameters=True)
+                self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
                 self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
             
         self.gpu_id = gpu_id
+        self.expert.eval()
+        self.target_actor.eval()
+        self.target_critic.eval()
         wandb.init(project=args.exp)
 
     def get_specs(self, clean, noisy):
@@ -216,113 +221,114 @@ class DDPGTrainer:
         
         return ret_val
     
-    def train_one_episode(self, epoch, episode, env, args):
+    def train_one_step(self, epoch, step, env, args):
         """
-        Runs an episode which takes input a batch and predicts masks
-        sequentially over the time dimension
-        
-        actor : actor model that learns P(a|s, theta), where theta are the 
-                actor's weight parameters. In our use case it takes windows 
-                of spectrogram and predicts masks both in real and complex domain.
-        critic: critic model learns to predict the quality of a (s_t, a_t) pair. 
-
-        ARGS:
-            batch   : batch of spectrograms of shape (b * 2 * f * t)
-            rewards : global ist to store cummulative reward
-            args    : global args 
+        Runs one step
         """
-        rewards = []
         torch.autograd.set_detect_anomaly(True)
-      
-        for step in range(env.steps-1):
-            #get the window input
-            inp = env.get_state_input(env.state, step)
-            #Forward pass through actor to get the action(mask)
-            action = self.actor(inp)
-            #Add noise to the action
-            action = env.noise.get_action(action)
-
-            #Apply mask to get the next state
-            next_state = env.get_next_state(state=env.state, 
-                                            action=action, 
-                                            t=step)
-            
-            if next_state is None:
-                continue
-
-            #Calculate the reward
-            reward = env.get_reward(env.state, next_state)
-            rewards.append(reward.mean().detach().cpu().numpy())
-            
-            #Store the experience in replay_buffer 
-            env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
-                                action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
-                                reward=reward.detach().clone().cpu().numpy(), 
-                                next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()},
-                                t=step)
-            
-            if len(env.exp_buffer) < args.batchsize:
-                continue
-            torch.cuda.empty_cache()
-
-            #sample experience from buffer
-            experience = env.exp_buffer.sample(args.batchsize)
-
-            #--------------------------- Update Critic ------------------------#
-            next_t = experience['t'] + 1
-            next_inp = env.get_state_input(experience['next'], next_t)
-            next_action = self.target_actor(next_inp)
-            next_action = (next_action[0].detach(), next_action[1].detach())
-            #Set TD target
-            value_next = self.target_critic(experience['next'], next_action, next_t).detach()
-            y_t = experience['reward'] + args.gamma * value_next
-            value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
-            #critic loss
-            critic_loss = F.mse_loss(y_t, value_curr).mean()
-            self.c_optimizer.zero_grad()
-            critic_loss.backward()
-            self.c_optimizer.step()
-            
-            #--------------------------- Update Actor ------------------------#
-            #actor loss
-            a_inp = env.get_state_input(experience['curr'], experience['t'])
-            a_action = self.actor(a_inp)
-            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() #+ mag_loss.mean()
-            
-            self.a_optimizer.zero_grad()
-            actor_loss.backward()
-            self.a_optimizer.step()
-
-            #update target networks
-            for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
         
-            for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+        clean = env.state['cl_audio'].detach().cpu().numpy()
+        est = env.state['est_audio'].detach().cpu().numpy()
+        p_mask, p_score = batch_pesq(clean, est)
+        noisy_pesq = original_pesq((p_mask * p_score).mean())
 
-            torch.cuda.empty_cache()
+        self.actor.train()
 
-            #update state
-            if reward > 0:
-                env.state = next_state
-            
-            clean = env.state['cl_audio'].cpu().numpy()
-            est = env.state['est_audio'].cpu().numpy()
-            p_mask, p_score = batch_pesq(clean, est)
-            train_pesq = (p_mask * p_score)
+        #Forward pass through expert to get the action(mask)
+        action = self.expert.get_action(env.state['noisy'])
+        action = (action[0].detach(), action[1].detach())
+        
+        #Add noise to the action
+        #action = env.noise.get_action(action)
 
-            wandb.log({
-                'episode_step':step,
-                'train_pesq':original_pesq(train_pesq).mean(),
-                'actor_loss':actor_loss,
-                'critic_loss':critic_loss,
-                'y_t':y_t.mean(),
-                'current':value_curr.mean(),
-                'reward':reward.mean()
-            })
-            print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{step} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
+        #Apply mask to get the next state
+        next_state = env.get_next_state(state=env.state, 
+                                        action=action)
+        
+        #Calculate the reward
+        reward = env.get_reward(env.state, next_state)
 
-        return rewards, actor_loss, critic_loss
+        #Store the experience in replay_buffer 
+        env.exp_buffer.push(state={k:v.detach().cpu().numpy() for k, v in env.state.items()}, 
+                            action=(action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy()), 
+                            reward=reward.detach().cpu().numpy(), 
+                            next_state={k:v.detach().cpu().numpy() for k, v in next_state.items()})
+        
+        env.state = next_state
+        
+        del(action)
+        del(next_state)
+
+        torch.cuda.empty_cache()
+        
+        #sample experience from buffer
+        experience = env.exp_buffer.sample(args.batchsize)
+
+        #--------------------------- Update Critic ------------------------#
+    
+        next_action = self.target_actor(experience['next']['noisy'])
+        next_action = (next_action[0].detach(), next_action[1].detach())
+        
+        #Set TD target
+        value_next = self.target_critic(experience['next'], next_action).detach()
+        y_t = experience['reward'] + args.gamma * value_next
+        value_curr = self.critic(experience['curr'], experience['action'])
+        
+        #critic loss
+        critic_loss = F.mse_loss(y_t, value_curr).mean()
+        self.c_optimizer.zero_grad()
+        critic_loss.backward()
+        torch.nn.utils.clip_grad_value_(self.critic.parameters(), 5.0)
+        self.c_optimizer.step()
+
+        #--------------------------- Update Actor ------------------------#
+        
+        #actor loss
+        a_action = self.actor(experience['curr']['noisy'])
+        actor_loss = -self.critic(experience['curr'], a_action).mean()
+        
+        self.a_optimizer.zero_grad()
+        actor_loss.backward()
+        torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
+        self.a_optimizer.step()
+
+        #--------------------- Update Target Networks --------------------#
+        
+        for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
+            target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+    
+        for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
+            target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
+
+        #sample action from actor to measure improvement
+        self.actor.eval()
+        action = self.actor(env.state['noisy'])
+        est_state = env.get_next_state(state=env.state, action=action)
+
+        clean = est_state['cl_audio'].detach().cpu().numpy()
+        est = est_state['est_audio'].detach().cpu().numpy()
+        p_mask, p_score = batch_pesq(clean, est)
+        
+        train_pesq = original_pesq((p_mask * p_score).mean())
+
+        torch.cuda.empty_cache()
+
+        print(f"EPOCH:{epoch} | STEP:{step} | change in PESQ:{train_pesq - noisy_pesq} | REWARD:{reward.mean()}")
+
+        outputs = {
+            'reward':reward.mean(),
+            'actor_loss':actor_loss.detach(),
+            'critic_loss':critic_loss.detach(),
+            'y_t':y_t.detach(),
+            'value_curr':value_curr.detach(),
+            'value_next':value_next.detach(),
+            'train_pesq':train_pesq,
+            'noisy_pesq':noisy_pesq
+        }
+
+
+        return outputs
+
     
     def run_validation(self, env):
         """
@@ -331,70 +337,61 @@ class DDPGTrainer:
         and return pesq score of the enhances batch of 
         spectrograms.
         """
-        print("Running validation...")
-        for step in range(env.steps):
-            #get the window input
-            inp = env.get_state_input(env.state, step)
-            #Forward pas through actor to get the action(mask)
-            action = self.actor(inp)
-            #Apply action  to get the next state
-            next_state = env.get_next_state(state=env.state, 
-                                            action=action, 
-                                            t=step)
-            env.state = next_state
+        #print("Running validation...")
+        
+        inp = env.state['noisy']
+        #Forward pass through actor to get the action(mask)
+        action = self.actor(inp)
+        #Apply action  to get the next state
+        next_state = env.get_next_state(state=env.state, 
+                                        action=action)
 
         pesq, pesq_mask = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
-                          env.state['est_audio'].detach().cpu().numpy())
+                          next_state['est_audio'].detach().cpu().numpy())
         return (pesq*pesq_mask).mean()
     
-    def train_one_epoch(self, epoch, args):
+    def train_one_episode(self, epoch, args):
         """
         Wrapper function to run one epoch of DDPG.
         One epoch is defined as running one episode of training
         for all batches in the dataset.
         """
-        REWARD_MAP=[]
         actor_epoch_loss = 0
         critic_epoch_loss = 0
+        ep_reward = 0
         step = 0
         env = SpeechEnhancementAgent(window=args.win_len // 2, 
-                                     buffer_size=1000000,
+                                     buffer_size=1200,
                                      n_fft=self.n_fft,
                                      hop=self.hop,
                                      gpu_id=self.gpu_id,
                                      args=args)
-        
-        #Run train loop
-        EPISODES_PER_EPOCH = args.episodes_per_epoch
+
+       
         for i, batch in enumerate(self.train_ds):
             self.actor.train()
             self.critic.train()
-            self.target_actor.eval()
-            self.target_critic.eval()
-            
+
             #Preprocess batch
             batch = self.preprocess_batch(batch)
-            #Run episode
+            #Run episode  
             env.set_batch(batch)
             step = i+1
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(epoch, step, env, args)
             
+            outputs = self.train_one_step(epoch, step, env, args)
+            if outputs is None:
+                continue
+
             #Collect reward and losses
-            actor_epoch_loss += actor_loss
-            critic_epoch_loss += critic_loss
-            REWARD_MAP.append(np.mean(ep_rewards))
-            
-            wandb.log({"episode":step,
-                       "mean_episode_reward":np.mean(ep_rewards)})
-            
-            print(f"EPOCH:{epoch} | EPISODE:{step} | mean_reward:{np.mean(ep_rewards)}")
+            actor_epoch_loss += outputs['actor_loss']
+            critic_epoch_loss += outputs['critic_loss']
+            ep_reward += outputs['reward']
 
-            if step > EPISODES_PER_EPOCH:
-                break
-
+       
         actor_epoch_loss = actor_epoch_loss / step
         critic_epoch_loss = critic_epoch_loss / step
-        print(f"Epoch:{epoch} ActorLoss:{actor_epoch_loss} CriticLoss:{critic_loss}")
+        ep_reward = ep_reward / step
+        print(f"Epoch:{epoch} | ActorLoss:{actor_epoch_loss} | CriticLoss:{critic_epoch_loss}")
 
         #Run validation
         self.actor.eval()
@@ -414,7 +411,8 @@ class DDPGTrainer:
                     "val_pesq":original_pesq(pesq)})   
         
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
-        return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, original_pesq(pesq)
+
+        return ep_reward, actor_epoch_loss, critic_epoch_loss, pesq
     
     def train(self, args):
         """
@@ -423,13 +421,13 @@ class DDPGTrainer:
         best_pesq = -1
         print("Start training...")
         for epoch in range(args.epochs):
-            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, args)
+            ep_reward, epoch_actor_loss, epoch_critic_loss, epoch_pesq = self.train_one_epoch(epoch+1, args)
             #TODO:Log these in wandb
-            wandb.log({"Epoch":epoch,
+            wandb.log({"Epoch":epoch+1,
                        "Actor_loss":epoch_actor_loss,
                        "Critic_loss":epoch_critic_loss,
-                       "PESQ":epoch_pesq,
-                       "reward":np.mean(re_map)})
+                       "ValPESQ":original_pesq(epoch_pesq),
+                       "Epoch_mean_reward":ep_reward})
             
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq
@@ -437,16 +435,14 @@ class DDPGTrainer:
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
                     path = os.path.join(args.output, args.exp, checkpoint_prefix)
-                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                'critic_state_dict':self.critic.state_dict(),
-                                'target_actor_state_dict':self.target_actor.state_dict(),
-                                'target_critic_state_dict':self.target_critic.state_dict(),
+                    save_dict = {'actor_state_dict':self.actor.module.state_dict(), 
+                                'critic_state_dict':self.critic.module.state_dict(),
                                 'actor_optim_state_dict':self.a_optimizer.state_dict(),
                                 'critic_optim_state_dict':self.c_optimizer.state_dict(),
                                 #'scheduler_state_dict':scheduler.state_dict(),
                                 #'lr':scheduler.get_last_lr()
                                 }
-                torch.save(save_dict, path)
+                    torch.save(save_dict, path)
                 #TODO:May need a LR scheduler as well
 
     
@@ -478,7 +474,7 @@ def main(rank: int, world_size: int, args):
                                     gpu = True)
     else:
         train_ds, test_ds = load_data(args.root, 
-                                    1, 
+                                    16, 
                                     1, 
                                     args.cut_len,
                                     gpu = False)
@@ -487,7 +483,7 @@ def main(rank: int, world_size: int, args):
     if args.ckpt is not None:
         pretrain=True
 
-    trainer = DDPGTrainer(train_ds, test_ds, args, rank, pretrain=pretrain)
+    trainer = Trainer(train_ds, test_ds, args, rank, out_distribution=args.out_dist, pretrain=pretrain)
     
     trainer.train(args)
     destroy_process_group()

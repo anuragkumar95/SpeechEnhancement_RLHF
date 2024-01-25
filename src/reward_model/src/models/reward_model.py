@@ -28,107 +28,6 @@ def power_uncompress(real, imag):
     real_compress = mag * torch.cos(phase)
     imag_compress = mag * torch.sin(phase)
     return torch.stack([real_compress, imag_compress], -1)
-
-
-class TSLossNet(nn.Module):
-    def __init__(self, in_channels, n_layers, kernel_size, keep_prob, norm_type='sbn'):
-        super().__init__()
-        self.net_time = nn.ModuleList()
-        self.net_freq = nn.ModuleList()
-        self.n_layers = n_layers
-    
-        t, f = 401, 201
-        for i in range(n_layers):
-            out_channels = 32 * (2 ** (i // 5))
-            
-            if t%2 == 1:
-                t = t // 2 + 1
-            else:
-                t = t // 2
-
-            if i < n_layers - 1:
-                if norm_type == 'sbn':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm1d(out_channels, track_running_stats=False),
-                        nn.LeakyReLU(0.2),
-                        nn.Dropout(1-keep_prob)
-                    )  
-                if norm_type == 'ln':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, t]),
-                        nn.LeakyReLU(0.2),
-                        nn.Dropout(1-keep_prob)
-                    )
-            else:
-                if norm_type == 'sbn':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm1d(out_channels, track_running_stats=False),
-                        nn.Dropout(1-keep_prob)
-                    ) 
-                if norm_type == 'ln':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, t]),
-                        nn.Dropout(1-keep_prob)
-                    )
-            in_channels = out_channels
-            self.net_time.append(layer)
-
-        for i in range(n_layers):
-            out_channels = 32 * (2 ** (i // 5))
-
-            if f%2 == 1:
-                f = f // 2 + 1
-            else:
-                f = f // 2
-
-            if i < n_layers - 1:
-                if norm_type == 'sbn':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm1d(out_channels, track_running_stats=False),
-                        nn.LeakyReLU(0.2),
-                        nn.Dropout(1-keep_prob)
-                    ) 
-                if norm_type == 'ln':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, f]),
-                        nn.LeakyReLU(0.2),
-                        nn.Dropout(1-keep_prob)
-                    ) 
-            else:
-                if norm_type == 'sbn':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.BatchNorm1d(out_channels, track_running_stats=False),
-                        nn.Dropout(1-keep_prob)
-                    ) 
-                if norm_type == 'ln':
-                    layer = nn.Sequential(
-                        nn.Conv1d(in_channels, out_channels, kernel_size, 2, padding=1),
-                        nn.LayerNorm([out_channels, f]),
-                        nn.Dropout(1-keep_prob)
-                    ) 
-            in_channels = out_channels
-            self.net_freq.append(layer)
-
-    def forward(self, x):
-        outs = []
-        b, c, t, f = x.shape
-        #reshape x (b, ch, t, f) --> x_time (b * f, t, ch)
-        x_t = x.permute(0, 3, 2, 1).contiguous().view(b * f, t, c)
-        #reshape x (b, ch, t, f) --> x_time (b * t, f, ch)
-        x_f = x.permute(0, 2, 3, 1).contiguous().view(b * t, f, c)
-        for i in range(self.n_layers):
-            x_t = self.net_time[i](x_t)
-            x_f = self.net_freq[i](x_f)
-            outs.append((x_t.view(b, f, t, c), x_f.view(b, t, f, c)))
-        return outs
-
     
 class LossNet(nn.Module):
     def __init__(self, in_channels, n_layers, kernel_size, keep_prob, norm_type='sbn'):
@@ -245,40 +144,6 @@ class ClassificationHead(nn.Module):
         return scores
 
 
-
-class TSFeatureLossBatch(nn.Module):
-    def __init__(self, n_layers, base_channels, sum_till=14, weights=False, gpu_id=None):
-        super().__init__()
-        self.out_channels = [base_channels * (2 ** (i // 5)) for i in range(n_layers)]
-        self.sum_last_layers=sum_till
-        self.n_layers = n_layers
-        if weights:
-            self.weights = nn.ParameterList([nn.Parameter(torch.randn(features), requires_grad=True) for features in self.out_channels])
-            if gpu_id is not None:
-                self.weights = [param.to(gpu_id) for param in self.weights]
-        else:
-            self.weights = None
-
-    def forward(self, embeds1, embeds2):
-        """
-        Both embeds1 and embeeds are outputs from each layer of
-        loss_net. 
-        """
-        loss_final = 0
-        for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
-            if i >= self.n_layers - self.sum_last_layers:
-                dist_t = e1[0] - e2[0]
-                dist_f = e1[1] - e2[1]
-                if self.weights is not None:
-                    res_t = (self.weights[i] * dist_t)
-                    res_f = (self.weights[i] * dist_f)
-                else:
-                    res_t = dist_t
-                    res_f = dist_f
-                loss = torch.mean(res_t, dim=[1, 2, 3]) + torch.mean(res_f, dim=[1, 2, 3])
-                loss_final += loss
-        return loss_final
-
 class AttentionFeatureLossBatch(nn.Module):
     def __init__(self, n_layers, base_channels, time_bins=401, freq_bins=201, sum_till=14):
         super().__init__()
@@ -308,24 +173,22 @@ class AttentionFeatureLossBatch(nn.Module):
         loss_final = 0
    
         for i, (e1, e2) in enumerate(zip(embeds1, embeds2)):
-            if i >= self.n_layers - self.sum_last_layers:
+            #both e1 and e2 is of shape (b, ch, f, t)
+            b, ch, f, t = e1.shape
+            #diff is average difference across time and freq axis
+            #should be of shape (b, ch)
+            diff = (e1 - e2)
 
-                #both e1 and e2 is of shape (b, ch, f, t)
-                b, ch, f, t = e1.shape
-                #diff is average difference across time and freq axis
-                #should be of shape (b, ch)
-                diff = (e1 - e2)
+            #for time attn, reshape both to (b*f, ch, t)
+            e1_t = e1.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+            e2_t = e2.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+            diff_t = diff.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
+            
+            attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff_t)
 
-                #for time attn, reshape both to (b*f, ch, t)
-                e1_t = e1.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
-                e2_t = e2.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
-                diff_t = diff.permute(0, 2, 3, 1).contiguous().view(b * f, t, ch)
-             
-                attn_time_outputs, _ = self.time_attn[i](e1_t, e2_t, diff_t)
-
-                attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch).permute(0, 3, 2, 1)
-                attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
-                loss_final += attn_scores 
+            attn_time_outputs = attn_time_outputs.reshape(b, f, t, ch).permute(0, 3, 2, 1)
+            attn_scores = torch.mean(attn_time_outputs, dim=[1, 2, 3])
+            loss_final += attn_scores 
         
         return loss_final
 

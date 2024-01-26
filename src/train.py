@@ -446,7 +446,7 @@ def main(rank: int, world_size: int, args):
 
 
 if __name__ == "__main__":
-    ARGS = args()
+    ARGS = args
 
     output = f"{ARGS.save_model_dir}/{ARGS.exp}"
     os.makedirs(output, exist_ok=True)

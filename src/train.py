@@ -448,7 +448,17 @@ def main(rank: int, world_size: int, args):
 
 
 if __name__ == "__main__":
+    ARGS = args().parse_args()
+
+    output = f"{ARGS.output}/{ARGS.exp}"
+    os.makedirs(output, exist_ok=True)
 
     world_size = torch.cuda.device_count()
-    print(f"World_size:{world_size}")
-    mp.spawn(main, args=(world_size, args), nprocs=world_size)
+    print(f"World size:{world_size}")
+    if ARGS.parallel:
+        mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
+    else:
+        if ARGS.gpu:
+            main(0, world_size, ARGS)
+        else:
+            main(None, world_size, ARGS)

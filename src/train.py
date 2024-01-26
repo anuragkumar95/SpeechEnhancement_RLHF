@@ -59,7 +59,7 @@ def ddp_setup(rank, world_size):
 
 
 class Trainer:
-    def __init__(self, train_ds, test_ds, batchsize, pretrain, log_wandb=False, parallel=False, gpu_id=None, pretrain_init=False, resume_pt=None):
+    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, resume_pt=None):
         
         self.n_fft = 400
         self.hop = 100
@@ -75,23 +75,6 @@ class Trainer:
         self.gpu_id = gpu_id
 
         self.discriminator = Discriminator(ndf=16)
-
-        if pretrain_init:
-            #Load checkpoint
-            print(f"Loading pretrained model saved at {args.pretrain}...")
-            cmgan_state_dict = torch.load(pretrain, map_location=torch.device('cpu'))
-            #Copy weights and freeze weights which are copied
-            keys, self.model = copy_weights(cmgan_state_dict, self.model)
-            self.model = freeze_layers(self.model, keys)
-            #Free mem
-            del cmgan_state_dict
-        elif pretrain is not None:
-            cmgan_state_dict = torch.load(pretrain, map_location=torch.device('cpu'))
-            #Get the keys which are supposed to be frozen
-            keys, _ = copy_weights(cmgan_state_dict, self.model, get_keys_only=True)
-            self.model = freeze_layers(self.model, keys)
-            #Free mem
-            del cmgan_state_dict
 
         if gpu_id is not None:
             self.model = self.model.to(gpu_id)
@@ -440,8 +423,6 @@ def main(rank: int, world_size: int, args):
                       batchsize=args.batch_size, 
                       parallel=args.parallel, 
                       gpu_id=rank, 
-                      pretrain=args.pretrain,
-                      pretrain_init=args.pretrain_init,
                       resume_pt=args.ckpt,
                       log_wandb=args.wandb)
     trainer.train()

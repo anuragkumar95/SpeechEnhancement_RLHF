@@ -1,7 +1,7 @@
 from model.actor import TSCNet
 from model.critic import Discriminator
 import os
-from data import dataloader
+from data import dataset as dataloader
 import torch.nn.functional as F
 import torch
 from utils import batch_pesq, power_compress, power_uncompress, original_pesq, copy_weights, freeze_layers
@@ -22,12 +22,10 @@ parser.add_argument("--parallel", action='store_true', help="Set this falg to ru
 parser.add_argument("--gpu", action='store_true', help="Set this falg to run single gpu training.")
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--exp", type=str, default='default', help='Experiment name')
-parser.add_argument("--win_len", type=int, default=24)
-parser.add_argument("--samples", type=int, default=24)
+
 parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
-parser.add_argument("--pretrain", type=str, required=False, 
-                    help="path to the pretrained checkpoint of original CMGAN.")
+
 parser.add_argument("--mag_only", action='store_true', required=False, 
                     help="set this flag to train using magnitude only.")
 parser.add_argument("--pretrain_init", action='store_true', required=False, 
@@ -450,7 +448,7 @@ def main(rank: int, world_size: int, args):
 if __name__ == "__main__":
     ARGS = args().parse_args()
 
-    output = f"{ARGS.output}/{ARGS.exp}"
+    output = f"{ARGS.save_model_dir}/{ARGS.exp}"
     os.makedirs(output, exist_ok=True)
 
     world_size = torch.cuda.device_count()

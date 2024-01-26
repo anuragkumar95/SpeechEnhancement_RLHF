@@ -193,7 +193,7 @@ class TSCNet(nn.Module):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
-        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
+        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=1)
         #self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)

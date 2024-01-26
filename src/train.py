@@ -428,9 +428,12 @@ def main(rank: int, world_size: int, args):
             torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
         ]
         print(available_gpus)
+
     train_ds, test_ds = dataloader.load_data(
-        args.data_dir, args.batch_size, 1, args.cut_len, parallel=True
-    )
+            args.data_dir, args.batch_size, 1, args.cut_len, gpu=True
+        )
+
+
     print(f"Train:{len(train_ds)}, Validation:{len(test_ds)}")
     trainer = Trainer(train_ds=train_ds, 
                       test_ds=test_ds, 

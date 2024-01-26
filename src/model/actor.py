@@ -234,7 +234,7 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
 
-        mask, _ = self.mask_decoder(out_2)
+        mask, prob = self.mask_decoder(out_2)
         complex_out = self.complex_decoder(out_2)
         
         out_mag = mask * mag

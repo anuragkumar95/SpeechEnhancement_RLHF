@@ -193,10 +193,10 @@ class TSCNet(nn.Module):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
-        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=1)
-        self.TSCB_2 = TSCB(num_channel=num_channel, nheads=1)
-        self.TSCB_3 = TSCB(num_channel=num_channel, nheads=1)
-        self.TSCB_4 = TSCB(num_channel=num_channel, nheads=1)
+        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
+        self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
+        self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
+        self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
 
         self.mask_decoder = MaskDecoder(
             num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
@@ -210,12 +210,12 @@ class TSCNet(nn.Module):
 
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
-        out_3 = self.TSCB_2(out_2)
-        out_4 = self.TSCB_3(out_3)
-        out_5 = self.TSCB_4(out_4)
+        #out_3 = self.TSCB_2(out_2)
+        #out_4 = self.TSCB_3(out_3)
+        #out_5 = self.TSCB_4(out_4)
 
-        mask, m_logprob = self.mask_decoder(out_5)
-        complex_out = self.complex_decoder(out_5)
+        mask, m_logprob = self.mask_decoder(out_2)
+        complex_out = self.complex_decoder(out_2)
 
         return (mask, complex_out), m_logprob
 
@@ -230,12 +230,12 @@ class TSCNet(nn.Module):
         
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
-        out_3 = self.TSCB_2(out_2)
-        out_4 = self.TSCB_3(out_3)
-        out_5 = self.TSCB_4(out_4)
+        #out_3 = self.TSCB_2(out_2)
+        #out_4 = self.TSCB_3(out_3)
+        #out_5 = self.TSCB_4(out_4)
 
-        mask, _ = self.mask_decoder(out_5)
-        complex_out = self.complex_decoder(out_5)
+        mask, _ = self.mask_decoder(out_2)
+        complex_out = self.complex_decoder(out_2)
         
         out_mag = mask * mag
 

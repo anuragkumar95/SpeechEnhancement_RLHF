@@ -137,6 +137,9 @@ class Trainer:
             window=torch.hamming_window(self.n_fft).to(self.gpu_id),
             onesided=True,
         )
+
+        print(f"gen_step: clean={clean_spec.sum()}, noisy={noisy_spec.sum()}")
+
         noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
         clean_spec = power_compress(clean_spec)
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
@@ -293,7 +296,7 @@ class Trainer:
         clean = batch[0].to(self.gpu_id)
         noisy = batch[1].to(self.gpu_id)
         one_labels = torch.ones(clean.shape[0]).to(self.gpu_id)
-
+        print(f"train_step: clean={clean.sum()}, noisy={noisy.sum()}")
         #Run generator
         generator_outputs = self.forward_generator_step(
             clean,
@@ -381,6 +384,9 @@ class Trainer:
             self.model.train()
             self.discriminator.train()
             for idx, batch in enumerate(self.train_ds):
+                clean, noisy, _ = batch
+                if clean != clean or noisy != noisy:
+                    continue
                 step = idx + 1
                 loss, disc_loss = self.train_step(batch)
                 template = "GPU: {}, Epoch {}, Step {}, loss: {}, disc_loss: {}"

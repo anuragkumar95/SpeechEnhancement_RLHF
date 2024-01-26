@@ -194,9 +194,9 @@ class TSCNet(nn.Module):
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
         self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
-        self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
-        self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
-        self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
+        #self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
+        #self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
+        #self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
 
         self.mask_decoder = MaskDecoder(
             num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id

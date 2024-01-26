@@ -156,7 +156,7 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x_mu = self.prelu_out(x_mu)
-            x_var = self.prelu_out(x_var)
+            #x_var = self.prelu_out(x_var)
             x, x_logprob = self.sample(x_mu, x_var)
             return x.permute(0, 2, 1).unsqueeze(1), x_logprob
         else:

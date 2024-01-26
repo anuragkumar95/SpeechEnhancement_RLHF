@@ -149,16 +149,18 @@ class MaskDecoder(nn.Module):
         return x, x_logprob
 
     def forward(self, x):
+        print(f"Mask Decoder: input={x.sum()}")
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.conv_1(x)
+        print(f"Mask Decoder: conv_out:{x.sum()}")
         x = self.prelu(self.norm(x))
         print(f"Mask Decoder: Prelu_out={x.sum()}")
         if self.dist:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             print(f"Mask Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
-            x = self.relu(x)
+            x_var = self.relu(x_var)
             print(f"Mask Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
             x, x_logprob = self.sample(x_mu, x_var)
             return x.permute(0, 2, 1).unsqueeze(1), x_logprob

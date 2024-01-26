@@ -385,7 +385,7 @@ class Trainer:
             self.discriminator.train()
             for idx, batch in enumerate(self.train_ds):
                 clean, noisy, _ = batch
-                if clean != clean or noisy != noisy:
+                if torch.isnan(clean).any() or torch.isnan(noisy).any():
                     continue
                 step = idx + 1
                 loss, disc_loss = self.train_step(batch)

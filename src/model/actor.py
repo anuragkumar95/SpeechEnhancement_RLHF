@@ -160,8 +160,6 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             print(f"Mask Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
-            x_var = self.relu(x_var)
-            print(f"Mask Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
             x, x_logprob = self.sample(x_mu, x_var)
             return x.permute(0, 2, 1).unsqueeze(1), x_logprob
         else:

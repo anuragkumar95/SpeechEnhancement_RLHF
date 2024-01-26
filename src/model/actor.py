@@ -152,9 +152,11 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
+        print(f"Mask Decoder: Prelu_out={x.sum()}")
         if self.dist:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
+            print(f"Mask Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
             x, x_logprob = self.sample(x_mu, x_var)
             x = self.prelu_out(x)
             return x.permute(0, 2, 1).unsqueeze(1), x_logprob
@@ -192,7 +194,7 @@ class TSCNet(nn.Module):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
-        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=1)
+        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)

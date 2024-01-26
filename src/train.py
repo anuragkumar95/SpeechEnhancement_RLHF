@@ -322,6 +322,7 @@ class Trainer:
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })
+        print(f"G_LOSS:{loss} | D_LOSS:{discrim_loss_metric}")
 
         return loss.item(), discrim_loss_metric.item()
 

@@ -24,9 +24,7 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
-
 from speech_enh_env import SpeechEnhancementAgent
-
 
 def args():
     parser = argparse.ArgumentParser()
@@ -36,23 +34,20 @@ def args():
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
-                        help="Path to saved checkpoint for resuming training.")
-    parser.add_argument("--expert_pt", type=str, required=True,
-                        help="Path to saved cmgan expert checkpoint.")
+                        help="Path to saved checkpoint to fine-tune.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
-    parser.add_argument("--episodes_per_epoch", type=int, required=False, default=100,
-                        help="Run validation every val_step steps.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
+    
     parser.add_argument("--reward", type=int, help="Type of reward")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
-    parser.add_argument("--win_len", type=int, default=24, help="Context window length for input")
+    
     parser.add_argument("--gamma", type=float, default=0.99, help="Reward discount factor")
     parser.add_argument("--tau", type=float, default=0.99, help="target critic soft update factor")
     parser.add_argument("--log_interval", type=int, default=500)
@@ -79,6 +74,7 @@ class Trainer:
                             num_features=self.n_fft // 2 + 1,
                             distribution=out_distribution, 
                             gpu_id=gpu_id)
+        
         self.target_actor = TSCNet(num_channel=64, 
                                    num_features=self.n_fft // 2 + 1,
                                    distribution=out_distribution,

@@ -1,455 +1,54 @@
-# -*- coding: utf-8 -*-
-"""
-@author: Anurag Kumar
-"""
-
 from model.actor import TSCNet
-from model.critic import QNet
+from model.critic import Discriminator
 import os
-from data.dataset import load_data
+from data import dataloader
 import torch.nn.functional as F
 import torch
-from utils import power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
+from utils import batch_pesq, power_compress, power_uncompress, original_pesq, copy_weights, freeze_layers
 import logging
 from torchinfo import summary
 import argparse
-import wandb
-import psutil
-import numpy as np
-import traceback
+from collections import OrderedDict
+
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
+import wandb
 
-
-from speech_enh_env import SpeechEnhancementAgent
-
-
-def args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--root", type=str, required=True,
-                        help="Root directory to Voicebank.")
-    parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
-    parser.add_argument("-o", "--output", type=str, required=True,
-                        help="Output directory for checkpoints. Will create one if doesn't exist")
-    parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
+parser = argparse.ArgumentParser()
+parser.add_argument("--epochs", type=int, default=120, help="number of epochs of training")
+parser.add_argument("--parallel", action='store_true', help="Set this falg to run parallel gpu training.")
+parser.add_argument("--gpu", action='store_true', help="Set this falg to run single gpu training.")
+parser.add_argument("--batch_size", type=int, default=4)
+parser.add_argument("--exp", type=str, default='default', help='Experiment name')
+parser.add_argument("--win_len", type=int, default=24)
+parser.add_argument("--samples", type=int, default=24)
+parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
-    parser.add_argument("--disc_pt", type=str, required=False, default=None,
-                        help="Path to saved cmgan checkpoint for discriminator.")
-    parser.add_argument("--epochs", type=int, required=False, default=5,
-                        help="No. of epochs to be trained.")
-    parser.add_argument("--batchsize", type=int, required=False, default=4,
-                        help="Training batchsize.")
-    parser.add_argument("--t_max", type=int, required=False, default=4,
-                        help="Backpropagate every t_max steps.")
-    parser.add_argument("--episodes_per_epoch", type=int, required=False, default=100,
-                        help="Run validation every val_step steps.")
-    parser.add_argument("--gpu", action='store_true',
-                        help="Set this flag for single gpu training.")
-    parser.add_argument("--parallel", action='store_true',
-                        help="Set this flag for parallel gpu training.")
-    parser.add_argument("--reward", type=int, help="Type of reward")
-    parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
+parser.add_argument("--pretrain", type=str, required=False, 
+                    help="path to the pretrained checkpoint of original CMGAN.")
+parser.add_argument("--mag_only", action='store_true', required=False, 
+                    help="set this flag to train using magnitude only.")
+parser.add_argument("--pretrain_init", action='store_true', required=False, 
+                    help="set this flag to init model with pretrainied weights.")
+parser.add_argument("--wandb", action='store_true', required=False, 
+                    help="set this flag to log using wandb.")
+parser.add_argument("--log_interval", type=int, default=500)
+parser.add_argument("--decay_epoch", type=int, default=30, help="epoch from which to start lr decay")
+parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
+parser.add_argument("--cut_len", type=int, default=16000*2, help="cut length, default is 2 seconds in denoise "
+                                                                 "and dereverberation")
+parser.add_argument("--data_dir", type=str, required=True,
+                    help="dir of VCTK+DEMAND dataset")
+parser.add_argument("--save_model_dir", type=str, required=True,
+                    help="dir of saved model")
+parser.add_argument("--loss_weights", nargs='+', type=float, default=[0.3, 0.7, 0.01, 1],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
-    parser.add_argument("--win_len", type=int, default=24, help="Context window length for input")
-    parser.add_argument("--samples", type=int, default=24)
-    parser.add_argument("--gamma", type=float, default=0.99, help="Reward discount factor")
-    parser.add_argument("--tau", type=float, default=0.99, help="target critic soft update factor")
-    parser.add_argument("--log_interval", type=int, default=500)
-    parser.add_argument("--decay_epoch", type=int, default=30, help="epoch from which to start lr decay")
-    parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
-    parser.add_argument("--cut_len", type=int, default=16000*2, help="cut length, default is 2 seconds in denoise "
-                                                                    "and dereverberation")
-    return parser
-
-wandb.login()
+args = parser.parse_args()
+logging.basicConfig(level=logging.INFO)
 
 
-class DDPGTrainer:
-    """
-    Class which defines Deep Deterministic Policy Gradient (DDPG)
-    Performs Actor Critic training using DDPG method.
-    """
-    def __init__(self, train_ds, test_ds, args, gpu_id, pretrain=False):
-        self.n_fft = 400
-        self.hop = 100
-        self.train_ds = train_ds
-        self.test_ds = test_ds
-
-        self.actor = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1, 
-                            win_len=args.win_len,
-                            gpu_id=gpu_id)
-        self.target_actor = TSCNet(num_channel=64, 
-                                   num_features=self.n_fft // 2 + 1, 
-                                   win_len=args.win_len,
-                                   gpu_id=gpu_id)
-        self.expert = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1, 
-                            win_len=args.win_len,
-                            gpu_id=gpu_id)
-        
-        if args.expert_pt:
-            expert_pt = torch.load(args.expert_pt, map_location=torch.device('cpu'))
-            self.expert.load_state_dict(expert_pt)
-
-        if pretrain:
-            #Load checkpoint
-            print(f"Loading checkpoint saved at {args.ckpt}...")
-            cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
-            #Copy weights and freeze weights which are copied
-            keys, self.actor = copy_weights(cmgan_state_dict, self.actor)
-            self.actor = freeze_layers(self.actor, keys)
-            keys, self.actor = copy_weights(cmgan_state_dict, self.target_actor)
-            self.target_actor = freeze_layers(self.target_actor, keys)
-            #Free mem
-            del cmgan_state_dict
-
-        self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
-        self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
-
-        if args.disc_pt is not None:
-            state_dict = torch.load(args.disc_pt, map_location=torch.device('cpu'))
-            self.critic.load_state_dict(state_dict['discriminator_state_dict'])
-            del state_dict
-            #self.critic = freeze_layers(self.critic, 'all')            
-
-        self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
-        self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
-
-        if gpu_id is not None:
-            self.actor = self.actor.to(gpu_id)
-            self.critic = self.critic.to(gpu_id)
-            self.target_actor = self.target_actor.to(gpu_id)
-            self.target_critic = self.target_critic.to(gpu_id)
-            
-            if args.parallel:
-                self.actor = DDP(self.actor, device_ids=[gpu_id])#, find_unused_parameters=True)
-                self.critic = DDP(self.critic, device_ids=[gpu_id])
-                self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])#, find_unused_parameters=True)
-                self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
-            
-        self.gpu_id = gpu_id
-        wandb.init(project=args.exp)
-
-    def get_specs(self, clean, noisy):
-        """
-        Create spectrograms from input waveform.
-        ARGS:
-            clean : clean waveform (batch * cut_len)
-            noisy : noisy waveform (batch * cut_len)
-
-        Return
-            noisy_spec : (b * 2 * f * t) noisy spectrogram
-            clean_spec : (b * 2 * f * t) clean spectrogram
-            clean_real : (b * 1 * f * t) real part of clean spectrogram
-            clean_imag : (b * 1 * f * t) imag part of clean spectrogram
-            clean_mag  : (b * 1 * f * t) mag of clean spectrogram
-        """
-        # Normalization
-        c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
-        noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)
-        noisy, clean = torch.transpose(noisy * c, 0, 1), torch.transpose(
-            clean * c, 0, 1
-        )
-        
-        win = torch.hamming_window(self.n_fft)
-        if self.gpu_id is not None:
-            win = win.to(self.gpu_id)
-
-        noisy_spec = torch.stft(
-            noisy,
-            self.n_fft,
-            self.hop,
-            window=win,
-            onesided=True,
-        )
-        clean_spec = torch.stft(
-            clean,
-            self.n_fft,
-            self.hop,
-            window=win,
-            onesided=True,
-        )
-
-        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
-        clean_spec = power_compress(clean_spec)
-        clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
-        clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
-        clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
-        est_real = noisy_spec[:, 0, :, :].unsqueeze(1)
-        est_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
-        est_mag = torch.sqrt(est_real**2 + est_imag**2)
-
-        return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, clean, noisy
-    
-    def preprocess_batch(self, batch):
-        """
-        Converts a batch of audio waveforms and returns a batch of
-        spectrograms.
-        ARGS:
-            batch : (b * cut_len) waveforms.
-
-        Returns:
-            Dict of spectrograms
-        """
-        clean, noisy, _ = batch
-        if self.gpu_id is not None:
-            clean = clean.to(self.gpu_id)
-            noisy = noisy.to(self.gpu_id)
-
-        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, cl_aud, noisy = self.get_specs(clean, noisy)
-        
-        ret_val = {'noisy':noisy_spec,
-                   'clean':clean_spec,
-                   'clean_real':clean_real,
-                   'clean_imag':clean_imag,
-                   'clean_mag':clean_mag,
-                   'cl_audio':cl_aud,
-                   'n_audio':noisy,
-                   'est_audio':noisy,
-                   'est_real':est_real.permute(0, 1, 3, 2),
-                   'est_imag':est_imag.permute(0, 1, 3, 2),
-                   'est_mag':est_mag.permute(0, 1, 3, 2)
-                  }
-        
-        return ret_val
-    
-    def train_one_episode(self, epoch, episode, env, args):
-        """
-        Runs an episode which takes input a batch and predicts masks
-        sequentially over the time dimension
-        
-        actor : actor model that learns P(a|s, theta), where theta are the 
-                actor's weight parameters. In our use case it takes windows 
-                of spectrogram and predicts masks both in real and complex domain.
-        critic: critic model learns to predict the quality of a (s_t, a_t) pair. 
-
-        ARGS:
-            batch   : batch of spectrograms of shape (b * 2 * f * t)
-            rewards : global ist to store cummulative reward
-            args    : global args 
-        """
-        rewards = []
-        torch.autograd.set_detect_anomaly(True)
-      
-        for step in range(env.steps-1):
-            #get the window input
-            inp = env.get_state_input(env.state, step)
-            #Forward pass through actor to get the action(mask)
-            action = self.actor(inp)
-            #Add noise to the action
-            action = env.noise.get_action(action)
-
-            #Apply mask to get the next state
-            next_state = env.get_next_state(state=env.state, 
-                                            action=action, 
-                                            t=step)
-            
-            if next_state is None:
-                continue
-
-            #Calculate the reward
-            reward = env.get_reward(env.state, next_state)
-            rewards.append(reward.mean().detach().cpu().numpy())
-            
-            #Store the experience in replay_buffer 
-            env.exp_buffer.push(state={k:v.detach().clone().cpu().numpy() for k, v in env.state.items()}, 
-                                action=(action[0].detach().clone().cpu().numpy(), action[1].detach().clone().cpu().numpy()), 
-                                reward=reward.detach().clone().cpu().numpy(), 
-                                next_state={k:v.detach().clone().cpu().numpy() for k, v in next_state.items()},
-                                t=step)
-            
-            if len(env.exp_buffer) < args.batchsize:
-                continue
-            torch.cuda.empty_cache()
-
-            #sample experience from buffer
-            experience = env.exp_buffer.sample(args.batchsize)
-
-            #--------------------------- Update Critic ------------------------#
-            next_t = experience['t'] + 1
-            next_inp = env.get_state_input(experience['next'], next_t)
-            next_action = self.target_actor(next_inp)
-            next_action = (next_action[0].detach(), next_action[1].detach())
-            #Set TD target
-            value_next = self.target_critic(experience['next'], next_action, next_t).detach()
-            y_t = experience['reward'] + args.gamma * value_next
-            value_curr = self.critic(experience['curr'], experience['action'], experience['t'])
-            #critic loss
-            critic_loss = F.mse_loss(y_t, value_curr).mean()
-            self.c_optimizer.zero_grad()
-            critic_loss.backward()
-            self.c_optimizer.step()
-            
-            #--------------------------- Update Actor ------------------------#
-            #actor loss
-            a_inp = env.get_state_input(experience['curr'], experience['t'])
-            a_action = self.actor(a_inp)
-            actor_loss = -self.critic(experience['curr'], a_action, experience['t']).mean() #+ mag_loss.mean()
-            
-            self.a_optimizer.zero_grad()
-            actor_loss.backward()
-            self.a_optimizer.step()
-
-            #update target networks
-            for target_param, param in zip(self.target_actor.parameters(), self.actor.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-        
-            for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-                target_param.data.copy_(param.data * args.tau + target_param.data * (1.0 - args.tau))
-
-            torch.cuda.empty_cache()
-
-            #update state
-            if reward > 0:
-                env.state = next_state
-            
-            clean = env.state['cl_audio'].cpu().numpy()
-            est = env.state['est_audio'].cpu().numpy()
-            p_mask, p_score = batch_pesq(clean, est)
-            train_pesq = (p_mask * p_score)
-
-            wandb.log({
-                'episode_step':step,
-                'train_pesq':original_pesq(train_pesq).mean(),
-                'actor_loss':actor_loss,
-                'critic_loss':critic_loss,
-                'y_t':y_t.mean(),
-                'current':value_curr.mean(),
-                'reward':reward.mean()
-            })
-            print(f"EPOCH:{epoch} | EPISODE:{episode} | STEP:{step} | PESQ:{original_pesq(train_pesq).mean()} | REWARD:{reward.mean()}")
-
-        return rewards, actor_loss, critic_loss
-    
-    def run_validation(self, env):
-        """
-        Runs a vlidation loop for a batch.
-        Predict mask for each frame one at a time 
-        and return pesq score of the enhances batch of 
-        spectrograms.
-        """
-        print("Running validation...")
-        for step in range(env.steps):
-            #get the window input
-            inp = env.get_state_input(env.state, step)
-            #Forward pas through actor to get the action(mask)
-            action = self.actor(inp)
-            #Apply action  to get the next state
-            next_state = env.get_next_state(state=env.state, 
-                                            action=action, 
-                                            t=step)
-            env.state = next_state
-
-        pesq, pesq_mask = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
-                          env.state['est_audio'].detach().cpu().numpy())
-        return (pesq*pesq_mask).mean()
-    
-    def train_one_epoch(self, epoch, args):
-        """
-        Wrapper function to run one epoch of DDPG.
-        One epoch is defined as running one episode of training
-        for all batches in the dataset.
-        """
-        REWARD_MAP=[]
-        actor_epoch_loss = 0
-        critic_epoch_loss = 0
-        step = 0
-        env = SpeechEnhancementAgent(window=args.win_len // 2, 
-                                     buffer_size=1000000,
-                                     n_fft=self.n_fft,
-                                     hop=self.hop,
-                                     gpu_id=self.gpu_id,
-                                     args=args)
-        
-        #Run train loop
-        EPISODES_PER_EPOCH = args.episodes_per_epoch
-        for i, batch in enumerate(self.train_ds):
-            self.actor.train()
-            self.critic.train()
-            self.target_actor.eval()
-            self.target_critic.eval()
-            
-            #Preprocess batch
-            batch = self.preprocess_batch(batch)
-            #Run episode
-            env.set_batch(batch)
-            step = i+1
-            ep_rewards, actor_loss, critic_loss = self.train_one_episode(epoch, step, env, args)
-            
-            #Collect reward and losses
-            actor_epoch_loss += actor_loss
-            critic_epoch_loss += critic_loss
-            REWARD_MAP.append(np.mean(ep_rewards))
-            
-            wandb.log({"episode":step,
-                       "mean_episode_reward":np.mean(ep_rewards)})
-            
-            print(f"EPOCH:{epoch} | EPISODE:{step} | mean_reward:{np.mean(ep_rewards)}")
-
-            if step > EPISODES_PER_EPOCH:
-                break
-
-        actor_epoch_loss = actor_epoch_loss / step
-        critic_epoch_loss = critic_epoch_loss / step
-        print(f"Epoch:{epoch} ActorLoss:{actor_epoch_loss} CriticLoss:{critic_loss}")
-
-        #Run validation
-        self.actor.eval()
-        self.critic.eval()
-        pesq = 0
-        v_step = 0
-        for i, batch in enumerate(self.test_ds):
-            #Preprocess batch
-            batch = self.preprocess_batch(batch)
-            env.set_batch(batch)
-            #Run validation episode
-            val_pesq_score = self.run_validation(env)
-            pesq += val_pesq_score
-            v_step += 1
-        pesq /= v_step
-        wandb.log({"val_step":v_step,
-                    "val_pesq":original_pesq(pesq)})   
-        
-        print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
-        return REWARD_MAP, actor_epoch_loss, critic_epoch_loss, original_pesq(pesq)
-    
-    def train(self, args):
-        """
-        Run epochs, collect validation results and save checkpoints. 
-        """
-        best_pesq = -1
-        print("Start training...")
-        for epoch in range(args.epochs):
-            re_map, epoch_actor_loss, epoch_critic_loss,epoch_pesq = self.train_one_epoch(epoch, args)
-            #TODO:Log these in wandb
-            wandb.log({"Epoch":epoch,
-                       "Actor_loss":epoch_actor_loss,
-                       "Critic_loss":epoch_critic_loss,
-                       "PESQ":epoch_pesq,
-                       "reward":np.mean(re_map)})
-            
-            if epoch_pesq >= best_pesq:
-                best_pesq = epoch_pesq
-                #TODO:Logic for savecheckpoint
-                if self.gpu_id == 0:
-                    checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
-                    path = os.path.join(args.output, args.exp, checkpoint_prefix)
-                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                'critic_state_dict':self.critic.state_dict(),
-                                'target_actor_state_dict':self.target_actor.state_dict(),
-                                'target_critic_state_dict':self.target_critic.state_dict(),
-                                'actor_optim_state_dict':self.a_optimizer.state_dict(),
-                                'critic_optim_state_dict':self.c_optimizer.state_dict(),
-                                #'scheduler_state_dict':scheduler.state_dict(),
-                                #'lr':scheduler.get_last_lr()
-                                }
-                torch.save(save_dict, path)
-                #TODO:May need a LR scheduler as well
-
-    
 def ddp_setup(rank, world_size):
     """
     Args:
@@ -461,50 +60,395 @@ def ddp_setup(rank, world_size):
     init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 
+class Trainer:
+    def __init__(self, train_ds, test_ds, batchsize, pretrain, log_wandb=False, parallel=False, gpu_id=None, pretrain_init=False, resume_pt=None):
+        
+        self.n_fft = 400
+        self.hop = 100
+        self.train_ds = train_ds
+        self.test_ds = test_ds
+        
+        self.model = TSCNet(num_channel=64, 
+                            num_features=self.n_fft // 2 + 1, 
+                            gpu_id=gpu_id)
+        self.batchsize = batchsize
+        
+        self.log_wandb = log_wandb
+        self.gpu_id = gpu_id
+
+        self.discriminator = Discriminator(ndf=16)
+
+        if pretrain_init:
+            #Load checkpoint
+            print(f"Loading pretrained model saved at {args.pretrain}...")
+            cmgan_state_dict = torch.load(pretrain, map_location=torch.device('cpu'))
+            #Copy weights and freeze weights which are copied
+            keys, self.model = copy_weights(cmgan_state_dict, self.model)
+            self.model = freeze_layers(self.model, keys)
+            #Free mem
+            del cmgan_state_dict
+        elif pretrain is not None:
+            cmgan_state_dict = torch.load(pretrain, map_location=torch.device('cpu'))
+            #Get the keys which are supposed to be frozen
+            keys, _ = copy_weights(cmgan_state_dict, self.model, get_keys_only=True)
+            self.model = freeze_layers(self.model, keys)
+            #Free mem
+            del cmgan_state_dict
+
+        if gpu_id is not None:
+            self.model = self.model.to(gpu_id)
+            self.discriminator = self.discriminator.to(gpu_id)
+
+        #optimizers and schedulers
+        self.optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.model.parameters()), 
+                                           lr=args.init_lr)
+        self.optimizer_disc = torch.optim.AdamW(
+            self.discriminator.parameters(), lr=2 * args.init_lr
+        )
+        self.scheduler_G = torch.optim.lr_scheduler.StepLR(
+            self.optimizer, step_size=args.decay_epoch, gamma=0.5
+        )
+        self.scheduler_D = torch.optim.lr_scheduler.StepLR(
+            self.optimizer_disc, step_size=args.decay_epoch, gamma=0.5
+        )
+
+        self.start_epoch = 0
+        if resume_pt is not None:
+            if not resume_pt.endswith('.pt'):
+                raise ValueError("Incorrect path to the checkpoint..")
+            try:
+                name = resume_pt[:-3]
+                epoch = name.split('_')[-1]
+                self.start_epoch = int(epoch)
+            except Exception:
+                self.start_epoch = int(resume_pt[-4])
+            self.load_checkpoint(resume_pt)
+
+        if parallel:
+            self.model = DDP(self.model, device_ids=[gpu_id])
+            self.discriminator = DDP(self.discriminator, device_ids=[gpu_id])
+        
+        if log_wandb:
+            wandb.login()
+            wandb.init(project=args.exp)
+
+    def forward_generator_step(self, clean, noisy):
+
+        # Normalization
+        c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
+        noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)
+        noisy, clean = torch.transpose(noisy * c, 0, 1), torch.transpose(
+            clean * c, 0, 1
+        )
+
+        noisy_spec = torch.stft(
+            noisy,
+            self.n_fft,
+            self.hop,
+            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            onesided=True,
+        )
+        clean_spec = torch.stft(
+            clean,
+            self.n_fft,
+            self.hop,
+            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            onesided=True,
+        )
+        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
+        clean_spec = power_compress(clean_spec)
+        clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
+        clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
+
+        est_real, est_imag = self.model(noisy_spec)
+        est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
+        est_mag = torch.sqrt(est_real**2 + est_imag**2)
+        clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
+
+        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+        est_audio = torch.istft(
+            est_spec_uncompress,
+            self.n_fft,
+            self.hop,
+            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            onesided=True,
+        )
+
+        return {
+            "est_real": est_real,
+            "est_imag": est_imag,
+            "est_mag": est_mag,
+            "clean_real": clean_real,
+            "clean_imag": clean_imag,
+            "clean_mag": clean_mag,
+            "est_audio": est_audio, 
+        }
+    
+    def load_checkpoint(self, path):
+        try:
+            state_dict = torch.load(path, map_location=torch.device(self.gpu_id))
+            self.model.load_state_dict(state_dict['generator_state_dict'])
+            self.discriminator.load_state_dict(state_dict['discriminator_state_dict'])
+            self.optimizer.load_state_dict(state_dict['optimizer_G_state_dict'])
+            self.optimizer_disc.load_state_dict(state_dict['optimizer_D_state_dict'])
+            self.scheduler_G.load_state_dict(state_dict['scheduler_G_state_dict'])
+            self.scheduler_D.load_state_dict(state_dict['scheduler_D_state_dict'])
+            print(f"Loaded checkpoint saved at {path} starting at epoch {self.start_epoch}")
+            del state_dict
+            
+        except Exception as e:
+            state_dict = torch.load(path, map_location=torch.device(self.gpu_id))
+            
+            gen_state_dict = OrderedDict()
+            for name, params in state_dict['generator_state_dict'].items():
+                name = name[7:]
+                gen_state_dict[name] = params        
+            self.model.load_state_dict(gen_state_dict)
+            del gen_state_dict
+            
+            disc_state_dict = OrderedDict()
+            for name, params in state_dict['discriminator_state_dict'].items():
+                name = name[7:]
+                disc_state_dict[name] = params
+            self.discriminator.load_state_dict(disc_state_dict)
+            del disc_state_dict
+            
+            self.optimizer.load_state_dict(state_dict['optimizer_G_state_dict'])
+            self.optimizer_disc.load_state_dict(state_dict['optimizer_D_state_dict'])
+            self.scheduler_G.load_state_dict(state_dict['scheduler_G_state_dict'])
+            self.scheduler_D.load_state_dict(state_dict['scheduler_D_state_dict'])
+            
+            print(f"Loaded checkpoint saved at {path} starting at epoch {self.start_epoch}")
+            del state_dict
+    
+    def save_model(self, path_root, exp, epoch, pesq):
+        """
+        Save model at path_root
+        """
+        checkpoint_prefix = f"{exp}_PESQ_{pesq}_epoch_{epoch}.pt"
+        path = os.path.join(path_root, exp)
+        os.makedirs(path, exist_ok=True)
+        path = os.path.join(path, checkpoint_prefix)
+        if self.gpu_id == 0:
+            save_dict = {'generator_state_dict':self.model.module.state_dict(), 
+                        'discriminator_state_dict':self.discriminator.module.state_dict(),
+                        'optimizer_G_state_dict':self.optimizer.state_dict(),
+                        'optimizer_D_state_dict':self.optimizer_disc.state_dict(),
+                        'scheduler_G_state_dict':self.scheduler_G.state_dict(),
+                        'scheduler_D_state_dict':self.scheduler_D.state_dict(),
+                        'epoch':epoch,
+                        'pesq':pesq
+                        }
+            
+            torch.save(save_dict, path)
+            print(f"checkpoint:{checkpoint_prefix} saved at {path}")
+
+    def calculate_generator_loss(self, generator_outputs):
+
+        predict_fake_metric = self.discriminator(
+            generator_outputs["clean_mag"], generator_outputs["est_mag"]
+        )
+        predict_fake_metric = torch.argmax(predict_fake_metric, dim=-1)
+
+
+        gen_loss_GAN = F.mse_loss(
+            predict_fake_metric.flatten(), generator_outputs["one_labels"].float()
+        )
+
+        loss_mag = F.mse_loss(
+            generator_outputs["est_mag"], generator_outputs["clean_mag"]
+        ) + F.mse_loss(
+            torch.log(generator_outputs["est_mag"]), torch.log(generator_outputs["clean_mag"])
+        )
+
+        loss_ri = F.mse_loss(
+            generator_outputs["est_real"], generator_outputs["clean_real"]
+        ) + F.mse_loss(generator_outputs["est_imag"], generator_outputs["clean_imag"])
+
+        time_loss = torch.mean(
+            torch.abs(generator_outputs["est_audio"] - generator_outputs["clean"])
+        )
+
+        loss = (
+            args.loss_weights[0] * loss_ri
+            + args.loss_weights[1] * loss_mag
+            + args.loss_weights[2] * time_loss
+            + args.loss_weights[3] * gen_loss_GAN
+        )
+
+        return loss
+
+    def calculate_discriminator_loss(self, generator_outputs):
+
+        length = generator_outputs["est_audio"].size(-1)
+        est_audio_list = list(generator_outputs["est_audio"].detach().cpu().numpy())
+        clean_audio_list = list(generator_outputs["clean"].cpu().numpy()[:, :length])
+        pesq_mask, pesq_score = batch_pesq(clean_audio_list, est_audio_list)
+
+        if self.gpu_id is not None:
+            pesq_score = pesq_score.to(self.gpu_id)
+            pesq_mask = pesq_mask.to(self.gpu_id)
+      
+        # The calculation of PESQ can be None due to silent part
+        if pesq_score is not None:
+            predict_enhance_metric = self.discriminator(
+                generator_outputs["clean_mag"], generator_outputs["est_mag"].detach()
+            )
+            predict_max_metric = self.discriminator(
+                generator_outputs["clean_mag"], generator_outputs["clean_mag"]
+            )
+            discrim_loss_metric = F.mse_loss(
+                predict_max_metric.flatten(), generator_outputs["one_labels"]
+            ) + F.mse_loss(predict_enhance_metric.flatten() * pesq_mask, pesq_score * pesq_mask)
+        else:
+            discrim_loss_metric = None
+            pesq_score = torch.tensor([0.0])
+
+        return discrim_loss_metric, pesq_score.mean()
+
+    def train_step(self, batch):
+        # Trainer generator
+        clean = batch[0].to(self.gpu_id)
+        noisy = batch[1].to(self.gpu_id)
+        one_labels = torch.ones(clean.shape[0]).to(self.gpu_id)
+
+        #Run generator
+        generator_outputs = self.forward_generator_step(
+            clean,
+            noisy,
+        )
+        generator_outputs["one_labels"] = one_labels
+        generator_outputs["clean"] = clean
+
+        loss = self.calculate_generator_loss(generator_outputs)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Train Discriminator
+        discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
+
+        if discrim_loss_metric is not None:
+            self.optimizer_disc.zero_grad()
+            discrim_loss_metric.backward()
+            self.optimizer_disc.step()
+        else:
+            discrim_loss_metric = torch.tensor([0.0])
+
+        wandb.log({
+            'step_gen_loss':loss,
+            'step_disc_loss':discrim_loss_metric,
+            'step_train_pesq':original_pesq(pesq)
+        })
+
+        return loss.item(), discrim_loss_metric.item()
+
+    @torch.no_grad()
+    def test_step(self, batch):
+
+        clean = batch[0].to(self.gpu_id)
+        noisy = batch[1].to(self.gpu_id)
+        one_labels = torch.ones(clean.shape[0]).to(self.gpu_id)
+
+        generator_outputs = self.forward_generator_step(
+            clean,
+            noisy,
+        )
+        generator_outputs["one_labels"] = one_labels
+        generator_outputs["clean"] = clean
+
+        loss = self.calculate_generator_loss(generator_outputs)
+
+        discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
+        if discrim_loss_metric is None:
+            discrim_loss_metric = torch.tensor([0.0])
+        
+
+        return loss.item(), discrim_loss_metric.item(), pesq.item()
+
+    def test(self):
+        self.model.eval()
+        self.discriminator.eval()
+        gen_loss_total = 0.0
+        disc_loss_total = 0.0
+        val_pesq = 0.0
+        for idx, batch in enumerate(self.test_ds):
+            step = idx + 1
+            loss, disc_loss, pesq = self.test_step(batch)
+            gen_loss_total += loss
+            disc_loss_total += disc_loss
+            val_pesq += pesq
+        gen_loss_avg = gen_loss_total / step
+        disc_loss_avg = disc_loss_total / step
+        val_pesq = val_pesq / step
+
+        template = "GPU: {}, Generator loss: {}, Discriminator loss: {}"
+        logging.info(template.format(self.gpu_id, gen_loss_avg, disc_loss_avg))
+
+        return gen_loss_avg, disc_loss_avg, val_pesq
+
+    def train(self):
+        scheduler_G = torch.optim.lr_scheduler.StepLR(
+            self.optimizer, step_size=args.decay_epoch, gamma=0.5
+        )
+        scheduler_D = torch.optim.lr_scheduler.StepLR(
+            self.optimizer_disc, step_size=args.decay_epoch, gamma=0.5
+        )
+        for epoch in range(self.start_epoch+1, args.epochs):
+            self.model.train()
+            self.discriminator.train()
+            for idx, batch in enumerate(self.train_ds):
+                step = idx + 1
+                loss, disc_loss = self.train_step(batch)
+                template = "GPU: {}, Epoch {}, Step {}, loss: {}, disc_loss: {}"
+                if (step % args.log_interval) == 0:
+                    logging.info(
+                        template.format(self.gpu_id, epoch, step, loss, disc_loss)
+                    )
+                
+            gen_loss, disc_loss, val_pesq = self.test()
+            wandb.log({
+                'val_gen_loss':gen_loss,
+                'val_disc_loss':disc_loss,
+                'val_pesq':original_pesq(val_pesq),
+                'Epoch':epoch
+            })
+            
+            self.save_model(path_root=args.save_model_dir,
+                            exp=args.exp,
+                            epoch=epoch,
+                            pesq=original_pesq(val_pesq))
+            scheduler_G.step()
+            scheduler_D.step()
+
+
 def main(rank: int, world_size: int, args):
-    if args.parallel:
-        ddp_setup(rank, world_size)
-        if rank == 0:
-            print(args)
-            available_gpus = [
-                torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
-            ]
-            print(f"Available gpus:{available_gpus}")
-
-        train_ds, test_ds = load_data(args.root, 
-                                    1, 
-                                    1, 
-                                    args.cut_len,
-                                    gpu = True)
-    else:
-        train_ds, test_ds = load_data(args.root, 
-                                    1, 
-                                    1, 
-                                    args.cut_len,
-                                    gpu = False)
-    
-    pretrain=False
-    if args.ckpt is not None:
-        pretrain=True
-
-    trainer = DDPGTrainer(train_ds, test_ds, args, rank, pretrain=pretrain)
-    
-    trainer.train(args)
+    ddp_setup(rank, world_size)
+    if rank == 0:
+        print(args)
+        available_gpus = [
+            torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())
+        ]
+        print(available_gpus)
+    train_ds, test_ds = dataloader.load_data(
+        args.data_dir, args.batch_size, 1, args.cut_len, parallel=True
+    )
+    print(f"Train:{len(train_ds)}, Validation:{len(test_ds)}")
+    trainer = Trainer(train_ds=train_ds, 
+                      test_ds=test_ds, 
+                      batchsize=args.batch_size, 
+                      parallel=args.parallel, 
+                      gpu_id=rank, 
+                      pretrain=args.pretrain,
+                      pretrain_init=args.pretrain_init,
+                      resume_pt=args.ckpt,
+                      log_wandb=args.wandb)
+    trainer.train()
     destroy_process_group()
 
 
 if __name__ == "__main__":
-    ARGS = args().parse_args()
-
-    output = f"{ARGS.output}/{ARGS.exp}"
-    os.makedirs(output, exist_ok=True)
 
     world_size = torch.cuda.device_count()
-    print(f"World size:{world_size}")
-    if ARGS.parallel:
-        mp.spawn(main, args=(world_size, ARGS), nprocs=world_size)
-    else:
-        if ARGS.gpu:
-            main(0, world_size, ARGS)
-        else:
-            main(None, world_size, ARGS)
+    print(f"World_size:{world_size}")
+    mp.spawn(main, args=(world_size, args), nprocs=world_size)

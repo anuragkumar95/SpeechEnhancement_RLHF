@@ -66,6 +66,7 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
         
+        
         self.model = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
                             distribution=True,

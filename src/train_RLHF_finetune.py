@@ -6,12 +6,13 @@
 from model.actor import TSCNet
 from model.critic import QNet
 from model.cmgan import TSCNetExpert
+from RLHF import REINFORCE
 
 import os
 from data.dataset import load_data
 import torch.nn.functional as F
 import torch
-from utils import power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
+from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
 import logging
 from torchinfo import summary
 import argparse
@@ -75,35 +76,12 @@ class Trainer:
                             distribution=out_distribution, 
                             gpu_id=gpu_id)
         
-        self.target_actor = TSCNet(num_channel=64, 
-                                   num_features=self.n_fft // 2 + 1,
-                                   distribution=out_distribution,
-                                   gpu_id=gpu_id)
-        
-        self.expert = TSCNetExpert(num_channel=64, 
-                                   num_features=self.n_fft // 2 + 1,
-                                   gpu_id=gpu_id)
         
         cmgan_expert_checkpoint = torch.load(args.expert_pt, map_location=torch.device(gpu_id))
-        self.expert.load_state_dict(cmgan_expert_checkpoint)
-
-        if pretrain and args.ckpt is None:
-            #Load checkpoint
-            print(f"Loading checkpoint saved at {args.ckpt}...")
-            cmgan_state_dict = torch.load(args.ckpt, map_location=torch.device('cpu'))
-            #Copy weights and freeze weights which are copied
-            keys, self.actor = copy_weights(cmgan_state_dict, self.actor)
-            self.actor = freeze_layers(self.actor, keys)
-            keys, self.actor = copy_weights(cmgan_state_dict, self.target_actor)
-            self.target_actor = freeze_layers(self.target_actor, keys)
-            #Free mem
-            del cmgan_state_dict
-
-        self.critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)
-        self.target_critic = QNet(ndf=16, in_channel=2, gpu_id=gpu_id)          
+        self.expert.load_state_dict(cmgan_expert_checkpoint)       
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
-        self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
+        #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
@@ -111,14 +89,22 @@ class Trainer:
             self.target_actor = self.target_actor.to(gpu_id)
             self.target_critic = self.target_critic.to(gpu_id)
 
+            self.trainer = REINFORCE(gpu_id=gpu_id, 
+                                     optimizer=self.a_optimizer, 
+                                     alpha=args.init_lr, 
+                                     discount=1.0,
+                                     env_params={'n_fft' : 400,
+                                                 'hop' : 100,
+                                                 'args':args})
+
             if args.ckpt is not None:
                 state_dict = torch.load(args.ckpt, map_location=torch.device(gpu_id))
                 self.actor.load_state_dict(state_dict['actor_state_dict'])
-                self.critic.load_state_dict(state_dict['critic_state_dict'])
+                #self.critic.load_state_dict(state_dict['critic_state_dict'])
                 self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
-                self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
-                _, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
-                _, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
+                #self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
+                #_, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
+                #_, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
                 del state_dict
                 print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
 
@@ -127,6 +113,8 @@ class Trainer:
                 self.critic = DDP(self.critic, device_ids=[gpu_id])
                 self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
                 self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
+
+        
             
         self.gpu_id = gpu_id
         self.expert.eval()
@@ -134,89 +122,7 @@ class Trainer:
         self.target_critic.eval()
         wandb.init(project=args.exp)
 
-    def get_specs(self, clean, noisy):
-        """
-        Create spectrograms from input waveform.
-        ARGS:
-            clean : clean waveform (batch * cut_len)
-            noisy : noisy waveform (batch * cut_len)
-
-        Return
-            noisy_spec : (b * 2 * f * t) noisy spectrogram
-            clean_spec : (b * 2 * f * t) clean spectrogram
-            clean_real : (b * 1 * f * t) real part of clean spectrogram
-            clean_imag : (b * 1 * f * t) imag part of clean spectrogram
-            clean_mag  : (b * 1 * f * t) mag of clean spectrogram
-        """
-        # Normalization
-        c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
-        noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)
-        noisy, clean = torch.transpose(noisy * c, 0, 1), torch.transpose(
-            clean * c, 0, 1
-        )
-        
-        win = torch.hamming_window(self.n_fft)
-        if self.gpu_id is not None:
-            win = win.to(self.gpu_id)
-
-        noisy_spec = torch.stft(
-            noisy,
-            self.n_fft,
-            self.hop,
-            window=win,
-            onesided=True,
-        )
-        clean_spec = torch.stft(
-            clean,
-            self.n_fft,
-            self.hop,
-            window=win,
-            onesided=True,
-        )
-
-        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
-        clean_spec = power_compress(clean_spec)
-        clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
-        clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
-        clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
-        est_real = noisy_spec[:, 0, :, :].unsqueeze(1)
-        est_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
-        est_mag = torch.sqrt(est_real**2 + est_imag**2)
-
-        return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, clean, noisy
-    
-    def preprocess_batch(self, batch):
-        """
-        Converts a batch of audio waveforms and returns a batch of
-        spectrograms.
-        ARGS:
-            batch : (b * cut_len) waveforms.
-
-        Returns:
-            Dict of spectrograms
-        """
-        clean, noisy, _ = batch
-        if self.gpu_id is not None:
-            clean = clean.to(self.gpu_id)
-            noisy = noisy.to(self.gpu_id)
-
-        noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, cl_aud, noisy = self.get_specs(clean, noisy)
-        
-        ret_val = {'noisy':noisy_spec,
-                   'clean':clean_spec,
-                   'clean_real':clean_real,
-                   'clean_imag':clean_imag,
-                   'clean_mag':clean_mag,
-                   'cl_audio':cl_aud,
-                   'n_audio':noisy,
-                   'est_audio':noisy,
-                   'est_real':est_real.permute(0, 1, 3, 2),
-                   'est_imag':est_imag.permute(0, 1, 3, 2),
-                   'est_mag':est_mag.permute(0, 1, 3, 2)
-                  }
-        
-        return ret_val
-    
+    '''
     def train_one_step(self, epoch, step, env, args):
         """
         Runs one step
@@ -322,9 +228,8 @@ class Trainer:
             'noisy_pesq':noisy_pesq
         }
 
-
         return outputs
-
+    '''
     
     def run_validation(self, env):
         """
@@ -337,7 +242,7 @@ class Trainer:
         
         inp = env.state['noisy']
         #Forward pass through actor to get the action(mask)
-        action = self.actor(inp)
+        action, _ = self.actor(inp)
         #Apply action  to get the next state
         next_state = env.get_next_state(state=env.state, 
                                         action=action)
@@ -346,6 +251,7 @@ class Trainer:
                           next_state['est_audio'].detach().cpu().numpy())
         return (pesq*pesq_mask).mean()
     
+    '''
     def train_one_episode(self, epoch, args):
         """
         Wrapper function to run one epoch of DDPG.
@@ -409,7 +315,57 @@ class Trainer:
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
 
         return ep_reward, actor_epoch_loss, critic_epoch_loss, pesq
-    
+    '''
+    def train_one_epoch(self, epoch):
+        #Train
+        self.actor.train()
+        self.critic.train()
+        REWARDS = []
+        num_batches = len(self.train_ds)
+        for i, batch in enumerate(self.train_ds):   
+            
+            #Each minibatch is an episode
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            batch_loss, batch_reward = self.trainer.run_episode(self.train_ds, self.actor)
+
+            self.a_optimizer.zero_grad()
+            batch_loss.backward()
+            #torch.nn.utils.clip_grad_value_(self.critic.parameters(), 5.0)
+            self.a_optimizer.step()
+
+            wandb.log({
+                "episode_cumulative_reward":batch_reward,
+                "episode": (i+1)+(epoch*num_batches)
+            })
+            print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
+            REWARDS.append(batch_reward)
+
+            
+        #Run validation
+        self.actor.eval()
+        self.critic.eval()
+        pesq = 0
+        v_step = 0
+        for i, batch in enumerate(self.test_ds):
+            #Preprocess batch
+            batch = self.preprocess_batch(batch)
+            self.trainer.env.set_batch(batch)
+            #Run validation episode
+            val_pesq_score = self.run_validation(self.trainer.env)
+            pesq += val_pesq_score
+            v_step += 1
+        pesq /= v_step
+
+        wandb.log({ 
+            "epoch":epoch,
+            "val_step":v_step,
+            "val_pesq":original_pesq(pesq)
+        })   
+        
+        print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
+
+        return REWARDS, original_pesq(pesq)
+
     def train(self, args):
         """
         Run epochs, collect validation results and save checkpoints. 

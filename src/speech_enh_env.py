@@ -38,16 +38,16 @@ class GymSpeechEnhancementEnv(Env):
         pass
 """
 class SpeechEnhancementAgent:
-    def __init__(self, window, buffer_size, n_fft, hop, args, gpu_id=None):
+    def __init__(self, n_fft, hop, args, buffer_size=None, gpu_id=None):
         """
         State : Dict{noisy, clean, est_real, est_imag, cl_audio, est_audio}
         """
         self.gpu_id = gpu_id
-        self.window = window
         self.n_fft = n_fft
         self.hop = hop
         self.args = args
-        self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
+        if buffer_size is not None:
+            self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
         
 
     def set_batch(self, batch):
@@ -55,45 +55,6 @@ class SpeechEnhancementAgent:
         self.clean = batch['clean']
         self.steps = batch['noisy'].shape[2]
         self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=self.gpu_id)
-
-    def get_state_input(self, state, t):
-        """
-        Get the batched windowed input for time index t
-        ARGS:
-            t : time index
-
-        Returns
-            Batch of windowed input centered around t
-            of shape (b, 2, f, w) 
-        """
-        state = state['noisy']
-        b, _, tm, f = state.shape
-        left = t - self.window
-        right = t + self.window + 1
-        windows = []
-
-        if isinstance(t, int):
-            t = [t]
-            left = [left]
-            right = [right]
-
-        for i in range(len(t)):
-            if t[i] < self.window: 
-                pad = torch.zeros(1, 2, -left[i], f)
-                if self.gpu_id is not None:
-                    pad = pad.to(self.gpu_id)
-                win = torch.cat([pad, state[i, :, :right[i], :].unsqueeze(0)], dim=2)
-            elif right[i] > tm - 1:
-                pad = torch.zeros(1, 2, right[i] - tm, f)
-                if self.gpu_id is not None:
-                    pad = pad.to(self.gpu_id)
-                win = torch.cat([state[i, :, left[i]:, :].unsqueeze(0), pad], dim=2) 
-            else:
-                win = state[i, :, left[i]:right[i], :].unsqueeze(0)
-            
-            windows.append(win)
-        windows = torch.stack(windows).squeeze(1)
-        return windows
     
        
     def get_next_state(self, state, action):
@@ -165,7 +126,7 @@ class SpeechEnhancementAgent:
 
             if self.gpu_id is not None:
                 pesq_reward = pesq_reward.to(self.gpu_id)
-            return pesq_reward.mean()
+            return pesq_reward
         
         if self.args.reward == 1:
             z_mask, z = batch_pesq(state['cl_audio'].detach().cpu().numpy(), 

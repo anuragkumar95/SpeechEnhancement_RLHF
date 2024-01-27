@@ -114,3 +114,92 @@ def freeze_layers(model, layers):
 
 def original_pesq(pesq):
     return (pesq * 3.5) + 1
+
+
+def get_specs(clean, noisy, gpu_id, n_fft, hop):
+    """
+    Create spectrograms from input waveform.
+    ARGS:
+        clean : clean waveform (batch * cut_len)
+        noisy : noisy waveform (batch * cut_len)
+
+    Return
+        noisy_spec : (b * 2 * f * t) noisy spectrogram
+        clean_spec : (b * 2 * f * t) clean spectrogram
+        clean_real : (b * 1 * f * t) real part of clean spectrogram
+        clean_imag : (b * 1 * f * t) imag part of clean spectrogram
+        clean_mag  : (b * 1 * f * t) mag of clean spectrogram
+    """
+    # Normalization
+    c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
+    noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)
+    noisy, clean = torch.transpose(noisy * c, 0, 1), torch.transpose(
+        clean * c, 0, 1
+    )
+    
+    win = torch.hamming_window(n_fft)
+    if gpu_id is not None:
+        win = win.to(gpu_id)
+
+    noisy_spec = torch.stft(
+        noisy,
+        n_fft,
+        hop,
+        window=win,
+        onesided=True,
+    )
+    clean_spec = torch.stft(
+        clean,
+        n_fft,
+        hop,
+        window=win,
+        onesided=True,
+    )
+
+    noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
+    clean_spec = power_compress(clean_spec)
+    clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
+    clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
+    clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
+    est_real = noisy_spec[:, 0, :, :].unsqueeze(1)
+    est_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
+    est_mag = torch.sqrt(est_real**2 + est_imag**2)
+
+    return noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, clean, noisy
+
+def preprocess_batch(batch, gpu_id=None):
+    """
+    Converts a batch of audio waveforms and returns a batch of
+    spectrograms.
+    ARGS:
+        batch : (b * cut_len) waveforms.
+
+    Returns:
+        Dict of spectrograms
+    """
+    clean, noisy, _ = batch
+
+    #if self.gpu_id is not None:
+    #    clean = clean.to(self.gpu_id)
+    #    noisy = noisy.to(self.gpu_id)
+
+    noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, cl_aud, noisy = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
+    
+    ret_val = {'noisy':noisy_spec,
+                'clean':clean_spec,
+                'clean_real':clean_real,
+                'clean_imag':clean_imag,
+                'clean_mag':clean_mag,
+                'cl_audio':cl_aud,
+                'n_audio':noisy,
+                'est_audio':noisy,
+                'est_real':est_real.permute(0, 1, 3, 2),
+                'est_imag':est_imag.permute(0, 1, 3, 2),
+                'est_mag':est_mag.permute(0, 1, 3, 2)
+                }
+    
+    if gpu_id is not None:
+        for k,v in ret_val.items():
+            ret_val[k] = v.to(gpu_id)
+    
+    return ret_val

@@ -309,29 +309,30 @@ class Trainer:
         loss = self.calculate_generator_loss(generator_outputs)
         print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}')
         if torch.isnan(loss).any():
-            return 0, 0
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        # Train Discriminator
-        discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
-
-        if discrim_loss_metric is not None:
-            self.optimizer_disc.zero_grad()
-            discrim_loss_metric.backward()
-            self.optimizer_disc.step()
+            return None, None
         else:
-            discrim_loss_metric = torch.tensor([0.0])
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
-        wandb.log({
-            'step_gen_loss':loss,
-            'step_disc_loss':discrim_loss_metric,
-            'step_train_pesq':original_pesq(pesq)
-        })
-        print(f"G_LOSS:{loss} | D_LOSS:{discrim_loss_metric}")
+            # Train Discriminator
+            discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
 
-        return loss.item(), discrim_loss_metric.item()
+            if discrim_loss_metric is not None:
+                self.optimizer_disc.zero_grad()
+                discrim_loss_metric.backward()
+                self.optimizer_disc.step()
+            else:
+                discrim_loss_metric = torch.tensor([0.0])
+
+            wandb.log({
+                'step_gen_loss':loss,
+                'step_disc_loss':discrim_loss_metric,
+                'step_train_pesq':original_pesq(pesq)
+            })
+            print(f"G_LOSS:{loss} | D_LOSS:{discrim_loss_metric}")
+
+            return loss.item(), discrim_loss_metric.item()
 
     @torch.no_grad()
     def test_step(self, batch):

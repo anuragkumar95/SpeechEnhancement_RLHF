@@ -143,8 +143,7 @@ class MaskDecoder(nn.Module):
     def sample(self, mu, logvar):
         sigma = torch.exp(0.5 * logvar)
         N = Normal(mu, sigma)
-        #x = mu + sigma * self.N.sample(mu.shape).to(self.gpu_id)
-        x = N.sample()
+        x = N.rsample()
         x_logprob = N.log_prob(x)
         return x, x_logprob
 
@@ -183,7 +182,7 @@ class ComplexDecoder(nn.Module):
     def sample(self, mu, logvar):
         sigma = torch.exp(0.5 * logvar)
         N = Normal(mu, sigma)
-        x = N.sample()
+        x = N.rsample()
         x_logprob = N.log_prob(x)
         return x, x_logprob
 
@@ -198,6 +197,7 @@ class ComplexDecoder(nn.Module):
             x_var = self.conv_var(x)
             print(f"Comp Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
             x, x_logprob = self.sample(x_mu, x_var)
+            print(f"Comp Decoder: x={x.sum()}, {x.requires_grad}")
             return x, x_logprob
         else:
             x = self.conv(x)

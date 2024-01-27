@@ -200,7 +200,7 @@ class ComplexDecoder(nn.Module):
             x, x_logprob = self.sample(x_mu, x_var)
             return x, x_logprob
         x = self.conv(x)
-        return x
+        return x, x
         
 
 
@@ -217,7 +217,7 @@ class TSCNet(nn.Module):
         self.mask_decoder = MaskDecoder(
             num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution)
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=False)
 
     def get_action(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)

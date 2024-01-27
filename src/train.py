@@ -307,6 +307,8 @@ class Trainer:
         generator_outputs["clean"] = clean
 
         loss = self.calculate_generator_loss(generator_outputs)
+        if torch.isnan(loss).any():
+            return 0, 0
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

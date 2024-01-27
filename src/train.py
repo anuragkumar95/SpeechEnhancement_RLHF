@@ -307,7 +307,7 @@ class Trainer:
         generator_outputs["clean"] = clean
 
         loss = self.calculate_generator_loss(generator_outputs)
-        print(f'Check Loss:{loss.sum()}')
+        print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}')
         if torch.isnan(loss).any():
             return 0, 0
         self.optimizer.zero_grad()

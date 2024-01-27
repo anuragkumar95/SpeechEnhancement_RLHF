@@ -199,8 +199,9 @@ class ComplexDecoder(nn.Module):
             print(f"Comp Decoder: mu={x_mu.sum()}, var={x_var.sum()}")
             x, x_logprob = self.sample(x_mu, x_var)
             return x, x_logprob
-        x = self.conv(x)
-        return x, x
+        else:
+            x = self.conv(x)
+            return x, x
         
 
 

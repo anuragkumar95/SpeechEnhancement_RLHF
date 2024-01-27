@@ -297,7 +297,7 @@ class Trainer:
         clean = batch[0].to(self.gpu_id)
         noisy = batch[1].to(self.gpu_id)
         one_labels = torch.ones(clean.shape[0]).to(self.gpu_id)
-        print(f"train_step: clean={clean.sum()}, noisy={noisy.sum()}")
+        #print(f"train_step: clean={clean.sum()}, noisy={noisy.sum()}")
         #Run generator
         generator_outputs = self.forward_generator_step(
             clean,
@@ -307,7 +307,7 @@ class Trainer:
         generator_outputs["clean"] = clean
 
         loss = self.calculate_generator_loss(generator_outputs)
-        print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
+        #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
         else:

@@ -25,15 +25,13 @@ from torch.distributed import init_process_group, destroy_process_group
 
 
 class REINFORCE:
-    def __init__(self, gpu_id, optimizer, alpha=0.001, discount=1.0, **env_params):
+    def __init__(self, gpu_id, discount=1.0, **env_params):
         self.env = SpeechEnhancementAgent(n_fft=env_params.get("n_fft"),
                                           hop=env_params.get("hop"),
                                           gpu_id=gpu_id,
                                           args=env_params.get("args"))
         self.discount = discount
         self.gpu_id = gpu_id
-        self.alpha = alpha
-        self.optim = optimizer
         
 
     def run_episode(self, batch, model):

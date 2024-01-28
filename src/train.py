@@ -108,8 +108,8 @@ class Trainer:
             self.load_checkpoint(resume_pt)
 
         if parallel:
-            self.model = DDP(self.model, device_ids=[gpu_id], find_unused_parameters=True)
-            self.discriminator = DDP(self.discriminator, device_ids=[gpu_id], find_unused_parameters=True)
+            self.model = DDP(self.model, device_ids=[gpu_id])
+            self.discriminator = DDP(self.discriminator, device_ids=[gpu_id])
         
         if log_wandb:
             wandb.login()

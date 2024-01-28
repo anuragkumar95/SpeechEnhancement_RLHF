@@ -135,8 +135,6 @@ class MaskDecoder(nn.Module):
         else:
             self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
-        self.relu = nn.ReLU()
-        #self.N = torch.distributions.Normal(0, 1)
         self.gpu_id = gpu_id
         self.dist = distribution
 
@@ -156,6 +154,7 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob = self.sample(x_mu, x_var)
+            x = self.prelu_out(x)
             return x.permute(0, 2, 1).unsqueeze(1), x_logprob
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)

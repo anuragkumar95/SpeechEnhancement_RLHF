@@ -17,7 +17,7 @@ import wandb
 import psutil
 import numpy as np
 import traceback
-import SpeechEnhancementAgent from speech_enh_env
+from SpeechEnhancementAgent import speech_enh_env
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP

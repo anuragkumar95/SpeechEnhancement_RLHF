@@ -33,6 +33,7 @@ parser.add_argument("--pretrain_init", action='store_true', required=False,
 parser.add_argument("--wandb", action='store_true', required=False, 
                     help="set this flag to log using wandb.")
 parser.add_argument("--log_interval", type=int, default=500)
+parser.add_argument("--accum_grad", type=int, default=4)
 parser.add_argument("--decay_epoch", type=int, default=30, help="epoch from which to start lr decay")
 parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
 parser.add_argument("--cut_len", type=int, default=16000*2, help="cut length, default is 2 seconds in denoise "
@@ -59,12 +60,13 @@ def ddp_setup(rank, world_size):
 
 
 class Trainer:
-    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, resume_pt=None):
+    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, resume_pt=None):
         
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
+        self.ACCUM_GRAD = accum_grad
         
         
         self.model = TSCNet(num_channel=64, 
@@ -292,7 +294,7 @@ class Trainer:
 
         return discrim_loss_metric, pesq_score.mean()
 
-    def train_step(self, batch):
+    def train_step(self, step, batch):
         # Trainer generator
         clean = batch[0].to(self.gpu_id)
         noisy = batch[1].to(self.gpu_id)
@@ -310,29 +312,32 @@ class Trainer:
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
-        else:
-            self.optimizer.zero_grad()
-            loss.backward()
+     
+        loss = loss / self.ACCUM_GRAD
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        if step % self.ACCUM_GRAD == 0 or step == len(self.train_ds):
             self.optimizer.step()
 
-            # Train Discriminator
-            discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
+        # Train Discriminator
+        discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
 
-            if discrim_loss_metric is not None:
-                self.optimizer_disc.zero_grad()
-                discrim_loss_metric.backward()
-                self.optimizer_disc.step()
-            else:
-                discrim_loss_metric = torch.tensor([0.0])
+        if discrim_loss_metric is not None:
+            self.optimizer_disc.zero_grad()
+            discrim_loss_metric.backward()
+            self.optimizer_disc.step()
+        else:
+            discrim_loss_metric = torch.tensor([0.0])
 
-            wandb.log({
-                'step_gen_loss':loss,
-                'step_disc_loss':discrim_loss_metric,
-                'step_train_pesq':original_pesq(pesq)
-            })
-            print(f"G_LOSS:{loss} | D_LOSS:{discrim_loss_metric}")
+        wandb.log({
+            'step_gen_loss':loss,
+            'step_disc_loss':discrim_loss_metric,
+            'step_train_pesq':original_pesq(pesq)
+        })
+        print(f"G_LOSS:{loss} | D_LOSS:{discrim_loss_metric}")
 
-            return loss.item(), discrim_loss_metric.item()
+        return loss.item(), discrim_loss_metric.item()
 
     @torch.no_grad()
     def test_step(self, batch):
@@ -435,7 +440,8 @@ def main(rank: int, world_size: int, args):
                       test_ds=test_ds, 
                       batchsize=args.batch_size, 
                       parallel=args.parallel, 
-                      gpu_id=rank, 
+                      gpu_id=rank,
+                      accum_grad=args.accum_grad, 
                       resume_pt=args.ckpt,
                       log_wandb=args.wandb)
     trainer.train()

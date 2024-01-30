@@ -398,7 +398,7 @@ class Trainer:
                 if torch.isnan(clean).any() or torch.isnan(noisy).any():
                     continue
                 step = idx + 1
-                loss, disc_loss = self.train_step(batch)
+                loss, disc_loss = self.train_step(step, batch)
                 template = "GPU: {}, Epoch {}, Step {}, loss: {}, disc_loss: {}"
                 if (step % args.log_interval) == 0:
                     logging.info(

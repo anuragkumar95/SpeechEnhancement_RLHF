@@ -179,9 +179,9 @@ def preprocess_batch(batch, gpu_id=None):
     """
     clean, noisy, _ = batch
 
-    #if self.gpu_id is not None:
-    #    clean = clean.to(self.gpu_id)
-    #    noisy = noisy.to(self.gpu_id)
+    if gpu_id is not None:
+        clean = clean.to(gpu_id)
+        noisy = noisy.to(gpu_id)
 
     noisy_spec, clean_spec, clean_real, clean_imag, clean_mag, est_real, est_imag, est_mag, cl_aud, noisy = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
     

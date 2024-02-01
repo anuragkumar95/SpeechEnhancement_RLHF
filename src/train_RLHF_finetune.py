@@ -183,6 +183,11 @@ class Trainer:
         v_step = 0
         for i, batch in enumerate(self.test_ds):
             #Preprocess batch
+            clean, noisy, lens = batch
+            if self.gpu_id is not None:
+                clean = clean.to(self.gpu_id)
+                noisy = noisy.to(self.gpu_id)
+                batch = (clean, noisy, lens)
             batch = self.preprocess_batch(batch)
             self.trainer.env.set_batch(batch)
             #Run validation episode

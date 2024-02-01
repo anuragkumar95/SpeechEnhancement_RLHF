@@ -80,7 +80,7 @@ class Trainer:
                             gpu_id=gpu_id)
         
         
-        cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device(gpu_id))
+        cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint     

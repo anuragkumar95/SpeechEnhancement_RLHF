@@ -208,7 +208,7 @@ class Trainer:
         best_pesq = -1
         print("Start training...")
         for epoch in range(args.epochs):
-            ep_reward, epoch_actor_loss, epoch_critic_loss, epoch_pesq = self.train_one_epoch(epoch+1, args)
+            ep_reward, epoch_actor_loss, epoch_critic_loss, epoch_pesq = self.train_one_epoch(epoch+1)
             #TODO:Log these in wandb
             wandb.log({"Epoch":epoch+1,
                        "Actor_loss":epoch_actor_loss,

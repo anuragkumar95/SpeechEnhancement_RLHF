@@ -33,6 +33,21 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         
+    def get_expected_reward(self, rewards):
+        """
+        Expects rewards to be a numpy array.
+        """
+        G_t = np.zeros(rewards.shape)
+        episode_len = rewards.shape[1]
+        for i in range(episode_len):
+            #Base case: G(T) = r(T)
+            #Recursive: G(t) = r(t) + G(t+1)*DISCOUNT
+            r_t = rewards[:, episode_len - i - 1]
+            if i == 0:
+                G_t[:, episode_len - i - 1] = r_t
+            else:
+                G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
+        return np.array(G_t)
 
     def run_episode(self, batch, model):
         """
@@ -50,8 +65,14 @@ class REINFORCE:
         
         #Get the reward
         reward = self.env.get_reward(self.env.state, next_state)
+        reward = reward.reshape(-1, 1)
+        g_t = self.get_expected_reward(reward)
+
+        #whitening rewards
+        G = torch.tensor(g_t).to(self.gpu_id)
+        G = (G - G.mean())/G.std()
         
-        loss = (-reward * torch.sum(log_probs, dim=-1)).sum()
+        loss = (-G * torch.sum(log_probs, dim=-1)).sum()
         return loss, reward
     
 

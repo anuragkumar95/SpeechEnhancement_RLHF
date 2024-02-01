@@ -371,6 +371,8 @@ class Trainer:
         for idx, batch in enumerate(self.test_ds):
             step = idx + 1
             loss, disc_loss, pesq = self.test_step(batch)
+            if torch.isnan(loss).any() or torch.isinf(loss).any():
+                continue
             gen_loss_total += loss
             disc_loss_total += disc_loss
             val_pesq += pesq
@@ -396,6 +398,8 @@ class Trainer:
             for idx, batch in enumerate(self.train_ds):
                 clean, noisy, _ = batch
                 if torch.isnan(clean).any() or torch.isnan(noisy).any():
+                    continue
+                if torch.isinf(clean).any() or torch.isinf(noisy).any():
                     continue
                 step = idx + 1
                 loss, disc_loss = self.train_step(step, batch)

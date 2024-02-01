@@ -81,7 +81,8 @@ class Trainer:
         
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device(gpu_id))
-        self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])       
+        self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+        print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")      
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)

@@ -40,6 +40,8 @@ def args():
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
+    parser.add_argument("--accum_grad", type=int, required=False, default=1,
+                        help="Gradient accumulation steps.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
@@ -70,6 +72,7 @@ class Trainer:
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
+        self.ACCUM_GRAD = args.accum_grad
 
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1,
@@ -155,10 +158,14 @@ class Trainer:
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
 
+            batch_loss = batch_loss / self.ACCUM_GRAD
+
             self.a_optimizer.zero_grad()
             batch_loss.backward()
-            #torch.nn.utils.clip_grad_value_(self.critic.parameters(), 5.0)
-            self.a_optimizer.step()
+
+            if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
+                #torch.nn.utils.clip_grad_value_(self.critic.parameters(), 5.0)
+                self.a_optimizer.step()
 
             wandb.log({
                 "episode_cumulative_reward":batch_reward,

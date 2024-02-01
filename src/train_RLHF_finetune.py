@@ -5,7 +5,7 @@
 
 from model.actor import TSCNet
 from model.critic import QNet
-from model.cmgan import TSCNetExpert
+#from model.cmgan import TSCNet
 from RLHF import REINFORCE
 
 import os
@@ -34,7 +34,7 @@ def args():
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
-    parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
+    parser.add_argument("-pt", "--ckpt", type=str, required=True, default=None,
                         help="Path to saved checkpoint to fine-tune.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
@@ -80,17 +80,17 @@ class Trainer:
                             gpu_id=gpu_id)
         
         
-        cmgan_expert_checkpoint = torch.load(args.expert_pt, map_location=torch.device(gpu_id))
-        self.expert.load_state_dict(cmgan_expert_checkpoint)       
+        cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device(gpu_id))
+        self.actor.load_state_dict(cmgan_expert_checkpoint)       
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
-            self.critic = self.critic.to(gpu_id)
-            self.target_actor = self.target_actor.to(gpu_id)
-            self.target_critic = self.target_critic.to(gpu_id)
+            #self.critic = self.critic.to(gpu_id)
+            #self.target_actor = self.target_actor.to(gpu_id)
+            #self.target_critic = self.target_critic.to(gpu_id)
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
                                      optimizer=self.a_optimizer, 
@@ -99,7 +99,7 @@ class Trainer:
                                      env_params={'n_fft' : 400,
                                                  'hop' : 100,
                                                  'args':args})
-
+            """
             if args.ckpt is not None:
                 state_dict = torch.load(args.ckpt, map_location=torch.device(gpu_id))
                 self.actor.load_state_dict(state_dict['actor_state_dict'])
@@ -110,7 +110,7 @@ class Trainer:
                 #_, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
                 del state_dict
                 print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
-
+            """
             if args.parallel:
                 self.actor = DDP(self.actor, device_ids=[gpu_id])
                 self.critic = DDP(self.critic, device_ids=[gpu_id])
@@ -120,9 +120,9 @@ class Trainer:
         
             
         self.gpu_id = gpu_id
-        self.expert.eval()
-        self.target_actor.eval()
-        self.target_critic.eval()
+        #self.expert.eval()
+        #self.target_actor.eval()
+        #self.target_critic.eval()
         wandb.init(project=args.exp)
     
     def run_validation(self, env):
@@ -149,7 +149,7 @@ class Trainer:
     def train_one_epoch(self, epoch):
         #Run training
         self.actor.train()
-        self.critic.train()
+        #self.critic.train()
         REWARDS = []
         num_batches = len(self.train_ds)
         for i, batch in enumerate(self.train_ds):   
@@ -177,7 +177,7 @@ class Trainer:
             
         #Run validation
         self.actor.eval()
-        self.critic.eval()
+        #self.critic.eval()
         pesq = 0
         v_step = 0
         for i, batch in enumerate(self.test_ds):
@@ -222,9 +222,9 @@ class Trainer:
                     checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
                     path = os.path.join(args.output, args.exp, checkpoint_prefix)
                     save_dict = {'actor_state_dict':self.actor.module.state_dict(), 
-                                'critic_state_dict':self.critic.module.state_dict(),
-                                'actor_optim_state_dict':self.a_optimizer.state_dict(),
-                                'critic_optim_state_dict':self.c_optimizer.state_dict(),
+                                #'critic_state_dict':self.critic.module.state_dict(),
+                                #'actor_optim_state_dict':self.a_optimizer.state_dict(),
+                                #'critic_optim_state_dict':self.c_optimizer.state_dict(),
                                 #'scheduler_state_dict':scheduler.state_dict(),
                                 #'lr':scheduler.get_last_lr()
                                 }

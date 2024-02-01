@@ -402,7 +402,11 @@ class Trainer:
                 if torch.isinf(clean).any() or torch.isinf(noisy).any():
                     continue
                 step = idx + 1
-                loss, disc_loss = self.train_step(step, batch)
+                try:
+                    loss, disc_loss = self.train_step(step, batch)
+                except Exception as e:
+                    print(e)
+                    continue
                 template = "GPU: {}, Epoch {}, Step {}, loss: {}, disc_loss: {}"
                 if (step % args.log_interval) == 0:
                     logging.info(

@@ -175,7 +175,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop):
     #    onesided=True,
     #)
 
-    return clean_spec, noisy_spec
+    return clean, clean_spec, noisy_spec
 
 def preprocess_batch(batch, gpu_id=None):
     """
@@ -193,10 +193,10 @@ def preprocess_batch(batch, gpu_id=None):
         clean = clean.to(gpu_id)
         noisy = noisy.to(gpu_id)
 
-    noisy_spec, clean_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
+    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
     
     #if gpu_id is not None:
     #    for k,v in ret_val.items():
     #        ret_val[k] = v.to(gpu_id)
     
-    return (clean_spec, noisy_spec)
+    return (clean, clean_spec, noisy_spec)

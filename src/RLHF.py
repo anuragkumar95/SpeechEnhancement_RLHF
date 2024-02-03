@@ -55,7 +55,7 @@ class REINFORCE:
         """
         #Preprocess batch
         #self.env.set_batch(batch)
-        clean, noisy = batch
+        cl_aud, clean, noisy = batch
         #Forward pass through expert to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
         print(f"Inp:{noisy.shape}")
@@ -63,9 +63,10 @@ class REINFORCE:
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
+        next_state['cl_audio'] = cl_aud
         
         #Get the reward
-        reward = self.env.get_reward(self.env.state, next_state)
+        reward = self.env.get_reward(next_state, next_state)
         reward = reward.reshape(-1, 1)
         g_t = self.get_expected_reward(reward)
 

@@ -57,6 +57,7 @@ class REINFORCE:
         #self.env.set_batch(batch)
 
         #Forward pass through expert to get the action(mask)
+        print(f"Inp:{batch['noisy'].shape}")
         action, log_probs = model.get_action(batch['noisy'])
 
         #Apply mask to get the next state

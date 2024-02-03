@@ -37,7 +37,7 @@ class REINFORCE:
         """
         Expects rewards to be a numpy array.
         """
-        G_t = np.zeros(rewards.shape)
+        G_t = torch.zeros(rewards.shape).to(self.gpu_id)
         episode_len = rewards.shape[1]
         for i in range(episode_len):
             #Base case: G(T) = r(T)
@@ -47,7 +47,7 @@ class REINFORCE:
                 G_t[:, episode_len - i - 1] = r_t
             else:
                 G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
-        return np.array(G_t)
+        return G_t
 
     def run_episode(self, batch, model):
         """

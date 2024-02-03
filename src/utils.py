@@ -187,19 +187,19 @@ def preprocess_batch(batch, gpu_id=None):
     
     ret_val = {'noisy':noisy_spec,
                 'clean':clean_spec,
-                'clean_real':clean_real,
-                'clean_imag':clean_imag,
-                'clean_mag':clean_mag,
+                #'clean_real':clean_real,
+                #'clean_imag':clean_imag,
+                #'clean_mag':clean_mag,
                 'cl_audio':cl_aud,
-                'n_audio':noisy,
+                #'n_audio':noisy,
                 'est_audio':noisy,
-                'est_real':est_real.permute(0, 1, 3, 2),
-                'est_imag':est_imag.permute(0, 1, 3, 2),
-                'est_mag':est_mag.permute(0, 1, 3, 2)
+                #'est_real':est_real.permute(0, 1, 3, 2),
+                #'est_imag':est_imag.permute(0, 1, 3, 2),
+                #'est_mag':est_mag.permute(0, 1, 3, 2)
                 }
     
-    if gpu_id is not None:
-        for k,v in ret_val.items():
-            ret_val[k] = v.to(gpu_id)
+    #if gpu_id is not None:
+    #    for k,v in ret_val.items():
+    #        ret_val[k] = v.to(gpu_id)
     
     return ret_val

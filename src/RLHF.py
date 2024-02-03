@@ -68,6 +68,7 @@ class REINFORCE:
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
         reward = reward.reshape(-1, 1)
+        print(f"Reward:{reward}")
         g_t = self.get_expected_reward(reward)
 
         #whitening rewards

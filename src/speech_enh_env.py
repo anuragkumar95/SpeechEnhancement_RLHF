@@ -100,8 +100,8 @@ class SpeechEnhancementAgent:
 
         est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
         
-        next_state = {k:v.detach() for k, v in state.items()}
-
+        #next_state = {k:v.detach() for k, v in state.items()}
+        next_state = {}
         next_state['noisy'] = est_spec
         next_state['est_mag'] = est_mag.permute(0, 1, 3, 2)
         next_state['est_real'] = est_real.permute(0, 1, 3, 2)

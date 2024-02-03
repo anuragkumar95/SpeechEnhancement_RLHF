@@ -266,8 +266,12 @@ def main(rank: int, world_size: int, args):
                                     args.cut_len,
                                     gpu = True)
     else:
+        if args.gpu:
+            gpu = True
+        else:
+            gpu = False
         train_ds, test_ds = load_data(args.root, 
-                                    16, 
+                                    args.batchsize, 
                                     1, 
                                     args.cut_len,
                                     gpu = False)

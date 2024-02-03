@@ -97,8 +97,6 @@ class Trainer:
             #self.target_critic = self.target_critic.to(gpu_id)
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
-                                     optimizer=self.a_optimizer, 
-                                     alpha=args.init_lr, 
                                      discount=1.0,
                                      env_params={'n_fft':400,
                                                  'hop':100,

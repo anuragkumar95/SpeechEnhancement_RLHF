@@ -67,17 +67,20 @@ class REINFORCE:
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
         G = reward.reshape(-1, 1)
-        
-        #whitening rewards
-        G = (G - G.mean())/G.std()
 
         m_lprob, c_lprob = log_probs
         c_lprob = c_lprob.permute(0, 1, 3, 2)
 
+        #whitening
+        G = (G - G.mean())/G.std()
+        m_lprob = (m_lprob - m_lprob.mean())/m_lprob.std()
+        c_lprob = (c_lprob - c_lprob.mean())/c_lprob.std()
+        
         print(m_lprob)
         print(torch.mean(m_lprob, dim=[1, 2]))
-        
-        log_prob = torch.mean(m_lprob, dim=[1, 2]) + torch.mean(c_lprob[:, 0, :, :], dim=[1, 2]) + torch.mean(c_lprob[:, 1, :, :], dim=[1, 2])
+
+        log_prob = torch.mean(m_lprob, dim=[1, 2]) + torch.mean(c_lprob[:, 0, :, :], dim=[1, 2]) + torch.mean(c_lprob[:, 1, :, :])
+        #whitening rewards
         
         loss = (-G * log_prob).mean()
         print(f"Loss:{loss} | G :{-G} | log_prob:{log_prob}")

@@ -85,7 +85,6 @@ class Trainer:
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
 
-        print(f"GPU:{[i/(1024*1024*1024) for i in torch.cuda.mem_get_info()]}")    
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
         #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
@@ -157,8 +156,7 @@ class Trainer:
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-            print(f"After batch GPU:{[i/(1024*1024*1024) for i in torch.cuda.mem_get_info()]}")    
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)   
             batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
 
             batch_loss = batch_loss / self.ACCUM_GRAD

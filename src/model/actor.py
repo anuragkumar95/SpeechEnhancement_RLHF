@@ -217,7 +217,6 @@ class TSCNet(nn.Module):
         x_in = torch.cat([mag, x], dim=1)
 
         out_1 = self.dense_encoder(x_in)
-        print(f"Out1 GPU:{[i/(1024*1024*1024) for i in torch.cuda.mem_get_info()]}")   
         out_2 = self.TSCB_1(out_1)
         #out_3 = self.TSCB_2(out_2)
         #out_4 = self.TSCB_3(out_3)

@@ -67,10 +67,9 @@ class REINFORCE:
         
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
-        reward = reward.reshape(-1, 1)
-        print(f"Reward:{reward}")
-        G = self.get_expected_reward(reward)
-        print(f"G_t:{G}")
+        G = reward.reshape(-1, 1)
+        #G = self.get_expected_reward(reward)
+        print(f"G_t:{G.shape}")
 
         #whitening rewards
         G = (G - G.mean())/G.std()
@@ -81,7 +80,7 @@ class REINFORCE:
         log_prob = torch.sum((m_lprob + c_lprob[:, 0, :, :] + c_lprob[:, 1, :, :]), dim=[1, 2]).unsqueeze(-1)
         
         print(f"G:{G.shape}, log_probs:{log_prob.shape}")
-        loss = -G * log_prob
+        loss = (-G * log_prob).sum()
         print(f"LOSS:{loss.shape}")
         return loss, reward
     

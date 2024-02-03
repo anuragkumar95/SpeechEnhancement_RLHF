@@ -78,10 +78,10 @@ class REINFORCE:
         m_lprob, c_lprob = log_probs
         c_lprob = c_lprob.permute(0, 1, 3, 2)
         
-        log_prob = m_lprob + c_lprob[:, 0, :, :] + c_lprob[:, 1, :, :] 
+        log_prob = torch.sum((m_lprob + c_lprob[:, 0, :, :] + c_lprob[:, 1, :, :]), dim=[1, 2]) 
         
         print(f"G:{G.shape}, log_probs:{log_prob.shape}")
-        loss = torch.sum(-G * log_prob, dim=[1, 2])
+        loss = -G * log_prob
         print(f"LOSS:{loss.shape}")
         return loss, reward
     

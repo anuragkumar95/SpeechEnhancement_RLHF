@@ -156,7 +156,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop):
         onesided=True,
     )
 
-    noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
+    noisy_spec = power_compress(noisy_spec)#.permute(0, 1, 3, 2)
     clean_spec = power_compress(clean_spec)
 
     #clean_real = clean_spec[:, 0, :, :].unsqueeze(1)

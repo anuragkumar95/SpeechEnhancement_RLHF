@@ -158,6 +158,9 @@ class Trainer:
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)   
             batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
+            
+            if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
+                continue
 
             batch_loss = batch_loss / self.ACCUM_GRAD
 

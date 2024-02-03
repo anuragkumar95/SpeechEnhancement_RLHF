@@ -189,7 +189,7 @@ class Trainer:
             
             #Preprocess batch
             batch = self.preprocess_batch(batch)
-            self.trainer.env.set_batch(batch)
+            #self.trainer.env.set_batch(batch)
             
             #Run validation episode
             val_pesq_score = self.run_validation(self.trainer.env)

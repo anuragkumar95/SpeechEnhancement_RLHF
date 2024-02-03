@@ -57,6 +57,7 @@ class REINFORCE:
         #self.env.set_batch(batch)
         clean, noisy = batch
         #Forward pass through expert to get the action(mask)
+        noisy = noisy.permute(0, 1, 3, 2)
         print(f"Inp:{noisy.shape}")
         action, log_probs = model.get_action(noisy)
 

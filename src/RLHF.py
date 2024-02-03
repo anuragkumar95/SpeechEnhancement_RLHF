@@ -57,10 +57,10 @@ class REINFORCE:
         #self.env.set_batch(batch)
 
         #Forward pass through expert to get the action(mask)
-        action, log_probs = model.get_action(self.env.state['noisy'])
+        action, log_probs = model.get_action(batch['noisy'])
 
         #Apply mask to get the next state
-        next_state = self.env.get_next_state(state=self.env.state, 
+        next_state = self.env.get_next_state(state=batch, 
                                                 action=action)
         
         #Get the reward

@@ -55,14 +55,13 @@ class REINFORCE:
         """
         #Preprocess batch
         #self.env.set_batch(batch)
-
+        clean, noisy = batch
         #Forward pass through expert to get the action(mask)
-        print(f"Inp:{batch['noisy'].shape}")
-        action, log_probs = model.get_action(batch['noisy'])
+        print(f"Inp:{noisy.shape}")
+        action, log_probs = model.get_action(noisy)
 
         #Apply mask to get the next state
-        next_state = self.env.get_next_state(state=batch, 
-                                                action=action)
+        next_state = self.env.get_next_state(state=noisy, action=action)
         
         #Get the reward
         reward = self.env.get_reward(self.env.state, next_state)

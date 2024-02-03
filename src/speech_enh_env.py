@@ -67,7 +67,7 @@ class SpeechEnhancementAgent:
         Returns:
             Next state enhanced by applying mask.
         """
-        x = state['noisy']
+        x = state
         mask, complex_out = action
 
         noisy_phase = torch.angle(

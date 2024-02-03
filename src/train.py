@@ -360,7 +360,7 @@ class Trainer:
             discrim_loss_metric = torch.tensor([0.0])
         
 
-        return loss.item(), discrim_loss_metric.item(), pesq.item()
+        return loss, discrim_loss_metric, pesq
 
     def test(self):
         self.model.eval()

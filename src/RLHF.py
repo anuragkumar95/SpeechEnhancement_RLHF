@@ -77,6 +77,7 @@ class REINFORCE:
         log_prob = torch.sum((m_lprob + c_lprob[:, 0, :, :] + c_lprob[:, 1, :, :]), dim=[1, 2]).unsqueeze(-1)
         
         loss = (-G * log_prob).mean()
+        print(f"Loss:{loss}")
         return loss, reward
     
 

@@ -100,8 +100,8 @@ class Trainer:
                                      optimizer=self.a_optimizer, 
                                      alpha=args.init_lr, 
                                      discount=1.0,
-                                     env_params={'n_fft' : 400,
-                                                 'hop' : 100,
+                                     env_params={'n_fft':400,
+                                                 'hop':100,
                                                  'args':args})
             """
             if args.ckpt is not None:

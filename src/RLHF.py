@@ -76,8 +76,8 @@ class REINFORCE:
         G = torch.tensor(g_t).to(self.gpu_id)
         G = (G - G.mean())/G.std()
         
-        print(f"G:{G.shape}, log_probs:{torch.sum(log_probs, dim=-1).shape}")
-        loss = (-G * torch.sum(log_probs, dim=-1)).sum(-1)
+        print(f"G:{G.shape}, log_probs:{torch.sum(log_probs, dim=1).shape}")
+        loss = (-G * torch.sum(log_probs, dim=1)).sum()
         return loss, reward
     
 

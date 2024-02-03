@@ -160,6 +160,7 @@ class Trainer:
             
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            print(f"After batch GPU:{torch.cuda.mem_get_info()}")    
             batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
 
             batch_loss = batch_loss / self.ACCUM_GRAD

@@ -50,11 +50,11 @@ class SpeechEnhancementAgent:
             self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
         
 
-    def set_batch(self, batch):
-        self.state = batch
-        self.clean = batch['clean']
-        self.steps = batch['noisy'].shape[2]
-        self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=self.gpu_id)
+    #def set_batch(self, batch):
+    #    self.state = batch
+    #    self.clean = batch['clean']
+    #    self.steps = batch['noisy'].shape[2]
+    #    #self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=self.gpu_id)
     
        
     def get_next_state(self, state, action):

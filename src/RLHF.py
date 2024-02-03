@@ -54,7 +54,7 @@ class REINFORCE:
         Runs an epoch using REINFORCE.
         """
         #Preprocess batch
-        self.env.set_batch(batch)
+        #self.env.set_batch(batch)
 
         #Forward pass through expert to get the action(mask)
         action, log_probs = model.get_action(self.env.state['noisy'])

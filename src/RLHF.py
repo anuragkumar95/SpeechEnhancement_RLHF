@@ -69,8 +69,8 @@ class REINFORCE:
         reward = self.env.get_reward(next_state, next_state)
         reward = reward.reshape(-1, 1)
         print(f"Reward:{reward}")
-        g_t = self.get_expected_reward(reward)
-        print(f"G_t:{g_t}")
+        G = self.get_expected_reward(reward)
+        print(f"G_t:{G}")
 
         #whitening rewards
         G = (G - G.mean())/G.std()

@@ -225,9 +225,6 @@ class TSCNet(nn.Module):
         mask, m_logprob = self.mask_decoder(out_2)
         complex_out, c_logprob = self.complex_decoder(out_2)
 
-        print(f"out: {mask.shape}, {complex_out.shape}")
-        print(f"out: {m_logprob.shape}, {c_logprob.shape}")
-
         return (mask, complex_out), (m_logprob, c_logprob)
 
     def forward(self, x):

@@ -76,8 +76,9 @@ class REINFORCE:
         m_lprob = (m_lprob - m_lprob.mean())/m_lprob.std()
         c_lprob = (c_lprob - c_lprob.mean())/c_lprob.std()
         
-        print(m_lprob)
-        print(torch.mean(m_lprob, dim=[1, 2]))
+        print(f"Mag: {m_lprob}")
+        print(f"comp:{c_lprob[:, 0, :, :]}")
+        print(f"comp:{c_lprob[:, 1, :, :]}")
 
         log_prob = torch.mean(m_lprob, dim=[1, 2]) + torch.mean(c_lprob[:, 0, :, :], dim=[1, 2]) + torch.mean(c_lprob[:, 1, :, :])
         #whitening rewards

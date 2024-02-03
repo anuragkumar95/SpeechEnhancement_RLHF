@@ -73,7 +73,6 @@ class REINFORCE:
         print(f"G_t:{g_t}")
 
         #whitening rewards
-        G = torch.tensor(g_t).to(self.gpu_id)
         G = (G - G.mean())/G.std()
 
         m_lprob, c_lprob = log_probs
@@ -82,7 +81,7 @@ class REINFORCE:
         log_prob = m_lprob + c_lprob[:, 0, :, :] + c_lprob[:, 1, :, :] 
         
         print(f"G:{G.shape}, log_probs:{log_prob.shape}")
-        loss = (-G * log_prob).sum(-1)
+        loss = torch.sum(-G * log_prob, dim=[1, 2])
         print(f"LOSS:{loss.shape}")
         return loss, reward
     

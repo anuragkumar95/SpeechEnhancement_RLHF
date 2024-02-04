@@ -156,9 +156,12 @@ class Trainer:
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)   
-            batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
-            
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
+            try:  
+                batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
+            except Exception as e:
+                continue
+
             if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
                 continue
 

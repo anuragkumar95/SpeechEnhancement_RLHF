@@ -198,7 +198,6 @@ class Trainer:
 
         wandb.log({ 
             "epoch":epoch,
-            "val_step":v_step,
             "val_pesq":original_pesq(pesq)
         })   
         
@@ -217,7 +216,7 @@ class Trainer:
             #TODO:Log these in wandb
             wandb.log({"Epoch":epoch+1,
                        "ValPESQ":original_pesq(epoch_pesq),
-                       "Epoch_mean_reward":ep_reward})
+                       "Epoch_mean_reward":np.mean(ep_reward)})
             
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq

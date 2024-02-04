@@ -139,7 +139,7 @@ class Trainer:
         #Forward pass through actor to get the action(mask)
         action, _ = self.actor.get_action(inp)
         #Apply action  to get the next state
-        next_state = env.get_next_state(state=noisy, 
+        next_state = env.get_next_state(state=inp, 
                                         action=action)
 
         pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 

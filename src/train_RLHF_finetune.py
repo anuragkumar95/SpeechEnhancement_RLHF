@@ -193,13 +193,14 @@ class Trainer:
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             
             #Run validation episode
-            #try:
-            val_pesq_score = self.run_validation(self.trainer.env, batch)
-            #except Exception as e:
-            #    print(e)
-            #    continue
+            try:
+                val_pesq_score = self.run_validation(self.trainer.env, batch)
+            except Exception as e:
+                print(e)
+                continue
             pesq += val_pesq_score
             v_step += 1
+            print(f"Epoch: {epoch+1} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
         pesq /= v_step
 
         wandb.log({ 

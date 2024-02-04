@@ -172,7 +172,7 @@ class Trainer:
                 self.a_optimizer.step()
 
             wandb.log({
-                "episode_cumulative_reward":batch_reward,
+                "episode_cumulative_reward":batch_reward.item(),
                 "episode": (i+1)+(epoch*num_batches)
             })
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
@@ -213,11 +213,9 @@ class Trainer:
         best_pesq = -1
         print("Start training...")
         for epoch in range(args.epochs):
-            ep_reward, epoch_actor_loss, epoch_critic_loss, epoch_pesq = self.train_one_epoch(epoch+1)
+            ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
             #TODO:Log these in wandb
             wandb.log({"Epoch":epoch+1,
-                       "Actor_loss":epoch_actor_loss,
-                       "Critic_loss":epoch_critic_loss,
                        "ValPESQ":original_pesq(epoch_pesq),
                        "Epoch_mean_reward":ep_reward})
             

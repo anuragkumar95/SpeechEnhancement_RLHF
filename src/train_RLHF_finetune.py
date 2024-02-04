@@ -126,7 +126,7 @@ class Trainer:
         #self.target_critic.eval()
         wandb.init(project=args.exp)
     
-    def run_validation(self, env):
+    def run_validation(self, env, batch):
         """
         Runs a vlidation loop for a batch.
         Predict mask for each frame one at a time 
@@ -134,15 +134,15 @@ class Trainer:
         spectrograms.
         """
         #print("Running validation...")
-        
-        inp = env.state['noisy']
+        clean_aud, _, noisy = batch
+        inp = noisy
         #Forward pass through actor to get the action(mask)
-        action, _ = self.actor(inp)
+        action, _ = self.actor.get_action(inp)
         #Apply action  to get the next state
-        next_state = env.get_next_state(state=env.state, 
+        next_state = env.get_next_state(state=noisy, 
                                         action=action)
 
-        pesq, pesq_mask = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
+        pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
                                      next_state['est_audio'].detach().cpu().numpy())
         return (pesq*pesq_mask).mean()
     
@@ -190,11 +190,10 @@ class Trainer:
         for i, batch in enumerate(self.test_ds):
             
             #Preprocess batch
-            batch = self.preprocess_batch(batch)
-            #self.trainer.env.set_batch(batch)
+            batch = preprocess_batch(batch)
             
             #Run validation episode
-            val_pesq_score = self.run_validation(self.trainer.env)
+            val_pesq_score = self.run_validation(batch)
             pesq += val_pesq_score
             v_step += 1
         pesq /= v_step

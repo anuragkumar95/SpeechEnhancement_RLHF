@@ -143,7 +143,7 @@ class Trainer:
                                         action=action)
 
         pesq, pesq_mask = batch_pesq(env.state['cl_audio'].detach().cpu().numpy(), 
-                          next_state['est_audio'].detach().cpu().numpy())
+                                     next_state['est_audio'].detach().cpu().numpy())
         return (pesq*pesq_mask).mean()
     
 

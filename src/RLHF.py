@@ -80,6 +80,6 @@ class REINFORCE:
         #whitening rewards
         
         loss = (-G * log_prob).mean()
-        return loss, reward
+        return loss, reward.mean()
     
 

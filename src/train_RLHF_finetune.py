@@ -157,10 +157,10 @@ class Trainer:
             
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-            try:  
-                batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
-            except Exception as e:
-                continue
+            #try:  
+            batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
+            #except Exception as e:
+            #    continue
 
             if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
                 continue
@@ -193,11 +193,11 @@ class Trainer:
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             
             #Run validation episode
-            try:
-                val_pesq_score = self.run_validation(self.trainer.env, batch)
-            except Exception as e:
-                print(e)
-                continue
+            #try:
+            val_pesq_score = self.run_validation(self.trainer.env, batch)
+            #except Exception as e:
+            #    print(e)
+            #    continue
             pesq += val_pesq_score
             v_step += 1
         pesq /= v_step

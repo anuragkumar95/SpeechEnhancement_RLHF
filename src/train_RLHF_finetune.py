@@ -190,10 +190,14 @@ class Trainer:
         for i, batch in enumerate(self.test_ds):
             
             #Preprocess batch
-            batch = preprocess_batch(batch)
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             
             #Run validation episode
-            val_pesq_score = self.run_validation(self.trainer.env, batch)
+            try:
+                val_pesq_score = self.run_validation(self.trainer.env, batch)
+            except Exception as e:
+                print(e)
+                continue
             pesq += val_pesq_score
             v_step += 1
         pesq /= v_step

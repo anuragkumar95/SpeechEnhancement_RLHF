@@ -370,7 +370,12 @@ class Trainer:
         val_pesq = 0.0
         for idx, batch in enumerate(self.test_ds):
             step = idx + 1
-            loss, disc_loss, pesq = self.test_step(batch)
+            try:
+                loss, disc_loss, pesq = self.test_step(batch)
+            except Exception as e:
+                print(e)
+                continue
+            
             if torch.isnan(loss).any() or torch.isinf(loss).any():
                 continue
             gen_loss_total += loss

@@ -179,7 +179,7 @@ class Trainer:
                 "episode": (i+1)+(epoch*num_batches)
             })
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
-            REWARDS.append(batch_reward)
+            REWARDS.append(batch_reward.item())
 
             
         #Run validation

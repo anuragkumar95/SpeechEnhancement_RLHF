@@ -200,7 +200,7 @@ class Trainer:
                 continue
             pesq += val_pesq_score
             v_step += 1
-            print(f"Epoch: {epoch+1} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
+            print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
         pesq /= v_step
 
         wandb.log({ 

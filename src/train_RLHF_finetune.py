@@ -82,6 +82,8 @@ class Trainer:
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+        #Freeze complex decoder
+        self.actor = freeze_layers(self.actor, ['complex_decoder'])
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
 
@@ -91,9 +93,6 @@ class Trainer:
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
-            #self.critic = self.critic.to(gpu_id)
-            #self.target_actor = self.target_actor.to(gpu_id)
-            #self.target_critic = self.target_critic.to(gpu_id)
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
                                      discount=1.0,
@@ -222,7 +221,7 @@ class Trainer:
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
             #TODO:Log these in wandb
             wandb.log({"Epoch":epoch+1,
-                       "ValPESQ":original_pesq(epoch_pesq),
+                       "ValPESQ":epoch_pesq,
                        "Epoch_mean_reward":np.mean(ep_reward)})
             
             if epoch_pesq >= best_pesq:

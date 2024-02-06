@@ -84,13 +84,16 @@ class REINFORCE:
         #c_lprob = (c_lprob - c_lprob.mean())/c_lprob.std()
 
         loss = []
-        for i in G.shape[0]:
-            loss.append(-G[i, ...] * m_lprob[i, ...])
+        for i in range(G.shape[0]):
+            loss.append(G[i, ...] * m_lprob[i, ...])
         loss = torch.stack(loss)
 
         if self.expert is not None:
             mu, var = params
             exp_mu, exp_var = expert_params
+
+            var = torch.exp(0.5 * var)
+            exp_var = torch.exp(0.5 * exp_var)
             loss = loss + self.kl_penalty(Normal(exp_mu, exp_var), 
                                           Normal(mu, var))
 

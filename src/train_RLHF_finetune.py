@@ -109,7 +109,7 @@ class Trainer:
                                      init_model=self.expert,
                                      discount=1.0,
                                      env_params={'n_fft':400,
-                                                 'hop':100,
+                                                 'hop':100, 
                                                  'args':args})
             """
             if args.ckpt is not None:
@@ -148,7 +148,7 @@ class Trainer:
         clean_aud, _, noisy = batch
         inp = noisy.permute(0, 1, 3, 2)
         #Forward pass through actor to get the action(mask)
-        action, _ = self.actor.get_action(inp)
+        action, _, _ = self.actor.get_action(inp)
         #Apply action  to get the next state
         next_state = env.get_next_state(state=inp, 
                                         action=action)
@@ -176,12 +176,13 @@ class Trainer:
             if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
                 continue
 
-            batch_loss = batch_loss / self.ACCUM_GRAD
+            batch_loss += batch_loss / self.ACCUM_GRAD
 
             self.a_optimizer.zero_grad()
             batch_loss.backward()
 
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
+                
                 torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
                 self.a_optimizer.step()
 

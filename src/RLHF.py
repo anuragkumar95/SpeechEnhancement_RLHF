@@ -77,11 +77,6 @@ class REINFORCE:
 
         #Ignore complex action, just tune magnitude mask
         m_lprob, _ = log_probs
-       
-        #whitening
-        #G = (G - G.mean())/G.std()
-        #m_lprob = (m_lprob - m_lprob.mean())/m_lprob.std()
-        #c_lprob = (c_lprob - c_lprob.mean())/c_lprob.std()
 
         loss = []
         for i in range(G.shape[0]):
@@ -97,8 +92,6 @@ class REINFORCE:
             loss = loss + self.kl_penalty(Normal(exp_mu, exp_var), 
                                           Normal(mu, var))
 
-        #log_prob = torch.mean(m_lprob, dim=[1, 2])
-        #loss = (-G * log_prob).mean()
-        return loss.mean(), reward.mean()
+        return loss.sum(), reward.sum()
     
 

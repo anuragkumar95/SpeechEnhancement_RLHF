@@ -87,8 +87,8 @@ class REINFORCE:
             mu, var = params
             exp_mu, exp_var = expert_params
 
-            var = torch.exp(0.5 * var)
-            exp_var = torch.exp(0.5 * exp_var)
+            var = torch.exp(0.5 * var + 1e-05)
+            exp_var = torch.exp(0.5 * exp_var + 1e-05)
             loss = loss + self.kl_penalty(Normal(exp_mu, exp_var), 
                                           Normal(mu, var))
 

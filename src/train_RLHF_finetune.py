@@ -164,6 +164,7 @@ class Trainer:
         #self.critic.train()
         REWARDS = []
         num_batches = len(self.train_ds)
+
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode

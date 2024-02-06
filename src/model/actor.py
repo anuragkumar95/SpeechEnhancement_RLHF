@@ -154,9 +154,8 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob = self.sample(x_mu, x_var)
-    
             x = self.prelu_out(x)
-            return x.permute(0, 2, 1).unsqueeze(1), x_logprob
+            return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_mu, x_var
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1), x
@@ -223,10 +222,11 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
 
-        mask, m_logprob = self.mask_decoder(out_2)
+        mask, m_logprob, mu, var = self.mask_decoder(out_2)
         complex_out, c_logprob = self.complex_decoder(out_2)
 
-        return (mask, complex_out), (m_logprob, c_logprob)
+        return (mask, complex_out), (m_logprob, c_logprob), (mu, var)
+    
 
     def forward(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)

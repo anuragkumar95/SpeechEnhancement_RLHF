@@ -79,11 +79,22 @@ class Trainer:
                             distribution=out_distribution, 
                             gpu_id=gpu_id)
         
+        self.expert = TSCNet(num_channel=64, 
+                            num_features=self.n_fft // 2 + 1,
+                            distribution=out_distribution, 
+                            gpu_id=gpu_id)
+        
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+        self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+        
         #Freeze complex decoder
         self.actor = freeze_layers(self.actor, ['complex_decoder'])
+
+        #Set expert to eval and freeze all layers.
+        self.expert = freeze_layers(self.expert, 'all')
+        self.expert.eval()
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
 
@@ -95,6 +106,7 @@ class Trainer:
             self.actor = self.actor.to(gpu_id)
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
+                                     init_model=self.expert,
                                      discount=1.0,
                                      env_params={'n_fft':400,
                                                  'hop':100,
@@ -113,9 +125,9 @@ class Trainer:
             """
             if args.parallel:
                 self.actor = DDP(self.actor, device_ids=[gpu_id])
-                self.critic = DDP(self.critic, device_ids=[gpu_id])
-                self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
-                self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
+                #self.critic = DDP(self.critic, device_ids=[gpu_id])
+                #self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
+                #self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
 
         
             

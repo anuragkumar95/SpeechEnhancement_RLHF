@@ -34,7 +34,7 @@ class REINFORCE:
                                           args=params['env_params'].get("args"))
         self.discount = discount
         self.gpu_id = gpu_id
-        self.expert = init_model
+        self.expert = init_model.to(self.gpu_id)
         self.kl_penalty = kl_divergence
         
     def get_expected_reward(self, rewards):

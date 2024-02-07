@@ -184,7 +184,7 @@ class Trainer:
             batch_loss.backward()
 
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
+                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 3.0)
                 self.a_optimizer.step()
 
             wandb.log({

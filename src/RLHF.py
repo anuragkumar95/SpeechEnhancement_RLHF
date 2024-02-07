@@ -27,7 +27,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 
 class REINFORCE:
-    def __init__(self, gpu_id, init_model=None, discount=1.0, **params):
+    def __init__(self, gpu_id, beta=0.01, init_model=None, discount=1.0, **params):
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
                                           hop=params['env_params'].get("hop"),
                                           gpu_id=gpu_id,
@@ -36,7 +36,8 @@ class REINFORCE:
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
         self.kl_div = torch.nn.KLDivLoss(reduction='batchmean')
-        
+        self.beta = beta
+
     def get_expected_reward(self, rewards):
         """
         Expects rewards to be a numpy array.
@@ -65,7 +66,7 @@ class REINFORCE:
         action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        exp_action, exp_log_probs, _ = self.expert.get_action(noisy)
+        _, exp_log_probs, _ = self.expert.get_action(noisy)
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
@@ -80,7 +81,7 @@ class REINFORCE:
             exp_m_logprob, _ = exp_log_probs
             kl_div_penalty = self.kl_div(m_logprob, exp_m_logprob, log_target=True)
         
-        G = reward - kl_div_penalty
+        G = reward - self.beta * kl_div_penalty
         G = G.reshape(-1, 1)
 
         #Ignore complex action, just tune magnitude mask

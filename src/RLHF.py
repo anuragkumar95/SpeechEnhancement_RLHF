@@ -70,10 +70,22 @@ class REINFORCE:
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
         next_state['cl_audio'] = cl_aud
-        
+
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
-        G = reward.reshape(-1, 1)
+
+        #Calculate KL_penalty
+        if self.expert is not None:
+            mu, log_var = params
+            exp_mu, log_exp_var = expert_params
+
+            var = torch.abs(torch.exp(0.5 * log_var))
+            exp_var = torch.abs(torch.exp(0.5 * log_exp_var))
+
+            kl_div = self.kl_penalty(Normal(mu, var), Normal(exp_mu, exp_var)).sum()
+        
+        G = reward - kl_div
+        G = G.reshape(-1, 1)
 
         #Ignore complex action, just tune magnitude mask
         m_lprob, _ = log_probs
@@ -83,15 +95,7 @@ class REINFORCE:
             loss.append(G[i, ...] * m_lprob[i, ...])
         loss = torch.stack(loss)
 
-        if self.expert is not None:
-            mu, var = params
-            exp_mu, exp_var = expert_params
-
-            var = torch.exp(0.5 * var + 1e-05)
-            exp_var = torch.exp(0.5 * exp_var + 1e-05)
-            loss = loss + self.kl_penalty(Normal(exp_mu, exp_var), 
-                                          Normal(mu, var))
-
+    
         return loss.sum(), reward.sum()
     
 

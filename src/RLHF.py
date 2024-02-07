@@ -18,7 +18,7 @@ import psutil
 import numpy as np
 import traceback
 from speech_enh_env import  SpeechEnhancementAgent
-from torch.nn.functional import kl_div
+import torch
 
 
 import torch.multiprocessing as mp
@@ -35,6 +35,7 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
+        self.kl_div = torch.nn.KLDivLoss(reduction='batchmean')
         
     def get_expected_reward(self, rewards):
         """
@@ -64,7 +65,7 @@ class REINFORCE:
         action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        exp_action, _, _ = self.expert.get_action(noisy)
+        exp_action, exp_log_probs, _ = self.expert.get_action(noisy)
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
@@ -75,9 +76,9 @@ class REINFORCE:
 
         #Calculate KL_penalty
         if self.expert is not None:
-            m_mask, _ = action
-            exp_m_mask, _ = exp_action
-            kl_div_penalty = kl_div(m_mask, exp_m_mask, reduction='batchmean')
+            m_logprob, _ = log_probs
+            exp_m_logprob, _ = exp_log_probs
+            kl_div_penalty = self.kl_div(m_logprob, exp_m_logprob, log_target=True)
         
         G = reward - kl_div_penalty
         G = G.reshape(-1, 1)
@@ -91,6 +92,6 @@ class REINFORCE:
         loss = torch.stack(loss)
 
     
-        return loss.sum(), reward.sum()
+        return loss.mean(), reward.sum()
     
 

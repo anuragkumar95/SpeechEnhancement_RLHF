@@ -9,6 +9,32 @@ import numpy as np
 from pesq import pesq
 import matplotlib.pyplot as plt
 
+"""
+class KL_Divergence(nn.Module):
+    def __init__(self, reduction='batchmean'):
+        self.reduction = reduction
+
+    def forward(self, input_mu, input_var, target_mu, target_var):
+        batch, _, _, _ = input_mu.shape
+
+        inp_mu = input_mu.reshape(batch, -1)
+        inp_sigma = (input_var ** 2).reshape(batch, -1)
+        trgt_mu = target_mu.reshape(batch, -1)
+        trgt_sigma = (target_var ** 2).reshape(batch, -1)
+
+        #covariance matrices
+        cov_1 = torch.diag_embed(inp_sigma)
+        cov_2 = torch.diag_embed(trgt_sigma)
+
+        #calculate trace
+        product = torch.bmm(torch.linalg.inv(cov_1), cov_2)
+"""
+
+
+
+
+
+
 
 def pesq_loss(clean, noisy, sr=16000):
     try:

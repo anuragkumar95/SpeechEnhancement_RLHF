@@ -35,7 +35,7 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
-        self.kl_div = torch.nn.KLDivLoss(reduction='batchmean')
+        self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
         self.beta = beta
 
     def get_expected_reward(self, rewards):
@@ -75,11 +75,14 @@ class REINFORCE:
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
 
+        m_logprob = m_logprob - m_logprob.mean() / m_logprob.std()
+        exp_m_logprob = exp_m_logprob - exp_m_logprob.mean() / exp_m_logprob.std()
+
         #Calculate KL_penalty
         if self.expert is not None:
             m_logprob, _ = log_probs
             exp_m_logprob, _ = exp_log_probs
-            kl_div_penalty = self.kl_div(m_logprob, exp_m_logprob, log_target=True)
+            kl_div_penalty = self.kl_div(m_logprob, exp_m_logprob)
         
         G = reward - self.beta * kl_div_penalty
         G = G.reshape(-1, 1)

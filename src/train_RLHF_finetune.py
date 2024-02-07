@@ -106,6 +106,7 @@ class Trainer:
             self.actor = self.actor.to(gpu_id)
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
+                                     beta = 0.01, 
                                      init_model=self.expert,
                                      discount=1.0,
                                      env_params={'n_fft':400,

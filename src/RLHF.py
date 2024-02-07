@@ -18,8 +18,8 @@ import psutil
 import numpy as np
 import traceback
 from speech_enh_env import  SpeechEnhancementAgent
-from torch.distributions.kl import kl_divergence
-from torch.distributions import Normal
+from torch.nn.functional import kl_div
+
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -35,7 +35,6 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
-        self.kl_penalty = kl_divergence
         
     def get_expected_reward(self, rewards):
         """
@@ -62,10 +61,10 @@ class REINFORCE:
 
         #Forward pass through expert to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
-        action, log_probs, params = model.get_action(noisy)
+        action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        _, _, expert_params = self.expert.get_action(noisy)
+        exp_action, _, _ = self.expert.get_action(noisy)
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
@@ -76,15 +75,11 @@ class REINFORCE:
 
         #Calculate KL_penalty
         if self.expert is not None:
-            mu, log_var = params
-            exp_mu, log_exp_var = expert_params
-
-            var = torch.abs(torch.exp(0.5 * log_var))
-            exp_var = torch.abs(torch.exp(0.5 * log_exp_var))
-
-            kl_div = self.kl_penalty(Normal(mu, var), Normal(exp_mu, exp_var)).sum()
+            m_mask, _ = action
+            exp_m_mask, _ = exp_action
+            kl_div_penalty = kl_div(m_mask, exp_m_mask, reduction='batchmean')
         
-        G = reward - kl_div
+        G = reward - kl_div_penalty
         G = G.reshape(-1, 1)
 
         #Ignore complex action, just tune magnitude mask

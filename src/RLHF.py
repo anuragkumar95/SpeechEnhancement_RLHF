@@ -75,6 +75,8 @@ class REINFORCE:
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
 
+        kl_div_penalty = 0
+
         #Calculate KL_penalty
         if self.expert is not None:
             m_logprob, _ = log_probs
@@ -97,6 +99,6 @@ class REINFORCE:
         loss = torch.stack(loss)
 
     
-        return loss.mean(), reward.sum()
+        return loss.mean(), reward.sum(), kl_div_penalty
     
 

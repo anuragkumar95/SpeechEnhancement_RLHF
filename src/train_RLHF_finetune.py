@@ -171,7 +171,7 @@ class Trainer:
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
             try:  
-                batch_loss, batch_reward = self.trainer.run_episode(batch, self.actor)
+                batch_loss, batch_reward, kl_penalty = self.trainer.run_episode(batch, self.actor)
             except Exception as e:
                 continue
 
@@ -184,13 +184,14 @@ class Trainer:
             batch_loss.backward()
 
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                
-                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
+                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
                 self.a_optimizer.step()
 
             wandb.log({
                 "episode_cumulative_reward":batch_reward.item(),
-                "episode": (i+1) + ((epoch - 1) * num_batches)
+                "episode": (i+1) + ((epoch - 1) * num_batches),
+                "kl_divergence": kl_penalty, 
+                "loss":batch_loss
             })
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())

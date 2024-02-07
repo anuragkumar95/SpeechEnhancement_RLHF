@@ -75,13 +75,14 @@ class REINFORCE:
         #Get the reward
         reward = self.env.get_reward(next_state, next_state)
 
-        m_logprob = m_logprob - m_logprob.mean() / m_logprob.std()
-        exp_m_logprob = exp_m_logprob - exp_m_logprob.mean() / exp_m_logprob.std()
-
         #Calculate KL_penalty
         if self.expert is not None:
             m_logprob, _ = log_probs
             exp_m_logprob, _ = exp_log_probs
+
+            m_logprob = m_logprob - m_logprob.mean() / m_logprob.std()
+            exp_m_logprob = exp_m_logprob - exp_m_logprob.mean() / exp_m_logprob.std()
+            
             kl_div_penalty = self.kl_div(m_logprob, exp_m_logprob)
         
         G = reward - self.beta * kl_div_penalty

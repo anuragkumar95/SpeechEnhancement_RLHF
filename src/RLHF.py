@@ -87,7 +87,7 @@ class REINFORCE:
 
             kl_div_penalty = torch.abs(self.kl_div(m_logprob, exp_m_logprob))
         
-        G = reward - self.beta * kl_div_penalty
+        G = reward
         G = G.reshape(-1, 1)
 
         #Ignore complex action, just tune magnitude mask
@@ -95,7 +95,7 @@ class REINFORCE:
 
         loss = []
         for i in range(G.shape[0]):
-            loss.append(G[i, ...] * m_lprob[i, ...])
+            loss.append(G[i, ...] * m_lprob[i, ...] + self.beta * kl_div_penalty)
         loss = torch.stack(loss)
 
     

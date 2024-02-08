@@ -66,17 +66,22 @@ class REINFORCE:
         action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        _, exp_log_probs, _ = self.expert.get_action(noisy)
+        exp_action, exp_log_probs, _ = self.expert.get_action(noisy)
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
         next_state['cl_audio'] = cl_aud
 
+        #Apply exp_mask to get next state
+        exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+        next_state['exp_est_audio'] = exp_next_state['est_audio']
+
         #Get the reward
-        reward = self.env.get_reward(next_state, next_state)
-
+        reward, baseline = self.env.get_reward(next_state, next_state)
+        
+        
         kl_div_penalty = 0
-
+        """
         #Calculate KL_penalty
         if self.expert is not None:
             m_logprob, _ = log_probs
@@ -86,8 +91,8 @@ class REINFORCE:
             exp_m_logprob = exp_m_logprob - exp_m_logprob.mean() / exp_m_logprob.std()
 
             kl_div_penalty = self.beta * self.kl_div(m_logprob, exp_m_logprob)
-        
-        G = reward - kl_div_penalty
+        """
+        G = reward - baseline #- kl_div_penalty
         G = G.reshape(-1, 1)
 
         #Ignore complex action, just tune magnitude mask

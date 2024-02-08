@@ -85,9 +85,9 @@ class REINFORCE:
             m_logprob = m_logprob - m_logprob.mean() / m_logprob.std()
             exp_m_logprob = exp_m_logprob - exp_m_logprob.mean() / exp_m_logprob.std()
 
-            kl_div_penalty = torch.abs(self.kl_div(m_logprob, exp_m_logprob))
+            kl_div_penalty = self.beta * self.kl_div(m_logprob, exp_m_logprob)
         
-        G = reward - self.beta * kl_div_penalty
+        G = reward - kl_div_penalty
         G = G.reshape(-1, 1)
 
         #Ignore complex action, just tune magnitude mask

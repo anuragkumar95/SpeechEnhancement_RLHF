@@ -106,7 +106,7 @@ class Trainer:
             self.actor = self.actor.to(gpu_id)
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
-                                     beta = 0.01, 
+                                     beta = 1e-10 , 
                                      init_model=self.expert,
                                      discount=1.0,
                                      env_params={'n_fft':400,
@@ -189,6 +189,7 @@ class Trainer:
 
             wandb.log({
                 "episode_cumulative_reward":batch_reward.item(),
+                "trainPESQ":original_pesq(batch_reward.item()),
                 "episode": (i+1) + ((epoch - 1) * num_batches),
                 "kl_divergence": kl_penalty, 
                 "loss":batch_loss

@@ -119,6 +119,10 @@ class SpeechEnhancementAgent:
 
         R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
+        length = next_state["est_audio"].size(-1)
+        est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
+        clean_audio_list = list(next_state["cl_audio"].cpu().numpy()[:, :length])
+
         if self.args.reward == 0:
             length = next_state["est_audio"].size(-1)
             est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
@@ -131,12 +135,10 @@ class SpeechEnhancementAgent:
                 pesq_reward = pesq_reward.to(self.gpu_id)
             return pesq_reward
         
-        if self.args.reward == 2:
-            length = next_state["est_audio"].size(-1)
-            est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
+        if self.args.reward == 1:
 
-            z_mask, z = batch_pesq(next_state['cl_audio'].detach().cpu().numpy(),
-                                   next_state['est_audio'].detach().cpu().numpy())
+            z_mask, z = batch_pesq(clean_audio_list,
+                                   est_audio_list)
             
             pesq_reward = (z_mask * z)
 

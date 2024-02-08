@@ -145,12 +145,13 @@ class SpeechEnhancementAgent:
                                    exp_est_audio_list)
             
             pesq_reward = (z_mask * z)
-            exp_pesq_reward = (z_mask_e, z_e)
+            exp_pesq_reward = (z_mask_e * z_e)
 
             if self.gpu_id is not None:
                 pesq_reward = pesq_reward.to(self.gpu_id)
+                exp_pesq_reward = exp_pesq_reward.to(self.gpu_id)
 
-            return pesq_reward, exp_pesq_reward
+            return pesq_reward.mean(), exp_pesq_reward.mean()
             #return torch.tanh(pesq_reward).mean()
             
     

@@ -84,6 +84,8 @@ class Trainer:
                             distribution=out_distribution, 
                             gpu_id=gpu_id)
         
+        self.critic = QNet(ndf=16, in_channel=3)
+        
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
@@ -100,7 +102,7 @@ class Trainer:
 
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
-        #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
+        self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
@@ -165,39 +167,41 @@ class Trainer:
         #self.critic.train()
         REWARDS = []
         num_batches = len(self.train_ds)
-
+        train_ep_PESQ = 0
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-            #try:  
-            batch_loss, batch_reward, kl_penalty = self.trainer.run_episode(batch, self.actor)
-            #except Exception as e:
-            #    continue
+            try:  
+                batch_loss, batch_reward, G = self.trainer.run_episode(batch, self.actor)
+            except Exception as e:
+                continue
 
             if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
                 continue
-
+            
+            train_ep_PESQ += original_pesq(batch_reward.item()) 
             batch_loss += batch_loss / self.ACCUM_GRAD
 
             self.a_optimizer.zero_grad()
             batch_loss.backward()
 
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 3.0)
+                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
                 self.a_optimizer.step()
 
             wandb.log({
                 "episode_cumulative_reward":batch_reward.item(),
                 "trainPESQ":original_pesq(batch_reward.item()),
                 "episode": (i+1) + ((epoch - 1) * num_batches),
-                "kl_divergence": kl_penalty, 
+                "G_t": G, 
                 "loss":batch_loss
             })
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())
 
-            
+        train_ep_PESQ = train_ep_PESQ / num_batches
+        
         #Run validation
         self.actor.eval()
         #self.critic.eval()
@@ -221,7 +225,8 @@ class Trainer:
 
         wandb.log({ 
             "epoch":epoch,
-            "val_pesq":original_pesq(pesq)
+            "val_pesq":original_pesq(pesq),
+            "train_PESQ":train_ep_PESQ
         })   
         
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")

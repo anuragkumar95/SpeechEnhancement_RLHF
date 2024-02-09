@@ -35,7 +35,7 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
-        self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
+        #self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
         self.beta = beta
 
     def get_expected_reward(self, rewards):
@@ -58,7 +58,7 @@ class REINFORCE:
         """
         Runs an epoch using REINFORCE.
         """
-        #Preprocess batch
+       #Preprocess batch
         cl_aud, _, noisy = batch
 
         #Forward pass through expert to get the action(mask)
@@ -66,7 +66,7 @@ class REINFORCE:
         action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        exp_action, exp_log_probs, _ = self.expert.get_action(noisy)
+        exp_action, _, _ = self.expert.get_action(noisy)
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
@@ -79,31 +79,57 @@ class REINFORCE:
         #Get the reward
         reward, baseline = self.env.get_reward(next_state, next_state)
         
-        
-        kl_div_penalty = 0
-        """
-        #Calculate KL_penalty
-        if self.expert is not None:
-            m_logprob, _ = log_probs
-            exp_m_logprob, _ = exp_log_probs
-
-            m_logprob = m_logprob - m_logprob.mean() / m_logprob.std()
-            exp_m_logprob = exp_m_logprob - exp_m_logprob.mean() / exp_m_logprob.std()
-
-            kl_div_penalty = self.beta * self.kl_div(m_logprob, exp_m_logprob)
-        """
-        G = reward - baseline #- kl_div_penalty
+        G = reward - baseline
         G = G.reshape(-1, 1)
+        print(f"G:{G.mean().item()}")
 
         #Ignore complex action, just tune magnitude mask
         m_lprob, _ = log_probs
 
         loss = []
+        alpha = 1
         for i in range(G.shape[0]):
-            loss.append(-G[i, ...] * m_lprob[i, ...] )
+            loss.append(alpha * -G[i, ...] * m_lprob[i, ...] )
         loss = torch.stack(loss)
 
-    
-        return loss.mean(), reward.mean(), kl_div_penalty
-    
+        print(f"M_LPROB:{m_lprob.mean()}")
+        print(f"LOSS:{loss.mean().item()}")
 
+        return loss.mean(), reward.mean(), G.mean()
+
+'''
+class A3C:
+    def __init__(self, gpu_id, beta=0.01, init_model=None, discount=1.0, **params):
+        self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
+                                          hop=params['env_params'].get("hop"),
+                                          gpu_id=gpu_id,
+                                          args=params['env_params'].get("args"))
+        self.discount = discount
+        self.gpu_id = gpu_id
+        self.expert = init_model.to(self.gpu_id)
+        #self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
+        self.beta = beta
+
+    def run_episode(self, batch, actor, critic):
+        """
+        Runs an epoch using REINFORCE.
+        """
+       #Preprocess batch
+        cl_aud, _, noisy = batch
+
+        #Forward pass through expert to get the action(mask)
+        noisy = noisy.permute(0, 1, 3, 2)
+        action, log_probs, _ = model.get_action(noisy)
+
+        #Forward pass through expert model
+        exp_action, _, _ = self.expert.get_action(noisy)
+
+        #Apply mask to get the next state
+        next_state = self.env.get_next_state(state=noisy, action=action)
+        next_state['cl_audio'] = cl_aud
+
+        #Apply exp_mask to get next state
+        exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+        next_state['exp_est_audio'] = exp_next_state['est_audio']
+    
+'''

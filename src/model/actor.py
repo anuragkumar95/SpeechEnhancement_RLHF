@@ -139,7 +139,7 @@ class MaskDecoder(nn.Module):
         self.dist = distribution
 
     def sample(self, mu, logvar):
-        sigma = torch.abs(torch.exp(0.5 * logvar))
+        sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         N = Normal(mu, sigma)
         x = N.rsample()
         x_logprob = N.log_prob(x)
@@ -175,7 +175,7 @@ class ComplexDecoder(nn.Module):
         self.out_dist = distribution
        
     def sample(self, mu, logvar):
-        sigma = torch.abs(torch.exp(0.5 * logvar))
+        sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         N = Normal(mu, sigma)
         x = N.rsample()
         x_logprob = N.log_prob(x)

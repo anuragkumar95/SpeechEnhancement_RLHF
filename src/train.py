@@ -324,9 +324,11 @@ class Trainer:
         discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
 
         if discrim_loss_metric is not None:
+            discrim_loss_metric = discrim_loss_metric / self.ACCUM_GRAD
             self.optimizer_disc.zero_grad()
             discrim_loss_metric.backward()
-            self.optimizer_disc.step()
+            if step % self.ACCUM_GRAD == 0 or step == len(self.train_ds):
+                self.optimizer_disc.step()
         else:
             discrim_loss_metric = torch.tensor([0.0])
 
@@ -410,7 +412,8 @@ class Trainer:
                 try:
                     loss, disc_loss = self.train_step(step, batch)
                 except Exception as e:
-                    print(e)
+                    import traceback
+                    print(traceback.format_exc())
                     continue
                 template = "GPU: {}, Epoch {}, Step {}, loss: {}, disc_loss: {}"
                 if (step % args.log_interval) == 0:

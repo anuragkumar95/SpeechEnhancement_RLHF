@@ -17,7 +17,7 @@ import wandb
 import psutil
 import numpy as np
 import traceback
-from speech_enh_env import  SpeechEnhancementAgent
+from speech_enh_env import  SpeechEnhancementAgent, GaussianStrategy
 import torch
 
 
@@ -37,6 +37,8 @@ class REINFORCE:
         self.expert = init_model.to(self.gpu_id)
         #self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
         self.beta = beta
+        self.gaussian_noise = GaussianStrategy()
+        self.t = 0
 
     def get_expected_reward(self, rewards):
         """
@@ -58,15 +60,19 @@ class REINFORCE:
         """
         Runs an epoch using REINFORCE.
         """
-       #Preprocess batch
+        #Preprocess batch
         cl_aud, _, noisy = batch
 
         #Forward pass through expert to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
-        action, log_probs, _ = model.get_action(noisy)
+        action, log_probs = model.get_action(noisy)
 
         #Forward pass through expert model
-        exp_action, _, _ = self.expert.get_action(noisy)
+        exp_action, _ = self.expert.get_action(noisy)
+
+        #Add gaussian noise
+        action, log_probs = self.gaussian_noise(action, t=self.t)
+        self.t += 1
 
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=action)
@@ -83,16 +89,13 @@ class REINFORCE:
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}")
 
-        #Ignore complex action, just tune magnitude mask
-        m_lprob, _ = log_probs
-
         loss = []
         alpha = 1
         for i in range(G.shape[0]):
-            loss.append(alpha * -G[i, ...] * m_lprob[i, ...] )
+            loss.append(alpha * -G[i, ...] * log_probs[i, ...] )
         loss = torch.stack(loss)
 
-        print(f"M_LPROB:{m_lprob.mean()}")
+        print(f"M_LPROB:{log_probs.mean()}")
         print(f"LOSS:{loss.mean().item()}")
 
         return loss.mean(), reward.mean(), G.mean()

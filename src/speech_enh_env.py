@@ -7,7 +7,10 @@ import torch
 import numpy as np
 from utils import batch_pesq, power_uncompress
 from collections import deque
+
 import torch.nn.functional as F
+from torch.distributions import Normal
+
 #import gym
 #from gym import Env, spaces
 
@@ -221,8 +224,48 @@ class replay_buffer:
 
     def __len__(self):
         return len(self.buffer)
+    
+
+
 
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
+
+class GaussianStrategy:
+    """
+    This strategy adds Gaussian noise to the action taken by the deterministic policy.
+
+    Based on the rllab implementation.
+    """
+    def __init__(self, max_sigma=1.0, min_sigma=None,
+                 decay_period=1000000):
+   
+        self._max_sigma = max_sigma
+        if min_sigma is None:
+            min_sigma = max_sigma
+        self._min_sigma = min_sigma
+        self._decay_period = decay_period
+
+    def get_action_from_raw_action(self, action, t=None, **kwargs):
+        sigma = (
+            self._max_sigma - (self._max_sigma - self._min_sigma) *
+            min(1.0, t * 1.0 / self._decay_period)
+        )
+        
+        dist = Normal(torch.zeros(action.shape), torch.ones(action.shape) * sigma)
+        rand = dist.sample()
+        
+        log_prob = dist.log_prob(rand)
+        
+        action = torch.clip(
+            action + rand,
+            self._action_space.low,
+            self._action_space.high,
+        )
+
+        return action, log_prob
+
+
+
 class OUNoise(object):
     def __init__(self, action_dim, mu=0.0, theta=0.015, max_sigma=0.05, min_sigma=0.05, decay_period=100000, gpu_id=None):
         self.mu           = mu
@@ -231,9 +274,9 @@ class OUNoise(object):
         self.max_sigma    = max_sigma
         self.min_sigma    = min_sigma
         self.decay_period = decay_period
-        self.action_dim = action_dim
-        self.gpu_id = gpu_id
-        self.state = {}
+        self.action_dim   = action_dim
+        self.gpu_id       = gpu_id
+        self.state        = {}
         #self.reset(self.action_dim)
         
         

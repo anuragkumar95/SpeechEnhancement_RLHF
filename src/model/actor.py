@@ -1,6 +1,7 @@
 from model.conformer import ConformerBlock
 import torch
 import torch.nn as nn
+
 from torch.distributions import Normal
 
 
@@ -155,10 +156,10 @@ class MaskDecoder(nn.Module):
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob = self.sample(x_mu, x_var)
             x = self.prelu_out(x)
-            return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_mu, x_var
+            return x.permute(0, 2, 1).unsqueeze(1), x_logprob
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-            return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1), x
+            return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
 
 class ComplexDecoder(nn.Module):
     def __init__(self, num_channel=64, distribution=False):
@@ -192,10 +193,8 @@ class ComplexDecoder(nn.Module):
             return x, x_logprob
         else:
             x = self.conv(x)
-            return x, x
+            return x
         
-
-
 class TSCNet(nn.Module):
     def __init__(self, num_channel=64, num_features=201, distribution=False, gpu_id=None):
         super(TSCNet, self).__init__()
@@ -210,6 +209,7 @@ class TSCNet(nn.Module):
             num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution)
+        self.dist = distribution
 
     def get_action(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
@@ -221,12 +221,14 @@ class TSCNet(nn.Module):
         #out_3 = self.TSCB_2(out_2)
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
-
-        mask, m_logprob, mu, var = self.mask_decoder(out_2)
-        complex_out, c_logprob = self.complex_decoder(out_2)
-
-        return (mask, complex_out), (m_logprob, c_logprob), (mu, var)
-    
+        if self.dist:
+            mask, m_logprob = self.mask_decoder(out_2)
+            complex_out, c_logprob = self.complex_decoder(out_2)
+            return (mask, complex_out), (m_logprob, c_logprob)
+        
+        mask = self.mask_decoder(out_2)
+        complex_out = self.complex_decoder(out_2)
+        return (mask, complex_out), None
 
     def forward(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
@@ -242,13 +244,14 @@ class TSCNet(nn.Module):
         #out_3 = self.TSCB_2(out_2)
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
-
-        mask, _, _, _ = self.mask_decoder(out_2)
-        complex_out, _ = self.complex_decoder(out_2)
+        if self.dist:
+            mask, _ = self.mask_decoder(out_2)
+            complex_out, _ = self.complex_decoder(out_2)
+        else:
+            mask = self.mask_decoder(out_2)
+            complex_out = self.complex_decoder(out_2)
         
         out_mag = mask * mag
-
-        
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)

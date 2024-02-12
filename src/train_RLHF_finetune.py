@@ -153,7 +153,7 @@ class Trainer:
         clean_aud, _, noisy = batch
         inp = noisy.permute(0, 1, 3, 2)
         #Forward pass through actor to get the action(mask)
-        action, _, _ = self.actor.get_action(inp)
+        action, _ = self.actor.get_action(inp)
         #Apply action  to get the next state
         next_state = env.get_next_state(state=inp, 
                                         action=action)

@@ -252,18 +252,23 @@ class GaussianStrategy:
             min(1.0, t * 1.0 / self._decay_period)
         )
         
-        dist = Normal(torch.zeros(action.shape), torch.ones(action.shape) * sigma)
-        rand = dist.sample()
+        mean = torch.zeros(action.shape)
+        var = torch.ones(action.shape)
         if self.gpu_id is not None:
-            rand = rand.to(self.gpu_id)
-        
+            mean = mean.to(self.gpu_id)
+            var = var.to(self.gpu_id)
+
+        dist = Normal(mean, var)
+        rand = dist.sample() * sigma
         log_prob = dist.log_prob(rand)
         
-        action = torch.clip(
-            action + rand,
-            self._action_space.low,
-            self._action_space.high,
-        )
+        #action = torch.clip(
+        #    action + rand,
+        #    self._action_space.low,
+        #    self._action_space.high,
+        #)
+
+        action = action + rand
 
         return action, log_prob
 

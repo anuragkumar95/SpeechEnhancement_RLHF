@@ -71,7 +71,7 @@ class REINFORCE:
         exp_action, _ = self.expert.get_action(noisy)
 
         #Add gaussian noise
-        action, log_probs = self.gaussian_noise(action, t=self.t)
+        action, log_probs = self.gaussian_noise.get_action_from_raw_action(action, t=self.t)
         self.t += 1
 
         #Apply mask to get the next state

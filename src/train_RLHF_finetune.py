@@ -170,6 +170,7 @@ class Trainer:
         REWARDS = []
         num_batches = len(self.train_ds)
         train_ep_PESQ = 0
+        self.trainer.t = 0
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode

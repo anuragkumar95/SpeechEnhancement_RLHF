@@ -39,6 +39,7 @@ class REINFORCE:
         self.beta = beta
         self.gaussian_noise = GaussianStrategy()
         self.t = 0
+        self.dist = params['env_params'].get("args").out_dist
 
     def get_expected_reward(self, rewards):
         """
@@ -67,15 +68,20 @@ class REINFORCE:
         noisy = noisy.permute(0, 1, 3, 2)
         action, log_probs = model.get_action(noisy)
 
+        #ignore complex mask, just tune mag mask
+        log_prob = log_probs[0]
+
         #Forward pass through expert model
         exp_action, _ = self.expert.get_action(noisy)
 
-        #Add gaussian noise
-        action, log_probs = self.gaussian_noise.get_action_from_raw_action(action, t=self.t)
-        self.t += 1
+        if self.dist == False:
+            #Add gaussian noise
+            action, log_prob = self.gaussian_noise.get_action_from_raw_action(action, t=self.t)
+            self.t += 1
 
         #Apply mask to get the next state
-        next_state = self.env.get_next_state(state=noisy, action=action)
+        a_t = (action[0], exp_action[-1])
+        next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
 
         #Apply exp_mask to get next state
@@ -92,10 +98,10 @@ class REINFORCE:
         loss = []
         alpha = 1
         for i in range(G.shape[0]):
-            loss.append(alpha * -G[i, ...] * log_probs[i, ...] )
+            loss.append(alpha * -G[i, ...] * log_prob[i, ...] )
         loss = torch.stack(loss)
 
-        print(f"M_LPROB:{log_probs.mean()}")
+        print(f"M_LPROB:{log_prob.mean()}")
         print(f"LOSS:{loss.mean().item()}")
 
         return loss.mean(), reward.mean(), G.mean()

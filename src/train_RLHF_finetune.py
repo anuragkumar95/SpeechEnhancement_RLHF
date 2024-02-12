@@ -46,6 +46,8 @@ def args():
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
+    parser.add_argument("--out_dist", action='store_true',
+                        help="If GAN learns a distribution.")
     
     parser.add_argument("--reward", type=int, help="Type of reward")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
@@ -67,7 +69,7 @@ class Trainer:
     """
     Starting with reinforce algorithm.
     """
-    def __init__(self, train_ds, test_ds, args, gpu_id, out_distribution=False, pretrain=False):
+    def __init__(self, train_ds, test_ds, args, gpu_id, pretrain=False):
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
@@ -76,12 +78,12 @@ class Trainer:
 
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1,
-                            distribution=out_distribution, 
+                            distribution=args.out_dist, 
                             gpu_id=gpu_id)
         
         self.expert = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1,
-                            distribution=out_distribution, 
+                            distribution=args.out_dist, 
                             gpu_id=gpu_id)
         
         self.critic = QNet(ndf=16, in_channel=3)
@@ -92,7 +94,7 @@ class Trainer:
         self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
         
         #Freeze complex decoder
-        self.actor = freeze_layers(self.actor, ['complex_decoder'])
+        self.actor = freeze_layers(self.actor, ['complex_decoder', 'dense_encoder', 'TSCB_1'])
 
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
@@ -102,7 +104,7 @@ class Trainer:
 
 
         self.a_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr)
-        self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
+        #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
@@ -304,7 +306,7 @@ def main(rank: int, world_size: int, args):
     if args.ckpt is not None:
         pretrain=True
 
-    trainer = Trainer(train_ds, test_ds, args, rank, out_distribution=False, pretrain=pretrain)
+    trainer = Trainer(train_ds, test_ds, args, rank, pretrain=pretrain)
     
     trainer.train(args)
     destroy_process_group()

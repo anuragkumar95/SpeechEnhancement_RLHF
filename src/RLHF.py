@@ -37,7 +37,7 @@ class REINFORCE:
         self.expert = init_model.to(self.gpu_id)
         #self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
         self.beta = beta
-        self.gaussian_noise = GaussianStrategy()
+        self.gaussian_noise = GaussianStrategy(gpu_id=gpu_id)
         self.t = 0
         self.dist = params['env_params'].get("args").out_dist
 

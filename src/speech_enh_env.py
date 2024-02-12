@@ -236,7 +236,7 @@ class GaussianStrategy:
 
     Based on the rllab implementation.
     """
-    def __init__(self, max_sigma=1.0, min_sigma=None,
+    def __init__(self, gpu_id=None, max_sigma=1.0, min_sigma=None,
                  decay_period=1000000):
    
         self._max_sigma = max_sigma
@@ -244,6 +244,7 @@ class GaussianStrategy:
             min_sigma = max_sigma
         self._min_sigma = min_sigma
         self._decay_period = decay_period
+        self.gpu_id = gpu_id
 
     def get_action_from_raw_action(self, action, t=None, **kwargs):
         sigma = (
@@ -253,6 +254,8 @@ class GaussianStrategy:
         
         dist = Normal(torch.zeros(action.shape), torch.ones(action.shape) * sigma)
         rand = dist.sample()
+        if self.gpu_id is not None:
+            rand = rand.to(self.gpu_id)
         
         log_prob = dist.log_prob(rand)
         

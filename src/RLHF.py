@@ -68,16 +68,18 @@ class REINFORCE:
         noisy = noisy.permute(0, 1, 3, 2)
         action, log_probs = model.get_action(noisy)
 
-        #ignore complex mask, just tune mag mask
-        log_prob = log_probs[0]
-
         #Forward pass through expert model
         exp_action, _ = self.expert.get_action(noisy)
 
         if self.dist == False:
             #Add gaussian noise
-            action, log_prob = self.gaussian_noise.get_action_from_raw_action(action, t=self.t)
+            m_action, log_prob = self.gaussian_noise.get_action_from_raw_action(action[0], t=self.t)
+            action = (m_action, action[-1])
             self.t += 1
+
+        else:  
+            #ignore complex mask, just tune mag mask 
+            log_prob = log_probs[0]
 
         #Apply mask to get the next state
         a_t = (action[0], exp_action[-1])

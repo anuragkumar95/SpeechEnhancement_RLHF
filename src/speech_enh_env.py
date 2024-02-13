@@ -252,10 +252,8 @@ class GaussianStrategy:
             min(1.0, t * 1.0 / self._decay_period)
         )
         
-        #mean = torch.zeros(action.shape)
         var = torch.ones(action.shape)
         if self.gpu_id is not None:
-            #mean = mean.to(self.gpu_id)
             var = var.to(self.gpu_id)
 
         dist = Normal(action, var * sigma)

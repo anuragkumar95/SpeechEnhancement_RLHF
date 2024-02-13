@@ -171,6 +171,7 @@ class Trainer:
         num_batches = len(self.train_ds)
         train_ep_PESQ = 0
         self.trainer.t = 0
+        prev_G = 0
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode
@@ -178,6 +179,7 @@ class Trainer:
             try:  
                 batch_loss, batch_reward, G = self.trainer.run_episode(batch, self.actor)
             except Exception as e:
+                print(traceback.format_exc())
                 continue
 
             if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
@@ -197,9 +199,10 @@ class Trainer:
                 "episode_cumulative_reward":batch_reward.item(),
                 "trainPESQ":original_pesq(batch_reward.item()),
                 "episode": (i+1) + ((epoch - 1) * num_batches),
-                "G_t": G, 
+                "cumulative_G_t": G + prev_G, 
                 "loss":batch_loss
             })
+            prev_G = G + prev_G
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())
 
@@ -219,8 +222,9 @@ class Trainer:
             try:
                 val_pesq_score = self.run_validation(self.trainer.env, batch)
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
                 continue
+
             pesq += val_pesq_score
             v_step += 1
             print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")

@@ -137,6 +137,7 @@ class Trainer:
         
             
         self.gpu_id = gpu_id
+        self.G = 0
         #self.expert.eval()
         #self.target_actor.eval()
         #self.target_critic.eval()
@@ -171,7 +172,6 @@ class Trainer:
         num_batches = len(self.train_ds)
         train_ep_PESQ = 0
         self.trainer.t = 0
-        prev_G = 0
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode
@@ -200,10 +200,10 @@ class Trainer:
                 "trainPESQ":original_pesq(batch_reward.item()),
                 "episode": (i+1) + ((epoch - 1) * num_batches),
                 "G_t":G,
-                "cumulative_G_t": G + prev_G, 
+                "cumulative_G_t": G + self.G, 
                 "loss":batch_loss
             })
-            prev_G = G + prev_G
+            self.G = G + self.G
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())
 

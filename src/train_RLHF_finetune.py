@@ -199,6 +199,7 @@ class Trainer:
                 "episode_cumulative_reward":batch_reward.item(),
                 "trainPESQ":original_pesq(batch_reward.item()),
                 "episode": (i+1) + ((epoch - 1) * num_batches),
+                "G_t":G,
                 "cumulative_G_t": G + prev_G, 
                 "loss":batch_loss
             })

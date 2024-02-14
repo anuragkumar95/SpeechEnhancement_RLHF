@@ -108,7 +108,7 @@ class Trainer:
         )
         #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
         self.lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-            self.optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range'
+            self.a_optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range'
         )
 
         if gpu_id is not None:

@@ -207,7 +207,8 @@ class Trainer:
                 "episode": (i+1) + ((epoch - 1) * num_batches),
                 "G_t":G,
                 "cumulative_G_t": G + self.G, 
-                "loss":batch_loss
+                "loss":batch_loss,
+                "lr":self.lr_scheduler.get_last_lr()
             })
             self.G = G + self.G
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")

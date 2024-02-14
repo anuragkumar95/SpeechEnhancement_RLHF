@@ -107,9 +107,9 @@ class Trainer:
             filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr
         )
         #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
-        self.lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-            self.a_optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range', cycle_momentum=False, 
-        )
+        #self.lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
+        #    self.a_optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range', cycle_momentum=False, 
+        #)
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
@@ -199,7 +199,7 @@ class Trainer:
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
                 torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
                 self.a_optimizer.step()
-                self.lr_scheduler.step()
+                #self.lr_scheduler.step()
 
             wandb.log({
                 "episode_cumulative_reward":batch_reward.item(),
@@ -208,8 +208,9 @@ class Trainer:
                 "G_t":G,
                 "cumulative_G_t": G + self.G, 
                 "loss":batch_loss,
-                "lr":self.lr_scheduler.get_last_lr()
+                #"lr":self.lr_scheduler.get_last_lr()
             })
+
             self.G = G + self.G
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())

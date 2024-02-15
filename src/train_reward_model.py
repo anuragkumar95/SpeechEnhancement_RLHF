@@ -91,7 +91,7 @@ class Trainer:
             self.reward_model = self.reward_model.to(gpu_id)
 
         self.gpu_id = gpu_id
-        self.G = 0
+        self.args = args
         wandb.init(project=args.exp)
 
     def save(self, path, state_dict):

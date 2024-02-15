@@ -10,7 +10,6 @@ from RLHF import REINFORCE
 from reward_model.src.dataset.dataset import load_data
 
 import os
-from data.dataset import load_data
 import torch.nn.functional as F
 import torch
 from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq

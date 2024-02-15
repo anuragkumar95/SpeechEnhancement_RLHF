@@ -33,6 +33,7 @@ def ARGS():
     parser.add_argument("-r", "--root", type=str, required=True,
                         help="Root directory to Voicebank.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
+    parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=True, default=None,
@@ -231,6 +232,9 @@ def main(args):
 
 if __name__=='__main__':
     args = ARGS().parse_args()
-    output = f"{args.output}/{args.exp}_{args.suffix}"
+    if len(args.suffix) > 0: 
+        output = f"{args.output}/{args.exp}_{args.suffix}"
+    else:
+        output = f"{args.output}/{args.exp}"
     os.makedirs(output, exist_ok=True)
     main(args)

@@ -144,7 +144,7 @@ class Trainer:
                 print(traceback.format_exc())
                 continue
 
-            if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
+            if torch.isnan(loss).any() or torch.isinf(loss).any():
                 continue
             
             batch_loss += loss / self.ACCUM_GRAD

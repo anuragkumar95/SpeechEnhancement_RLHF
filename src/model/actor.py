@@ -1,6 +1,8 @@
 from model.conformer import ConformerBlock
 import torch
 import torch.nn as nn
+from critic import QNet
+import torch.nn.functional as F
 
 from torch.distributions import Normal
 
@@ -229,6 +231,16 @@ class TSCNet(nn.Module):
         mask = self.mask_decoder(out_2)
         complex_out = self.complex_decoder(out_2)
         return (mask, complex_out), None
+    
+    def get_embedding(self, x):
+        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+        
+        x_in = torch.cat([mag, x], dim=1)
+        
+        out_1 = self.dense_encoder(x_in)
+        out_2 = self.TSCB_1(out_1)
+
+        return out_2
 
     def forward(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
@@ -259,3 +271,36 @@ class TSCNet(nn.Module):
 
         return final_real, final_imag
         
+
+class RewardModel(nn.Module):
+    def __init__(self, policy):
+        super(RewardModel, self).__init__()
+        self.conformer = policy
+        self.reward_projection = QNet(ndf=16, in_channel=3)
+
+    def forward(self, x_ref, x_per):
+        final_real_ref, final_imag_ref = self.conformer(x_ref)
+        final_real_per, final_imag_per = self.conformer(x_per)
+
+        final_mag_ref = torch.sqrt(final_real_ref ** 2 + final_imag_ref ** 2)
+        final_mag_per = torch.sqrt(final_real_per ** 2 + final_imag_per ** 2)
+
+        state_ref = {
+            'mag':final_mag_ref,
+            'real':final_real_ref,
+            'imag':final_imag_ref
+        }
+
+        state_per = {
+            'mag':final_mag_per,
+            'real':final_real_per,
+            'imag':final_imag_per
+        }
+        
+        score_ref = self.reward_projection(state_ref)
+        score_per = self.reward_projection(state_per)
+
+        scores = torch.cat([score_ref, score_per], dim=-1)
+        probs = F.softmax(scores, dim=-1)
+
+        return probs

@@ -129,12 +129,12 @@ class JNDDataset(Dataset):
             inp = inp.reshape(-1)
             out = out.reshape(-1)
 
-            label = self.data[idx, 2]
-            if label == 0:
-                label = torch.tensor([0.0, 1.0])
-            else:
-                label = torch.tensor([1.0, 0.0])
-        return inp[:self.cut_len], out[:self.cut_len], label
+            ch = np.random.choice(10)
+            if ch >= 5:
+                label = [1.0, 0.0]
+                return inp[:self.cut_len], out[:self.cut_len], label
+            label = [0.0, 1.0]
+            return out[:self.cut_len], inp[:self.cut_len], label
 
     
 def load_data(root=None, data=None, path_root=None, batch_size=4, n_cpu=1, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):

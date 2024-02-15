@@ -213,7 +213,7 @@ def preprocess_batch(batch, gpu_id=None):
     Returns:
         Dict of spectrograms
     """
-    clean, noisy, _ = batch
+    clean, noisy, labels = batch
 
     if gpu_id is not None:
         clean = clean.to(gpu_id)
@@ -221,4 +221,4 @@ def preprocess_batch(batch, gpu_id=None):
 
     clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
     
-    return (clean, clean_spec, noisy_spec)
+    return (clean, clean_spec, noisy_spec, labels)

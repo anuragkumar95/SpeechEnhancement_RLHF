@@ -182,7 +182,7 @@ class Trainer:
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
             try:  
-                batch_loss, batch_reward, G = self.trainer.run_episode(batch, self.actor)
+                loss, batch_reward, G = self.trainer.run_episode(batch, self.actor)
             except Exception as e:
                 print(traceback.format_exc())
                 continue
@@ -191,7 +191,7 @@ class Trainer:
                 continue
             
             train_ep_PESQ += original_pesq(batch_reward.item()) 
-            batch_loss += batch_loss / self.ACCUM_GRAD
+            batch_loss += loss / self.ACCUM_GRAD
 
             self.a_optimizer.zero_grad()
             batch_loss.backward()
@@ -199,6 +199,7 @@ class Trainer:
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
                 torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
                 self.a_optimizer.step()
+                batch_loss = 0
                 #self.lr_scheduler.step()
 
             wandb.log({

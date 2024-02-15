@@ -1,7 +1,7 @@
 from model.conformer import ConformerBlock
 import torch
 import torch.nn as nn
-from critic import QNet
+from model.critic import QNet
 import torch.nn.functional as F
 
 from torch.distributions import Normal

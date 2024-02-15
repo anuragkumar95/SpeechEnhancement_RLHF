@@ -279,6 +279,10 @@ class RewardModel(nn.Module):
         self.reward_projection = QNet(ndf=16, in_channel=3)
 
     def forward(self, x_ref, x_per):
+
+        x_ref = x_ref.permute(0, 1, 3, 2)
+        x_per = x_per.permute(0, 1, 3, 2)
+
         final_real_ref, final_imag_ref = self.conformer(x_ref)
         final_real_per, final_imag_per = self.conformer(x_per)
 

@@ -112,6 +112,11 @@ class Trainer:
     def forward_step(self, batch):
         _, x_1, x_2, labels = batch
 
+        if self.gpu_id is not None:
+            x_1 = x_1.to(self.gpu_id)
+            x_2 = x_2.to(self.gpu_id)
+            labels = labels.to(self.gpu_id)
+
         probs = self.reward_model(x_1, x_2)
         loss = F.cross_entropy(probs, labels)
 

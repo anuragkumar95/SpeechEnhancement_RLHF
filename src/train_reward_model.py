@@ -163,6 +163,12 @@ class Trainer:
 
                 batch_loss = 0
             
+            wandb.log({
+                "step": i+1,
+                "batch_loss":loss.item(),
+                "batch_acc":batch_acc
+            })
+            
 
         train_loss = train_loss * self.ACCUM_GRAD / num_batches
         train_acc = train_acc * self.ACCUM_GRAD / num_batches

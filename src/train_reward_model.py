@@ -134,6 +134,7 @@ class Trainer:
         num_batches = len(self.train_ds)
         train_loss = 0
         train_acc = 0
+        batch_loss = 0
         for i, batch in enumerate(self.train_ds):   
             
             #Each minibatch is an episode

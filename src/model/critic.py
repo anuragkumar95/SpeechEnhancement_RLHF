@@ -43,9 +43,9 @@ class QNet(nn.Module):
    
 
     def forward(self, state,):
-        mag = state['est_mag']
-        est_real = state['est_real']
-        est_imag = state['est_imag']
+        mag = state['mag']
+        est_real = state['real']
+        est_imag = state['imag']
 
         xy = torch.cat([mag, est_real, est_imag], dim = 1)
         return self.layers(xy)

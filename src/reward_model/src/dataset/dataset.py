@@ -131,9 +131,9 @@ class JNDDataset(Dataset):
 
             ch = np.random.choice(10)
             if ch >= 5:
-                label = [1.0, 0.0]
+                label = torch.tensor([1.0, 0.0])
                 return inp[:self.cut_len], out[:self.cut_len], label
-            label = [0.0, 1.0]
+            label = torch.tensor([0.0, 1.0])
             return out[:self.cut_len], inp[:self.cut_len], label
 
     

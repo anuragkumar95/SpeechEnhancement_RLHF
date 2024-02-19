@@ -83,7 +83,7 @@ class Trainer:
         del cmgan_expert_checkpoint 
 
         self.reward_model = RewardModel(policy=self.actor)
-        self.cdpam = cdpam.CDPAM(dev=self.gpu_id)
+        self.cdpam = cdpam.CDPAM(dev=gpu_id)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr

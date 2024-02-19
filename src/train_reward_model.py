@@ -209,8 +209,8 @@ class Trainer:
             #TODO:Log these in wandb
             wandb.log({
                 "Epoch":epoch+1,
-                "Val_loss":val_loss.item(),
-                "Train_loss":tr_loss.item(),
+                "Val_loss":val_loss,
+                "Train_loss":tr_loss,
                 "Val_acc":val_acc,
                 "Train_acc":tr_acc
             })

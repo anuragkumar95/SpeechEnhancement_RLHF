@@ -297,5 +297,6 @@ class RewardModel(nn.Module):
 
         print(f"proj:{scores.shape}")
         probs = F.softmax(scores, dim=-1)
-
+        print(f"probs:{probs.shape}")
+        print(f"PROBS:{probs}")
         return probs

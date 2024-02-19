@@ -288,10 +288,8 @@ class RewardModel(nn.Module):
 
         print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
         
-        proj = self.reward_projection(ref_emb, per_emb)
-        print(f"proj:{proj.shape}")
-        scores = self.out(proj) 
-        print(f"scores:{scores.shape}")
+        scores = self.reward_projection(ref_emb, per_emb)
+        print(f"proj:{scores.shape}")
         probs = F.softmax(scores, dim=-1)
 
         return probs

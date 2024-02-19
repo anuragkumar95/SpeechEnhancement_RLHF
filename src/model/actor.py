@@ -287,7 +287,7 @@ class RewardModel(nn.Module):
         ref_emb = self.conformer.get_embedding(x_ref)
         per_emb = self.conformer.get_embedding(x_per)
 
-        print(f"ref:{ref_emb.shape}, per:{per_emb.shape}, dist:{dist.shape}")
+        print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
         
         scores = self.reward_projection(ref_emb, per_emb)
         if dist is not None:

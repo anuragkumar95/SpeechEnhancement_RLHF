@@ -8,7 +8,7 @@ from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE
 from reward_model.src.dataset.dataset import load_data
-import cdpam
+#import cdpam
 
 import os
 import torch.nn.functional as F
@@ -85,7 +85,7 @@ class Trainer:
         del cmgan_expert_checkpoint 
 
         self.reward_model = RewardModel(policy=self.actor)
-        self.cdpam = cdpam.CDPAM(dev=gpu_id)
+        #self.cdpam = cdpam.CDPAM(dev=gpu_id)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr
@@ -140,14 +140,14 @@ class Trainer:
         train_acc = 0
         batch_loss = 0
         for i, batch in enumerate(self.train_ds):   
-             #Calculate cdpam distance
-            wav_ref, wav_inp, _ = batch
-            cdpam_dist = self.cdpam.forward(wav_ref, wav_inp)
+            ##Calculate cdpam distance
+            #wav_ref, wav_inp, _ = batch
+            #cdpam_dist = self.cdpam.forward(wav_ref, wav_inp)
 
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             try:  
-                loss, batch_acc = self.forward_step(batch, cdpam_dist)
+                loss, batch_acc = self.forward_step(batch)
             except Exception as e:
                 print(traceback.format_exc())
                 continue

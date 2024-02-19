@@ -287,9 +287,13 @@ class RewardModel(nn.Module):
         ref_emb = self.conformer.get_embedding(x_ref)
         per_emb = self.conformer.get_embedding(x_per)
 
+        print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
+
         proj_inp = torch.cat([ref_emb, per_emb], dim=-1)
+        print(f"inp:{proj_inp.shape}")
         
         proj = self.reward_projection(proj_inp)
+        print(f"proj:{proj.shape}")
         scores = self.out(proj) 
         probs = F.softmax(scores, dim=-1)
 

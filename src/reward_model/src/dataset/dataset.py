@@ -179,8 +179,8 @@ def load_data(root=None,
 
         if resample:
             resample = 16000
-        train_ds = JNDDataset(root, path_root, train_indices, cut_len=cut_len, resample=resample)
-        test_ds = JNDDataset(root, path_root, test_indices, cut_len=cut_len, resample=resample)
+        train_ds = JNDDataset(root=root, path_root=path_root, indices=train_indices, cut_len=cut_len, resample=resample)
+        test_ds = JNDDataset(root=root, path_root=path_root, indices=test_indices, cut_len=cut_len, resample=resample)
 
     else:
         print(f"loading data from {data} ...")

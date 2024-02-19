@@ -8,6 +8,7 @@ from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE
 
+
 import os
 from data.dataset import load_data
 import torch.nn.functional as F
@@ -87,6 +88,8 @@ class Trainer:
                             gpu_id=gpu_id)
         
         self.critic = QNet(ndf=16, in_channel=3)
+
+        
         
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
@@ -178,7 +181,7 @@ class Trainer:
         train_ep_PESQ = 0
         self.trainer.t = 0
         for i, batch in enumerate(self.train_ds):   
-            
+           
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
             try:  

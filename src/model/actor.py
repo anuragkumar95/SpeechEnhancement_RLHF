@@ -278,7 +278,6 @@ class RewardModel(nn.Module):
         self.conformer = policy
         self.reward_projection = QNet(ndf=16, out_channel=2)
         
-
     def forward(self, x_ref, x_per):
 
         x_ref = x_ref.permute(0, 1, 3, 2)

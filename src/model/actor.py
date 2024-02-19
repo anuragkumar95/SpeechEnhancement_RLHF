@@ -276,15 +276,15 @@ class RewardModel(nn.Module):
     def __init__(self, policy):
         super(RewardModel, self).__init__()
         self.conformer = policy
-        self.reward_projection = QNet(ndf=16, out_channel=2)
+        self.reward_projection = QNet(ndf=16, in_channel=128, out_channel=2)
         
     def forward(self, x_ref, x_per):
 
         x_ref = x_ref.permute(0, 1, 3, 2)
         x_per = x_per.permute(0, 1, 3, 2)
 
-        ref_emb = self.conformer.get_embedding(x_ref).permute(0, 2, 3, 1)
-        per_emb = self.conformer.get_embedding(x_per).permute(0, 2, 3, 1)
+        ref_emb = self.conformer.get_embedding(x_ref)
+        per_emb = self.conformer.get_embedding(x_per)
 
         print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
         

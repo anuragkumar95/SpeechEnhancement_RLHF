@@ -31,7 +31,9 @@ from speech_enh_env import SpeechEnhancementAgent
 def ARGS():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--root", type=str, required=True,
-                        help="Root directory to Voicebank.")
+                        help="Root directory to JND.")
+    parser.add_argument("-c", "--comp", type=str, required=False,
+                        help="Root directory to JND Dataset comparision lists.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")
     parser.add_argument("-o", "--output", type=str, required=True,
@@ -230,15 +232,26 @@ class Trainer:
                 #TODO:May need a LR scheduler as well
 
 def main(args):
+
+    if args.root.endswith('.npy'):
+        train_ds, test_ds = load_data(data=args.root, 
+                                        batch_size=args.batchsize, 
+                                        n_cpu=1,
+                                        split_ratio=0.8, 
+                                        cut_len=args.cut_len,
+                                        type='linear',
+                                        resample=True,
+                                        parallel=False)
+    else:
+        train_ds, test_ds = load_data(root=args.root, 
+                                        path_root=args.comp,
+                                        batch_size=args.batchsize, 
+                                        n_cpu=1,
+                                        split_ratio=0.8, 
+                                        cut_len=args.cut_len,
+                                        resample=True,
+                                        parallel=False)
     
-    train_ds, test_ds = load_data(data=args.root, 
-                                  batch_size=args.batchsize, 
-                                  n_cpu=1,
-                                  split_ratio=0.8, 
-                                  cut_len=args.cut_len,
-                                  resample=True,
-                                  parallel=False)
-            
     if args.gpu:
         trainer = Trainer(train_ds, test_ds, args, 0)
     else:

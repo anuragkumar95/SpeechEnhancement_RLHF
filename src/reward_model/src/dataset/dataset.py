@@ -137,13 +137,30 @@ class JNDDataset(Dataset):
             return out[:self.cut_len], inp[:self.cut_len], label
 
     
-def load_data(root=None, data=None, path_root=None, batch_size=4, n_cpu=1, split_ratio=0.7, cut_len=40000, resample=False, parallel=False, shuffle=False):
+def load_data(root=None, 
+              data=None, 
+              path_root=None, 
+              batch_size=4, 
+              type=None,
+              n_cpu=1, 
+              split_ratio=0.7, 
+              cut_len=40000, 
+              resample=False, 
+              parallel=False, 
+              shuffle=False):
     torchaudio.set_audio_backend("sox_io")  # in linux
     #For reproducing results
     np.random.seed(4)
     if data is None:
-        train_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
-        test_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
+        if type is not None:
+            if type not in ['combined', 'reverb', 'linear', 'eq']:
+                raise ValueError("Unknown type for JND. Set type to be one of ('combined', 'reverb', 'linear', 'eq')")
+            else:
+                train_indices = {type:[]}
+                test_indices = {type:[]}
+        else:
+            train_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
+            test_indices = {'combined':[], 'reverb':[], 'linear':[], 'eq':[]}
         
         for key in train_indices:
             with open(os.path.join(path_root, f'dataset_{key}.txt'), 'r') as f:

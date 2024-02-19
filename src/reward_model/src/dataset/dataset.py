@@ -113,10 +113,11 @@ class JNDDataset(Dataset):
             inp = inp.reshape(-1)
             out = out.reshape(-1)
 
-            if self.paths['labels'][idx] == 1:
-                label = torch.tensor([0.0, 1.0])
-            else:
-                label = torch.tensor([1.0, 0.0])
+            #if self.paths['labels'][idx] == 1:
+            #    label = torch.tensor([0.0, 1.0])
+            #else:
+            #    label = torch.tensor([1.0, 0.0])
+
         
         else:
             inp = torch.FloatTensor(self.data[idx, 0]).reshape(1, -1)
@@ -133,12 +134,12 @@ class JNDDataset(Dataset):
             inp = inp.reshape(-1)
             out = out.reshape(-1)
 
-            ch = np.random.choice(10)
-            if ch >= 5:
-                label = torch.tensor([1.0, 0.0])
-                return inp[:self.cut_len], out[:self.cut_len], label
-            label = torch.tensor([0.0, 1.0])
-            return out[:self.cut_len], inp[:self.cut_len], label
+        ch = np.random.choice(10)
+        if ch >= 5:
+            label = torch.tensor([1.0, 0.0])
+            return inp[:self.cut_len], out[:self.cut_len], label
+        label = torch.tensor([0.0, 1.0])
+        return out[:self.cut_len], inp[:self.cut_len], label
 
     
 def load_data(root=None, 

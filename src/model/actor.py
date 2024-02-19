@@ -276,7 +276,7 @@ class RewardModel(nn.Module):
     def __init__(self, policy):
         super(RewardModel, self).__init__()
         self.conformer = policy
-        self.reward_projection = DilatedDenseNet(depth=2, in_channels=128)
+        self.reward_projection = nn.Sequential(depth=2, in_channels=128)
         self.out = nn.Linear(in_features=128, out_features=2)
 
     def forward(self, x_ref, x_per):
@@ -284,8 +284,8 @@ class RewardModel(nn.Module):
         x_ref = x_ref.permute(0, 1, 3, 2)
         x_per = x_per.permute(0, 1, 3, 2)
 
-        ref_emb = self.conformer.get_embedding(x_ref)
-        per_emb = self.conformer.get_embedding(x_per)
+        ref_emb = self.conformer.get_embedding(x_ref).permute(0, 2, 3, 1)
+        per_emb = self.conformer.get_embedding(x_per).permute(0, 2, 3, 1)
 
         print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
 
@@ -295,6 +295,7 @@ class RewardModel(nn.Module):
         proj = self.reward_projection(proj_inp)
         print(f"proj:{proj.shape}")
         scores = self.out(proj) 
+        print(f"scores:{scores.shape}")
         probs = F.softmax(scores, dim=-1)
 
         return probs

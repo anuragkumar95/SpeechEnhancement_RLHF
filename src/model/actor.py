@@ -287,11 +287,8 @@ class RewardModel(nn.Module):
         per_emb = self.conformer.get_embedding(x_per).permute(0, 2, 3, 1)
 
         print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
-
-        proj_inp = torch.cat([ref_emb, per_emb], dim=-1)
-        print(f"inp:{proj_inp.shape}")
         
-        proj = self.reward_projection(proj_inp)
+        proj = self.reward_projection(ref_emb, per_emb)
         print(f"proj:{proj.shape}")
         scores = self.out(proj) 
         print(f"scores:{scores.shape}")

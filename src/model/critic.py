@@ -9,7 +9,7 @@ from speech_enh_env import SpeechEnhancementAgent
 
 
 class QNet(nn.Module):
-    def __init__(self, ndf, in_channel=2):
+    def __init__(self, ndf, in_channel=2, out_channel=1):
         super().__init__()
         self.layers = nn.Sequential(
             nn.utils.spectral_norm(
@@ -37,8 +37,8 @@ class QNet(nn.Module):
             nn.utils.spectral_norm(nn.Linear(ndf * 8, ndf * 4)),
             nn.Dropout(0.3),
             nn.PReLU(4 * ndf),
-            nn.utils.spectral_norm(nn.Linear(ndf * 4, 1)),
-            LearnableSigmoid(1),
+            nn.utils.spectral_norm(nn.Linear(ndf * 4, out_channel)),
+            LearnableSigmoid(out_channel),
         )
    
 

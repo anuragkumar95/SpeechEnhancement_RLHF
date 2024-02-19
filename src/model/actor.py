@@ -276,8 +276,8 @@ class RewardModel(nn.Module):
     def __init__(self, policy):
         super(RewardModel, self).__init__()
         self.conformer = policy
-        self.reward_projection = DilatedDenseNet(depth=2, in_channels=128)
-        self.out = nn.Linear(in_features=128, out_features=2)
+        self.reward_projection = QNet(ndf=16, out_channel=2)
+        
 
     def forward(self, x_ref, x_per):
 

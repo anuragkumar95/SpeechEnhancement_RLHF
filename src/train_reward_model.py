@@ -164,7 +164,7 @@ class Trainer:
                 torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
                 self.a_optimizer.step()
 
-                train_loss += batch_loss
+                train_loss += batch_loss.item()
                 train_acc += batch_acc
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
@@ -198,7 +198,7 @@ class Trainer:
             if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
                 continue
 
-            val_loss += batch_loss
+            val_loss += batch_loss.item()
             val_acc += batch_acc
         
         val_loss = val_loss / num_batches

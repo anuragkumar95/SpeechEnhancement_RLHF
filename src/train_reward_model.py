@@ -239,7 +239,6 @@ def main(args):
                                         n_cpu=1,
                                         split_ratio=0.8, 
                                         cut_len=args.cut_len,
-                                        type='linear',
                                         resample=True,
                                         parallel=False)
     else:
@@ -247,6 +246,7 @@ def main(args):
                                         path_root=args.comp,
                                         batch_size=args.batchsize, 
                                         n_cpu=1,
+                                        type='linear',
                                         split_ratio=0.8, 
                                         cut_len=args.cut_len,
                                         resample=True,

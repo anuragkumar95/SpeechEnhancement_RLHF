@@ -293,6 +293,7 @@ class RewardModel(nn.Module):
         if dist is not None:
             scores = torch.cat([scores, dist], dim=-1)
             scores = self.out(scores)
+            
         print(f"proj:{scores.shape}")
         probs = F.softmax(scores, dim=-1)
 

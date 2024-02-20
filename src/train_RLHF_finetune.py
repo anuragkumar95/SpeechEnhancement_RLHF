@@ -3,7 +3,7 @@
 @author: Anurag Kumar
 """
 
-from model.actor import TSCNet
+from model.actor import TSCNet, RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE
@@ -37,6 +37,8 @@ def args():
                         help="Output directory for checkpoints. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=True, default=None,
                         help="Path to saved checkpoint to fine-tune.")
+    parser.add_argument("--reward_pt", type=str, required=False, default=None,
+                        help="path to the reward model checkpoint.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
@@ -88,22 +90,26 @@ class Trainer:
                             gpu_id=gpu_id)
         
         self.critic = QNet(ndf=16, in_channel=3)
-
-        
-        
+        self.reward_model = RewardModel(policy=self.actor)
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
         self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
         
-        #Freeze complex decoder
+        reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
+        self.reward_model.load_state_dict(reward_checkpoint)
+        
+        #Freeze complex decoder and reward model
         self.actor = freeze_layers(self.actor, ['complex_decoder', 'dense_encoder', 'TSCB_1'])
+        self.reward_model = freeze_layers(self.reward_model, 'all')
+        self.reward_model.eval()
 
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
         self.expert.eval()
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
+        del reward_checkpoint
 
 
         self.a_optimizer = torch.optim.AdamW(
@@ -121,6 +127,7 @@ class Trainer:
                                      beta = 1e-10 , 
                                      init_model=self.expert,
                                      discount=1.0,
+                                     reward_model=self.reward_model,
                                      env_params={'n_fft':400,
                                                  'hop':100, 
                                                  'args':args})

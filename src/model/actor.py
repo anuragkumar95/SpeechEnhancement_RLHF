@@ -298,3 +298,15 @@ class RewardModel(nn.Module):
         print(f"probs:{probs.shape}")
         print(f"PROBS:{probs}")
         return probs
+    
+    def get_reward(self, x):
+        """
+        ARGS:
+            x : spectrogram of shape (b * ch * t * f)
+        """
+        x = x.permute(0, 1, 3, 2)
+        x_emb = self.conformer.get_embedding(x)
+        
+        rewards = self.reward_projection(x_emb)
+
+        return rewards

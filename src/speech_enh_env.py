@@ -41,7 +41,7 @@ class GymSpeechEnhancementEnv(Env):
         pass
 """
 class SpeechEnhancementAgent:
-    def __init__(self, n_fft, hop, args, buffer_size=None, gpu_id=None):
+    def __init__(self, n_fft, hop, args, reward_model=None, buffer_size=None, gpu_id=None):
         """
         State : Dict{noisy, clean, est_real, est_imag, cl_audio, est_audio}
         """
@@ -49,8 +49,11 @@ class SpeechEnhancementAgent:
         self.n_fft = n_fft
         self.hop = hop
         self.args = args
+        self.reward_model = None
         if buffer_size is not None:
             self.exp_buffer = replay_buffer(buffer_size, gpu_id=gpu_id)
+        if reward_model is not None:
+            self.reward_model = reward_model
         
 
     #def set_batch(self, batch):
@@ -112,8 +115,18 @@ class SpeechEnhancementAgent:
         next_state['est_audio'] = est_audio
 
         return next_state
+    
+    def get_reward(self, state):
+        """
+        spec shape should be (b * ch * t * f)
+        """
+        print(f"state:{state['est_real'].shape}")
+        spec = torch.cat([state['est_real'], state['est_imag']], dim=1)
+        reward = self.reward_model.get_reward(spec)
+        return reward
+        
 
-
+    '''
     def get_reward(self, state, next_state):
         """
         Calculate the reward of the current state.
@@ -126,13 +139,12 @@ class SpeechEnhancementAgent:
         est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
         exp_est_audio_list = list(next_state["exp_est_audio"].detach().cpu().numpy())
         clean_audio_list = list(next_state["cl_audio"].cpu().numpy()[:, :length])
-
         if self.args.reward == 0:
             length = next_state["est_audio"].size(-1)
             est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
             clean_audio_list = list(next_state["cl_audio"].cpu().numpy()[:, :length])
             z_hat_mask, z_hat = batch_pesq(clean_audio_list, 
-                                           est_audio_list)
+                                        est_audio_list)
             pesq_reward = (z_hat_mask * z_hat)
 
             if self.gpu_id is not None:
@@ -142,10 +154,10 @@ class SpeechEnhancementAgent:
         if self.args.reward == 1:
 
             z_mask, z = batch_pesq(clean_audio_list,
-                                   est_audio_list)
+                                est_audio_list)
             
             z_mask_e, z_e = batch_pesq(clean_audio_list,
-                                   exp_est_audio_list)
+                                exp_est_audio_list)
             
             pesq_reward = (z_mask * z)
             exp_pesq_reward = (z_mask_e * z_e)
@@ -156,7 +168,7 @@ class SpeechEnhancementAgent:
 
             return pesq_reward.mean(), exp_pesq_reward.mean()
             #return torch.tanh(pesq_reward).mean()
-            
+    '''  
     
 
 class replay_buffer:

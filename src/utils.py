@@ -184,23 +184,6 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop):
 
     noisy_spec = power_compress(noisy_spec)#.permute(0, 1, 3, 2)
     clean_spec = power_compress(clean_spec)
-
-    #clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
-    #clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
-    #clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
-    #est_real = noisy_spec[:, 0, :, :].unsqueeze(1)
-    #est_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
-    #est_mag = torch.sqrt(est_real**2 + est_imag**2)
-
-    #est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-    #est_audio = torch.istft(
-    #    est_spec_uncompress,
-    #    n_fft,
-    #    hop,
-    #    window=torch.hamming_window(n_fft).to(gpu_id),
-    #    onesided=True,
-    #)
-
     return clean, clean_spec, noisy_spec
 
 def preprocess_batch(batch, gpu_id=None):
@@ -211,7 +194,7 @@ def preprocess_batch(batch, gpu_id=None):
         batch : (b * cut_len) waveforms.
 
     Returns:
-        Dict of spectrograms
+        List of spectrograms
     """
     clean, noisy, labels = batch
 

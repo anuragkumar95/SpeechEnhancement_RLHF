@@ -27,11 +27,12 @@ from torch.distributed import init_process_group, destroy_process_group
 
 
 class REINFORCE:
-    def __init__(self, gpu_id, beta=0.01, init_model=None, discount=1.0, **params):
+    def __init__(self, init_model, reward_model, gpu_id=None, beta=0.01, discount=1.0, **params):
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
                                           hop=params['env_params'].get("hop"),
                                           gpu_id=gpu_id,
-                                          args=params['env_params'].get("args"))
+                                          args=params['env_params'].get("args"),
+                                          reward_model=reward_model)
         self.discount = discount
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
@@ -91,7 +92,7 @@ class REINFORCE:
         next_state['exp_est_audio'] = exp_next_state['est_audio']
 
         #Get the reward
-        reward, baseline = self.env.get_reward(next_state, next_state)
+        reward, baseline = self.env.get_reward(next_state)
         
         G = reward - baseline
         G = G.reshape(-1, 1)

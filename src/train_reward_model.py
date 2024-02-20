@@ -112,7 +112,7 @@ class Trainer:
         score = (y_pred == y_true).float()
         return score.mean()
 
-    def forward_step(self, batch, dist=None):
+    def forward_step(self, batch):
         _, x_1, x_2, labels = batch
 
         if self.gpu_id is not None:
@@ -120,7 +120,7 @@ class Trainer:
             x_2 = x_2.to(self.gpu_id)
             labels = labels.to(self.gpu_id)
 
-        probs = self.reward_model(x_1, x_2, dist)
+        probs = self.reward_model(x_1, x_2)
         loss = F.cross_entropy(probs, labels)
 
         y_preds = torch.argmax(probs, dim=-1)

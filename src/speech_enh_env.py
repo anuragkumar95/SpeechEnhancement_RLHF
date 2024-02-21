@@ -126,7 +126,7 @@ class SpeechEnhancementAgent:
         return reward
         
 
-    '''
+    
     def get_reward(self, state, next_state):
         """
         Calculate the reward of the current state.
@@ -168,7 +168,7 @@ class SpeechEnhancementAgent:
 
             return pesq_reward.mean(), exp_pesq_reward.mean()
             #return torch.tanh(pesq_reward).mean()
-    '''  
+     
     
 
 class replay_buffer:

@@ -36,11 +36,15 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         self.expert = init_model.to(self.gpu_id)
+        self.rlhf = True
+        if reward_model is None:
+            self.rlhf = False
         #self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
         self.beta = beta
         self.gaussian_noise = GaussianStrategy(gpu_id=gpu_id)
         self.t = 0
         self.dist = params['env_params'].get("args").out_dist
+        self.train_phase = params['train_phase']
 
     def get_expected_reward(self, rewards):
         """
@@ -65,7 +69,7 @@ class REINFORCE:
         #Preprocess batch
         cl_aud, _, noisy = batch
 
-        #Forward pass through expert to get the action(mask)
+        #Forward pass through model to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
         action, log_probs = model.get_action(noisy)
 
@@ -78,9 +82,14 @@ class REINFORCE:
             action = (m_action, action[-1])
             self.t += 1
 
-        else:  
-            #ignore complex mask, just tune mag mask 
-            log_prob = log_probs[0]
+        else:
+            if self.train_phase:
+                #finetune both mag and phase
+                log_prob = log_prob[0] + log_prob[1][:, 0, :, :].unsqueeze(1) + log_prob[1][:, 1, :, :].unsqueeze(1)
+            else:  
+                #ignore complex mask, just tune mag mask 
+                log_prob = log_probs[0]
+            
 
         #Apply mask to get the next state
         a_t = (action[0], exp_action[-1])
@@ -92,9 +101,13 @@ class REINFORCE:
         next_state['exp_est_audio'] = exp_next_state['est_audio']
 
         #Get the reward
-        reward, baseline = self.env.get_reward(next_state)
+        if not self.rlhf:
+            reward, baseline = self.env.get_reward(next_state, next_state)
+            G = reward - baseline
+        else:
+            reward = self.env.get_reward(next_state)
+            G = reward
         
-        G = reward - baseline
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}")
 

@@ -100,7 +100,7 @@ class Trainer:
         self.reward_model.load_state_dict(reward_checkpoint)
         
         #Freeze complex decoder and reward model
-        self.actor = freeze_layers(self.actor, ['complex_decoder', 'dense_encoder', 'TSCB_1'])
+        self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1'])
         self.reward_model = freeze_layers(self.reward_model, 'all')
         self.reward_model.eval()
 
@@ -117,7 +117,7 @@ class Trainer:
         )
         #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
         #self.lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-        #    self.a_optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range', cycle_momentum=False, 
+        #    self.a_optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range', cycle_momentum=False,  
         #)
 
         if gpu_id is not None:
@@ -127,6 +127,7 @@ class Trainer:
                                      beta = 1e-10 , 
                                      init_model=self.expert,
                                      discount=1.0,
+                                     train_phase=True,
                                      reward_model=self.reward_model,
                                      env_params={'n_fft':400,
                                                  'hop':100, 

@@ -66,8 +66,8 @@ class REINFORCE:
         """
         Runs an epoch using REINFORCE.
         """
-        #Preprocess batch
-        cl_aud, _, noisy = batch
+        #Preprocessed batch
+        cl_aud, _, noisy, _ = batch
 
         #Forward pass through model to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)

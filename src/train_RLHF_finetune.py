@@ -167,7 +167,7 @@ class Trainer:
         spectrograms.
         """
         #print("Running validation...")
-        clean_aud, _, noisy = batch
+        clean_aud, _, noisy, _ = batch
         inp = noisy.permute(0, 1, 3, 2)
         #Forward pass through actor to get the action(mask)
         action, _ = self.actor.get_action(inp)

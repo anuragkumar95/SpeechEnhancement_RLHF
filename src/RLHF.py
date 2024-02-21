@@ -85,7 +85,7 @@ class REINFORCE:
         else:
             if self.train_phase:
                 #finetune both mag and phase
-                log_prob = log_prob[0] + log_prob[1][:, 0, :, :].unsqueeze(1) + log_prob[1][:, 1, :, :].unsqueeze(1)
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].unsqueeze(1) + log_probs[1][:, 1, :, :].unsqueeze(1)
             else:  
                 #ignore complex mask, just tune mag mask 
                 log_prob = log_probs[0]

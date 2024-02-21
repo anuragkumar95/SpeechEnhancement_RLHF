@@ -198,19 +198,18 @@ class Trainer:
                 print(traceback.format_exc())
                 continue
 
-            if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
+            if torch.isnan(loss).any() or torch.isinf(loss).any():
                 continue
             
             train_ep_PESQ += original_pesq(batch_reward.item()) 
-            batch_loss += loss / self.ACCUM_GRAD
+            loss = loss / self.ACCUM_GRAD
 
             self.a_optimizer.zero_grad()
-            batch_loss.backward()
+            loss.backward()
 
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
                 torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
                 self.a_optimizer.step()
-                batch_loss = 0
                 #self.lr_scheduler.step()
 
             wandb.log({
@@ -219,7 +218,7 @@ class Trainer:
                 "episode": (i+1) + ((epoch - 1) * num_batches),
                 "G_t":G,
                 "cumulative_G_t": G + self.G, 
-                "loss":batch_loss,
+                "loss":loss.item(),
                 #"lr":self.lr_scheduler.get_last_lr()
             })
 

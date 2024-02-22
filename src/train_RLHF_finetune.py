@@ -113,6 +113,11 @@ class Trainer:
         del cmgan_expert_checkpoint 
         del reward_checkpoint
 
+        if gpu_id is not None:
+            self.actor = self.actor.to(gpu_id)
+            if args.method == 'PPO':
+                self.critic = self.critic.to(gpu_id)
+
         if args.method == 'reinforce':
             
             self.optimizer = torch.optim.AdamW(
@@ -148,9 +153,6 @@ class Trainer:
                                env_params={'n_fft':400,
                                             'hop':100, 
                                             'args':args})
-        if gpu_id is not None:
-            self.actor = self.actor.to(gpu_id)
-            self.critic = self.critic.to(gpu_id)
 
         self.gpu_id = gpu_id
         self.G = 0

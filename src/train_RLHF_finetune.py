@@ -108,7 +108,7 @@ class Trainer:
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
         self.expert.eval()
-        
+
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
         del reward_checkpoint
@@ -139,7 +139,9 @@ class Trainer:
             self.trainer = PPO(init_model=self.expert, 
                                reward_model=self.reward_model, 
                                gpu_id=None, 
-                               beta=0.01, 
+                               beta=0.01,
+                               val_coef=0.5,
+                               en_coef=0.01,
                                discount=1.0,
                                env_params={'n_fft':400,
                                             'hop':100, 

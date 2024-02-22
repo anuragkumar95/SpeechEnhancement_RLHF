@@ -141,6 +141,7 @@ class PPO:
                                           reward_model=reward_model)
         
         self.discount = discount
+        self.beta = beta
         self.gpu_id = gpu_id
         self.rlhf = True
         if reward_model is None:
@@ -163,7 +164,7 @@ class PPO:
         cl_aud, clean, noisy, _ = batch
         noisy = noisy.permute(0, 1, 3, 2)
         clean = clean.permute(0, 1, 3, 2)
-        
+
         #Calculate target values and advantages
         with torch.no_grad():
             #Calculate target values for clean state

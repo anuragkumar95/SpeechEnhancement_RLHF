@@ -101,13 +101,14 @@ class Trainer:
         self.reward_model.load_state_dict(reward_checkpoint)
         
         #Freeze complex decoder and reward model
-        self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1'])
+        self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
         self.reward_model = freeze_layers(self.reward_model, 'all')
         self.reward_model.eval()
 
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
         self.expert.eval()
+        
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
         del reward_checkpoint

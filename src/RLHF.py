@@ -162,8 +162,8 @@ class PPO:
         """
         #Preprocessed batch
         cl_aud, clean, noisy, _ = batch
-        noisy = noisy.permute(0, 1, 3, 2)
-        clean = clean.permute(0, 1, 3, 2)
+        noisy = noisy.permute(0, 1, 3, 2).to(self.gpu_id)
+        clean = clean.permute(0, 1, 3, 2).to(self.gpu_id)
 
         #Calculate target values and advantages
         with torch.no_grad():

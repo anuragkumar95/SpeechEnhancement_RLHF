@@ -146,7 +146,8 @@ class MaskDecoder(nn.Module):
         N = Normal(mu, sigma)
         x = N.rsample()
         x_logprob = N.log_prob(x)
-        return x, x_logprob
+        x_entropy = N.entropy()
+        return x, x_logprob, x_entropy
 
     def forward(self, x):
         x = self.dense_block(x)
@@ -156,9 +157,9 @@ class MaskDecoder(nn.Module):
         if self.dist:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-            x, x_logprob = self.sample(x_mu, x_var)
+            x, x_logprob, x_entropy = self.sample(x_mu, x_var)
             x = self.prelu_out(x)
-            return x.permute(0, 2, 1).unsqueeze(1), x_logprob
+            return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_entropy
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
@@ -182,7 +183,8 @@ class ComplexDecoder(nn.Module):
         N = Normal(mu, sigma)
         x = N.rsample()
         x_logprob = N.log_prob(x)
-        return x, x_logprob
+        x_entropy = N.entropy()
+        return x, x_logprob, x_entropy
 
     def forward(self, x):
         x = self.dense_block(x)
@@ -191,8 +193,8 @@ class ComplexDecoder(nn.Module):
         if self.out_dist:
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
-            x, x_logprob = self.sample(x_mu, x_var)
-            return x, x_logprob
+            x, x_logprob, x_entropy = self.sample(x_mu, x_var)
+            return x, x_logprob, x_entropy
         else:
             x = self.conv(x)
             return x
@@ -224,13 +226,13 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
         if self.dist:
-            mask, m_logprob = self.mask_decoder(out_2)
-            complex_out, c_logprob = self.complex_decoder(out_2)
-            return (mask, complex_out), (m_logprob, c_logprob)
+            mask, m_logprob, m_entropy = self.mask_decoder(out_2)
+            complex_out, c_logprob, c_entropy = self.complex_decoder(out_2)
+            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy)
         
         mask = self.mask_decoder(out_2)
         complex_out = self.complex_decoder(out_2)
-        return (mask, complex_out), None
+        return (mask, complex_out), None, None
     
     def get_embedding(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
@@ -310,3 +312,4 @@ class RewardModel(nn.Module):
         rewards = self.reward_projection(x_emb)
 
         return rewards
+    

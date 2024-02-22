@@ -6,7 +6,7 @@
 from model.actor import TSCNet, RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
-from RLHF import REINFORCE
+from RLHF import REINFORCE, PPO
 
 
 import os
@@ -51,6 +51,8 @@ def args():
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--out_dist", action='store_true',
                         help="If GAN learns a distribution.")
+    parser.add_argument("--method", type='str', default='reinforce', required=False,
+                        help="RL Algo to run. Choose between (reinforce/PPO)")
     
     parser.add_argument("--reward", type=int, help="Type of reward")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
@@ -89,7 +91,6 @@ class Trainer:
                             distribution=args.out_dist, 
                             gpu_id=gpu_id)
         
-        self.critic = QNet(ndf=16, in_channel=3)
         self.reward_model = RewardModel(policy=self.actor)
         
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
@@ -111,52 +112,48 @@ class Trainer:
         del cmgan_expert_checkpoint 
         del reward_checkpoint
 
-
-        self.a_optimizer = torch.optim.AdamW(
-            filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr
-        )
-        #self.c_optimizer = torch.optim.AdamW(filter(lambda layer:layer.requires_grad,self.critic.parameters()), lr=2 * args.init_lr)
-        #self.lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-        #    self.a_optimizer, base_lr=args.init_lr, max_lr=10 * args.init_lr, mode='exp_range', cycle_momentum=False,  
-        #)
-
-        if gpu_id is not None:
-            self.actor = self.actor.to(gpu_id)
+        if args.method == 'reinforce':
+            
+            self.optimizer = torch.optim.AdamW(
+                filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr
+            )
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
-                                     beta = 1e-10 , 
-                                     init_model=self.expert,
-                                     discount=1.0,
-                                     train_phase=True,
-                                     reward_model=self.reward_model,
-                                     env_params={'n_fft':400,
-                                                 'hop':100, 
-                                                 'args':args})
-            """
-            if args.ckpt is not None:
-                state_dict = torch.load(args.ckpt, map_location=torch.device(gpu_id))
-                self.actor.load_state_dict(state_dict['actor_state_dict'])
-                #self.critic.load_state_dict(state_dict['critic_state_dict'])
-                self.a_optimizer.load_state_dict(state_dict['actor_optim_state_dict'])
-                #self.c_optimizer.load_state_dict(state_dict['critic_optim_state_dict'])
-                #_, self.target_actor = copy_weights(state_dict['actor_state_dict'], self.target_actor)
-                #_, self.target_critic = copy_weights(state_dict['critic_state_dict'], self.target_critic)
-                del state_dict
-                print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...")
-            """
+                                    beta = 1e-10 , 
+                                    init_model=self.expert,
+                                    discount=1.0,
+                                    train_phase=True,
+                                    reward_model=self.reward_model,
+                                    env_params={'n_fft':400,
+                                                'hop':100, 
+                                                'args':args})
+            
+        if args.method == 'PPO':
+            self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
+            params = list(self.actor.parameters()) + list(self.critic.parameters())
+            self.optimizer = torch.optim.AdamW(
+                filter(lambda layer:layer.requires_grad, params), lr=args.init_lr
+            )
+
+            self.trainer = PPO(init_model=self.expert, 
+                               reward_model=self.reward_model, 
+                               gpu_id=None, 
+                               beta=0.01, 
+                               discount=1.0,
+                               env_params={'n_fft':400,
+                                            'hop':100, 
+                                            'args':args})
+        if gpu_id is not None:
+            self.actor = self.actor.to(gpu_id)
+            self.critic = self.critic.to(gpu_id)
             if args.parallel:
                 self.actor = DDP(self.actor, device_ids=[gpu_id])
-                #self.critic = DDP(self.critic, device_ids=[gpu_id])
-                #self.target_actor = DDP(self.target_actor, device_ids=[gpu_id])
-                #self.target_critic = DDP(self.target_critic, device_ids=[gpu_id])
+                self.critic = DDP(self.critic, device_ids=[gpu_id])
 
-        
-            
         self.gpu_id = gpu_id
         self.G = 0
-        #self.expert.eval()
-        #self.target_actor.eval()
-        #self.target_critic.eval()
+        self.args = args
+        
         wandb.init(project=args.exp)
     
     def run_validation(self, env, batch):
@@ -169,11 +166,15 @@ class Trainer:
         #print("Running validation...")
         clean_aud, _, noisy, _ = batch
         inp = noisy.permute(0, 1, 3, 2)
+
         #Forward pass through actor to get the action(mask)
-        action, _ = self.actor.get_action(inp)
+        action, _, _ = self.actor.get_action(inp)
+        exp_action, _, _ = self.expert.get_action(inp)
+        a_t = (action[0], exp_action[-1])
+        
         #Apply action  to get the next state
         next_state = env.get_next_state(state=inp, 
-                                        action=action)
+                                        action=a_t)
 
         pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
                                      next_state['est_audio'].detach().cpu().numpy())
@@ -183,7 +184,8 @@ class Trainer:
     def train_one_epoch(self, epoch):
         #Run training
         self.actor.train()
-        #self.critic.train()
+        if self.args.method == 'PPO':
+            self.critic.train()
         REWARDS = []
         num_batches = len(self.train_ds)
         train_ep_PESQ = 0
@@ -193,7 +195,7 @@ class Trainer:
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
             try:  
-                loss, batch_reward, G = self.trainer.run_episode(batch, self.actor)
+                loss, batch_reward, G = self.trainer.run_episode(batch, self.actor, self.optimizer)
             except Exception as e:
                 print(traceback.format_exc())
                 continue
@@ -202,15 +204,6 @@ class Trainer:
                 continue
             
             train_ep_PESQ += original_pesq(batch_reward.item()) 
-            loss = loss / self.ACCUM_GRAD
-
-            self.a_optimizer.zero_grad()
-            loss.backward()
-
-            if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 1.0)
-                self.a_optimizer.step()
-                #self.lr_scheduler.step()
 
             wandb.log({
                 "episode_cumulative_reward":batch_reward.item(),
@@ -230,7 +223,8 @@ class Trainer:
         
         #Run validation
         self.actor.eval()
-        #self.critic.eval()
+        if self.args.method == 'PPO':
+            self.critic.eval()
         pesq = 0
         v_step = 0
         for i, batch in enumerate(self.test_ds):
@@ -268,9 +262,8 @@ class Trainer:
         print("Start training...")
         for epoch in range(args.epochs):
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
-            #TODO:Log these in wandb
+         
             wandb.log({"Epoch":epoch+1,
-                       "ValPESQ":epoch_pesq,
                        "Epoch_mean_reward":np.mean(ep_reward)})
             
             if epoch_pesq >= best_pesq:
@@ -279,15 +272,17 @@ class Trainer:
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
                     path = os.path.join(args.output, args.exp, checkpoint_prefix)
-                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                #'critic_state_dict':self.critic.module.state_dict(),
-                                #'actor_optim_state_dict':self.a_optimizer.state_dict(),
-                                #'critic_optim_state_dict':self.c_optimizer.state_dict(),
-                                #'scheduler_state_dict':scheduler.state_dict(),
-                                #'lr':scheduler.get_last_lr()
-                                }
+                    if self.args.method == 'reinforce':
+                        save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                                    'optim_state_dict':self.optimizer.state_dict()
+                                    }
+                    if self.args.method == 'PPO':
+                        save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                                    'critic_state_dict':self.critic.state_dict(),
+                                    'optim_state_dict':self.optimizer.state_dict()
+                                    }
                     torch.save(save_dict, path)
-                #TODO:May need a LR scheduler as well
+                
 
     
 def ddp_setup(rank, world_size):

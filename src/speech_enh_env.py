@@ -127,7 +127,7 @@ class SpeechEnhancementAgent:
         
 
     
-    def get_reward(self, state, next_state):
+    def get_pesq_reward(self, next_state):
         """
         Calculate the reward of the current state.
         Reward is defined as the tanh of relative difference between 

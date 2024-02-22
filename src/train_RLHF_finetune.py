@@ -51,7 +51,7 @@ def args():
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--out_dist", action='store_true',
                         help="If GAN learns a distribution.")
-    parser.add_argument("--method", type='str', default='reinforce', required=False,
+    parser.add_argument("--method", type=str, default='reinforce', required=False,
                         help="RL Algo to run. Choose between (reinforce/PPO)")
     
     parser.add_argument("--reward", type=int, help="Type of reward")

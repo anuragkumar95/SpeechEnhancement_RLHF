@@ -115,8 +115,6 @@ class Trainer:
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
-            if args.method == 'PPO':
-                self.critic = self.critic.to(gpu_id)
 
         if args.method == 'reinforce':
             
@@ -136,10 +134,13 @@ class Trainer:
             
         if args.method == 'PPO':
             self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
+            self.critic = self.critic.to(gpu_id)
             params = list(self.actor.parameters()) + list(self.critic.parameters())
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad, params), lr=args.init_lr
             )
+
+            
 
             self.trainer = PPO(init_model=self.expert, 
                                #reward_model=self.reward_model, 

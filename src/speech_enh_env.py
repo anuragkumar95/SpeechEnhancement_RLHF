@@ -116,7 +116,7 @@ class SpeechEnhancementAgent:
 
         return next_state
     
-    def get_reward(self, state):
+    def get_RLHF_reward(self, state):
         """
         spec shape should be (b * ch * t * f)
         """
@@ -127,7 +127,7 @@ class SpeechEnhancementAgent:
         
 
     
-    def get_pesq_reward(self, next_state):
+    def get_PESQ_reward(self, next_state):
         """
         Calculate the reward of the current state.
         Reward is defined as the tanh of relative difference between 

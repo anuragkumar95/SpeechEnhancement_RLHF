@@ -199,8 +199,11 @@ class Trainer:
            
             #Each minibatch is an episode
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-            try:  
-                loss, batch_reward, G = self.trainer.run_episode(batch, self.actor, self.optimizer)
+            try: 
+                if self.args.method == 'reinforce': 
+                    loss, batch_reward, G = self.trainer.run_episode(batch, self.actor, self.optimizer)
+                if self.args.method == 'PPO':
+                    loss, batch_reward, G = self.trainer.run_episode(batch, self.actor, self.critic, self.optimizer)
             except Exception as e:
                 print(traceback.format_exc())
                 continue

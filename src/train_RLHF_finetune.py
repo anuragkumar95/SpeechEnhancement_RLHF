@@ -139,7 +139,7 @@ class Trainer:
             self.trainer = PPO(init_model=self.expert, 
                                #reward_model=self.reward_model, 
                                reward_model=None,
-                               gpu_id=None, 
+                               gpu_id=gpu_id, 
                                beta=0.01,
                                val_coef=0.5,
                                en_coef=0.01,
@@ -151,9 +151,6 @@ class Trainer:
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
             self.critic = self.critic.to(gpu_id)
-            if args.parallel:
-                self.actor = DDP(self.actor, device_ids=[gpu_id])
-                self.critic = DDP(self.critic, device_ids=[gpu_id])
 
         self.gpu_id = gpu_id
         self.G = 0

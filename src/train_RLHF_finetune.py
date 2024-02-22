@@ -137,12 +137,14 @@ class Trainer:
             )
 
             self.trainer = PPO(init_model=self.expert, 
-                               reward_model=self.reward_model, 
+                               #reward_model=self.reward_model, 
+                               reward_model=None,
                                gpu_id=None, 
                                beta=0.01,
                                val_coef=0.5,
                                en_coef=0.01,
                                discount=1.0,
+                               train_phase=False,
                                env_params={'n_fft':400,
                                             'hop':100, 
                                             'args':args})

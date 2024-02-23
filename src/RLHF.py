@@ -223,10 +223,10 @@ class PPO:
         print(f"Ratio:{ratio.shape}")
         print(f"Advantages:{advantages.shape}")
         print(f"Tgt_vals:{target_values.shape}")
-        
+
         #Policy loss
-        pg_loss1 = -advantages[:, 0] * ratio
-        pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+        pg_loss1 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], ratio])
+        pg_loss2 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], torch.clamp(ratio, 1 - self.beta, 1 + self.beta)])
         pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
         #value_loss

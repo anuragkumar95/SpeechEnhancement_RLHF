@@ -134,7 +134,7 @@ class PPO:
     """
     Base class for PPO ploicy gradient method
     """
-    def __init__(self, init_model, reward_model, gpu_id=None, beta=0.2, val_coef=0.02, en_coef=0.01, discount=1.0, **params):
+    def __init__(self, init_model, reward_model, gpu_id=None, run_steps=5, beta=0.2, val_coef=0.02, en_coef=0.01, discount=1.0, **params):
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
                                           hop=params['env_params'].get("hop"),
                                           gpu_id=gpu_id,
@@ -151,9 +151,10 @@ class PPO:
         self.train_phase = params['train_phase']
         self.t = 0
         self.init_model = init_model
-        self.prev_log_probs = None
+        self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
         self.en_coef = en_coef
+        self.run_steps = run_steps
 
     def run_episode(self, batch, actor, critic, optimizer):
         """
@@ -165,6 +166,8 @@ class PPO:
         cl_aud, clean, noisy, _ = batch
         noisy = noisy.permute(0, 1, 3, 2)
         clean = clean.permute(0, 1, 3, 2)
+        bs = clean.shape[0]
+
 
         #Calculate target values and advantages
         with torch.no_grad():
@@ -192,6 +195,7 @@ class PPO:
             advantages = torch.stack([adv_n, adv_c], dim=-1).squeeze(1)
 
         
+        ############################## NOISY STATE ################################
         #Forward pass through model to get the action(mask)
         action, log_probs, entropies = actor.get_action(noisy)
         values = critic(noisy)
@@ -214,17 +218,17 @@ class PPO:
             
         #Get previous model log_probs 
         if self.t == 0:
-            self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+            self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
         
         #ignore complex mask, just tune mag mask 
         entropy = entropies[0]
         log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
         logratio = log_prob - old_log_prob 
-        ratio = torch.exp(logratio).mean()
+        ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
         #Policy loss
-        pg_loss1 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], ratio])
-        pg_loss2 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], torch.clamp(ratio, 1 - self.beta, 1 + self.beta)])
+        pg_loss1 = -advantages[:, 0] * ratio
+        pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
         pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
         #value_loss
@@ -247,7 +251,12 @@ class PPO:
                 "entropy_loss":entropy_loss
             })
 
-        self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
+        self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
+        
+        ################################ CLEAN STATE ################################
+        
+        
+        
         self.t += 1
 
                      

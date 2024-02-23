@@ -213,7 +213,7 @@ class PPO:
             
         #Get previous model log_probs 
         if self.t == 0:
-            self.prev_log_probs = exp_log_probs.detach()
+            self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
         
         #ignore complex mask, just tune mag mask 
         log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
@@ -238,5 +238,8 @@ class PPO:
             optimizer.zero_grad()
             clip_loss.backward()
             optimizer.step()
+
+        self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
+        self.t += 1
                      
         return clip_loss, G.mean(), G.mean()

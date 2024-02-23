@@ -197,6 +197,7 @@ class PPO:
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0
+        step_G = 0
 
         for _ in range(self.run_steps):
             ############################## NOISY STATE ################################
@@ -253,6 +254,7 @@ class PPO:
             step_clip_loss += clip_loss.item()
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()
+            step_G += G.mean()
             
             ################################ CLEAN STATE ################################
             #Forward pass through model to get the action(mask)
@@ -310,9 +312,11 @@ class PPO:
             step_clip_loss += clip_loss.item()
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()
+            step_G += G.mean()
 
         step_clip_loss = step_clip_loss / (2 * self.run_steps)
         step_val_loss = step_val_loss / (2 * self.run_steps)
         step_entropy_loss = step_entropy_loss / (2 * self.run_steps)
+        step_G = step_G / self.run_steps
                      
-        return (step_clip_loss, step_val_loss, step_entropy_loss), G.mean(), G.mean()
+        return (step_clip_loss, step_val_loss, step_entropy_loss), step_G, G.mean()

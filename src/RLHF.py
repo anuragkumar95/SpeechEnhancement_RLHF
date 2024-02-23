@@ -176,7 +176,7 @@ class PPO:
             state['est_audio'] = clean
             state['exp_est_audio'] = cl_aud
             state['cl_audio'] = cl_aud
-            r_c, _ = self.env.get_PESQ_reward(state)
+            r_c = self.env.get_PESQ_reward(state)
             tgt_val_C = r_c.reshape(-1, 1)
             value_C = critic(clean).reshape(-1, 1).detach()
             adv_c = tgt_val_C - value_C
@@ -186,7 +186,7 @@ class PPO:
             state['est_audio'] = noisy
             state['exp_est_audio'] = cl_aud
             state['cl_audio'] = cl_aud
-            r_n, _ = self.env.get_PESQ_reward(state)
+            r_n = self.env.get_PESQ_reward(state)
             tgt_val_N = r_n.reshape(-1, 1) + self.discount * tgt_val_C
             value_N = critic(noisy).reshape(-1, 1).detach()
             adv_n = tgt_val_N - value_N
@@ -215,8 +215,7 @@ class PPO:
             next_state['exp_est_audio'] = exp_next_state['est_audio']
 
             if not self.rlhf:
-                G, _ = self.env.get_PESQ_reward(next_state)
-                #G = reward - baseline
+                G = self.env.get_PESQ_reward(next_state)
             else:
                 G = self.env.get_RLHF_reward(next_state)
                 
@@ -272,8 +271,7 @@ class PPO:
             next_state['exp_est_audio'] = exp_next_state['est_audio']
 
             if not self.rlhf:
-                G, _ = self.env.get_PESQ_reward(next_state)
-                #G = reward - baseline
+                G = self.env.get_PESQ_reward(next_state)
             else:
                 G = self.env.get_RLHF_reward(next_state)
                 

@@ -210,8 +210,8 @@ class Trainer:
                 print(traceback.format_exc())
                 continue
 
-            if torch.isnan(loss).any() or torch.isinf(loss).any():
-                continue
+            #if torch.isnan(loss).any() or torch.isinf(loss).any():
+            #    continue
             
             train_ep_PESQ += original_pesq(batch_reward.item()) 
 

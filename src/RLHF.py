@@ -225,7 +225,7 @@ class PPO:
             
             #ignore complex mask, just tune mag mask 
             entropy = entropies[0]
-            log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
+            log_prob, old_log_prob = log_probs[0], self.prev_log_probs['noisy'][0]
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
@@ -277,11 +277,11 @@ class PPO:
                 
             #Get previous model log_probs 
             if self.t == 0:
-                self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+                self.prev_log_probs['clean'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             #ignore complex mask, just tune mag mask 
             entropy = entropies[0]
-            log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
+            log_prob, old_log_prob = log_probs[0], self.prev_log_probs['clean'][0]
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
@@ -304,7 +304,7 @@ class PPO:
                 clip_loss.backward()
                 optimizer.step()
 
-            self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
+            self.prev_log_probs['clean'] = (log_probs[0].detach(), log_probs[1].detach())
             self.t += 1
 
             step_clip_loss += clip_loss.item()

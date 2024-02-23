@@ -194,70 +194,127 @@ class PPO:
             target_values = torch.stack([tgt_val_N, tgt_val_C], dim=-1).squeeze(1)
             advantages = torch.stack([adv_n, adv_c], dim=-1).squeeze(1)
 
-        
-        ############################## NOISY STATE ################################
-        #Forward pass through model to get the action(mask)
-        action, log_probs, entropies = actor.get_action(noisy)
-        values = critic(noisy)
-        exp_action, exp_log_probs, _ = self.init_model.get_action(noisy)
-        
-        #Get next state and reward for the state
-        a_t = (action[0], exp_action[-1])
-        next_state = self.env.get_next_state(state=noisy, action=a_t)
-        next_state['cl_audio'] = cl_aud
+        step_clip_loss = 0
+        step_val_loss = 0
+        step_entropy_loss = 0
 
-        #Get expert output
-        exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
-        next_state['exp_est_audio'] = exp_next_state['est_audio']
-
-        if not self.rlhf:
-            G, _ = self.env.get_PESQ_reward(next_state)
-            #G = reward - baseline
-        else:
-            G = self.env.get_RLHF_reward(next_state)
+        for _ in range(self.run_steps):
+            ############################## NOISY STATE ################################
+            #Forward pass through model to get the action(mask)
+            action, log_probs, entropies = actor.get_action(noisy)
+            values = critic(noisy)
+            exp_action, exp_log_probs, _ = self.init_model.get_action(noisy)
             
-        #Get previous model log_probs 
-        if self.t == 0:
-            self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
-        
-        #ignore complex mask, just tune mag mask 
-        entropy = entropies[0]
-        log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
-        logratio = log_prob - old_log_prob 
-        ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+            #Get next state and reward for the state
+            a_t = (action[0], exp_action[-1])
+            next_state = self.env.get_next_state(state=noisy, action=a_t)
+            next_state['cl_audio'] = cl_aud
 
-        #Policy loss
-        pg_loss1 = -advantages[:, 0] * ratio
-        pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
-        pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+            #Get expert output
+            exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+            next_state['exp_est_audio'] = exp_next_state['est_audio']
 
-        #value_loss
-        v_loss = 0.5 * ((target_values[:, 0] - values) ** 2).mean()
+            if not self.rlhf:
+                G, _ = self.env.get_PESQ_reward(next_state)
+                #G = reward - baseline
+            else:
+                G = self.env.get_RLHF_reward(next_state)
+                
+            #Get previous model log_probs 
+            if self.t == 0:
+                self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+            
+            #ignore complex mask, just tune mag mask 
+            entropy = entropies[0]
+            log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
+            logratio = log_prob - old_log_prob 
+            ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
-        #Entropy loss
-        entropy_loss = entropy.mean()
+            #Policy loss
+            pg_loss1 = -advantages[:, 0] * ratio
+            pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+            pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
-        clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
+            #value_loss
+            v_loss = 0.5 * ((target_values[:, 0] - values) ** 2).mean()
 
-        #Update network
-        if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()):
-            optimizer.zero_grad()
-            clip_loss.backward()
-            optimizer.step()
+            #Entropy loss
+            entropy_loss = entropy.mean()
 
-            wandb.log({
-                "clip_loss":pg_loss,
-                "val_loss":v_loss,
-                "entropy_loss":entropy_loss
-            })
+            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
 
-        self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
-        
-        ################################ CLEAN STATE ################################
-        
-        
-        
-        self.t += 1
+            #Update network
+            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()):
+                optimizer.zero_grad()
+                clip_loss.backward()
+                optimizer.step()
 
+            self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
+
+            step_clip_loss += clip_loss.item()
+            step_val_loss += v_loss.item()
+            step_entropy_loss += entropy_loss.item()
+            
+            ################################ CLEAN STATE ################################
+            #Forward pass through model to get the action(mask)
+            enhanced = next_state['noisy']
+            action, log_probs, entropies = actor.get_action(enhanced)
+            values = critic(enhanced)
+            exp_action, exp_log_probs, _ = self.init_model.get_action(enhanced)
+            
+            #Get next state and reward for the state
+            a_t = (action[0], exp_action[-1])
+            next_state = self.env.get_next_state(state=enhanced, action=a_t)
+            next_state['cl_audio'] = cl_aud
+
+            #Get expert output
+            exp_next_state = self.env.get_next_state(state=enhanced, action=exp_action)
+            next_state['exp_est_audio'] = exp_next_state['est_audio']
+
+            if not self.rlhf:
+                G, _ = self.env.get_PESQ_reward(next_state)
+                #G = reward - baseline
+            else:
+                G = self.env.get_RLHF_reward(next_state)
+                
+            #Get previous model log_probs 
+            if self.t == 0:
+                self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+            
+            #ignore complex mask, just tune mag mask 
+            entropy = entropies[0]
+            log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
+            logratio = log_prob - old_log_prob 
+            ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+
+            #Policy loss
+            pg_loss1 = -advantages[:, 0] * ratio
+            pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+            pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+            #value_loss
+            v_loss = 0.5 * ((target_values[:, 0] - values) ** 2).mean()
+
+            #Entropy loss
+            entropy_loss = entropy.mean()
+
+            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
+
+            #Update network
+            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()):
+                optimizer.zero_grad()
+                clip_loss.backward()
+                optimizer.step()
+
+            self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
+            self.t += 1
+
+            step_clip_loss += clip_loss.item()
+            step_val_loss += v_loss.item()
+            step_entropy_loss += entropy_loss.item()
+
+        step_clip_loss = step_clip_loss / (2 * self.run_steps)
+        step_val_loss = step_val_loss / (2 * self.run_steps)
+        step_entropy_loss = step_entropy_loss / (2 * self.run_steps)
                      
-        return clip_loss, G.mean(), G.mean()
+        return (step_clip_loss, step_val_loss, step_entropy_loss), G.mean(), G.mean()

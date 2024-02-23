@@ -221,7 +221,9 @@ class Trainer:
                 "episode": (i+1) + ((epoch - 1) * num_batches),
                 "G_t":G,
                 "cumulative_G_t": G + self.G, 
-                "loss":loss.item(),
+                "clip_loss":loss[0],
+                "value_loss":loss[1],
+                "entropy_loss":loss[2],
                 #"lr":self.lr_scheduler.get_last_lr()
             })
 

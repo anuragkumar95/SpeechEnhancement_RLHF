@@ -187,8 +187,8 @@ class PPO:
             value_N = critic(noisy).reshape(-1, 1).detach()
             adv_n = tgt_val_N - value_N
 
-            target_values = torch.stack([tgt_val_N, tgt_val_C], dim=-1)
-            advantages = torch.stack([adv_n, adv_c], dim=-1)
+            target_values = torch.stack([tgt_val_N, tgt_val_C], dim=-1).squeeze(1)
+            advantages = torch.stack([adv_n, adv_c], dim=-1).squeeze(1)
 
         
         #Forward pass through model to get the action(mask)
@@ -222,6 +222,8 @@ class PPO:
 
         print(f"Ratio:{ratio.shape}")
         print(f"Advantages:{advantages.shape}")
+        print(f"Tgt_vals:{target_values.shape}")
+        
         #Policy loss
         pg_loss1 = -advantages[:, 0] * ratio
         pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)

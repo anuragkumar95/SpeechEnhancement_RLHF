@@ -221,10 +221,6 @@ class PPO:
         logratio = log_prob - old_log_prob 
         ratio = torch.exp(logratio)
 
-        print(f"Ratio:{ratio.shape}")
-        print(f"Advantages:{advantages.shape}")
-        print(f"Tgt_vals:{target_values.shape}")
-
         #Policy loss
         pg_loss1 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], ratio])
         pg_loss2 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], torch.clamp(ratio, 1 - self.beta, 1 + self.beta)])

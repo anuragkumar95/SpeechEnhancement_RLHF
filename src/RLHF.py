@@ -86,13 +86,14 @@ class REINFORCE:
             if self.train_phase:
                 #finetune both mag and phase
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                a_t = action
             else:  
                 #ignore complex mask, just tune mag mask 
                 log_prob = log_probs[0]
+                a_t = (action[0], exp_action[-1])
             
 
         #Apply mask to get the next state
-        a_t = (action[0], exp_action[-1])
         next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
 
@@ -219,7 +220,7 @@ class PPO:
         entropy = entropies[0]
         log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
         logratio = log_prob - old_log_prob 
-        ratio = torch.exp(logratio)
+        ratio = torch.exp(logratio).mean()
 
         #Policy loss
         pg_loss1 = torch.einsum("i, ijk -> ijk", [-advantages[:, 0], ratio])

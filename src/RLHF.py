@@ -256,7 +256,7 @@ class PPO:
             
             ################################ CLEAN STATE ################################
             #Forward pass through model to get the action(mask)
-            enhanced = next_state['noisy']
+            enhanced = next_state['noisy'].detach()
             action, log_probs, entropies = actor.get_action(enhanced)
             values = critic(enhanced)
             exp_action, exp_log_probs, _ = self.init_model.get_action(enhanced)

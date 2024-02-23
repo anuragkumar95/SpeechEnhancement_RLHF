@@ -202,10 +202,10 @@ class PPO:
         next_state['cl_audio'] = cl_aud
 
         if not self.rlhf:
-            G, _ = self.env.get_PESQ_reward(next_state.detach())
+            G, _ = self.env.get_PESQ_reward(next_state)
             #G = reward - baseline
         else:
-            G = self.env.get_RLHF_reward(next_state.detach())
+            G = self.env.get_RLHF_reward(next_state)
             
         #Get previous model log_probs 
         if self.t == 0:

@@ -19,7 +19,7 @@ import numpy as np
 import traceback
 from speech_enh_env import  SpeechEnhancementAgent, GaussianStrategy
 import torch
-
+import wandb
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -240,7 +240,14 @@ class PPO:
             clip_loss.backward()
             optimizer.step()
 
+            wandb.log({
+                "clip_loss":pg_loss,
+                "val_loss":v_loss,
+                "entropy_loss":entropy_loss
+            })
+
         self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
         self.t += 1
+
                      
         return clip_loss, G.mean(), G.mean()

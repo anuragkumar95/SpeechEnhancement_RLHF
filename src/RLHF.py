@@ -170,7 +170,7 @@ class PPO:
             #Calculate target values for clean state
             state = {}
             state['est_audio'] = clean
-            state['exp_est_audio'] = clean
+            state['exp_est_audio'] = cl_aud
             state['cl_audio'] = cl_aud
             r_c, _ = self.env.get_PESQ_reward(state)
             tgt_val_C = r_c.reshape(-1, 1)
@@ -180,7 +180,7 @@ class PPO:
             #Calculate target values for noisy state
             state = {}
             state['est_audio'] = noisy
-            state['exp_est_audio'] = clean
+            state['exp_est_audio'] = cl_aud
             state['cl_audio'] = cl_aud
             r_n, _ = self.env.get_PESQ_reward(state)
             tgt_val_N = r_n.reshape(-1, 1) + self.discount * tgt_val_C
@@ -200,6 +200,10 @@ class PPO:
         a_t = (action[0], exp_action[-1])
         next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
+
+        #Get expert output
+        exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+        next_state['exp_est_audio'] = exp_next_state['est_audio']
 
         if not self.rlhf:
             G, _ = self.env.get_PESQ_reward(next_state)

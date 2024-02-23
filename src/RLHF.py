@@ -134,7 +134,7 @@ class PPO:
     """
     Base class for PPO ploicy gradient method
     """
-    def __init__(self, init_model, reward_model, gpu_id=None, run_steps=5, beta=0.2, val_coef=0.02, en_coef=0.01, discount=1.0, **params):
+    def __init__(self, init_model, reward_model, gpu_id=None, run_steps=3, beta=0.2, val_coef=0.02, en_coef=0.01, discount=1.0, **params):
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
                                           hop=params['env_params'].get("hop"),
                                           gpu_id=gpu_id,

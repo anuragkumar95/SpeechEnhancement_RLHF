@@ -192,7 +192,7 @@ class PPO:
 
         
         #Forward pass through model to get the action(mask)
-        action, log_probs, entropy = actor.get_action(noisy)
+        action, log_probs, entropies = actor.get_action(noisy)
         values = critic(noisy)
         exp_action, exp_log_probs, _ = self.init_model.get_action(noisy)
         
@@ -216,6 +216,7 @@ class PPO:
             self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
         
         #ignore complex mask, just tune mag mask 
+        entropy = entropies[0]
         log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
         logratio = log_prob - old_log_prob 
         ratio = torch.exp(logratio)

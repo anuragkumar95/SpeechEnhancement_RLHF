@@ -168,7 +168,6 @@ class PPO:
         clean = clean.permute(0, 1, 3, 2)
         bs = clean.shape[0]
 
-
         #Calculate target values and advantages
         with torch.no_grad():
             #Calculate target values for clean state
@@ -288,12 +287,12 @@ class PPO:
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
             #Policy loss
-            pg_loss1 = -advantages[:, 0] * ratio
-            pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+            pg_loss1 = -advantages[:, 1] * ratio
+            pg_loss2 = -advantages[:, 1] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss
-            v_loss = 0.5 * ((target_values[:, 0] - values) ** 2).mean()
+            v_loss = 0.5 * ((target_values[:, 1] - values) ** 2).mean()
 
             #Entropy loss
             entropy_loss = entropy.mean()

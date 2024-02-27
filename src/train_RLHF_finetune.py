@@ -74,7 +74,13 @@ class Trainer:
     """
     Starting with reinforce algorithm.
     """
-    def __init__(self, train_ds, test_ds, args, gpu_id, pretrain=False):
+    def __init__(self, 
+                 train_ds, 
+                 test_ds, 
+                 args, 
+                 gpu_id, 
+                 pretrain=False):
+        
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
@@ -142,8 +148,6 @@ class Trainer:
                 filter(lambda layer:layer.requires_grad, params), lr=args.init_lr
             )
 
-            
-
             self.trainer = PPO(init_model=self.expert, 
                                #reward_model=self.reward_model, 
                                reward_model=None,
@@ -153,6 +157,7 @@ class Trainer:
                                en_coef=0.01,
                                discount=1.0,
                                train_phase=False,
+                               accum_grad=args.accum_grad,
                                env_params={'n_fft':400,
                                             'hop':100, 
                                             'args':args})
@@ -209,9 +214,6 @@ class Trainer:
             except Exception as e:
                 print(traceback.format_exc())
                 continue
-
-            #if torch.isnan(loss).any() or torch.isinf(loss).any():
-            #    continue
             
             train_ep_PESQ += original_pesq(batch_reward.item()) 
 
@@ -223,8 +225,7 @@ class Trainer:
                 "cumulative_G_t": G + self.G, 
                 "clip_loss":loss[0],
                 "value_loss":loss[1],
-                "entropy_loss":loss[2],
-                #"lr":self.lr_scheduler.get_last_lr()
+                "entropy_loss":loss[2]
             })
 
             self.G = G + self.G

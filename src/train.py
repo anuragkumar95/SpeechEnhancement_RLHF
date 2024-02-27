@@ -141,7 +141,6 @@ class Trainer:
             onesided=True,
         )
 
-        #print(f"gen_step: clean={clean_spec.sum()}, noisy={noisy_spec.sum()}")
 
         noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
         clean_spec = power_compress(clean_spec)

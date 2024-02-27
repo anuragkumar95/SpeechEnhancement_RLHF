@@ -27,7 +27,14 @@ from torch.distributed import init_process_group, destroy_process_group
 
 
 class REINFORCE:
-    def __init__(self, init_model, reward_model, gpu_id=None, beta=0.01, discount=1.0, **params):
+    def __init__(self, 
+                 init_model, 
+                 reward_model, 
+                 gpu_id=None, 
+                 beta=0.01, 
+                 discount=1.0, 
+                 **params):
+        
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
                                           hop=params['env_params'].get("hop"),
                                           gpu_id=gpu_id,
@@ -92,7 +99,6 @@ class REINFORCE:
                 log_prob = log_probs[0]
                 a_t = (action[0], exp_action[-1])
             
-
         #Apply mask to get the next state
         next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
@@ -132,9 +138,20 @@ class REINFORCE:
 
 class PPO:
     """
-    Base class for PPO ploicy gradient method
+    Base class for PPO ploicy gradient method.
     """
-    def __init__(self, init_model, reward_model, gpu_id=None, run_steps=3, beta=0.2, val_coef=0.02, en_coef=0.01, discount=1.0, **params):
+    def __init__(self, 
+                 init_model, 
+                 reward_model, 
+                 gpu_id=None, 
+                 run_steps=3, 
+                 beta=0.2, 
+                 val_coef=0.02, 
+                 en_coef=0.01, 
+                 discount=1.0, 
+                 accum_grad=1, 
+                 **params):
+        
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
                                           hop=params['env_params'].get("hop"),
                                           gpu_id=gpu_id,
@@ -144,6 +161,7 @@ class PPO:
         self.discount = discount
         self.beta = beta
         self.gpu_id = gpu_id
+        self.accum_grad = accum_grad
         self.rlhf = True
         if reward_model is None:
             self.rlhf = False
@@ -170,7 +188,8 @@ class PPO:
 
         #Calculate target values and advantages
         with torch.no_grad():
-            #Calculate target values for clean state
+            #Calculate target values for enhanced state
+            
             state = {}
             state['est_audio'] = clean
             state['exp_est_audio'] = cl_aud
@@ -240,12 +259,12 @@ class PPO:
             #Entropy loss
             entropy_loss = entropy.mean()
 
-            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
+            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 
+            optimizer.zero_grad()
+            clip_loss.backward()
             #Update network
-            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()):
-                optimizer.zero_grad()
-                clip_loss.backward()
+            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                 optimizer.step()
 
             self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
@@ -288,7 +307,7 @@ class PPO:
 
             #Policy loss
             pg_loss1 = -advantages[:, 1] * ratio
-            pg_loss2 = -advantages[:, 1] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+            pg_loss2 = -advantages[:, 1] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta) 
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss
@@ -299,10 +318,10 @@ class PPO:
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
 
+            optimizer.zero_grad()
+            clip_loss.backward()
             #Update network
-            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()):
-                optimizer.zero_grad()
-                clip_loss.backward()
+            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                 optimizer.step()
 
             self.prev_log_probs['clean'] = (log_probs[0].detach(), log_probs[1].detach())

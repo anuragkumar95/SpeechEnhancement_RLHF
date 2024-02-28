@@ -131,10 +131,10 @@ class REINFORCE:
         if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
             optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
             optimizer.step()
 
-        return loss.mean(), reward.mean(), G.mean()
+        return loss.mean(), G.mean()
 
 class PPO:
     """
@@ -189,10 +189,8 @@ class PPO:
         #Calculate target values and advantages
         with torch.no_grad():
             #Calculate target values for enhanced state
-            
-            state = {}
-            state['est_audio'] = clean
-            state['exp_est_audio'] = cl_aud
+            init_action, _, _ = self.init_model.get_action(noisy)
+            state = self.env.get_next_state(state=noisy, action=init_action)
             state['cl_audio'] = cl_aud
             r_c = self.env.get_PESQ_reward(state)
             tgt_val_C = r_c.reshape(-1, 1)
@@ -337,4 +335,4 @@ class PPO:
         step_entropy_loss = step_entropy_loss / (2 * self.run_steps)
         step_G = step_G / self.run_steps
                      
-        return (step_clip_loss, step_val_loss, step_entropy_loss), step_G, G.mean()
+        return (step_clip_loss, step_val_loss, step_entropy_loss), step_G

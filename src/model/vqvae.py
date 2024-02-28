@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Anurag Kumar
-"""
+
 
 import torch
 import torch.nn as nn

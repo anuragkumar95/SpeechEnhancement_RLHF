@@ -208,9 +208,9 @@ class Trainer:
             batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
             try: 
                 if self.args.method == 'reinforce': 
-                    loss, batch_reward, G = self.trainer.run_episode(batch, self.actor, self.optimizer)
+                    loss, batch_reward = self.trainer.run_episode(batch, self.actor, self.optimizer)
                 if self.args.method == 'PPO':
-                    loss, batch_reward, G = self.trainer.run_episode(batch, self.actor, self.critic, self.optimizer)
+                    loss, batch_reward = self.trainer.run_episode(batch, self.actor, self.critic, self.optimizer)
             except Exception as e:
                 print(traceback.format_exc())
                 continue
@@ -218,17 +218,15 @@ class Trainer:
             train_ep_PESQ += original_pesq(batch_reward.item()) 
 
             wandb.log({
-                "episode_cumulative_reward":batch_reward.item(),
-                "trainPESQ":original_pesq(batch_reward.item()),
                 "episode": (i+1) + ((epoch - 1) * num_batches),
-                "G_t":G,
-                "cumulative_G_t": G + self.G, 
+                "G_t":batch_reward.item(),
+                "cumulative_G_t": batch_reward.item() + self.G, 
                 "clip_loss":loss[0],
                 "value_loss":loss[1],
                 "entropy_loss":loss[2]
             })
 
-            self.G = G + self.G
+            self.G = batch_reward.item() + self.G
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())
 

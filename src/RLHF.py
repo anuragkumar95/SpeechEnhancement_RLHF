@@ -120,10 +120,10 @@ class REINFORCE:
         alpha = 1
         for i in range(G.shape[0]):
             loss.append(alpha * -G[i, ...] * log_prob[i, ...] )
-        loss = torch.stack(loss)
+        loss = torch.stack(loss).mean()
 
         print(f"M_LPROB:{log_prob.mean()}")
-        print(f"LOSS:{loss.mean().item()}")
+        print(f"LOSS:{loss.item()}")
 
         #Update network
         if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
@@ -132,7 +132,7 @@ class REINFORCE:
             torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
             optimizer.step()
 
-        return loss.mean(), G.mean()
+        return loss, G.mean()
 
 class PPO:
     """

@@ -187,19 +187,24 @@ class PPO:
         #Calculate target values and advantages
         with torch.no_grad():
             #Calculate target values for enhanced state
-            init_action, _, _ = self.init_model.get_action(noisy)
-            state = self.env.get_next_state(state=noisy, action=init_action)
+            action, _, _ = actor.get_action(clean)
+            init_action, _, _ = self.init_model.get_action(clean)
+            state = self.env.get_next_state(state=clean, action=action)
+            exp_state = self.env.get_next_state(state=clean, action=init_action)
             state['cl_audio'] = cl_aud
+            state['exp_est_audio'] = exp_state['est_audio']
             r_c = self.env.get_PESQ_reward(state)
             tgt_val_C = r_c.reshape(-1, 1)
             value_C = critic(clean).reshape(-1, 1).detach()
             adv_c = tgt_val_C - value_C
 
             #Calculate target values for noisy state
-            state = {}
-            state['est_audio'] = noisy
-            state['exp_est_audio'] = cl_aud
+            action, _, _ = actor.get_action(noisy)
+            init_action, _, _ = self.init_model.get_action(noisy)
+            state = self.env.get_next_state(state=noisy, action=action)
+            exp_state = self.env.get_next_state(state=noisy, action=init_action)
             state['cl_audio'] = cl_aud
+            state['exp_est_audio'] = exp_state['est_audio']
             r_n = self.env.get_PESQ_reward(state)
             tgt_val_N = r_n.reshape(-1, 1) + self.discount * tgt_val_C
             value_N = critic(noisy).reshape(-1, 1).detach()
@@ -219,20 +224,6 @@ class PPO:
             action, log_probs, entropies = actor.get_action(noisy)
             values = critic(noisy)
             exp_action, exp_log_probs, _ = self.init_model.get_action(noisy)
-            
-            #Get next state and reward for the state
-            a_t = (action[0], exp_action[-1])
-            next_state = self.env.get_next_state(state=noisy, action=a_t)
-            next_state['cl_audio'] = cl_aud
-
-            #Get expert output
-            exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
-            next_state['exp_est_audio'] = exp_next_state['est_audio']
-
-            if not self.rlhf:
-                G = self.env.get_PESQ_reward(next_state)
-            else:
-                G = self.env.get_RLHF_reward(next_state)
                 
             #Get previous model log_probs 
             if self.t == 0:
@@ -244,10 +235,12 @@ class PPO:
                 old_log_prob = self.prev_log_probs['noisy'][0] + \
                                self.prev_log_probs['noisy'][1][:, 0, :, :].permute(0, 2, 1) + \
                                self.prev_log_probs['noisy'][1][:, 1, :, :].permute(0, 2, 1)
+                a_t = action
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
                 log_prob, old_log_prob = log_probs[0], self.prev_log_probs['noisy'][0]
+                a_t = (action[0], exp_action[-1])
             
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
@@ -264,6 +257,19 @@ class PPO:
             entropy_loss = entropy.mean()
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
+
+            #Get next state and reward for the state
+            next_state = self.env.get_next_state(state=noisy, action=a_t)
+            next_state['cl_audio'] = cl_aud
+
+            #Get expert output
+            exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+            next_state['exp_est_audio'] = exp_next_state['est_audio']
+
+            if not self.rlhf:
+                G = self.env.get_PESQ_reward(next_state)
+            else:
+                G = self.env.get_RLHF_reward(next_state)
 
             optimizer.zero_grad()
             clip_loss.backward()
@@ -285,20 +291,6 @@ class PPO:
             values = critic(enhanced)
             exp_action, exp_log_probs, _ = self.init_model.get_action(enhanced)
             
-            #Get next state and reward for the state
-            a_t = (action[0], exp_action[-1])
-            next_state = self.env.get_next_state(state=enhanced, action=a_t)
-            next_state['cl_audio'] = cl_aud
-
-            #Get expert output
-            exp_next_state = self.env.get_next_state(state=enhanced, action=exp_action)
-            next_state['exp_est_audio'] = exp_next_state['est_audio']
-
-            if not self.rlhf:
-                G = self.env.get_PESQ_reward(next_state)
-            else:
-                G = self.env.get_RLHF_reward(next_state)
-                
             #Get previous model log_probs 
             if self.t == 0:
                 self.prev_log_probs['clean'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
@@ -310,10 +302,13 @@ class PPO:
                 old_log_prob = self.prev_log_probs['clean'][0] + \
                                self.prev_log_probs['clean'][1][:, 0, :, :].permute(0, 2, 1) + \
                                self.prev_log_probs['clean'][1][:, 1, :, :].permute(0, 2, 1)
+                a_t = action
+
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
                 log_prob, old_log_prob = log_probs[0], self.prev_log_probs['clean'][0]
+                a_t = (action[0], exp_action[-1])
 
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
@@ -330,6 +325,20 @@ class PPO:
             entropy_loss = entropy.mean()
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
+
+            #Get next state and reward for the state
+            next_state = self.env.get_next_state(state=enhanced, action=a_t)
+            next_state['cl_audio'] = cl_aud
+
+            #Get expert output
+            exp_next_state = self.env.get_next_state(state=enhanced, action=exp_action)
+            next_state['exp_est_audio'] = exp_next_state['est_audio']
+
+            if not self.rlhf:
+                G = self.env.get_PESQ_reward(next_state)
+            else:
+                G = self.env.get_RLHF_reward(next_state)
+                
 
             optimizer.zero_grad()
             clip_loss.backward()

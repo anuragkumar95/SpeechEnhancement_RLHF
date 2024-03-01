@@ -192,7 +192,7 @@ class Trainer:
         action, _, _ = self.actor.get_action(inp)
         exp_action, _, _ = self.expert.get_action(inp)
 
-        if self.train_phase:
+        if self.args.train_phase:
             a_t = action
         else:
             a_t = (action[0], exp_action[-1])

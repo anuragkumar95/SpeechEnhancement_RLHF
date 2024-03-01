@@ -135,7 +135,8 @@ class Trainer:
                                     init_model=self.expert,
                                     discount=1.0,
                                     train_phase=True,
-                                    reward_model=self.reward_model,
+                                    #reward_model=self.reward_model,
+                                    reward_model=None,
                                     env_params={'n_fft':400,
                                                 'hop':100, 
                                                 'args':args})

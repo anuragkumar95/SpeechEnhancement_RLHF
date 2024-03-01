@@ -109,11 +109,9 @@ class REINFORCE:
 
         #Get the reward
         if not self.rlhf:
-            reward, baseline = self.env.get_reward(next_state, next_state)
-            G = reward - baseline
+            G = self.env.get_PESQ_reward(next_state)
         else:
-            reward = self.env.get_reward(next_state)
-            G = reward
+            G = self.env.get_RLHF_reward(next_state)
         
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}")

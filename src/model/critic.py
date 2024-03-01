@@ -40,7 +40,7 @@ class QNet(nn.Module):
             nn.utils.spectral_norm(nn.Linear(ndf * 4, out_channel)),
             LearnableSigmoid(out_channel),
         )
-   
+        
 
     def forward(self, x):
         return self.layers(x)

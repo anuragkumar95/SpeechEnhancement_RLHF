@@ -297,7 +297,7 @@ class PPO:
             
             if self.train_phase:
                 #finetune both mag and complex masks
-                entropy = entropy[0] + entropy[1]
+                entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 old_log_prob = self.prev_log_probs['clean'][0] + \
                                self.prev_log_probs['clean'][1][:, 0, :, :].permute(0, 2, 1) + \

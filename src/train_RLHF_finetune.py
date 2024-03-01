@@ -53,6 +53,8 @@ def args():
                         help="If GAN learns a distribution.")
     parser.add_argument("--train_phase", action='store_true',
                         help="Phase is also finetuned using RL.")
+    parser.add_argument("--suffix", type=str, required=False, default='',
+                        help="Save path suffix")
     parser.add_argument("--method", type=str, default='reinforce', required=False,
                         help="RL Algo to run. Choose between (reinforce/PPO)")
     
@@ -296,7 +298,7 @@ class Trainer:
                 #TODO:Logic for savecheckpoint
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
-                    path = os.path.join(args.output, args.exp, checkpoint_prefix)
+                    path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
                     if self.args.method == 'reinforce':
                         save_dict = {'actor_state_dict':self.actor.state_dict(), 
                                     'optim_state_dict':self.optimizer.state_dict()

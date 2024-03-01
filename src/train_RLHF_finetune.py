@@ -191,7 +191,11 @@ class Trainer:
         #Forward pass through actor to get the action(mask)
         action, _, _ = self.actor.get_action(inp)
         exp_action, _, _ = self.expert.get_action(inp)
-        a_t = (action[0], exp_action[-1])
+
+        if self.train_phase:
+            a_t = action
+        else:
+            a_t = (action[0], exp_action[-1])
         
         #Apply action  to get the next state
         next_state = env.get_next_state(state=inp, 
@@ -203,13 +207,40 @@ class Trainer:
     
 
     def train_one_epoch(self, epoch):
+        #Run validation
+        self.actor.eval()
+        if self.args.method == 'PPO':
+            self.critic.eval()
+        pesq = 0
+        v_step = 0
+        for i, batch in enumerate(self.test_ds):
+            
+            #Preprocess batch
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            
+            #Run validation episode
+            try:
+                val_pesq_score = self.run_validation(self.trainer.env, batch)
+            except Exception as e:
+                print(traceback.format_exc())
+                continue
+
+            pesq += val_pesq_score
+            v_step += 1
+            print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
+        pesq /= v_step
+
+        wandb.log({ 
+            "epoch":epoch,
+            "val_pesq":original_pesq(pesq),
+        }) 
         #Run training
         self.actor.train()
         if self.args.method == 'PPO':
             self.critic.train()
         REWARDS = []
         num_batches = len(self.train_ds)
-        train_ep_PESQ = 0
+        
         self.trainer.t = 0
         for i, batch in enumerate(self.train_ds):   
            
@@ -245,37 +276,7 @@ class Trainer:
             self.G = batch_reward.item() + self.G
             print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
             REWARDS.append(batch_reward.item())
-
-        train_ep_PESQ = train_ep_PESQ / num_batches
-        
-        #Run validation
-        self.actor.eval()
-        if self.args.method == 'PPO':
-            self.critic.eval()
-        pesq = 0
-        v_step = 0
-        for i, batch in enumerate(self.test_ds):
-            
-            #Preprocess batch
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-            
-            #Run validation episode
-            try:
-                val_pesq_score = self.run_validation(self.trainer.env, batch)
-            except Exception as e:
-                print(traceback.format_exc())
-                continue
-
-            pesq += val_pesq_score
-            v_step += 1
-            print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
-        pesq /= v_step
-
-        wandb.log({ 
-            "epoch":epoch,
-            "val_pesq":original_pesq(pesq),
-            "train_PESQ":train_ep_PESQ
-        })   
+          
         
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
 
@@ -289,9 +290,6 @@ class Trainer:
         print("Start training...")
         for epoch in range(args.epochs):
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
-         
-            wandb.log({"Epoch":epoch+1,
-                       "Epoch_mean_reward":np.mean(ep_reward)})
             
             if epoch_pesq >= best_pesq:
                 best_pesq = epoch_pesq

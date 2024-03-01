@@ -231,7 +231,7 @@ class Trainer:
         pesq /= v_step
 
         wandb.log({ 
-            "epoch":epoch,
+            "epoch":epoch-1,
             "val_pesq":original_pesq(pesq),
         }) 
         #Run training

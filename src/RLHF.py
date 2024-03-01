@@ -238,9 +238,17 @@ class PPO:
             if self.t == 0:
                 self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
-            #ignore complex mask, just tune mag mask 
-            entropy = entropies[0]
-            log_prob, old_log_prob = log_probs[0], self.prev_log_probs['noisy'][0]
+            if self.train_phase:
+                entropy = entropy[0] + entropy[1]
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = self.prev_log_probs['noisy'][0] + \
+                               self.prev_log_probs['noisy'][1][:, 0, :, :].permute(0, 2, 1) + \
+                               self.prev_log_probs['noisy'][1][:, 1, :, :].permute(0, 2, 1)
+            else:
+                #ignore complex mask, just tune mag mask 
+                entropy = entropies[0]
+                log_prob, old_log_prob = log_probs[0], self.prev_log_probs['noisy'][0]
+            
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
@@ -295,9 +303,18 @@ class PPO:
             if self.t == 0:
                 self.prev_log_probs['clean'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
-            #ignore complex mask, just tune mag mask 
-            entropy = entropies[0]
-            log_prob, old_log_prob = log_probs[0], self.prev_log_probs['clean'][0]
+            if self.train_phase:
+                #finetune both mag and complex masks
+                entropy = entropy[0] + entropy[1]
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = self.prev_log_probs['clean'][0] + \
+                               self.prev_log_probs['clean'][1][:, 0, :, :].permute(0, 2, 1) + \
+                               self.prev_log_probs['clean'][1][:, 1, :, :].permute(0, 2, 1)
+            else:
+                #ignore complex mask, just tune mag mask 
+                entropy = entropies[0]
+                log_prob, old_log_prob = log_probs[0], self.prev_log_probs['clean'][0]
+
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 

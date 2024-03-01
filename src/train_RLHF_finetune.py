@@ -51,6 +51,8 @@ def args():
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--out_dist", action='store_true',
                         help="If GAN learns a distribution.")
+    parser.add_argument("--train_phase", action='store_true',
+                        help="Phase is also finetuned using RL.")
     parser.add_argument("--method", type=str, default='reinforce', required=False,
                         help="RL Algo to run. Choose between (reinforce/PPO)")
     
@@ -103,14 +105,20 @@ class Trainer:
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
         self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
         
-        reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
-        self.reward_model.load_state_dict(reward_checkpoint)
+        if args.reward_pt is not None:
+            reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
+            self.reward_model.load_state_dict(reward_checkpoint)
+            self.reward_model = freeze_layers(self.reward_model, 'all')
+            self.reward_model.eval()
+        else:
+            self.reward_model = None
         
         #Freeze complex decoder and reward model
-        self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
-        self.reward_model = freeze_layers(self.reward_model, 'all')
-        self.reward_model.eval()
-
+        if not args.train_phase:
+            self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
+        else:
+            self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1'])
+    
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
         self.expert.eval()
@@ -134,9 +142,8 @@ class Trainer:
                                     beta = 1e-10 , 
                                     init_model=self.expert,
                                     discount=1.0,
-                                    train_phase=True,
-                                    #reward_model=self.reward_model,
-                                    reward_model=None,
+                                    train_phase=args.train_phase,
+                                    reward_model=self.reward_model,
                                     env_params={'n_fft':400,
                                                 'hop':100, 
                                                 'args':args})
@@ -150,14 +157,13 @@ class Trainer:
             )
 
             self.trainer = PPO(init_model=self.expert, 
-                               #reward_model=self.reward_model, 
-                               reward_model=None,
+                               reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
                                beta=0.01,
                                val_coef=0.5,
                                en_coef=0.01,
                                discount=1.0,
-                               train_phase=False,
+                               train_phase=args.train_phase,
                                accum_grad=args.accum_grad,
                                env_params={'n_fft':400,
                                             'hop':100, 

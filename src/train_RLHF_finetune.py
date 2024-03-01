@@ -234,6 +234,7 @@ class Trainer:
             "epoch":epoch-1,
             "val_pesq":original_pesq(pesq),
         }) 
+        
         #Run training
         self.actor.train()
         if self.args.method == 'PPO':
@@ -241,7 +242,6 @@ class Trainer:
         REWARDS = []
         num_batches = len(self.train_ds)
         
-        self.trainer.t = 0
         for i, batch in enumerate(self.train_ds):   
            
             #Each minibatch is an episode

@@ -313,3 +313,7 @@ class RewardModel(nn.Module):
 
         return rewards
     
+
+class LSTMActor(nn.Module):
+    def __init__(self, n_layers, hidden_size, in_dim, out_dim):
+        self.gru = nn.GRU 

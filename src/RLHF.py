@@ -230,7 +230,7 @@ class PPO:
                 self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             if self.train_phase:
-                entropy = entropy[0] + entropy[1]
+                entropy = entropies[0] + entropies[1]
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 old_log_prob = self.prev_log_probs['noisy'][0] + \
                                self.prev_log_probs['noisy'][1][:, 0, :, :].permute(0, 2, 1) + \

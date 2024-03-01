@@ -285,8 +285,9 @@ class PPO:
             step_G += G.mean()
             
             ################################ CLEAN STATE ################################
-            #Forward pass through model to get the action(mask)
             enhanced = next_state['noisy'].detach()
+
+            #Forward pass through model to get the action(mask)
             action, log_probs, entropies = actor.get_action(enhanced)
             values = critic(enhanced)
             exp_action, exp_log_probs, _ = self.init_model.get_action(enhanced)

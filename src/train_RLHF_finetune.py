@@ -362,7 +362,7 @@ def main(rank: int, world_size: int, args):
 if __name__ == "__main__":
     ARGS = args().parse_args()
 
-    output = f"{ARGS.output}/{ARGS.exp}"
+    output = f"{ARGS.output}/{args.exp}_{args.suffix}"
     os.makedirs(output, exist_ok=True)
 
     world_size = torch.cuda.device_count()

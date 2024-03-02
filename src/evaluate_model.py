@@ -92,15 +92,15 @@ class EvalModel:
                     #Forward pass through actor to get the action(mask)
                     action, _, _ = self.actor.get_action(inp)
 
+                    #Apply action  to get the next state
+                    next_state = self.env.get_next_state(state=inp, 
+                                                        action=action)
                     if mode == 'action':
                         with open(os.path.join(save_path, f"action_{i}.pickle"), 'wb') as f:
                             action = (action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy())
                             pickle.dump(action, f)
                         print(f"action_{i}.pickle saved in {save_path}")
 
-                    #Apply action  to get the next state
-                    next_state = self.env.get_next_state(state=inp, 
-                                                        action=action)
                     if mode == 'spectogram':
                         with open(os.path.join(save_path, f"spec_{i}.pickle"), 'wb') as f:
                             spec = {

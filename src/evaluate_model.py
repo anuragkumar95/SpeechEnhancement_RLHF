@@ -104,7 +104,7 @@ class EvalModel:
                     if mode == 'spectogram':
                         with open(os.path.join(save_path, f"spec_{i}.pickle"), 'wb') as f:
                             spec = {
-                                'enhanced': next_state['est_audio'].detach().cpu().numpy(),
+                                'enhanced': next_state['noisy'].detach().cpu().numpy(),
                                 'noisy'   : noisy.detach().cpu().numpy(),
                                 'clean'   : clean.detach().cpu().numpy()
                             }
@@ -114,7 +114,7 @@ class EvalModel:
                     if mode == 'critic_score':
                         score_clean = self.critic(clean)
                         score_noisy = self.critic(noisy)
-                        score_enhanced = self.critic(next_state['est_audio'])
+                        score_enhanced = self.critic(next_state['noisy'])
                         scores = {
                             'enhanced' : score_enhanced.detach().cpu().numpy(),
                             'noisy'    : score_noisy.detach().cpu().numpy(),

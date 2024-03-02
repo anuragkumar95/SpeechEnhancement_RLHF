@@ -38,6 +38,8 @@ def args():
                         help="Flag to save enhanced spectograms")
     parser.add_argument("--save_scores", action='store_true', 
                         help="Flag to save critic scores")
+    parser.add_argument("--save_pesq", action='store_true', 
+                        help="Flag to save pesq values")
     return parser
 
 class EvalModel:
@@ -83,10 +85,11 @@ class EvalModel:
                 os.makedirs(save_path, exist_ok=True)
                 for i, batch in enumerate(dataset):
                     
+                    _, noisy_aud, _ = batch
                     #Preprocess batch
                     batch = preprocess_batch(batch, gpu_id=self.gpu_id)
 
-                    _, clean, noisy, _ = batch
+                    cl_aud, clean, noisy, _ = batch
                     inp = noisy.permute(0, 1, 3, 2)
 
                     #Forward pass through actor to get the action(mask)
@@ -123,6 +126,24 @@ class EvalModel:
                         with open(os.path.join(save_path, f"score_{i}.pickle"), 'wb') as f:
                             pickle.dump(scores, f)
                         print(f"score_{i}.pickle saved in {save_path}")
+
+                    if mode == 'pesq':
+                        enh_aud = next_state['est_audio'].detach().cpu().numpy()
+                        
+                        n_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), noisy_aud.detach().cpu().numpy())
+                        n_pesq = (n_pesq * pesq_mask).mean()
+
+                        e_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), enh_aud.detach().cpu().numpy())
+                        e_pesq = (e_pesq * pesq_mask).mean()
+
+                        pesq = {
+                            'noisy':original_pesq(n_pesq),
+                            'enhanced':original_pesq(e_pesq),
+                        }
+
+                        with open(os.path.join(save_path, f"pesq_{i}.pickle"), 'wb') as f:
+                            pickle.dump(pesq, f)
+                        print(f"pesq_{i}.pickle saved in {save_path}")
                         
 
 if __name__ == '__main__':
@@ -135,6 +156,8 @@ if __name__ == '__main__':
         modes.append('spectogram')
     if ARGS.save_scores:
         modes.append('critic_score')
+    if ARGS.save_pesq:
+        modes.append('pesq')
 
 
     eval = EvalModel(modes=modes, 

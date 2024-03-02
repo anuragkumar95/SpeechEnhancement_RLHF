@@ -95,7 +95,7 @@ class EvalModel:
                     if mode == 'action':
                         with open(os.path.join(save_path, f"action_{i}.pickle"), 'wb') as f:
                             action = (action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy())
-                            pickle.dump(f, action)
+                            pickle.dump(action, f)
                         print(f"action_{i}.pickle saved in {save_path}")
 
                     #Apply action  to get the next state
@@ -108,7 +108,7 @@ class EvalModel:
                                 'noisy'   : noisy.detach().cpu().numpy(),
                                 'clean'   : clean.detach().cpu().numpy()
                             }
-                            pickle.dump(f, spec)
+                            pickle.dump(spec, f)
                         print(f"spec_{i}.pickle saved in {save_path}")
 
                     if mode == 'critic_score':
@@ -121,7 +121,7 @@ class EvalModel:
                             'clean'    : score_clean.detach().cpu().numpy()
                         }
                         with open(os.path.join(save_path, f"score_{i}.pickle"), 'wb') as f:
-                            pickle.dump(f, scores)
+                            pickle.dump(scores, f)
                         print(f"score_{i}.pickle saved in {save_path}")
                         
 

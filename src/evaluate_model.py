@@ -36,6 +36,8 @@ def args():
                         help="Flag to save actions")
     parser.add_argument("--save_specs", action='store_true', 
                         help="Flag to save enhanced spectograms")
+    parser.add_argument("--save_scores", action='store_true', 
+                        help="Flag to save critic scores")
     return parser
 
 class EvalModel:

@@ -32,7 +32,7 @@ def args():
                         help="Path to saved checkpoint to evaluate.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
-    parser.add_argument("--save_action", action='store_true', 
+    parser.add_argument("--save_actions", action='store_true', 
                         help="Flag to save actions")
     parser.add_argument("--save_specs", action='store_true', 
                         help="Flag to save enhanced spectograms")
@@ -129,11 +129,11 @@ if __name__ == '__main__':
     ARGS = args().parse_args()
 
     modes = []
-    if ARGS.save_action:
+    if ARGS.save_actions:
         modes.append('action')
-    if ARGS.save_spec:
+    if ARGS.save_specs:
         modes.append('spectogram')
-    if ARGS.save_score:
+    if ARGS.save_scores:
         modes.append('critic_score')
 
 

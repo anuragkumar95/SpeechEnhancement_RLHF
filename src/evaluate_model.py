@@ -133,7 +133,7 @@ class EvalModel:
                         n_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), noisy_aud.detach().cpu().numpy())
                         n_pesq = (n_pesq * pesq_mask).mean()
 
-                        e_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), enh_aud.detach().cpu().numpy())
+                        e_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), enh_aud)
                         e_pesq = (e_pesq * pesq_mask).mean()
 
                         pesq = {

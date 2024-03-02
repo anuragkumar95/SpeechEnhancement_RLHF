@@ -57,6 +57,7 @@ class EvalModel:
         checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(checkpoint['actor_state_dict'])
         self.critic.load_state_dict(checkpoint['critic_state_dict'])
+        print(f"Loaded checkpoint from {model_pt}...")
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)

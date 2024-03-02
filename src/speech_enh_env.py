@@ -14,32 +14,7 @@ from torch.distributions import Normal
 #import gym
 #from gym import Env, spaces
 
-"""
-class GymSpeechEnhancementEnv(Env):
-    def __init__(self, spec_shape, mask_shape, low, high, win_len, n_fft=400, hop=100):
-        super().__init__()
-        self.state_shape = spec_shape
-        self.observation_space = spaces.Box(low=low, 
-                                            high=high,
-                                            shape=self.state_shape)
-        
-        self.action_space = spaces.Box(low=low, 
-                                       high=high,
-                                       shape=mask_shape)
-        
-        self.agent = SpeechEnhancementAgent(window=win_len // 2, 
-                                            buffer_size=250,
-                                            n_fft=n_fft,
-                                            hop=hop)
 
-        pass
-
-    def step(self, action):
-        state = self.agent.get_next_state(self, state, action, t)
-
-    def reset(self):
-        pass
-"""
 class SpeechEnhancementAgent:
     def __init__(self, n_fft, hop, args, reward_model=None, buffer_size=None, gpu_id=None):
         """
@@ -139,36 +114,22 @@ class SpeechEnhancementAgent:
         est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
         exp_est_audio_list = list(next_state["exp_est_audio"].detach().cpu().numpy())
         clean_audio_list = list(next_state["cl_audio"].cpu().numpy()[:, :length])
-        if self.args.reward == 0:
-            length = next_state["est_audio"].size(-1)
-            est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
-            clean_audio_list = list(next_state["cl_audio"].cpu().numpy()[:, :length])
-            z_hat_mask, z_hat = batch_pesq(clean_audio_list, 
-                                        est_audio_list)
-            pesq_reward = (z_hat_mask * z_hat)
-
-            if self.gpu_id is not None:
-                pesq_reward = pesq_reward.to(self.gpu_id)
-            return pesq_reward
         
-        if self.args.reward == 1:
 
-            z_mask, z = batch_pesq(clean_audio_list,
-                                est_audio_list)
-            
-            z_mask_e, z_e = batch_pesq(clean_audio_list,
-                                exp_est_audio_list)
-            
-            pesq_reward = (z_mask * z)
-            exp_pesq_reward = (z_mask_e * z_e)
+        z_mask, z = batch_pesq(clean_audio_list,
+                            est_audio_list)
+        
+        z_mask_e, z_e = batch_pesq(clean_audio_list,
+                            exp_est_audio_list)
+        
+        pesq_reward = (z_mask * z)
+        exp_pesq_reward = (z_mask_e * z_e)
 
-            if self.gpu_id is not None:
-                pesq_reward = pesq_reward.to(self.gpu_id)
-                exp_pesq_reward = exp_pesq_reward.to(self.gpu_id)
+        if self.gpu_id is not None:
+            pesq_reward = pesq_reward.to(self.gpu_id)
+            exp_pesq_reward = exp_pesq_reward.to(self.gpu_id)
 
-            return pesq_reward.mean() - exp_pesq_reward.mean()
-            #return torch.tanh(pesq_reward).mean()
-     
+        return pesq_reward.mean() - exp_pesq_reward.mean()
     
 
 class replay_buffer:

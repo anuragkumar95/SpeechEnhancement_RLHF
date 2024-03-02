@@ -118,9 +118,7 @@ class Trainer:
         #Freeze complex decoder and reward model
         if not args.train_phase:
             self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
-        else:
-            self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1'])
-    
+        
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
         self.expert.eval()

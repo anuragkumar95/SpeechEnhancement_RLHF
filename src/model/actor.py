@@ -5,6 +5,7 @@ from model.critic import QNet
 import torch.nn.functional as F
 
 from torch.distributions import Normal
+from torch.nn.utils import rnn
 
 
 class DilatedDenseNet(nn.Module):
@@ -315,5 +316,81 @@ class RewardModel(nn.Module):
     
 
 class LSTMActor(nn.Module):
-    def __init__(self, n_layers, hidden_size, in_dim, out_dim):
-        self.gru = nn.GRU 
+    def __init__(self,
+                 generator, 
+                 n_layers, 
+                 hid_dim,
+                 in_channel, 
+                 in_dim, 
+                 out_dim, 
+                 batch_first=True,
+                 drop_out=0.05,
+                 bi_directional=False,
+                 gpu_id=None):
+        
+        self.encoder = generator
+
+        self.gru = nn.GRU(input_size=in_dim * in_channel,
+                          hid_dim=hid_dim,
+                          num_layers=n_layers,
+                          batch_first=batch_first,
+                          drop_out=drop_out,
+                          bidirectional=bi_directional)
+        
+        self.num_layers = n_layers
+        self.hidden_dim = hid_dim
+        self.bi_directional = bi_directional
+        
+        #FC layers to output a dist over K classes
+        inp_dim = hid_dim
+        if self.bi_directional:
+            inp_dim = 2 * inp_dim
+        self.final_out = nn.Linear(inp_dim, out_dim)
+
+        self.gpu_id = gpu_id
+
+    def init_hidden_state(self, h):
+        return nn.init.xavier_uniform_(h, gain=nn.init.calculate_gain('relu'))
+
+    def forward(self, inputs, lens, batch_first=False):
+        """
+        ARGS:
+            inputs : (Long.tensor) padded tensor of shape (batch,ch,t, f).
+            lens   : (List[Int]) length of time_seq for each example in the batch. 
+        """  
+        # Initializing hidden state for first input with zeros
+        num_layers = self.num_layers
+        if self.bi_directional:
+            num_layers = 2*self.num_layers
+        if batch_first:
+            h0 = torch.zeros(num_layers, inputs.shape[0], self.hidden_dim).requires_grad_()
+        else:
+            h0 = torch.zeros(inputs.shape[0], num_layers, self.hidden_dim).requires_grad_()
+        h0 = self.init_hidden_state(h0)
+
+        if self.gpu_id is not None:
+            h0 = h0.to(self.gpu_id)
+        
+        #get embeddings from the generator
+        encodings = self.encoder.get_embeddings(inputs)
+        #change (b, ch, t, f) --> (b, t, f * ch)
+        b, c, t, f = encodings.size()
+        encodings = encodings.permute(0, 2, 3, 1).contiguous().view(b, t, f*c)
+
+        #Feed-forward GRU
+        packed_inp = rnn.pack_padded_sequence(encodings, lens, batch_first=batch_first, enforce_sorted=False)
+        gru_outputs, _ = self.gru(packed_inp, h0)
+        gru_outputs, lens = rnn.pad_packed_sequence(packed_inp, batch_first=batch_first)
+
+        #Predict probs over K clusters
+        scores = self.final_out(gru_outputs)
+        probs = F.Softmax(scores, dim=-1)
+
+        return probs
+        
+
+        
+
+
+
+

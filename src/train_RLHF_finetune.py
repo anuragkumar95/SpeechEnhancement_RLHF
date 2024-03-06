@@ -228,7 +228,7 @@ class Trainer:
 
             pesq += val_pesq_score
             v_step += 1
-            #print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
+            print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score.mean())}")
         pesq /= (v_step * batch[0].shape[0])
 
         wandb.log({ 

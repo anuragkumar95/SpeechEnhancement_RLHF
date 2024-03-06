@@ -204,7 +204,7 @@ class Trainer:
 
         pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
                                      next_state['est_audio'].detach().cpu().numpy())
-        return (pesq*pesq_mask).mean()
+        return (pesq*pesq_mask).sum()
     
 
     def train_one_epoch(self, epoch):
@@ -228,8 +228,8 @@ class Trainer:
 
             pesq += val_pesq_score
             v_step += 1
-            print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
-        pesq /= v_step
+            #print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
+        pesq /= (v_step * batch.shape[0])
 
         wandb.log({ 
             "epoch":epoch-1,

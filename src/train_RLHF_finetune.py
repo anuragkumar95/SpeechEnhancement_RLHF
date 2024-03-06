@@ -162,9 +162,9 @@ class Trainer:
                                reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
                                beta=0.01,
-                               val_coef=0.5,
+                               val_coef=0.8,
                                en_coef=0.01,
-                               discount=1.0,
+                               discount=0.98,
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,
@@ -229,7 +229,7 @@ class Trainer:
             pesq += val_pesq_score
             v_step += 1
             #print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score)}")
-        pesq /= (v_step * batch.shape[0])
+        pesq /= (v_step * batch[0].shape[0])
 
         wandb.log({ 
             "epoch":epoch-1,

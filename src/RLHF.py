@@ -174,6 +174,12 @@ class PPO:
         self.run_steps = run_steps
 
     def run_episode(self, batch, actor, critic, optimizer):
+        if self.run_steps > 1:
+            return self.run_n_step_episode(batch, actor, critic, optimizer)
+        else:
+            return self.run_one_step_episode(batch, actor, critic, optimizer)
+
+    def run_one_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> C --> Terminal
         So for target values, we consider Noisy --> Clean --> Terminal
@@ -446,7 +452,7 @@ class PPO:
                 
             #Get previous model log_probs 
             if self.t == 0:
-                self.prev_log_probs[t] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+                self.prev_log_probs_n[t] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
@@ -458,7 +464,7 @@ class PPO:
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], self.prev_log_probs[t][0]
+                log_prob, old_log_prob = log_probs[0], self.prev_log_probs_n[t][0]
                 a_t = (action[0], exp_action[-1])
             
             logratio = log_prob - old_log_prob 
@@ -478,11 +484,11 @@ class PPO:
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 
             #Get next state and reward for the state
-            next_state = self.env.get_next_state(state=noisy, action=a_t)
+            next_state = self.env.get_next_state(state=states[t], action=a_t)
             next_state['cl_audio'] = cl_aud
 
             #Get expert output
-            exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+            exp_next_state = self.env.get_next_state(state=states[t], action=exp_action)
             next_state['exp_est_audio'] = exp_next_state['est_audio']
 
             if not self.rlhf:

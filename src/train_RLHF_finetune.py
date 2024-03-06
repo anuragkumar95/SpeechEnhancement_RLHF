@@ -57,6 +57,8 @@ def args():
                         help="Save path suffix")
     parser.add_argument("--method", type=str, default='reinforce', required=False,
                         help="RL Algo to run. Choose between (reinforce/PPO)")
+    parser.add_argument("--episode_steps", type=int, default=1, required=False,
+                        help="No. of steps in episode to run for PPO")
     
     parser.add_argument("--reward", type=int, help="Type of reward")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
@@ -163,6 +165,7 @@ class Trainer:
                                val_coef=0.5,
                                en_coef=0.01,
                                discount=1.0,
+                               run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,
                                env_params={'n_fft':400,

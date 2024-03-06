@@ -460,9 +460,9 @@ class PPO:
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = self.prev_log_probs[t][0] + \
-                               self.prev_log_probs[t][1][:, 0, :, :].permute(0, 2, 1) + \
-                               self.prev_log_probs[t][1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = self.prev_log_probs_n[t][0] + \
+                               self.prev_log_probs_n[t][1][:, 0, :, :].permute(0, 2, 1) + \
+                               self.prev_log_probs_n[t][1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
             else:
                 #ignore complex mask, just tune mag mask 

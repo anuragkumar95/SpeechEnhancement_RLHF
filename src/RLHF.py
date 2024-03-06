@@ -392,8 +392,6 @@ class PPO:
         for t in range(rewards.shape[1]-1):
             r_t = rewards[:, t].reshape(-1, 1)
             a_t = (r_t + self.discount * critic(states[t+1]) - critic(states[t])).reshape(-1)
-            print(f"R:{rewards[:, t].shape}, C_t+1:{critic(states[t+1]).shape}, C_t:{critic(states[t]).shape}")
-            print(f"A[:, t]={A[:, t].shape} a_t={a_t.shape}")
             A[:, t] = a_t
         return A
     
@@ -460,9 +458,12 @@ class PPO:
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                print(f"t:{t}")
+                print(self.prev_log_probs_n[t])
                 old_log_prob = self.prev_log_probs_n[t][0] + \
                                self.prev_log_probs_n[t][1][:, 0, :, :].permute(0, 2, 1) + \
                                self.prev_log_probs_n[t][1][:, 1, :, :].permute(0, 2, 1)
+                
                 a_t = action
             else:
                 #ignore complex mask, just tune mag mask 

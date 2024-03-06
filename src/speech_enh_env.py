@@ -130,7 +130,7 @@ class SpeechEnhancementAgent:
             exp_pesq_reward = exp_pesq_reward.to(self.gpu_id)
 
         #return torch.tanh(pesq_reward)
-        return pesq_reward.mean() - exp_pesq_reward.mean()
+        return pesq_reward - exp_pesq_reward
     
 
 class replay_buffer:

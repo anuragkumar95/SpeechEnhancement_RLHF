@@ -142,7 +142,7 @@ class PPO:
                  init_model, 
                  reward_model, 
                  gpu_id=None, 
-                 run_steps=3, 
+                 run_steps=1, 
                  beta=0.2, 
                  val_coef=0.02, 
                  en_coef=0.01, 
@@ -167,6 +167,7 @@ class PPO:
         self.train_phase = params['train_phase']
         self.t = 0
         self.init_model = init_model
+        self.prev_log_probs_n = {i:None for i in range(run_steps)}
         self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
         self.en_coef = en_coef
@@ -218,40 +219,258 @@ class PPO:
         step_entropy_loss = 0
         step_G = 0
 
-        for _ in range(self.run_steps):
-            ############################## NOISY STATE ################################
+        
+        ############################## NOISY STATE ################################
+        #Forward pass through model to get the action(mask)
+        action, log_probs, entropies = actor.get_action(noisy)
+        values = critic(noisy)
+        exp_action, exp_log_probs, _ = self.init_model.get_action(noisy)
+            
+        #Get previous model log_probs 
+        if self.t == 0:
+            self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+        
+        if self.train_phase:
+            entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
+            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            old_log_prob = self.prev_log_probs['noisy'][0] + \
+                            self.prev_log_probs['noisy'][1][:, 0, :, :].permute(0, 2, 1) + \
+                            self.prev_log_probs['noisy'][1][:, 1, :, :].permute(0, 2, 1)
+            a_t = action
+        else:
+            #ignore complex mask, just tune mag mask 
+            entropy = entropies[0]
+            log_prob, old_log_prob = log_probs[0], self.prev_log_probs['noisy'][0]
+            a_t = (action[0], exp_action[-1])
+        
+        logratio = log_prob - old_log_prob 
+        ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+
+        #Policy loss
+        pg_loss1 = -advantages[:, 0] * ratio
+        pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+        pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+        #value_loss
+        v_loss = 0.5 * ((target_values[:, 0] - values) ** 2).mean()
+
+        #Entropy loss
+        entropy_loss = entropy.mean()
+
+        clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
+
+        #Get next state and reward for the state
+        next_state = self.env.get_next_state(state=noisy, action=a_t)
+        next_state['cl_audio'] = cl_aud
+
+        #Get expert output
+        exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+        next_state['exp_est_audio'] = exp_next_state['est_audio']
+
+        if not self.rlhf:
+            G = self.env.get_PESQ_reward(next_state)
+        else:
+            G = self.env.get_RLHF_reward(next_state)
+
+        optimizer.zero_grad()
+        clip_loss.backward()
+        #Update network
+        if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
+            optimizer.step()
+
+        self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
+
+        step_clip_loss += clip_loss.item()
+        step_val_loss += v_loss.item()
+        step_entropy_loss += entropy_loss.item()
+        step_G += G.mean()
+        
+        ################################ CLEAN STATE ################################
+        enhanced = next_state['noisy'].detach()
+
+        #Forward pass through model to get the action(mask)
+        action, log_probs, entropies = actor.get_action(enhanced)
+        values = critic(enhanced)
+        exp_action, exp_log_probs, _ = self.init_model.get_action(enhanced)
+        
+        #Get previous model log_probs 
+        if self.t == 0:
+            self.prev_log_probs['clean'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+        
+        if self.train_phase:
+            #finetune both mag and complex masks
+            entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
+            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            old_log_prob = self.prev_log_probs['clean'][0] + \
+                            self.prev_log_probs['clean'][1][:, 0, :, :].permute(0, 2, 1) + \
+                            self.prev_log_probs['clean'][1][:, 1, :, :].permute(0, 2, 1)
+            a_t = action
+
+        else:
+            #ignore complex mask, just tune mag mask 
+            entropy = entropies[0]
+            log_prob, old_log_prob = log_probs[0], self.prev_log_probs['clean'][0]
+            a_t = (action[0], exp_action[-1])
+
+        logratio = log_prob - old_log_prob 
+        ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+
+        #Policy loss
+        pg_loss1 = -advantages[:, 1] * ratio
+        pg_loss2 = -advantages[:, 1] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta) 
+        pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+        #value_loss
+        v_loss = 0.5 * ((target_values[:, 1] - values) ** 2).mean()
+
+        #Entropy loss
+        entropy_loss = entropy.mean()
+
+        clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
+
+        #Get next state and reward for the state
+        next_state = self.env.get_next_state(state=enhanced, action=a_t)
+        next_state['cl_audio'] = cl_aud
+
+        #Get expert output
+        exp_next_state = self.env.get_next_state(state=enhanced, action=exp_action)
+        next_state['exp_est_audio'] = exp_next_state['est_audio']
+
+        if not self.rlhf:
+            G = self.env.get_PESQ_reward(next_state)
+        else:
+            G = self.env.get_RLHF_reward(next_state)
+            
+
+        optimizer.zero_grad()
+        clip_loss.backward()
+        #Update network
+        if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
+            #torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
+            #torch.nn.utils.clip_grad_value_(critic.parameters(), 1.0)
+            optimizer.step()
+
+        self.prev_log_probs['clean'] = (log_probs[0].detach(), log_probs[1].detach())
+        self.t += 1
+
+        step_clip_loss += clip_loss.item()
+        step_val_loss += v_loss.item()
+        step_entropy_loss += entropy_loss.item()
+        step_G += G.mean()
+
+        step_clip_loss = step_clip_loss / (2 * self.run_steps)
+        step_val_loss = step_val_loss / (2 * self.run_steps)
+        step_entropy_loss = step_entropy_loss / (2 * self.run_steps)
+        step_G = step_G / self.run_steps
+                    
+        return (step_clip_loss, step_val_loss, step_entropy_loss), step_G
+    
+    def get_expected_return(self, rewards):
+        """
+        Expects rewards to be a torch tensor.
+        """
+        G_t = torch.zeros(rewards.shape).to(self.gpu_id)
+        episode_len = rewards.shape[0]
+        for i in range(episode_len):
+            #Base case: G(T) = r(T)
+            #Recursive: G(t) = r(t) + G(t+1)*DISCOUNT
+            r_t = rewards[:, episode_len - i - 1]
+            if i == 0:
+                G_t[:, episode_len - i - 1] = r_t
+            else:
+                G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
+        return G_t
+    
+    def get_advantages(self, rewards, states, critic): 
+        A = torch.zeros(rewards.shape).to(self.gpu_id)
+        for t in range(rewards.shape[1]-1):
+            a_t = rewards[:, t] + self.discount * critic(states[t+1]) - critic(states[t])
+            A[:, t] = a_t
+        return A
+    
+    def run_n_step_episode(self, batch, actor, critic, optimizer):
+        """
+        Imagine the episode N --> C --> Terminal
+        So for target values, we consider Noisy --> Clean --> Terminal
+        and for current iteration values we consider Noisy --> Enhanced --> Terminal
+        """
+        #Preprocessed batch
+        cl_aud, clean, noisy, _ = batch
+        noisy = noisy.permute(0, 1, 3, 2)
+        clean = clean.permute(0, 1, 3, 2)
+        bs = clean.shape[0]
+        critic.eval()
+        actor.eval()
+        
+        #Calculate target values and advantages
+        with torch.no_grad():
+            curr = noisy
+            rewards = []
+            states = []
+            for _ in range(self.run_steps):
+                #Unroll policy for n steps and store rewards.
+                action, _, _ = actor.get_action(curr)
+                init_action, _, _ = self.init_model.get_action(curr)
+
+                state = self.env.get_next_state(state=curr, action=action)
+                exp_state = self.env.get_next_state(state=curr, action=init_action)
+                state['cl_audio'] = cl_aud
+                state['exp_est_audio'] = exp_state['est_audio']
+                
+                #Store reward
+                r_t = self.env.get_PESQ_reward(state)
+                rewards.append(r_t)
+
+                #Store state
+                states.append(curr)
+                curr = state['noisy']
+
+            #Convert collected rewards to target_values and advantages
+            rewards = torch.stack(rewards).reshape(bs, -1)
+            target_values = self.get_expected_return(rewards)
+            advantages = self.get_advantages(rewards, states, critic)
+
+        #Start training over the unrolled batch of trajectories
+        actor.train()
+        critic.train()
+        step_clip_loss = 0
+        step_val_loss = 0
+        step_entropy_loss = 0
+        step_G = 0
+
+        for t in range(len(states)):
             #Forward pass through model to get the action(mask)
-            action, log_probs, entropies = actor.get_action(noisy)
-            values = critic(noisy)
-            exp_action, exp_log_probs, _ = self.init_model.get_action(noisy)
+            action, log_probs, entropies = actor.get_action(states[t])
+            values = critic(states[t])
+            exp_action, exp_log_probs, _ = self.init_model.get_action(states[t])
                 
             #Get previous model log_probs 
             if self.t == 0:
-                self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+                self.prev_log_probs[t] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = self.prev_log_probs['noisy'][0] + \
-                               self.prev_log_probs['noisy'][1][:, 0, :, :].permute(0, 2, 1) + \
-                               self.prev_log_probs['noisy'][1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = self.prev_log_probs[t][0] + \
+                               self.prev_log_probs[t][1][:, 0, :, :].permute(0, 2, 1) + \
+                               self.prev_log_probs[t][1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], self.prev_log_probs['noisy'][0]
+                log_prob, old_log_prob = log_probs[0], self.prev_log_probs[t][0]
                 a_t = (action[0], exp_action[-1])
             
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
 
             #Policy loss
-            pg_loss1 = -advantages[:, 0] * ratio
-            pg_loss2 = -advantages[:, 0] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+            pg_loss1 = -advantages[:, t] * ratio
+            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss
-            v_loss = 0.5 * ((target_values[:, 0] - values) ** 2).mean()
+            v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()
 
             #Entropy loss
             entropy_loss = entropy.mean()
@@ -277,89 +496,25 @@ class PPO:
             if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                 optimizer.step()
 
-            self.prev_log_probs['noisy'] = (log_probs[0].detach(), log_probs[1].detach())
+            self.prev_log_probs[t] = (log_probs[0].detach(), log_probs[1].detach())
 
             step_clip_loss += clip_loss.item()
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()
             step_G += G.mean()
-            
-            ################################ CLEAN STATE ################################
-            enhanced = next_state['noisy'].detach()
-
-            #Forward pass through model to get the action(mask)
-            action, log_probs, entropies = actor.get_action(enhanced)
-            values = critic(enhanced)
-            exp_action, exp_log_probs, _ = self.init_model.get_action(enhanced)
-            
-            #Get previous model log_probs 
-            if self.t == 0:
-                self.prev_log_probs['clean'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
-            
-            if self.train_phase:
-                #finetune both mag and complex masks
-                entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = self.prev_log_probs['clean'][0] + \
-                               self.prev_log_probs['clean'][1][:, 0, :, :].permute(0, 2, 1) + \
-                               self.prev_log_probs['clean'][1][:, 1, :, :].permute(0, 2, 1)
-                a_t = action
-
-            else:
-                #ignore complex mask, just tune mag mask 
-                entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], self.prev_log_probs['clean'][0]
-                a_t = (action[0], exp_action[-1])
-
-            logratio = log_prob - old_log_prob 
-            ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
-
-            #Policy loss
-            pg_loss1 = -advantages[:, 1] * ratio
-            pg_loss2 = -advantages[:, 1] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta) 
-            pg_loss = torch.max(pg_loss1, pg_loss2).mean()
-
-            #value_loss
-            v_loss = 0.5 * ((target_values[:, 1] - values) ** 2).mean()
-
-            #Entropy loss
-            entropy_loss = entropy.mean()
-
-            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss) 
-
-            #Get next state and reward for the state
-            next_state = self.env.get_next_state(state=enhanced, action=a_t)
-            next_state['cl_audio'] = cl_aud
-
-            #Get expert output
-            exp_next_state = self.env.get_next_state(state=enhanced, action=exp_action)
-            next_state['exp_est_audio'] = exp_next_state['est_audio']
-
-            if not self.rlhf:
-                G = self.env.get_PESQ_reward(next_state)
-            else:
-                G = self.env.get_RLHF_reward(next_state)
-                
-
-            optimizer.zero_grad()
-            clip_loss.backward()
-            #Update network
-            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                #torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
-                #torch.nn.utils.clip_grad_value_(critic.parameters(), 1.0)
-                optimizer.step()
-
-            self.prev_log_probs['clean'] = (log_probs[0].detach(), log_probs[1].detach())
             self.t += 1
 
-            step_clip_loss += clip_loss.item()
-            step_val_loss += v_loss.item()
-            step_entropy_loss += entropy_loss.item()
-            step_G += G.mean()
-
-        step_clip_loss = step_clip_loss / (2 * self.run_steps)
-        step_val_loss = step_val_loss / (2 * self.run_steps)
-        step_entropy_loss = step_entropy_loss / (2 * self.run_steps)
+        step_clip_loss = step_clip_loss / self.run_steps
+        step_val_loss = step_val_loss / self.run_steps
+        step_entropy_loss = step_entropy_loss / self.run_steps
         step_G = step_G / self.run_steps
-                     
+                    
         return (step_clip_loss, step_val_loss, step_entropy_loss), step_G
+
+            
+
+                
+
+            
+
+        

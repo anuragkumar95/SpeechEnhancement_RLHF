@@ -389,6 +389,7 @@ class PPO:
     
     def get_advantages(self, rewards, states, critic): 
         A = torch.zeros(rewards.shape).to(self.gpu_id)
+        
         for t in range(rewards.shape[1]-1):
             a_t = rewards[:, t] + self.discount * critic(states[t+1]) - critic(states[t])
             A[:, t] = a_t

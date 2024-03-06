@@ -452,7 +452,7 @@ class PPO:
             exp_action, exp_log_probs, _ = self.init_model.get_action(states[t])
                 
             #Get previous model log_probs 
-            if self.t == 0:
+            if self.prev_log_probs_n[t] == None:
                 self.prev_log_probs_n[t] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             if self.train_phase:

@@ -150,6 +150,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
     def __init__(self, 
                  jnd_root, 
                  vctk_root, 
+                 comp, 
                  set, 
                  train_split=0.8, 
                  resample=None, 
@@ -160,6 +161,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
         self.cutlen = cutlen
         self.resample = resample
         self.set = set
+        self.comp = comp
         self.split = train_split
         self.paths = self.collect_paths() 
 
@@ -169,7 +171,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
             'per':[]
         }
 
-        with open(os.path.join(self.j_root, 'dataset_linear.txt'), 'r') as f:
+        with open(os.path.join(self.comp, 'dataset_linear.txt'), 'r') as f:
             lines = f.readlines()
             split_index = int(len(lines) * self.split)
             if self.set == 'train':

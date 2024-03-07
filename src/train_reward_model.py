@@ -232,6 +232,7 @@ def main(args):
     train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
                                       vctk_root=args.vctkroot, 
                                       set="train", 
+                                      comp=args.comp,
                                       train_split=0.8, 
                                       resample=16000, 
                                       cutlen=40000)
@@ -239,6 +240,7 @@ def main(args):
     test_dataset = PreferenceDataset(jnd_root=args.jndroot, 
                                      vctk_root=args.vctkroot, 
                                      set="test", 
+                                     comp=args.comp,
                                      train_split=0.8, 
                                      resample=16000, 
                                      cutlen=40000)

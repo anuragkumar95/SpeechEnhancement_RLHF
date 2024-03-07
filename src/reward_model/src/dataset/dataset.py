@@ -179,7 +179,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
             else:
                 set_lines = lines[split_index:]
             for line in set_lines:
-                inp, out, label, noise = line.strip().split('\t')
+                inp, out, _, noise = line.strip().split('\t')
                 inp = os.path.join(self.j_root, f"{noise.strip()}_list", inp)
                 out = os.path.join(self.j_root, f"{noise.strip()}_list", out)
                 paths['ref'].append(inp)

@@ -193,8 +193,8 @@ class PreferenceDataset(torch.utils.data.Dataset):
             vctk_noisy_dir = os.path.join(self.v_root, "test", "noisy")
 
         for clean, noisy in zip(os.listdir(vctk_clean_dir), os.listdir(vctk_noisy_dir)):
-            inp = os.path.join(self.v_root, clean)
-            out = os.path.join(self.v_root, noisy)
+            inp = os.path.join(vctk_clean_dir, clean)
+            out = os.path.join(vctk_noisy_dir, noisy)
             paths['ref'].append(inp)
             paths['per'].append(out)
 

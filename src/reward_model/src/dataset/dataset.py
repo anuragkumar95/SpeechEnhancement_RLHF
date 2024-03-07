@@ -141,7 +141,96 @@ class JNDDataset(Dataset):
         label = torch.tensor([0.0, 1.0])
         return out[:self.cut_len], inp[:self.cut_len], label
 
+class PreferenceDataset(torch.utils.data.Dataset):
+    """
+    Combined VCTK and JND Dataset for preferance 
+    reward model training. Only the linear dataset
+    from the JND Dataset is considered. 
+    """
+    def __init__(self, 
+                 jnd_root, 
+                 vctk_root, 
+                 set, 
+                 train_split=0.8, 
+                 resample=None, 
+                 cutlen=40000):
+        
+        self.j_root = jnd_root
+        self.v_root = vctk_root
+        self.cutlen = cutlen
+        self.resample = resample
+        self.set = set
+        self.split = train_split
+        self.paths = self.collect_paths() 
+
+    def collect_paths(self):
+        paths = {
+            'ref':[],
+            'per':[]
+        }
+
+        with open(os.path.join(self.j_root, 'dataset_linear.txt'), 'r') as f:
+            lines = f.readlines()
+            split_index = int(len(lines) * self.split)
+            if self.set == 'train':
+                set_lines = lines[:split_index]
+            else:
+                set_lines = lines[split_index:]
+            for line in set_lines:
+                inp, out, label, noise = line.strip().split('\t')
+                inp = os.path.join(self.j_root, f"{noise.strip()}_list", inp)
+                out = os.path.join(self.j_root, f"{noise.strip()}_list", out)
+                paths['ref'].append(inp)
+                paths['per'].append(out)
+
+        if self.set == 'train':
+            vctk_clean_dir = os.path.join(self.v_root, "train", "clean")
+            vctk_noisy_dir = os.path.join(self.v_root, "train", "noisy")
+        else:
+            vctk_clean_dir = os.path.join(self.v_root, "test", "clean")
+            vctk_noisy_dir = os.path.join(self.v_root, "test", "noisy")
+
+        for clean, noisy in zip(os.listdir(vctk_clean_dir), os.listdir(vctk_noisy_dir)):
+            inp = os.path.join(self.v_root, clean)
+            out = os.path.join(self.v_root, noisy)
+            paths['ref'].append(inp)
+            paths['per'].append(out)
+
+        return paths
     
+    def __len__(self):
+        return len(self.paths['ref'])
+    
+    def __getitem__(self, idx):
+        inp_file = self.paths['ref'][idx]
+        out_file = self.paths['per'][idx]
+
+        inp, i_sr = torchaudio.load(inp_file)
+        out, o_sr = torchaudio.load(out_file)
+
+        if self.resample is not None:
+            inp = F.resample(inp, orig_freq=i_sr, new_freq=self.resample)
+            out = F.resample(out, orig_freq=o_sr, new_freq=self.resample)
+    
+        inp = inp[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+        out = out[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+
+        if inp.shape[-1] < self.cut_len: 
+            pad = torch.zeros(1, self.cut_len - inp.shape[-1])
+            inp = torch.cat([pad, inp], dim=-1)
+            out = torch.cat([pad, out], dim=-1)
+
+        inp = inp.reshape(-1)
+        out = out.reshape(-1)
+
+        ch = np.random.choice(10)
+        if ch >= 5:
+            label = torch.tensor([1.0, 0.0])
+            return inp[:self.cut_len], out[:self.cut_len], label
+        label = torch.tensor([0.0, 1.0])
+        return out[:self.cut_len], inp[:self.cut_len], label
+
+
 def load_data(root=None, 
               data=None, 
               path_root=None, 

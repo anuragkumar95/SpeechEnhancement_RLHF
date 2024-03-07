@@ -502,6 +502,8 @@ class PPO:
             clip_loss.backward()
             #Update network
             if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
+                torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
+                torch.nn.utils.clip_grad_norm_(critic.parameters(), 0.5)
                 optimizer.step()
 
             self.prev_log_probs_n[t] = (log_probs[0].detach(), log_probs[1].detach())

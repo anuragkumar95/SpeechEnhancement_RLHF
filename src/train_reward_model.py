@@ -30,8 +30,10 @@ from speech_enh_env import SpeechEnhancementAgent
 
 def ARGS():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--root", type=str, required=True,
-                        help="Root directory to JND.")
+    parser.add_argument("-jr", "--jndroot", type=str, required=True,
+                        help="Root directory to JND Dataset.")
+    parser.add_argument("-vr", "--vctkroot", type=str, required=True,
+                        help="Root directory to VCTK Dataset.")
     parser.add_argument("-c", "--comp", type=str, required=False,
                         help="Root directory to JND Dataset comparision lists.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")

@@ -7,8 +7,8 @@ from model.actor import TSCNet, RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE
-from reward_model.src.dataset.dataset import load_data
-#import cdpam
+from reward_model.src.dataset.dataset import PreferenceDataset
+from torch.utils.data import DataLoader
 
 import os
 import torch.nn.functional as F
@@ -229,29 +229,42 @@ class Trainer:
 
 def main(args):
 
-    if args.root.endswith('.npy'):
-        train_ds, test_ds = load_data(data=args.root, 
-                                        batch_size=args.batchsize, 
-                                        n_cpu=1,
-                                        split_ratio=0.8, 
-                                        cut_len=args.cut_len,
-                                        resample=True,
-                                        parallel=False)
-    else:
-        train_ds, test_ds = load_data(root=args.root, 
-                                        path_root=args.comp,
-                                        batch_size=args.batchsize, 
-                                        n_cpu=1,
-                                        type='linear',
-                                        split_ratio=0.8, 
-                                        cut_len=args.cut_len,
-                                        resample=True,
-                                        parallel=False)
+    train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
+                                      vctk_root=args.vctkroot, 
+                                      set="train", 
+                                      train_split=0.8, 
+                                      resample=16000, 
+                                      cutlen=40000)
+    
+    test_dataset = PreferenceDataset(jnd_root=args.jndroot, 
+                                     vctk_root=args.vctkroot, 
+                                     set="test", 
+                                     train_split=0.8, 
+                                     resample=16000, 
+                                     cutlen=40000)
+
+    train_dataloader = DataLoader(
+        dataset=train_dataset,
+        batch_size=args.batchsize,
+        pin_memory=True,
+        shuffle=True,
+        drop_last=True,
+        num_workers=2,
+    )
+
+    test_dataloader = DataLoader(
+        dataset=test_dataset,
+        batch_size=args.batchsize,
+        pin_memory=True,
+        shuffle=True,
+        drop_last=True,
+        num_workers=2,
+    )
     
     if args.gpu:
-        trainer = Trainer(train_ds, test_ds, args, 0)
+        trainer = Trainer(train_dataloader, test_dataloader, args, 0)
     else:
-        trainer = Trainer(train_ds, test_ds, args, None)
+        trainer = Trainer(train_dataloader, test_dataloader, args, None)
     trainer.train()
    
 

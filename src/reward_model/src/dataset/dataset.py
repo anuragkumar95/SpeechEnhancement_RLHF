@@ -214,11 +214,11 @@ class PreferenceDataset(torch.utils.data.Dataset):
             inp = F.resample(inp, orig_freq=i_sr, new_freq=self.resample)
             out = F.resample(out, orig_freq=o_sr, new_freq=self.resample)
     
-        inp = inp[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
-        out = out[:, :min(inp.shape[-1], out.shape[-1], self.cut_len)]
+        inp = inp[:, :min(inp.shape[-1], out.shape[-1], self.cutlen)]
+        out = out[:, :min(inp.shape[-1], out.shape[-1], self.cutlen)]
 
-        if inp.shape[-1] < self.cut_len: 
-            pad = torch.zeros(1, self.cut_len - inp.shape[-1])
+        if inp.shape[-1] < self.cutlen: 
+            pad = torch.zeros(1, self.cutlen - inp.shape[-1])
             inp = torch.cat([pad, inp], dim=-1)
             out = torch.cat([pad, out], dim=-1)
 
@@ -228,9 +228,9 @@ class PreferenceDataset(torch.utils.data.Dataset):
         ch = np.random.choice(10)
         if ch >= 5:
             label = torch.tensor([1.0, 0.0])
-            return inp[:self.cut_len], out[:self.cut_len], label
+            return inp[:self.cutlen], out[:self.cutlen], label
         label = torch.tensor([0.0, 1.0])
-        return out[:self.cut_len], inp[:self.cut_len], label
+        return out[:self.cutlen], inp[:self.cutlen], label
 
 
 def load_data(root=None, 

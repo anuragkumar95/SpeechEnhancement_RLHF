@@ -204,6 +204,7 @@ class ComplexDecoder(nn.Module):
             return x, x_logprob, x_entropy
         
         if self.out_dist == "Categorical":
+            print(f"In complex_decoder categorical")
             #Limit the value of the output to be between 1, -1
             x = F.tanh(x)
             x_1 = self.conv_1(x).permute(0, 2, 3, 1)
@@ -217,6 +218,7 @@ class ComplexDecoder(nn.Module):
             x_1 = (torch.argmax(x_1_one_hot, dim=-1) * ((2/k) - 1.0))
             x_2 = (torch.argmax(x_2_one_hot, dim=-1) * ((2/k) - 1.0))
             x = torch.cat([x_1, x_2], dim=1)
+            print(f"OUT:{x.shape}")
             #Figure out a way to create output domain change from (-1, 1)
             return x
         

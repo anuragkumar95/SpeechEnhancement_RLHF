@@ -71,7 +71,7 @@ class Trainer:
         
         self.model = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            distribution=True,
+                            distribution="Categorical",
                             gpu_id=gpu_id)
         self.batchsize = batchsize
         

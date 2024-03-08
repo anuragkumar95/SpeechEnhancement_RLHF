@@ -126,14 +126,14 @@ class SPConvTranspose2d(nn.Module):
 
 
 class MaskDecoder(nn.Module):
-    def __init__(self, num_features, num_channel=64, out_channel=1, distribution=False, gpu_id=None):
+    def __init__(self, num_features, num_channel=64, out_channel=1, distribution=None, gpu_id=None):
         super(MaskDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.conv_1 = nn.Conv2d(num_channel, out_channel, (1, 2))
         self.norm = nn.InstanceNorm2d(out_channel, affine=True)
         self.prelu = nn.PReLU(out_channel)
-        if distribution:
+        if distribution == "Normal":
             self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
             self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
         else:
@@ -230,7 +230,7 @@ class ComplexDecoder(nn.Module):
             return x
         
 class TSCNet(nn.Module):
-    def __init__(self, num_channel=64, num_features=201, distribution=False, gpu_id=None):
+    def __init__(self, num_channel=64, num_features=201, distribution=None, gpu_id=None):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
@@ -238,7 +238,9 @@ class TSCNet(nn.Module):
         #self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
-
+        if distribution is not None:
+            m_dist = "Normal"
+            c_dist = distribution
         self.mask_decoder = MaskDecoder(
             num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )

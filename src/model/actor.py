@@ -209,14 +209,16 @@ class ComplexDecoder(nn.Module):
             x = F.tanh(x)
             x_1 = self.conv_1(x).permute(0, 2, 3, 1)
             x_2 = self.conv_2(x).permute(0, 2, 3, 1)
+            print(f"x_1:{x_1.shape}")
             b, t, f, k = x_1.size()
             #change logits of shape (b, t, f, k) to probs of shape (b, t, f)
             x_1_one_hot = F.gumbel_softmax(x_1, tau=0.5, hard=True)
             x_2_one_hot = F.gumbel_softmax(x_1, tau=0.5, hard=True)
-
+            print(f"x_1_onehot:{x_1_one_hot.shape}")
             #select the k with max probability and get the corresponding value of max index
             x_1 = (torch.argmax(x_1_one_hot, dim=-1) * ((2/k) - 1.0))
             x_2 = (torch.argmax(x_2_one_hot, dim=-1) * ((2/k) - 1.0))
+            print(f"x_1:{x_1.shape}")
             x = torch.cat([x_1, x_2], dim=1)
             print(f"OUT:{x.shape}")
             #Figure out a way to create output domain change from (-1, 1)

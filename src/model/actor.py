@@ -216,8 +216,8 @@ class ComplexDecoder(nn.Module):
             x_2_one_hot = F.gumbel_softmax(x_1, tau=0.5, hard=True)
             print(f"x_1_onehot:{x_1_one_hot.shape}")
             #select the k with max probability and get the corresponding value of max index
-            x_1 = (torch.argmax(x_1_one_hot, dim=-1) * ((2/k) - 1.0))
-            x_2 = (torch.argmax(x_2_one_hot, dim=-1) * ((2/k) - 1.0))
+            x_1 = (torch.argmax(x_1_one_hot, dim=-1) * ((2/k) - 1.0)).unsqueeze(1)
+            x_2 = (torch.argmax(x_2_one_hot, dim=-1) * ((2/k) - 1.0)).unsqueeze(1)
             print(f"x_1:{x_1.shape}")
             x = torch.cat([x_1, x_2], dim=1)
             print(f"OUT:{x.shape}")

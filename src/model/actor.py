@@ -233,13 +233,15 @@ class TSCNet(nn.Module):
         #self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
         #self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
+        m_dist = None
+        c_dist = None
         if distribution is not None:
             m_dist = "Normal"
             c_dist = distribution
         self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
+            num_features, num_channel=num_channel, out_channel=1, distribution=m_dist, gpu_id=gpu_id
         )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, K=K)
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=c_dist, K=K)
         self.dist = distribution
 
     def get_action(self, x):

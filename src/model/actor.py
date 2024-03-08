@@ -155,7 +155,7 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
-        if self.dist:
+        if self.dist is not None:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var)
@@ -287,11 +287,15 @@ class TSCNet(nn.Module):
         #out_3 = self.TSCB_2(out_2)
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
-        if self.dist=="Normal":
-            mask, _ = self.mask_decoder(out_2)
-            complex_out, _ = self.complex_decoder(out_2)
+        if self.dist == "Normal":
+            mask, _, _ = self.mask_decoder(out_2)
+            complex_out, _, _ = self.complex_decoder(out_2)
         
-        else:
+        if self.dist == "Categorical":
+            mask, _, _ = self.mask_decoder(out_2)
+            complex_out = self.complex_decoder(out_2)
+        
+        if self.dist == "None":
             mask = self.mask_decoder(out_2)
             complex_out = self.complex_decoder(out_2)
         

@@ -166,16 +166,21 @@ class MaskDecoder(nn.Module):
             return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
 
 class ComplexDecoder(nn.Module):
-    def __init__(self, num_channel=64, distribution=False):
+    def __init__(self, num_channel=64, distribution=None, K=None):
         super(ComplexDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.prelu = nn.PReLU(num_channel)
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
-        if distribution:
+        if distribution=='Normal':
             self.conv_mu = nn.Conv2d(num_channel, 2, (1, 2))
             self.conv_var = nn.Conv2d(num_channel, 2, (1, 2))
-        else:
+        if distribution=='Categorical':
+            if K is None:
+                raise ValueError("K cannot be None for Categorical distribution. Pass K >=1")
+            self.conv_1 = nn.Conv2d(num_channel, K+1, (1, 2))
+            self.conv_2 = nn.Conv2d(num_channel, K+1, (1, 2))
+        if distribution is None:
             self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.out_dist = distribution
        
@@ -191,12 +196,36 @@ class ComplexDecoder(nn.Module):
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
-        if self.out_dist:
+
+        if self.out_dist == "Normal":
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var)
             return x, x_logprob, x_entropy
-        else:
+        
+        if self.out_dist == "Categorical":
+            #Limit the value of the output to be between 1, -1
+            x = F.tanh(x)
+            x_1 = self.conv_1(x).permute(0, 2, 3, 1)
+            x_2 = self.conv_2(x).permute(0, 2, 3, 1)
+            #change logits of shape (b, t, f, k) to probs of shape (b, t, f, k)
+            probs_1 = F.softmax(x_1, dim=-1)
+            probs_2 = F.softmax(x_2, dim=-1)
+            
+            #change probs from (b, t, f, k) --> (b, t * f, k)
+            b, t, f, k = probs_1.size()
+            probs_1 = probs_1.contiguous().view(b, t*f, k)
+            probs_2 = probs_2.contiguous().view(b, t*f, k)
+
+            #select the k with max probability and get the corresponding value of max index
+            x_1 = (torch.argmax(probs_1, dim=-1) * ((2/k) - 1.0)).view(b, t, f, 1).permute(0, 3, 1, 2)
+            x_2 = (torch.argmax(probs_2, dim=-1) * ((2/k) - 1.0)).view(b, t, f, 1).permute(0, 3, 1, 2)
+
+            x = torch.cat([x_1, x_2], dim=1)
+            #Figure out a way to create output domain change from (-1, 1)
+            return x
+        
+        if self.out_dist is None:
             x = self.conv(x)
             return x
         
@@ -259,9 +288,10 @@ class TSCNet(nn.Module):
         #out_3 = self.TSCB_2(out_2)
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
-        if self.dist:
+        if self.dist=="Normal":
             mask, _ = self.mask_decoder(out_2)
             complex_out, _ = self.complex_decoder(out_2)
+        
         else:
             mask = self.mask_decoder(out_2)
             complex_out = self.complex_decoder(out_2)
@@ -275,44 +305,6 @@ class TSCNet(nn.Module):
         return final_real, final_imag
         
 
-class RewardModel(nn.Module):
-    def __init__(self, policy):
-        super(RewardModel, self).__init__()
-        self.conformer = policy
-        self.reward_projection = QNet(ndf=16, in_channel=64, out_channel=1)
-        
-    def forward(self, x_ref, x_per):
-
-        x_ref = x_ref.permute(0, 1, 3, 2)
-        x_per = x_per.permute(0, 1, 3, 2)
-
-        ref_emb = self.conformer.get_embedding(x_ref)
-        per_emb = self.conformer.get_embedding(x_per)
-
-        print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
-        
-        score_ref = self.reward_projection(ref_emb)
-        score_per = self.reward_projection(per_emb)
-
-        scores = torch.cat([score_ref, score_per], dim=-1)
-
-        print(f"proj:{scores.shape}")
-        probs = F.softmax(scores, dim=-1)
-        print(f"probs:{probs.shape}")
-        print(f"PROBS:{probs}")
-        return probs
-    
-    def get_reward(self, x):
-        """
-        ARGS:
-            x : spectrogram of shape (b * ch * t * f)
-        """
-        x = x.permute(0, 1, 3, 2)
-        x_emb = self.conformer.get_embedding(x)
-        
-        rewards = self.reward_projection(x_emb)
-
-        return rewards
     
 
 class LSTMActor(nn.Module):

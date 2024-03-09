@@ -317,8 +317,8 @@ class TSCNet(nn.Module):
             for i in range(complex_mask.shape[-1]):
                 final_real = mag_real + complex_mask[:, 0, :, :, i].unsqueeze(1)
                 final_imag = mag_imag + complex_mask[:, 1, :, :, i].unsqueeze(1)
-                final_reals.append(final_real.unsqueeze(-1))
-                final_imags.append(final_imag.unsqueeze(-1))
+                final_reals.append(final_real)
+                final_imags.append(final_imag)
             final_reals = torch.stack(final_reals, dim=-1)
             final_imags = torch.stack(final_imags, dim=-1)
             print(f"final_reals:{final_reals.shape} final_imags:{final_imags.shape}")

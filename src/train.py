@@ -311,7 +311,7 @@ class Trainer:
         
             loss = loss + ce_loss 
 
-        return loss
+        return loss, ce_loss
 
     def calculate_discriminator_loss(self, generator_outputs):
 
@@ -355,7 +355,7 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss = self.calculate_generator_loss(generator_outputs)
+        loss, ce_loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
@@ -381,6 +381,7 @@ class Trainer:
 
         wandb.log({
             'step_gen_loss':loss,
+            'step_gen_ce_loss': ce_loss,
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })

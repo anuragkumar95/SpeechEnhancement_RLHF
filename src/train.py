@@ -21,6 +21,7 @@ parser.add_argument("--epochs", type=int, default=120, help="number of epochs of
 parser.add_argument("--parallel", action='store_true', help="Set this falg to run parallel gpu training.")
 parser.add_argument("--gpu", action='store_true', help="Set this falg to run single gpu training.")
 parser.add_argument("--batch_size", type=int, default=4)
+parser.add_argument("--K", type=int, required=False, help="K for categorical dist.")
 parser.add_argument("--exp", type=str, default='default', help='Experiment name')
 
 parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
@@ -60,7 +61,7 @@ def ddp_setup(rank, world_size):
 
 
 class Trainer:
-    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, resume_pt=None):
+    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, K=None, resume_pt=None):
         
         self.n_fft = 400
         self.hop = 100
@@ -72,7 +73,7 @@ class Trainer:
         self.model = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
                             distribution="Categorical",
-                            K=10,
+                            K=K,
                             gpu_id=gpu_id)
         self.batchsize = batchsize
         
@@ -505,6 +506,7 @@ def main(rank: int, world_size: int, args):
                       batchsize=args.batch_size, 
                       parallel=args.parallel, 
                       gpu_id=rank,
+                      K=args.K, 
                       accum_grad=args.accum_grad, 
                       resume_pt=args.ckpt,
                       log_wandb=args.wandb)

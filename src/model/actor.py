@@ -216,7 +216,7 @@ class ComplexDecoder(nn.Module):
             x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
             x_2_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
             print(f"x_1_probs:{x_1_probs.shape}")
-            x = torch.cat([x_1, x_2], dim=1)
+            x = torch.cat([x_1_probs, x_2_probs], dim=1)
             print(f"OUT:{x.shape}")
             #Figure out a way to create output domain change from (-1, 1)
             return x

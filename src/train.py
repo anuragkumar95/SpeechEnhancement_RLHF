@@ -156,8 +156,8 @@ class Trainer:
             dist_reals = []
             dist_imags = []
             for i in range(est_reals.shape[-1]):
-                dist_real = (est_reals[..., i] - clean_real) ** 2
-                dist_imag = (est_imags[..., i] - clean_imag) ** 2
+                dist_real = (est_reals[..., i] - clean_real.permute(0, 1, 3, 2)) ** 2
+                dist_imag = (est_imags[..., i] - clean_imag.permute(0, 1, 3, 2)) ** 2
                 dist_reals.append(dist_real)
                 dist_imags.append(dist_imag)
 

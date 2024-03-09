@@ -256,8 +256,8 @@ class Trainer:
         os.makedirs(path, exist_ok=True)
         path = os.path.join(path, checkpoint_prefix)
         if self.gpu_id == 0:
-            save_dict = {'generator_state_dict':self.model.module.state_dict(), 
-                        'discriminator_state_dict':self.discriminator.module.state_dict(),
+            save_dict = {'generator_state_dict':self.model.state_dict(), 
+                        'discriminator_state_dict':self.discriminator.state_dict(),
                         'optimizer_G_state_dict':self.optimizer.state_dict(),
                         'optimizer_D_state_dict':self.optimizer_disc.state_dict(),
                         'scheduler_G_state_dict':self.scheduler_G.state_dict(),

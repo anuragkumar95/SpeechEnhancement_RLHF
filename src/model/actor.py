@@ -310,7 +310,7 @@ class TSCNet(nn.Module):
             mag_real = out_mag * torch.cos(noisy_phase)
             mag_imag = out_mag * torch.sin(noisy_phase)
 
-            print(f"mag_real:{mag_real.shape}, comp_mask:{complex_mask[:, 0, :, :, :].unsqueeze(1).shape}")
+            print(f"mag_real:{mag_real.shape}, comp_mask:{complex_mask[:, 0, :, :, :].unsqueeze(1).shape}, probs:{complex_out_real_probs.shape}")
 
             final_reals = []
             final_imags = []

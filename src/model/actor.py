@@ -214,7 +214,7 @@ class ComplexDecoder(nn.Module):
 
             #sample using gumbel_softmax trick
             x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
-            x_2_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
+            x_2_probs = F.gumbel_softmax(x_2, tau=0.5, hard=False).unsqueeze(1)
             print(f"x_1_probs:{x_1_probs.shape}")
             x = torch.cat([x_1_probs, x_2_probs], dim=1)
             print(f"OUT:{x.shape}")

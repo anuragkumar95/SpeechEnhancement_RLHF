@@ -213,8 +213,8 @@ class ComplexDecoder(nn.Module):
             _, _, _, k = x_1.size()
 
             #sample using gumbel_softmax trick
-            x_1_probs = F.gumbel_softmax(x_1, tau=0.5, soft=True)
-            x_2_probs = F.gumbel_softmax(x_1, tau=0.5, soft=True)
+            x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False)
+            x_2_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False)
             
             x = torch.cat([x_1, x_2], dim=1)
             print(f"OUT:{x.shape}")
@@ -312,8 +312,6 @@ class TSCNet(nn.Module):
 
             final_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
             final_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
-
-            
 
             return final_real, final_imag, complex_out_real_probs, complex_out_imag_probs
             

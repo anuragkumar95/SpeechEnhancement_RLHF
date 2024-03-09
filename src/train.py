@@ -23,6 +23,7 @@ parser.add_argument("--gpu", action='store_true', help="Set this falg to run sin
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--K", type=int, required=False, help="K for categorical dist.")
 parser.add_argument("--exp", type=str, default='default', help='Experiment name')
+parser.add_argument("--suffix", type=str, default='', help='Experiment suffix name')
 
 parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
@@ -479,7 +480,7 @@ class Trainer:
             })
             
             self.save_model(path_root=args.save_model_dir,
-                            exp=args.exp,
+                            exp=f"{args.exp}_{args.suffix}",
                             epoch=epoch,
                             pesq=original_pesq(val_pesq))
             scheduler_G.step()

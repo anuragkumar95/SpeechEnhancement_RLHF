@@ -78,7 +78,7 @@ class Trainer:
         
         self.log_wandb = log_wandb
         self.gpu_id = gpu_id
-
+        self.dist = "Categorical"
         self.discriminator = Discriminator(ndf=16)
 
         if gpu_id is not None:
@@ -148,7 +148,25 @@ class Trainer:
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
 
-        est_real, est_imag = self.model(noisy_spec)
+        target_k_real = None
+        target_k_imag = None
+
+        if self.dist == "Categorical":
+            est_reals, est_imags, comp_real_probs, comp_imag_probs = self.model(noisy_spec)
+            dist_reals = (est_reals - clean_real) ** 2
+            dist_imags = (est_imags - clean_real) ** 2
+
+            target_k_real = torch.argmin(dist_reals, dim=-1)
+            target_k_imag = torch.argmin(dist_imags, dim=-1)
+
+            pred_k_real = torch.argmax(comp_real_probs, dim=-1)
+            pred_k_imag = torch.argmax(comp_imag_probs, dim=-1)
+
+            est_real = torch.gather(est_reals, -1, pred_k_real)
+            est_imag = torch.gather(est_imags, -1, pred_k_imag)
+        else:
+            est_real, est_imag = self.model(noisy_spec)
+        
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
         clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
@@ -170,6 +188,10 @@ class Trainer:
             "clean_imag": clean_imag,
             "clean_mag": clean_mag,
             "est_audio": est_audio, 
+            "tgt_k_real": target_k_real,
+            "tgt_k_imag": target_k_imag,
+            "real_probs": comp_real_probs,
+            "imag_probs": comp_imag_probs
         }
     
     def load_checkpoint(self, path):
@@ -263,6 +285,15 @@ class Trainer:
             + args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
         )
+
+        if generator_outputs["tgt_k_real"] is not None:
+            tgt_real = generator_outputs["tgt_k_real"]
+            tgt_imag = generator_outputs["tgt_k_imag"]
+            real_probs = generator_outputs["real_probs"].unsqueeze(0, 3, 1, 2)
+            imag_probs = generator_outputs["imag_probs"].unsqueeze(0, 3, 1, 2)
+            ce_loss = F.cross_entropy(real_probs, tgt_real) + F.cross_entropy(imag_probs + tgt_imag)
+        
+            loss = loss + ce_loss 
 
         return loss
 

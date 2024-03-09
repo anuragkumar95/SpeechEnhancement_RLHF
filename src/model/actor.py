@@ -178,8 +178,8 @@ class ComplexDecoder(nn.Module):
         if distribution=='Categorical':
             if K is None:
                 raise ValueError("K cannot be None for Categorical distribution. Pass K >=1")
-            self.conv_1 = nn.Conv2d(num_channel, K+1, (1, 2))
-            self.conv_2 = nn.Conv2d(num_channel, K+1, (1, 2))
+            self.conv_1 = nn.Conv2d(num_channel, K, (1, 2))
+            self.conv_2 = nn.Conv2d(num_channel, K, (1, 2))
         if distribution is None:
             self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.out_dist = distribution
@@ -210,15 +210,12 @@ class ComplexDecoder(nn.Module):
             x_1 = self.conv_1(x).permute(0, 2, 3, 1)
             x_2 = self.conv_2(x).permute(0, 2, 3, 1)
             print(f"x_1:{x_1.shape}")
-            b, t, f, k = x_1.size()
-            #change logits of shape (b, t, f, k) to probs of shape (b, t, f)
-            x_1_one_hot = F.gumbel_softmax(x_1, tau=0.5, hard=True)
-            x_2_one_hot = F.gumbel_softmax(x_1, tau=0.5, hard=True)
-            print(f"x_1_onehot:{x_1_one_hot.shape}")
-            #select the k with max probability and get the corresponding value of max index
-            x_1 = (torch.argmax(x_1_one_hot, dim=-1) * ((2/k) - 1.0)).unsqueeze(1)
-            x_2 = (torch.argmax(x_2_one_hot, dim=-1) * ((2/k) - 1.0)).unsqueeze(1)
-            print(f"x_1:{x_1.shape}")
+            _, _, _, k = x_1.size()
+
+            #sample using gumbel_softmax trick
+            x_1_probs = F.gumbel_softmax(x_1, tau=0.5, soft=True)
+            x_2_probs = F.gumbel_softmax(x_1, tau=0.5, soft=True)
+            
             x = torch.cat([x_1, x_2], dim=1)
             print(f"OUT:{x.shape}")
             #Figure out a way to create output domain change from (-1, 1)
@@ -246,6 +243,9 @@ class TSCNet(nn.Module):
             num_features, num_channel=num_channel, out_channel=1, distribution=m_dist, gpu_id=gpu_id
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=c_dist, K=K)
+        if c_dist == "Categorical":
+            #create categorical mask bins
+            self.categorical_comp_mask = torch.linspace(1.0, -1.0, K)
         self.dist = distribution
 
     def get_action(self, x):
@@ -278,6 +278,7 @@ class TSCNet(nn.Module):
         return out_2
 
     def forward(self, x):
+        b, ch, t, f = x.size() 
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         noisy_phase = torch.angle(
@@ -298,7 +299,24 @@ class TSCNet(nn.Module):
         if self.dist == "Categorical":
             print(f"here")
             mask, _, _ = self.mask_decoder(out_2)
-            complex_out = self.complex_decoder(out_2)
+            
+            complex_out_probs = self.complex_decoder(out_2)
+            complex_out_real_probs = complex_out_probs[:, 0, :, :].unsqueeze(1)
+            complex_out_imag_probs = complex_out_probs[:, 1, :, :].unsqueeze(1)
+            
+            complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
+
+            out_mag = mask * mag
+            mag_real = out_mag * torch.cos(noisy_phase)
+            mag_imag = out_mag * torch.sin(noisy_phase)
+
+            final_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
+            final_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
+
+            
+
+            return final_real, final_imag, complex_out_real_probs, complex_out_imag_probs
+            
         
         if self.dist == "None":
             mask = self.mask_decoder(out_2)

@@ -245,7 +245,7 @@ class TSCNet(nn.Module):
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=c_dist, K=K)
         if c_dist == "Categorical":
             #create categorical mask bins
-            self.categorical_comp_mask = torch.linspace(1.0, -1.0, K)
+            self.categorical_comp_mask = torch.linspace(1.0, -1.0, K).to(gpu_id)
         self.dist = distribution
 
     def get_action(self, x):

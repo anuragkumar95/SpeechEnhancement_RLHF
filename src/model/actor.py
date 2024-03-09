@@ -213,8 +213,8 @@ class ComplexDecoder(nn.Module):
             _, _, _, k = x_1.size()
 
             #sample using gumbel_softmax trick
-            x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False)
-            x_2_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False)
+            x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
+            x_2_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
             
             x = torch.cat([x_1, x_2], dim=1)
             print(f"OUT:{x.shape}")

@@ -518,7 +518,7 @@ def main(rank: int, world_size: int, args):
 if __name__ == "__main__":
     ARGS = args
 
-    output = f"{ARGS.save_model_dir}/{ARGS.exp}"
+    output = f"{ARGS.save_model_dir}/{ARGS.exp}_{ARGS.suffix}"
     os.makedirs(output, exist_ok=True)
 
     world_size = torch.cuda.device_count()

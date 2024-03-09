@@ -403,14 +403,14 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss = self.calculate_generator_loss(generator_outputs)
+        loss, ce_loss = self.calculate_generator_loss(generator_outputs)
 
         discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
         if discrim_loss_metric is None:
             discrim_loss_metric = torch.tensor([0.0])
         
 
-        return loss, discrim_loss_metric, pesq
+        return loss, ce_loss, discrim_loss_metric, pesq
 
     def test(self):
         self.model.eval()
@@ -421,7 +421,7 @@ class Trainer:
         for idx, batch in enumerate(self.test_ds):
             step = idx + 1
             try:
-                loss, disc_loss, pesq = self.test_step(batch)
+                loss, ce_loss, disc_loss, pesq = self.test_step(batch)
             except Exception as e:
                 print(e)
                 continue

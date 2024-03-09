@@ -298,6 +298,7 @@ class TSCNet(nn.Module):
             mask, _, _ = self.mask_decoder(out_2)
             
             complex_out_probs = self.complex_decoder(out_2)
+            print(f"probs:{complex_out_probs.shape}")
             complex_out_real_probs = complex_out_probs[:, 0, :, :, :].unsqueeze(1)
             complex_out_imag_probs = complex_out_probs[:, 1, :, :, :].unsqueeze(1)
             

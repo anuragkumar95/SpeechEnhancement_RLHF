@@ -321,6 +321,8 @@ class TSCNet(nn.Module):
                 final_imags.append(final_imag)
             final_reals = torch.stack(final_reals, dim=-1)
             final_imags = torch.stack(final_imags, dim=-1)
+
+
             print(f"final_reals:{final_reals.shape} final_imags:{final_imags.shape}")
 
             return final_reals, final_imags, complex_out_real_probs, complex_out_imag_probs

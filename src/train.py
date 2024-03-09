@@ -166,22 +166,15 @@ class Trainer:
             dist_reals = torch.stack(dist_reals, dim=-1)
             dist_imags = torch.stack(dist_imags, dim=-1)
 
-            print(f"dist:{dist_reals.shape}")
-
             target_k_real = torch.argmin(dist_reals, dim=-1)
             target_k_imag = torch.argmin(dist_imags, dim=-1)
-
-            print(f"tgt_k:{target_k_real.shape}")
 
             pred_k_real = torch.argmax(comp_real_probs, dim=-1)
             pred_k_imag = torch.argmax(comp_imag_probs, dim=-1)
 
-            print(f"pred_k:{pred_k_real.shape}")
-
             est_real = torch.gather(est_reals, -1, pred_k_real.unsqueeze(-1)).squeeze(-1)
             est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1)).squeeze(-1)
-
-            print(f"est_real:{est_real.shape}")
+            
         else:
             est_real, est_imag = self.model(noisy_spec)
         

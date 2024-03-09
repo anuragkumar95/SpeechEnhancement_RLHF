@@ -204,20 +204,16 @@ class ComplexDecoder(nn.Module):
             return x, x_logprob, x_entropy
         
         if self.out_dist == "Categorical":
-            print(f"In complex_decoder categorical")
             #Limit the value of the output to be between 1, -1
             x = F.tanh(x)
             x_1 = self.conv_1(x).permute(0, 2, 3, 1)
             x_2 = self.conv_2(x).permute(0, 2, 3, 1)
-            print(f"x_1:{x_1.shape}")
-            _, _, _, k = x_1.size()
 
             #sample using gumbel_softmax trick
             x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
             x_2_probs = F.gumbel_softmax(x_2, tau=0.5, hard=False).unsqueeze(1)
-            print(f"x_1_probs:{x_1_probs.shape}")
+            
             x = torch.cat([x_1_probs, x_2_probs], dim=1)
-            print(f"OUT:{x.shape}")
             #Figure out a way to create output domain change from (-1, 1)
             return x
         
@@ -297,7 +293,6 @@ class TSCNet(nn.Module):
             complex_out, _, _ = self.complex_decoder(out_2)
         
         if self.dist == "Categorical":
-            print(f"here")
             mask, _, _ = self.mask_decoder(out_2)
             
             complex_out_probs = self.complex_decoder(out_2)
@@ -310,8 +305,6 @@ class TSCNet(nn.Module):
             mag_real = out_mag * torch.cos(noisy_phase)
             mag_imag = out_mag * torch.sin(noisy_phase)
 
-            print(f"mag_real:{mag_real.shape}, comp_mask:{complex_mask[:, 0, :, :, :].unsqueeze(1).shape}, probs:{complex_out_real_probs.shape}")
-
             final_reals = []
             final_imags = []
             for i in range(complex_mask.shape[-1]):
@@ -321,9 +314,6 @@ class TSCNet(nn.Module):
                 final_imags.append(final_imag)
             final_reals = torch.stack(final_reals, dim=-1)
             final_imags = torch.stack(final_imags, dim=-1)
-
-
-            print(f"final_reals:{final_reals.shape} final_imags:{final_imags.shape}")
 
             return final_reals, final_imags, complex_out_real_probs, complex_out_imag_probs
             

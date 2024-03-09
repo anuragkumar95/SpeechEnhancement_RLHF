@@ -301,8 +301,8 @@ class TSCNet(nn.Module):
             mask, _, _ = self.mask_decoder(out_2)
             
             complex_out_probs = self.complex_decoder(out_2)
-            complex_out_real_probs = complex_out_probs[:, 0, :, :].unsqueeze(1)
-            complex_out_imag_probs = complex_out_probs[:, 1, :, :].unsqueeze(1)
+            complex_out_real_probs = complex_out_probs[:, 0, :, :, :].unsqueeze(1)
+            complex_out_imag_probs = complex_out_probs[:, 1, :, :, :].unsqueeze(1)
             
             complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
 
@@ -310,8 +310,10 @@ class TSCNet(nn.Module):
             mag_real = out_mag * torch.cos(noisy_phase)
             mag_imag = out_mag * torch.sin(noisy_phase)
 
-            final_real = mag_real + complex_mask[:, 0, :, :].unsqueeze(1)
-            final_imag = mag_imag + complex_mask[:, 1, :, :].unsqueeze(1)
+            print(f"mag_real:{mag_real.shape}, comp_mask:{complex_mask.shape}")
+
+            final_real = mag_real + complex_mask[:, 0, :, :, :].unsqueeze(1)
+            final_imag = mag_imag + complex_mask[:, 1, :, :, :].unsqueeze(1)
 
             return final_real, final_imag, complex_out_real_probs, complex_out_imag_probs
             

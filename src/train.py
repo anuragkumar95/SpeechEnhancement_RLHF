@@ -307,7 +307,7 @@ class Trainer:
             tgt_imag = generator_outputs["tgt_k_imag"]
             real_probs = generator_outputs["real_probs"].permute(0, 4, 1, 2, 3)
             imag_probs = generator_outputs["imag_probs"].permute(0, 4, 1, 2, 3)
-            ce_loss = F.cross_entropy(real_probs, tgt_real) + F.cross_entropy(imag_probs + tgt_imag)
+            ce_loss = F.cross_entropy(real_probs, tgt_real) + F.cross_entropy(imag_probs, tgt_imag)
         
             loss = loss + ce_loss 
 

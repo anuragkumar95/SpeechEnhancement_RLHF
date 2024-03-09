@@ -381,7 +381,7 @@ class Trainer:
 
         wandb.log({
             'step_gen_loss':loss,
-            'step_gen_ce_loss': ce_loss,
+            'step_gen_ce_loss': ce_loss / self.ACCUM_GRAD,
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })

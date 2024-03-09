@@ -176,7 +176,7 @@ class Trainer:
 
             print(f"pred_k:{pred_k_real.shape}")
 
-            est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1))
+            est_real = torch.gather(est_reals, -1, pred_k_real.unsqueeze(-1))
             est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1))
 
             print(f"est_real:{est_real.shape}")

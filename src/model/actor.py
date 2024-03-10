@@ -261,8 +261,8 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
         if self.dist:
-            mask, m_logprob, m_entropy = self.mask_decoder(out_2)
-            complex_out, c_logprob, c_entropy = self.complex_decoder(out_2)
+            mask, m_logprob, m_entropy, _ = self.mask_decoder(out_2)
+            complex_out, c_logprob, c_entropy,_ = self.complex_decoder(out_2)
             return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy)
         
         mask = self.mask_decoder(out_2)
@@ -295,8 +295,8 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
         if self.dist == "Normal":
-            mask, _, _ = self.mask_decoder(out_2)
-            complex_out, _, _ = self.complex_decoder(out_2)
+            mask, _, _, (mask_mu, mask_var) = self.mask_decoder(out_2)
+            complex_out, _, _, (c_mu, c_var) = self.complex_decoder(out_2)
         
         if self.dist == "Categorical":
             mask, _, _ = self.mask_decoder(out_2)            
@@ -334,7 +334,12 @@ class TSCNet(nn.Module):
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
-        return final_real, final_imag
+        kld_loss_mag = -0.5 * (1 + mask_var + mask_mu**2 + torch.exp(mask_var)).sum()
+        kld_loss_comp = -0.5 * (1 + c_var + c_mu**2 + torch.exp(c_var)).sum()
+
+        kld_loss = kld_loss_mag + kld_loss_comp
+
+        return final_real, final_imag, kld_loss
         
 
     

@@ -178,7 +178,7 @@ class Trainer:
             est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1)).squeeze(-1)
 
         else:
-            est_real, est_imag = self.model(noisy_spec)
+            est_real, est_imag, kld_loss = self.model(noisy_spec)
         
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
@@ -194,6 +194,7 @@ class Trainer:
         )
 
         return {
+            "kld_loss": kld_loss,
             "est_real": est_real,
             "est_imag": est_imag,
             "est_mag": est_mag,
@@ -280,9 +281,9 @@ class Trainer:
 
         loss_mag = F.mse_loss(
             generator_outputs["est_mag"], generator_outputs["clean_mag"]
-        ) + F.mse_loss(
-            torch.log(generator_outputs["est_mag"]), torch.log(generator_outputs["clean_mag"])
-        )
+        ) #+ F.mse_loss(
+        #    torch.log(generator_outputs["est_mag"]), torch.log(generator_outputs["clean_mag"])
+        #)
 
         loss_ri = F.mse_loss(
             generator_outputs["est_real"], generator_outputs["clean_real"]
@@ -292,11 +293,14 @@ class Trainer:
             torch.abs(generator_outputs["est_audio"] - generator_outputs["clean"])
         )
 
+        kld_loss = generator_outputs["kld_loss"]
+
         loss = (
             args.loss_weights[0] * loss_ri
             + args.loss_weights[1] * loss_mag
             + args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
+            + 0.000001 * kld_loss
         )
 
         if generator_outputs["tgt_k_real"] is not None:
@@ -307,8 +311,9 @@ class Trainer:
             ce_loss = F.cross_entropy(real_probs, tgt_real) + F.cross_entropy(imag_probs, tgt_imag)
         
             loss = loss + ce_loss 
-
-        return loss, ce_loss
+            return loss, ce_loss
+        
+        return loss, 0.000001*kld_loss
 
     def calculate_discriminator_loss(self, generator_outputs):
 
@@ -352,7 +357,7 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss, ce_loss = self.calculate_generator_loss(generator_outputs)
+        loss, e_loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
@@ -378,7 +383,7 @@ class Trainer:
 
         wandb.log({
             'step_gen_loss':loss,
-            'step_gen_ce_loss': ce_loss / self.ACCUM_GRAD,
+            'step_gen_kld_loss': e_loss / self.ACCUM_GRAD,
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })

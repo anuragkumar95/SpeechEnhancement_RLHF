@@ -268,9 +268,9 @@ class Trainer:
 
         print(f"loss_ri:{loss_ri}")
 
-        time_loss = torch.mean(
-            torch.abs(generator_outputs["est_audio"] - generator_outputs["noisy"])
-        )
+        #time_loss = torch.mean(
+        #    torch.abs(generator_outputs["est_audio"] - generator_outputs["noisy"])
+        #)
 
         print(f"loss_time:{time_loss}")
 

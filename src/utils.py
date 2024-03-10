@@ -93,6 +93,37 @@ class LearnableSigmoid(nn.Module):
         return self.beta * torch.sigmoid(self.slope * x)
     
 
+class K_way_CrossEntropy(nn.Module):
+    def __init__(self, reduction='mean'):
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, logits, target):
+        """
+        Calculates K-way ordinal cross-entropy loss
+        ARGS:
+            logits : [-1, K] logits.
+            target : [-1, K, K] shaped one-hot vector.
+
+        Returns:
+            K-way ordinal cross-entropy loss
+        """
+        classes = logits.shape[-1]
+        log_preds = torch.log(logits)
+        
+        log_likelihoods = 0
+        for k in range(classes):
+            k_targets = target[:, k, :]
+            log_likelihood = k_targets * log_preds
+            log_likelihoods += log_likelihood.sum(-1)
+
+        if self.reduction == 'mean':        
+            return -log_likelihoods.mean()
+        else:
+            return -log_likelihoods.sum()
+
+    
+
 def copy_weights(src_state_dict, target):
     """
     Copy weights from src model to target model.

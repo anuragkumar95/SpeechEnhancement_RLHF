@@ -148,41 +148,17 @@ class Trainer:
 
 
         noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
-        clean_spec = power_compress(clean_spec)
+        clean_spec = power_compress(clean_spec).permute(0, 1, 3, 2)
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
+        noisy_real = noisy_spec[:, 0, :, :].unsqueeze(1)
+        noisy_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
 
-        target_k_real = None
-        target_k_imag = None
-
-        if self.dist == "Categorical":
-            est_reals, est_imags, real_probs, imag_probs, logits = self.model(noisy_spec)
-            dist_reals = []
-            dist_imags = []
-            for i in range(est_reals.shape[-1]):
-                dist_real = (est_reals[..., i] - clean_real.permute(0, 1, 3, 2)) ** 2
-                dist_imag = (est_imags[..., i] - clean_imag.permute(0, 1, 3, 2)) ** 2
-                dist_reals.append(dist_real)
-                dist_imags.append(dist_imag)
-
-            dist_reals = torch.stack(dist_reals, dim=-1)
-            dist_imags = torch.stack(dist_imags, dim=-1)
-
-            target_k_real = torch.argmin(dist_reals, dim=-1)
-            target_k_imag = torch.argmin(dist_imags, dim=-1)
-
-            pred_k_real = torch.argmax(real_probs, dim=-1)
-            pred_k_imag = torch.argmax(imag_probs, dim=-1)
-
-            est_real = torch.gather(est_reals, -1, pred_k_real.unsqueeze(-1)).squeeze(-1)
-            est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1)).squeeze(-1)
-
-        else:
-            est_real, est_imag = self.model(noisy_spec)
-        
-        est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
+        est_real, est_imag, kld_loss = self.model(noisy_spec)
+        #est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
         clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
+        noisy_mag = torch.sqrt(noisy_real**2 + noisy_imag**2)
 
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
         est_audio = torch.istft(
@@ -194,17 +170,17 @@ class Trainer:
         )
 
         return {
+            "kld_loss": kld_loss,
             "est_real": est_real,
             "est_imag": est_imag,
             "est_mag": est_mag,
             "clean_real": clean_real,
             "clean_imag": clean_imag,
             "clean_mag": clean_mag,
+            "noisy_mag": noisy_mag, 
+            "noisy_real": noisy_real,
+            "noisy_imag": noisy_imag, 
             "est_audio": est_audio, 
-            "tgt_k_real": target_k_real,
-            "tgt_k_imag": target_k_imag,
-            "real_probs": real_probs,
-            "imag_probs": imag_probs
         }
     
     def load_checkpoint(self, path):
@@ -269,7 +245,7 @@ class Trainer:
     def calculate_generator_loss(self, generator_outputs):
 
         predict_fake_metric = self.discriminator(
-            generator_outputs["clean_mag"], generator_outputs["est_mag"]
+            generator_outputs["noisy_mag"], generator_outputs["est_mag"]
         )
         predict_fake_metric = torch.argmax(predict_fake_metric, dim=-1)
 
@@ -279,43 +255,36 @@ class Trainer:
         )
 
         loss_mag = F.mse_loss(
-            generator_outputs["est_mag"], generator_outputs["clean_mag"]
-        ) + F.mse_loss(
-            torch.log(generator_outputs["est_mag"]), torch.log(generator_outputs["clean_mag"])
-        )
+            generator_outputs["est_mag"], generator_outputs["noisy_mag"]
+        ) 
 
         loss_ri = F.mse_loss(
-            generator_outputs["est_real"], generator_outputs["clean_real"]
-        ) + F.mse_loss(generator_outputs["est_imag"], generator_outputs["clean_imag"])
+            generator_outputs["est_real"], generator_outputs["noisy_real"]
+        ) + F.mse_loss(generator_outputs["noisy_imag"], generator_outputs["noisy_imag"])
 
         time_loss = torch.mean(
-            torch.abs(generator_outputs["est_audio"] - generator_outputs["clean"])
+            torch.abs(generator_outputs["est_audio"] - generator_outputs["noisy"])
         )
+
+        kld_loss = generator_outputs['kld_loss'].mean()
 
         loss = (
             args.loss_weights[0] * loss_ri
             + args.loss_weights[1] * loss_mag
             + args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
+            + 0.001 * kld_loss
         )
 
-        if generator_outputs["tgt_k_real"] is not None:
-            tgt_real = generator_outputs["tgt_k_real"]
-            tgt_imag = generator_outputs["tgt_k_imag"]
-            real_probs = generator_outputs["real_probs"].permute(0, 4, 1, 2, 3)
-            imag_probs = generator_outputs["imag_probs"].permute(0, 4, 1, 2, 3)
-            ce_loss = F.cross_entropy(real_probs, tgt_real) + F.cross_entropy(imag_probs, tgt_imag)
-        
-            loss = loss + ce_loss 
-
-        return loss, ce_loss
+       
+        return loss
 
     def calculate_discriminator_loss(self, generator_outputs):
 
         length = generator_outputs["est_audio"].size(-1)
         est_audio_list = list(generator_outputs["est_audio"].detach().cpu().numpy())
-        clean_audio_list = list(generator_outputs["clean"].cpu().numpy()[:, :length])
-        pesq_mask, pesq_score = batch_pesq(clean_audio_list, est_audio_list)
+        noisy_audio_list = list(generator_outputs["noisy"].cpu().numpy()[:, :length])
+        pesq_mask, pesq_score = batch_pesq(noisy_audio_list, est_audio_list)
 
         if self.gpu_id is not None:
             pesq_score = pesq_score.to(self.gpu_id)
@@ -324,10 +293,10 @@ class Trainer:
         # The calculation of PESQ can be None due to silent part
         if pesq_score is not None:
             predict_enhance_metric = self.discriminator(
-                generator_outputs["clean_mag"], generator_outputs["est_mag"].detach()
+                generator_outputs["noisy_mag"], generator_outputs["est_mag"].detach()
             )
             predict_max_metric = self.discriminator(
-                generator_outputs["clean_mag"], generator_outputs["clean_mag"]
+                generator_outputs["noisy_mag"], generator_outputs["noisy_mag"]
             )
             discrim_loss_metric = F.mse_loss(
                 predict_max_metric.flatten(), generator_outputs["one_labels"]
@@ -351,6 +320,7 @@ class Trainer:
         )
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
+        generator_outputs["noisy"] = noisy
 
         loss, ce_loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
@@ -376,15 +346,41 @@ class Trainer:
         else:
             discrim_loss_metric = torch.tensor([0.0])
 
+        noisy_spec = torch.cat([generator_outputs['noisy_real'], generator_outputs['noisy_imag']], dim=1)
+
+        clean_pesq = original_pesq(self.enhance_signal(noisy_spec, clean)).mean()
+
         wandb.log({
             'step_gen_loss':loss,
-            'step_gen_ce_loss': ce_loss / self.ACCUM_GRAD,
             'step_disc_loss':discrim_loss_metric,
-            'step_train_pesq':original_pesq(pesq)
+            'step_train_pesq':clean_pesq
         })
         print(f"G_LOSS:{loss} | D_LOSS:{discrim_loss_metric}")
 
         return loss.item(), discrim_loss_metric.item()
+    
+    def enhance_signal(self, noisy_spec, clean):
+        est_clean_real, est_clean_imag = self.model.enhance(noisy_spec)
+        est_spec_uncompress = power_uncompress(est_clean_real, est_clean_imag).squeeze(1)
+        est_audio = torch.istft(
+            est_spec_uncompress,
+            self.n_fft,
+            self.hop,
+            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            onesided=True,
+        )
+        length = est_audio.size(-1)
+        est_audio_list = list(est_audio.detach().cpu().numpy())
+        clean_audio_list = list(clean.cpu().numpy()[:, :length])
+        pesq_mask, pesq_score = batch_pesq(clean_audio_list, est_audio_list)
+
+        if self.gpu_id is not None:
+            pesq_score = pesq_score.to(self.gpu_id)
+            pesq_mask = pesq_mask.to(self.gpu_id)
+
+        pesq = pesq_mask * pesq_score
+        return pesq
+
 
     @torch.no_grad()
     def test_step(self, batch):

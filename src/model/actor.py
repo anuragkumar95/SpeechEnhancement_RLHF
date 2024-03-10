@@ -160,7 +160,7 @@ class MaskDecoder(nn.Module):
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var)
             x = self.prelu_out(x)
-            return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_entropy
+            return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_entropy, (x_mu, x_var)
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
@@ -201,7 +201,7 @@ class ComplexDecoder(nn.Module):
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var)
-            return x, x_logprob, x_entropy
+            return x, x_logprob, x_entropy, (x_mu, x_var)
         
         if self.out_dist == "Categorical":
             #Limit the value of the output to be between 1, -1
@@ -212,12 +212,16 @@ class ComplexDecoder(nn.Module):
             #sample using gumbel_softmax trick
             #x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
             #x_2_probs = F.gumbel_softmax(x_2, tau=0.5, hard=False).unsqueeze(1)
-            x_1_probs = F.softmax(x_1, dim=-1).unsqueeze(1)
-            x_2_probs = F.softmax(x_2, dim=-1).unsqueeze(1)  
+            x_1_logits = F.sigmoid(x_1)
+            x_2_logits = F.sigmoid(x_2)
+
+            x_1_probs = F.softmax(x_1_logits, dim=-1).unsqueeze(1)
+            x_2_probs = F.softmax(x_2_logits, dim=-1).unsqueeze(1)  
             
-            x = torch.cat([x_1_probs, x_2_probs], dim=1)
+            x_logits = torch.cat([x_1_logits, x_2_logits], dim=1)
+            x_probs = torch.cat([x_1_probs, x_2_probs], dim=1)
             #Figure out a way to create output domain change from (-1, 1)
-            return x
+            return x_probs, x_logits
         
         if self.out_dist is None:
             x = self.conv(x)
@@ -295,10 +299,9 @@ class TSCNet(nn.Module):
             complex_out, _, _ = self.complex_decoder(out_2)
         
         if self.dist == "Categorical":
-            mask, _, _ = self.mask_decoder(out_2)
-            
-            complex_out_probs = self.complex_decoder(out_2)
-            print(f"probs:{complex_out_probs.shape}")
+            mask, _, _ = self.mask_decoder(out_2)            
+            complex_out_probs, complex_out_logits = self.complex_decoder(out_2)
+
             complex_out_real_probs = complex_out_probs[:, 0, :, :, :].unsqueeze(1)
             complex_out_imag_probs = complex_out_probs[:, 1, :, :, :].unsqueeze(1)
             
@@ -318,7 +321,7 @@ class TSCNet(nn.Module):
             final_reals = torch.stack(final_reals, dim=-1)
             final_imags = torch.stack(final_imags, dim=-1)
 
-            return final_reals, final_imags, complex_out_real_probs, complex_out_imag_probs
+            return final_reals, final_imags, complex_out_real_probs, complex_out_imag_probs, complex_out_logits
             
         
         if self.dist == "None":
@@ -409,9 +412,82 @@ class LSTMActor(nn.Module):
 
         return probs
         
+class TSCNetNoisy(nn.Module):
+    def __init__(self, num_channel=64, num_features=201, distribution=None, K=None, gpu_id=None):
+        super(TSCNet, self).__init__()
+        self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
+        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
+        #self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
+        #self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
+        #self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
+       
+        self.mask_decoder = MaskDecoder(
+            num_features, num_channel=num_channel, out_channel=1, distribution="Normal", gpu_id=gpu_id
+        )
         
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution="Normal")
+        self.dist = distribution
+        self.eps = 1e-08
 
+    def forward(self, noisy, clean):
+        b, ch, t, f = noisy.size() 
+        clean_mag = torch.sqrt(clean[:, 0, :, :] ** 2 + clean[:, 1, :, :] ** 2).unsqueeze(1)
+        
+        clean_phase = torch.angle(
+            torch.complex(clean[:, 0, :, :], clean[:, 1, :, :])
+        ).unsqueeze(1)
+        
+        noisy_mag = torch.sqrt(noisy[:, 0, :, :] ** 2 + noisy[:, 1, :, :] ** 2).unsqueeze(1)
 
+        x_in = torch.cat([noisy_mag, noisy], dim=1)
+        
+        out_1 = self.dense_encoder(x_in)
+        out_2 = self.TSCB_1(out_1)
+        #out_3 = self.TSCB_2(out_2)
+        #out_4 = self.TSCB_3(out_3)
+        #out_5 = self.TSCB_4(out_4)
+        if self.dist == "Normal":
+            mask, _, _, (mag_mu, mag_var) = self.mask_decoder(out_2)
+            complex_out, _, _, (comp_mu, comp_var) = self.complex_decoder(out_2)
+        
+        #out_mag = mask * mag
+        noisy_est_mag = clean_mag / (mask + self.eps)
+        mag_real = noisy_est_mag / (torch.cos(clean_phase) + self.eps )
+        mag_imag = noisy_est_mag / (torch.sin(clean_phase) + self.eps )
+        final_real = mag_real - complex_out[:, 0, :, :].unsqueeze(1)
+        final_imag = mag_imag - complex_out[:, 1, :, :].unsqueeze(1)
+
+        kld_loss_mag = -0.5 * (1 + mag_var + mag_mu**2 + torch.exp(mag_var)).sum()
+        kld_loss_comp = -0.5 * (1 + mag_var + mag_mu**2 + torch.exp(mag_var)).sum()
+
+        kld_loss = kld_loss + kld_loss_comp
+
+        return final_real, final_imag, kld_loss
+    
+    def enhance(self, noisy):
+
+        noisy_mag = torch.sqrt(noisy[:, 0, :, :] ** 2 + noisy[:, 1, :, :] ** 2).unsqueeze(1)
+
+        noisy_phase = torch.angle(
+            torch.complex(noisy[:, 0, :, :], noisy[:, 1, :, :])
+        ).unsqueeze(1)
+
+        x_in = torch.cat([noisy_mag, noisy], dim=1)
+        
+        out_1 = self.dense_encoder(x_in)
+        out_2 = self.TSCB_1(out_1)
+
+        if self.dist == "Normal":
+            mask, _, _ = self.mask_decoder(out_2)
+            complex_out, _, _ = self.complex_decoder(out_2)
+
+        out_mag = mask * noisy_mag
+        mag_real = out_mag * torch.cos(noisy_phase)
+        mag_imag = out_mag * torch.sin(noisy_phase)
+        final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
+        final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
+
+        return final_real, final_imag
 
 

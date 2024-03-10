@@ -155,6 +155,7 @@ class Trainer:
         noisy_imag = noisy_spec[:, 1, :, :].unsqueeze(1)
 
         est_real, est_imag, kld_loss = self.model(noisy_spec, clean_spec)
+        print(est_real.shape, est_imag.shape)
         #est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
         clean_mag = torch.sqrt(clean_real**2 + clean_imag**2)
@@ -322,7 +323,7 @@ class Trainer:
         generator_outputs["clean"] = clean
         generator_outputs["noisy"] = noisy
 
-        loss, ce_loss = self.calculate_generator_loss(generator_outputs)
+        loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None

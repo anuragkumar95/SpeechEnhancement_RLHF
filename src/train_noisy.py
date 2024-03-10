@@ -71,16 +71,16 @@ class Trainer:
         self.ACCUM_GRAD = accum_grad
         
         
-        self.model = TSCNet(num_channel=64, 
+        self.model = TSCNetNoisy(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            distribution="Categorical",
+                            distribution="Normal",
                             K=K,
                             gpu_id=gpu_id)
         self.batchsize = batchsize
         
         self.log_wandb = log_wandb
         self.gpu_id = gpu_id
-        self.dist = "Categorical"
+        self.dist = "Normal"
         self.discriminator = Discriminator(ndf=16)
 
         self.ce_loss = K_way_CrossEntropy()

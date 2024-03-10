@@ -324,12 +324,12 @@ class Trainer:
         generator_outputs["noisy"] = noisy
 
         loss = self.calculate_generator_loss(generator_outputs)
-        #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
+        print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
      
         loss = loss / self.ACCUM_GRAD
-
+        print(f"LOSS:{loss}")
         self.optimizer.zero_grad()
         loss.backward()
         if step % self.ACCUM_GRAD == 0 or step == len(self.train_ds):
@@ -337,7 +337,7 @@ class Trainer:
 
         # Train Discriminator
         discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
-
+        print(f"DLOSS:{discrim_loss_metric}")
         if discrim_loss_metric is not None:
             discrim_loss_metric = discrim_loss_metric / self.ACCUM_GRAD
             self.optimizer_disc.zero_grad()

@@ -461,7 +461,7 @@ class TSCNetNoisy(nn.Module):
         kld_loss_mag = -0.5 * (1 + mag_var + mag_mu**2 + torch.exp(mag_var)).sum()
         kld_loss_comp = -0.5 * (1 + mag_var + mag_mu**2 + torch.exp(mag_var)).sum()
 
-        kld_loss = kld_loss + kld_loss_comp
+        kld_loss = kld_loss_mag + kld_loss_comp
 
         return final_real, final_imag, kld_loss
     

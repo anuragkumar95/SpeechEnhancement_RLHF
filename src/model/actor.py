@@ -414,7 +414,7 @@ class LSTMActor(nn.Module):
         
 class TSCNetNoisy(nn.Module):
     def __init__(self, num_channel=64, num_features=201, distribution=None, K=None, gpu_id=None):
-        super(TSCNet, self).__init__()
+        super(TSCNetNoisy, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
         self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)

@@ -302,7 +302,7 @@ class Trainer:
             + args.loss_weights[3] * gen_loss_GAN
             + 0.000001 * kld_loss
         )
-
+        """
         if generator_outputs["tgt_k_real"] is not None:
             tgt_real = generator_outputs["tgt_k_real"]
             tgt_imag = generator_outputs["tgt_k_imag"]
@@ -312,7 +312,7 @@ class Trainer:
         
             loss = loss + ce_loss 
             return loss, ce_loss
-        
+        """
         return loss, 0.000001*kld_loss
 
     def calculate_discriminator_loss(self, generator_outputs):

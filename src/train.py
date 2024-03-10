@@ -202,10 +202,10 @@ class Trainer:
             "clean_imag": clean_imag,
             "clean_mag": clean_mag,
             "est_audio": est_audio, 
-            "tgt_k_real": target_k_real,
-            "tgt_k_imag": target_k_imag,
-            "real_probs": real_probs,
-            "imag_probs": imag_probs
+            #"tgt_k_real": target_k_real,
+            #"tgt_k_imag": target_k_imag,
+            #"real_probs": real_probs,
+            #"imag_probs": imag_probs
         }
     
     def load_checkpoint(self, path):

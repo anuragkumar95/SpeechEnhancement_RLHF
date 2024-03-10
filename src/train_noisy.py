@@ -272,7 +272,7 @@ class Trainer:
         #    torch.abs(generator_outputs["est_audio"] - generator_outputs["noisy"])
         #)
 
-        print(f"loss_time:{time_loss}")
+        #print(f"loss_time:{time_loss}")
 
         kld_loss = generator_outputs['kld_loss'].mean()
 
@@ -281,7 +281,7 @@ class Trainer:
         loss = (
             args.loss_weights[0] * loss_ri
             + args.loss_weights[1] * loss_mag
-            + args.loss_weights[2] * time_loss
+            #+ args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
             + 0.001 * kld_loss
         )

@@ -1,4 +1,4 @@
-from model.actor import TSCNet
+from model.actor import TSCNetNoisy
 from model.critic import Discriminator
 import os
 from data import dataset as dataloader

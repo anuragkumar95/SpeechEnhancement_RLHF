@@ -162,7 +162,7 @@ class Trainer:
 
         est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
         est_audio = torch.istft(
-            est_spec_uncompress,
+            est_spec_uncompress.permute(0, 2, 1, 3),
             self.n_fft,
             self.hop,
             window=torch.hamming_window(self.n_fft).to(self.gpu_id),
@@ -363,7 +363,7 @@ class Trainer:
         est_clean_real, est_clean_imag = self.model.enhance(noisy_spec)
         est_spec_uncompress = power_uncompress(est_clean_real, est_clean_imag).squeeze(1)
         est_audio = torch.istft(
-            est_spec_uncompress,
+            est_spec_uncompress.permute(0, 2, 1, 3),
             self.n_fft,
             self.hop,
             window=torch.hamming_window(self.n_fft).to(self.gpu_id),

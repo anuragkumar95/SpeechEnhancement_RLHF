@@ -254,20 +254,29 @@ class Trainer:
         gen_loss_GAN = F.mse_loss(
             predict_fake_metric.flatten(), generator_outputs["one_labels"].float()
         )
+        print(f"GEN_loss_GAN:{gen_loss_GAN}")
 
         loss_mag = F.mse_loss(
             generator_outputs["est_mag"], generator_outputs["noisy_mag"]
         ) 
 
+        print(f"loss_mag:{loss_mag}")
+
         loss_ri = F.mse_loss(
             generator_outputs["est_real"], generator_outputs["noisy_real"]
         ) + F.mse_loss(generator_outputs["noisy_imag"], generator_outputs["noisy_imag"])
+
+        print(f"loss_ri:{loss_ri}")
 
         time_loss = torch.mean(
             torch.abs(generator_outputs["est_audio"] - generator_outputs["noisy"])
         )
 
+        print(f"loss_time:{time_loss}")
+
         kld_loss = generator_outputs['kld_loss'].mean()
+
+        print(f"loss_kld:{kld_loss}")
 
         loss = (
             args.loss_weights[0] * loss_ri

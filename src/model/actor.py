@@ -459,7 +459,7 @@ class TSCNetNoisy(nn.Module):
         final_imag = mag_imag - complex_out[:, 1, :, :].unsqueeze(1)
 
         kld_loss_mag = -0.5 * (1 + mag_var + mag_mu**2 + torch.exp(mag_var)).sum()
-        kld_loss_comp = -0.5 * (1 + mag_var + mag_mu**2 + torch.exp(mag_var)).sum()
+        kld_loss_comp = -0.5 * (1 + comp_var + comp_mu**2 + torch.exp(comp_var)).sum()
 
         kld_loss = kld_loss_mag + kld_loss_comp
 
@@ -479,8 +479,8 @@ class TSCNetNoisy(nn.Module):
         out_2 = self.TSCB_1(out_1)
 
         if self.dist == "Normal":
-            mask, _, _ = self.mask_decoder(out_2)
-            complex_out, _, _ = self.complex_decoder(out_2)
+            mask, _, _, _ = self.mask_decoder(out_2)
+            complex_out, _, _, _ = self.complex_decoder(out_2)
 
         out_mag = mask * noisy_mag
         mag_real = out_mag * torch.cos(noisy_phase)

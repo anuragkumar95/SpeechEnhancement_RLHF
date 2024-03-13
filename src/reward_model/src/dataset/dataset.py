@@ -224,13 +224,10 @@ class PreferenceDataset(torch.utils.data.Dataset):
 
         inp = inp.reshape(-1)
         out = out.reshape(-1)
-
-        ch = np.random.choice(10)
-        if ch >= 5:
-            label = torch.tensor([1.0, 0.0])
-            return inp[:self.cutlen], out[:self.cutlen], label
-        label = torch.tensor([0.0, 1.0])
-        return out[:self.cutlen], inp[:self.cutlen], label
+     
+        label = torch.tensor([1.0, 0.0])
+        return inp[:self.cutlen], out[:self.cutlen], label
+        
 
 
 def load_data(root=None, 

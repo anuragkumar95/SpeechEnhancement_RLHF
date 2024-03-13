@@ -14,7 +14,7 @@ class RewardModel(nn.Module):
     def __init__(self, policy):
         super(RewardModel, self).__init__()
         self.conformer = policy
-        self.reward_projection = QNet(ndf=16, in_channel=64, out_channel=1)
+        self.reward_projection = QNet(ndf=16, in_channel=128, out_channel=1)
         
     def forward(self, x_ref, x_per):
 
@@ -24,18 +24,17 @@ class RewardModel(nn.Module):
         ref_emb = self.conformer.get_embedding(x_ref)
         per_emb = self.conformer.get_embedding(x_per)
 
-        print(f"ref:{ref_emb.shape}, per:{per_emb.shape}")
+        ref_inp = torch.cat([per_emb, ref_emb], dim=1)
+        per_inp = torch.cat([per_emb, per_emb], dim=1)
+
+        print(f"ref:{ref_inp.shape}, per:{per_inp.shape}")
         
-        score_ref = self.reward_projection(ref_emb)
-        score_per = self.reward_projection(per_emb)
+        ref_proj = self.reward_projection(ref_inp)
+        per_proj = self.reward_projection(per_inp)
 
-        scores = torch.cat([score_ref, score_per], dim=-1)
-
-        print(f"proj:{scores.shape}")
-        probs = F.softmax(scores, dim=-1)
-        print(f"probs:{probs.shape}")
-        print(f"PROBS:{probs}")
-        return probs
+        score = F.sigmoid(torch.log(ref_proj - per_proj))
+        loss = -torch.log(score)
+        return loss, score
     
     def get_reward(self, x):
         """

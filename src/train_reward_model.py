@@ -123,9 +123,8 @@ class Trainer:
             x_2 = x_2.to(self.gpu_id)
             labels = labels.to(self.gpu_id)
 
-        probs = self.reward_model(x_1, x_2)
-        loss = F.cross_entropy(probs, labels)
-
+        loss, score = self.reward_model(x_1, x_2)
+        probs = F.softmax(score, dim=-1)
         y_preds = torch.argmax(probs, dim=-1)
         labels = torch.argmax(labels, dim=-1)
         print(f"PREDS:{y_preds}")
@@ -256,7 +255,7 @@ def main(args):
         pin_memory=True,
         shuffle=True,
         drop_last=True,
-        num_workers=2,
+        num_workers=1,
     )
 
     test_dataloader = DataLoader(
@@ -265,7 +264,7 @@ def main(args):
         pin_memory=True,
         shuffle=True,
         drop_last=True,
-        num_workers=2,
+        num_workers=1,
     )
     
     if args.gpu:

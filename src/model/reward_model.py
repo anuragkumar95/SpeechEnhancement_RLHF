@@ -17,25 +17,27 @@ class RewardModel(nn.Module):
         self.reward_projection = QNet(ndf=16, in_channel=128, out_channel=1)
         self.eps = 1e-08
         
-    def forward(self, x_ref, x_per):
+    def forward(self, anchor, pos, neg):
 
-        x_ref = x_ref.permute(0, 1, 3, 2)
-        x_per = x_per.permute(0, 1, 3, 2)
+        anchor = anchor.permute(0, 1, 3, 2)
+        x_pos = pos.permute(0, 1, 3, 2)
+        x_neg = neg.permute(0, 1, 3, 2)
 
-        ref_emb = self.conformer.get_embedding(x_ref)
-        per_emb = self.conformer.get_embedding(x_per)
+        anchor_emb = self.conformer.get_embedding(anchor)
+        pos_emb = self.conformer.get_embedding(x_pos)
+        neg_emb = self.conformer.get_embedding(x_neg)
 
-        ref_inp = torch.cat([per_emb, ref_emb], dim=1)
-        per_inp = torch.cat([per_emb, per_emb], dim=1)
+        pos_inp = torch.cat([anchor_emb, pos_emb], dim=1)
+        neg_inp = torch.cat([anchor_emb, neg_emb], dim=1)
 
         #print(f"ref:{ref_inp.shape}, per:{per_inp.shape}")
         
-        ref_proj = self.reward_projection(ref_inp)
-        per_proj = self.reward_projection(per_inp)
+        pos_proj = self.reward_projection(pos_inp)
+        neg_proj = self.reward_projection(neg_inp)
 
-        print(f"diff:{torch.sqrt((ref_proj - per_proj)**2).mean(-1)}")
+        print(f"diff:{(pos_proj - neg_proj).mean(-1)}")
 
-        score = F.sigmoid(torch.log( torch.sqrt((ref_proj - per_proj)**2) + self.eps))
+        score = F.sigmoid(pos_proj - neg_proj + self.eps)
 
         print(f"SCORE:{score.mean(-1)}")
 

@@ -208,6 +208,7 @@ class Trainer:
 
     def train(self):
         best_val = 99999999
+        best_acc = 0
         print("Start training...")
         for epoch in range(self.args.epochs):
             val_loss, val_acc, tr_loss, tr_acc = self.train_one_epoch(epoch+1)
@@ -220,11 +221,12 @@ class Trainer:
                 "Train_acc":tr_acc
             })
             
-            if val_loss >= best_val:
+            if val_loss <= best_val or val_acc >= best_acc:
                 best_val = val_loss
+                best_acc = val_acc
                 #TODO:Logic for savecheckpoint
                 if self.gpu_id == 0:
-                    checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_epoch_{epoch}.pt"
+                    checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
                     path = os.path.join(args.output, args.exp, checkpoint_prefix)
                     torch.save(self.reward_model.state_dict(), path)
                 #TODO:May need a LR scheduler as well

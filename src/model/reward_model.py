@@ -33,7 +33,9 @@ class RewardModel(nn.Module):
         ref_proj = self.reward_projection(ref_inp)
         per_proj = self.reward_projection(per_inp)
 
-        score = F.sigmoid(torch.log(ref_proj - per_proj + self.eps))
+        print(f"diff:{torch.sqrt((ref_proj - per_proj)**2).mean(-1)}")
+
+        score = F.sigmoid(torch.log( torch.sqrt((ref_proj - per_proj)**2) + self.eps))
 
         print(f"SCORE:{score.mean(-1)}")
 

@@ -47,7 +47,7 @@ class REINFORCE:
         self.rlhf = True
         if reward_model is None:
             self.rlhf = False
-        #self.kl_div = torch.nn.KLDivLoss(reduction='batchmean', log_target=True)
+      
         self.beta = beta
         self.gaussian_noise = GaussianStrategy(gpu_id=gpu_id)
         self.t = 0
@@ -84,8 +84,10 @@ class REINFORCE:
         action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        exp_action, _, _ = self.expert.get_action(noisy)
+        exp_action, exp_log_probs, _ = self.expert.get_action(noisy)
 
+        kl_penalty = 0
+        
         if self.dist == False:
             #Add gaussian noise
             m_action, log_prob = self.gaussian_noise.get_action_from_raw_action(action[0], t=self.t)
@@ -95,7 +97,10 @@ class REINFORCE:
             if self.train_phase:
                 #finetune both mag and phase
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
+                #kl divergence term
+                #kl_penalty = self.beta * (log_prob - exp_log_prob)
             else:  
                 #ignore complex mask, just tune mag mask 
                 log_prob = log_probs[0]
@@ -119,7 +124,7 @@ class REINFORCE:
             r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
             #Baseline is moving average of rewards seen so far
             self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
-            G = r_t - self._r_mvg
+            G = r_t - self._r_mvg - kl_penalty
         
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}")

@@ -148,7 +148,7 @@ class Trainer:
             except Exception as e:
                 print(traceback.format_exc())
                 continue
-            print(f"LOSS:{loss.mean()}")
+            
             if torch.isnan(loss).any() or torch.isinf(loss).any():
                 continue
             

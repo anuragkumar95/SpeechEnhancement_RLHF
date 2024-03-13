@@ -35,14 +35,10 @@ class RewardModel(nn.Module):
         pos_proj = self.reward_projection(pos_inp)
         neg_proj = self.reward_projection(neg_inp)
 
-        print(f"diff:{(pos_proj - neg_proj).mean(-1)}")
-
         score = F.sigmoid(pos_proj - neg_proj + self.eps)
 
-        print(f"SCORE:{score.mean(-1)}")
-
         loss = -torch.log(score)
-        print(f"LOSS:{loss.mean(-1)}")
+   
         return loss.mean(), score
     
     def get_reward(self, x):

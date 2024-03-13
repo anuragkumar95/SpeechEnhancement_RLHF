@@ -123,7 +123,7 @@ class Trainer:
             x_2 = x_2.to(self.gpu_id)
             labels = labels.to(self.gpu_id)
 
-        loss, score = self.reward_model(x_1, x_2)
+        loss, score = self.reward_model(anchor=x_2, pos=x_1, neg=x_2)
         probs = F.softmax(score, dim=-1)
         y_preds = torch.argmax(probs, dim=-1)
         labels = torch.argmax(labels, dim=-1)

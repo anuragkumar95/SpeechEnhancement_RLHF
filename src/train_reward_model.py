@@ -149,7 +149,7 @@ class Trainer:
             except Exception as e:
                 print(traceback.format_exc())
                 continue
-
+            print(f"LOSS:{loss.mean()}")
             if torch.isnan(loss).any() or torch.isinf(loss).any():
                 continue
             
@@ -159,7 +159,7 @@ class Trainer:
             batch_loss.backward()
 
             if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
+                #torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
                 self.a_optimizer.step()
 
                 train_loss += batch_loss.item()
@@ -167,7 +167,6 @@ class Trainer:
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
                 batch_loss = 0
-            
             wandb.log({
                 "step": i+1,
                 "batch_loss":loss.item(),

@@ -27,14 +27,14 @@ class RewardModel(nn.Module):
         ref_inp = torch.cat([per_emb, ref_emb], dim=1)
         per_inp = torch.cat([per_emb, per_emb], dim=1)
 
-        print(f"ref:{ref_inp.shape}, per:{per_inp.shape}")
+        #print(f"ref:{ref_inp.shape}, per:{per_inp.shape}")
         
         ref_proj = self.reward_projection(ref_inp)
         per_proj = self.reward_projection(per_inp)
 
         score = F.sigmoid(torch.log(ref_proj - per_proj))
         loss = -torch.log(score)
-        return loss, score
+        return loss.mean(), score
     
     def get_reward(self, x):
         """

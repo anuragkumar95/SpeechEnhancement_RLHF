@@ -15,6 +15,7 @@ class RewardModel(nn.Module):
         super(RewardModel, self).__init__()
         self.conformer = policy
         self.reward_projection = QNet(ndf=16, in_channel=128, out_channel=1)
+        self.eps = 1e-08
         
     def forward(self, x_ref, x_per):
 
@@ -32,7 +33,7 @@ class RewardModel(nn.Module):
         ref_proj = self.reward_projection(ref_inp)
         per_proj = self.reward_projection(per_inp)
 
-        score = F.sigmoid(torch.log(ref_proj - per_proj))
+        score = F.sigmoid(torch.log(ref_proj - per_proj + self.eps))
 
         print(f"SCORE:{score.mean(-1)}")
 

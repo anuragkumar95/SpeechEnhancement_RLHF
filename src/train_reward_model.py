@@ -225,7 +225,7 @@ class Trainer:
                 #TODO:Logic for savecheckpoint
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
-                    path = os.path.join(args.output, args.exp, checkpoint_prefix)
+                    path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
                     torch.save(self.reward_model.state_dict(), path)
                 #TODO:May need a LR scheduler as well
 

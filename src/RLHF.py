@@ -33,6 +33,7 @@ class REINFORCE:
                  gpu_id=None, 
                  beta=0.01, 
                  discount=1.0, 
+                 episode_len=1,
                  **params):
         
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
@@ -52,6 +53,8 @@ class REINFORCE:
         self.t = 0
         self.dist = params['env_params'].get("args").out_dist
         self.train_phase = params['train_phase']
+        self.episode_len = episode_len
+        self._r_mavg = 0
 
     def get_expected_reward(self, rewards):
         """
@@ -69,7 +72,7 @@ class REINFORCE:
                 G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
         return G_t
 
-    def run_episode(self, batch, model, optimizer):
+    def run_one_step_episode(self, batch, model, optimizer):
         """
         Runs an epoch using REINFORCE.
         """
@@ -87,7 +90,6 @@ class REINFORCE:
             #Add gaussian noise
             m_action, log_prob = self.gaussian_noise.get_action_from_raw_action(action[0], t=self.t)
             action = (m_action, action[-1])
-            self.t += 1
 
         else:
             if self.train_phase:
@@ -103,15 +105,21 @@ class REINFORCE:
         next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
 
-        #Apply exp_mask to get next state
-        exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
-        next_state['exp_est_audio'] = exp_next_state['est_audio']
-
+        #Get enhanced output
+        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1)
+        self.t += 1
+        
         #Get the reward
         if not self.rlhf:
+            #Apply exp_mask to get next state
+            exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
+            next_state['exp_est_audio'] = exp_next_state['est_audio']
             G = self.env.get_PESQ_reward(next_state)
         else:
-            G = self.env.get_RLHF_reward(next_state)
+            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
+            #Baseline is moving average of rewards seen so far
+            self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
+            G = r_t - self._r_mvg
         
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}")
@@ -132,7 +140,27 @@ class REINFORCE:
             torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
             optimizer.step()
 
-        return loss, G.mean()
+        return loss, G.mean(), enhanced
+    
+    def run_n_step_episode(self, batch, model, optimizer):
+        curr = None
+        episode_loss = 0
+        episode_return = 0
+        for step in range(self.episode_len):
+            if step > 0:
+                assert curr != None, "Curr is None, check your current update."
+                cl_aud, clean, _, labels = batch
+                batch = (cl_aud, clean, curr, labels)
+
+            step_loss, step_return, enhanced = self.run_one_step_episode(batch, model, optimizer)
+            curr = enhanced
+            episode_loss += step_loss.item()
+            episode_return += step_return.item() 
+
+        episode_loss = episode_loss / self.episode_len
+        episode_return = episode_return / self.episode_len
+        return episode_loss, episode_return
+
 
 class PPO:
     """

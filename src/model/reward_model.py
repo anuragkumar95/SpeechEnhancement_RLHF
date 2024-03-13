@@ -36,19 +36,26 @@ class RewardModel(nn.Module):
         neg_proj = self.reward_projection(neg_inp)
 
         score = F.sigmoid(pos_proj - neg_proj + self.eps)
-
         loss = -torch.log(score)
    
         return loss.mean(), score
     
-    def get_reward(self, x):
+    def get_reward(self, inp, out):
         """
         ARGS:
-            x : spectrogram of shape (b * ch * t * f)
+            inp : spectrogram of curr state (b * ch * t * f) 
+            out : spectrogram of next state (b * ch * t * f)
+
+        Returns
+            Reward in the range (0, 1) for next state with reference to curr state.
         """
-        x = x.permute(0, 1, 3, 2)
-        x_emb = self.conformer.get_embedding(x)
+        inp = inp.permute(0, 1, 3, 2)
+        out = out.permute(0, 1, 3, 2)
+
+        inp_emb = self.conformer.get_embedding(inp)
+        out_emb = self.conformer.get_embedding(out)
         
-        rewards = self.reward_projection(x_emb)
+        inp = torch.cat([inp_emb, out_emb], dim=-1)
+        rewards = self.reward_projection(inp)
 
         return rewards

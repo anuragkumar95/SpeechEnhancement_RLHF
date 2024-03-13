@@ -91,16 +91,18 @@ class SpeechEnhancementAgent:
 
         return next_state
     
-    def get_RLHF_reward(self, state):
+    def get_RLHF_reward(self, inp, out):
         """
-        spec shape should be (b * ch * t * f)
-        """
-        print(f"state:{state['est_real'].shape}")
-        spec = torch.cat([state['est_real'], state['est_imag']], dim=1)
-        reward = self.reward_model.get_reward(spec)
-        return reward
-        
+        ARGS:
+            inp : spectrogram of curr state (b * ch * t * f) 
+            out : spectrogram of next state (b * ch * t * f)
+            beta : [Float] scalar coef for kldivergence 
 
+        Returns
+            Reward in the range (0, 1) for next state with reference to curr state.
+        """
+
+        return self.reward_model.get_reward(inp, out) 
     
     def get_PESQ_reward(self, next_state):
         """

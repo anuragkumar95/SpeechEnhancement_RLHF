@@ -124,8 +124,7 @@ class Trainer:
             labels = labels.to(self.gpu_id)
 
         loss, score = self.reward_model(anchor=x_2, pos=x_1, neg=x_2)
-        probs = F.softmax(score, dim=-1)
-        y_preds = torch.argmax(probs, dim=-1)
+        y_preds = (score < 0.5)
         labels = torch.argmax(labels, dim=-1)
         print(f"PREDS:{y_preds}")
         print(f"LABELS:{labels}")

@@ -124,11 +124,11 @@ class Trainer:
             labels = labels.to(self.gpu_id)
 
         loss, score = self.reward_model(anchor=x_2, pos=x_1, neg=x_2)
-        y_preds = (score < 0.5)
+        y_preds = (score < 0.5).float()
         labels = torch.argmax(labels, dim=-1)
         print(f"PREDS:{y_preds}")
         print(f"LABELS:{labels}")
-        acc = self.accuracy(y_preds.float(), labels.float())
+        acc = self.accuracy(y_preds, labels.float())
 
         return loss, acc
 

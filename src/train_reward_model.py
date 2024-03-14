@@ -170,7 +170,7 @@ class Trainer:
                     print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
                     batch_loss = 0
-                    
+
                 wandb.log({
                     "step": i+1,
                     "batch_loss":loss.item(),
@@ -247,7 +247,7 @@ def main(args):
 
     speech_env = SpeechEnhancementAgent(n_fft=400,
                                         hop=100,
-                                        gpu_id=0,
+                                        gpu_id=None,
                                         args=None,
                                         reward_model=None)
 

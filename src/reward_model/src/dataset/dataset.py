@@ -243,8 +243,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
                 #Apply action  to get the next state
                 next_state = self.env.get_next_state(state=noisy_spec, 
                                                      action=action)
-                enhanced_aud = next_state['est_audio'].detach().cpu()
-
+                enhanced_aud = next_state['est_audio'].detach()
             inp = inp.reshape(-1)
             out = out.reshape(-1)
             label = torch.tensor([1.0, 3.0, 2.0])

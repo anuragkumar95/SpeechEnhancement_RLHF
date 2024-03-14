@@ -10,6 +10,7 @@ from model.critic import QNet
 from RLHF import REINFORCE
 from reward_model.src.dataset.dataset import PreferenceDataset
 from torch.utils.data import DataLoader
+import copy
 
 import os
 import torch.nn.functional as F
@@ -250,6 +251,8 @@ def main(args):
                                         gpu_id=None,
                                         args=None,
                                         reward_model=None)
+    
+    enhance_model = copy.deepcopy(trainer.actor)
 
     train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
                                       vctk_root=args.vctkroot, 
@@ -257,7 +260,7 @@ def main(args):
                                       comp=args.comp,
                                       train_split=0.8, 
                                       resample=16000,
-                                      enhance_model=trainer.actor,
+                                      enhance_model=enhance_model,
                                       env=speech_env,
                                       gpu_id=0, 
                                       cutlen=40000)
@@ -268,7 +271,7 @@ def main(args):
                                      comp=args.comp,
                                      train_split=0.8, 
                                      resample=16000,
-                                     enhance_model=trainer.actor,
+                                     enhance_model=enhance_model,
                                      env=speech_env,
                                      gpu_id=0,  
                                      cutlen=40000)

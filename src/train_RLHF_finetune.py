@@ -95,12 +95,12 @@ class Trainer:
 
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1,
-                            distribution=args.out_dist, 
+                            distribution="Normal", 
                             gpu_id=gpu_id)
         
         self.expert = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1,
-                            distribution=args.out_dist, 
+                            distribution="Normal", 
                             gpu_id=gpu_id)
         
         self.reward_model = RewardModel(policy=self.actor)

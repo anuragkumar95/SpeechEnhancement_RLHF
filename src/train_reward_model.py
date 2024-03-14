@@ -149,7 +149,7 @@ class Trainer:
                 mini_batch = (pos, neg, labels)
                 mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
                 try:  
-                    loss, batch_acc = self.forward_step(mini_batch)
+                    loss, acc = self.forward_step(mini_batch)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
@@ -158,6 +158,7 @@ class Trainer:
                     continue
                 
                 batch_loss += loss / self.ACCUM_GRAD
+                batch_acc += acc
 
             self.a_optimizer.zero_grad()
             batch_loss.backward()
@@ -167,15 +168,15 @@ class Trainer:
                 self.a_optimizer.step()
 
                 train_loss += batch_loss.item()
-                train_acc += batch_acc
-                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
+                train_acc += batch_acc/3
+                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc/3}")
 
                 batch_loss = 0
 
             wandb.log({
                 "step": i+1,
                 "batch_loss":loss.item(),
-                "batch_acc":batch_acc
+                "batch_acc":batch_acc/3,
             })
         
 

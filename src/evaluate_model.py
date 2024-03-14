@@ -205,7 +205,7 @@ if __name__ == '__main__':
     if ARGS.save_pesq:
         modes.append('pesq')
     if ARGS.save_rewards:
-        modes.append('save_rewards')
+        modes.append('rewards')
 
     eval = EvalModel(modes=modes, 
                     model_pt=ARGS.ckpt, 

@@ -139,6 +139,7 @@ class Trainer:
         train_loss = 0
         train_acc = 0
         batch_loss = 0
+        batch_acc = 0
         for i, batch in enumerate(train_ds):   
             
             #clean, noisy, enh, _ = batch
@@ -169,8 +170,9 @@ class Trainer:
 
                 train_loss += batch_loss.item()
                 train_acc += batch_acc/3
-                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc/3}")
+                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc / 3}")
                 batch_loss = 0
+                batch_acc = 0
 
             wandb.log({
                 "step": i+1,

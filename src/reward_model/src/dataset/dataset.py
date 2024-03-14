@@ -13,6 +13,7 @@ import os
 import numpy as np
 import tempfile
 import gzip
+from src.utils import get_specs 
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -153,7 +154,10 @@ class PreferenceDataset(torch.utils.data.Dataset):
                  comp, 
                  set, 
                  train_split=0.8, 
-                 resample=None, 
+                 resample=None,
+                 enhance_model=None,
+                 env=None,
+                 gpu_id=None, 
                  cutlen=40000):
         
         self.j_root = jnd_root
@@ -163,12 +167,18 @@ class PreferenceDataset(torch.utils.data.Dataset):
         self.set = set
         self.comp = comp
         self.split = train_split
+        self.gpu_id = gpu_id
+        self.env = env
+        if enhance_model is not None:
+            self.model = enhance_model.to(gpu_id)
+            self.model.eval()
         self.paths = self.collect_paths() 
 
     def collect_paths(self):
         paths = {
             'ref':[],
-            'per':[]
+            'per':[],
+            'enh':[],
         }
 
         with open(os.path.join(self.comp, 'dataset_linear.txt'), 'r') as f:
@@ -198,6 +208,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
             paths['ref'].append(inp)
             paths['per'].append(out)
 
+
         return paths
     
     def __len__(self):
@@ -224,9 +235,25 @@ class PreferenceDataset(torch.utils.data.Dataset):
 
         inp = inp.reshape(-1)
         out = out.reshape(-1)
+        
+        if self.model is not None:
+            with torch.no_grad():
+                _, _, noisy_spec = get_specs(out, inp, self.gpu_id, 400, 100)
+                noisy_spec = noisy_spec.permute(0, 1, 3, 2)
+                #Forward pass through actor to get the action(mask)
+                action, _, _ = self.actor.get_action(noisy_spec)
+
+                #Apply action  to get the next state
+                next_state = self.env.get_next_state(state=noisy_spec, 
+                                                     action=action)
+                enhanced_aud = next_state['est_audio'].detach().cpu()
+
      
+            label = torch.tensor([1.0, 3.0, 2.0])
+            return inp[:self.cutlen], out[:self.cutlen], enhanced_aud[:self.cutlen], label
+        
         label = torch.tensor([1.0, 0.0])
-        return inp[:self.cutlen], out[:self.cutlen], label
+        return inp[:self.cutlen], out[:self.cutlen], None, label
         
 
 

@@ -67,11 +67,10 @@ class Trainer:
     """
     Reward model training.
     """
-    def __init__(self, train_ds, test_ds, args, gpu_id):
+    def __init__(self, args, gpu_id):
         self.n_fft = 400
         self.hop = 100
-        self.train_ds = train_ds
-        self.test_ds = test_ds
+    
         self.ACCUM_GRAD = args.accum_grad
 
         self.actor = TSCNet(num_channel=64, 
@@ -123,7 +122,7 @@ class Trainer:
             x_2 = x_2.to(self.gpu_id)
             labels = labels.to(self.gpu_id)
 
-        loss, score = self.reward_model(anchor=x_2, pos=x_1, neg=x_2)
+        loss, score = self.reward_model(pos=x_1, neg=x_2)
         y_preds = (score < 0.5).float()
         labels = torch.argmax(labels, dim=-1)
         print(f"PREDS:{y_preds}")
@@ -132,84 +131,94 @@ class Trainer:
 
         return loss, acc
 
-    def train_one_epoch(self, epoch):
+    def train_one_epoch(self, epoch, train_ds, test_ds):
         #Run training
         self.reward_model.train()
-        num_batches = len(self.train_ds)
+        num_batches = len(train_ds)
         train_loss = 0
         train_acc = 0
         batch_loss = 0
-        for i, batch in enumerate(self.train_ds):   
-
-            #Each minibatch is an episode
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-            try:  
-                loss, batch_acc = self.forward_step(batch)
-            except Exception as e:
-                print(traceback.format_exc())
-                continue
+        for i, batch in enumerate(train_ds):   
             
-            if torch.isnan(loss).any() or torch.isinf(loss).any():
-                continue
+            #clean, noisy, enh, _ = batch
+            mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+            for pair in mini_batch_pairs:
+                pos, neg = batch[pair[0]], batch[pair[1]]
+                labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
+                mini_batch = (pos, neg, labels)
+                mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
+                try:  
+                    loss, batch_acc = self.forward_step(mini_batch)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    continue
+                
+                if torch.isnan(loss).any() or torch.isinf(loss).any():
+                    continue
+                
+                batch_loss += loss / self.ACCUM_GRAD
+
+                self.a_optimizer.zero_grad()
+                batch_loss.backward()
+
+                if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
+                    #torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
+                    self.a_optimizer.step()
+
+                    train_loss += batch_loss.item()
+                    train_acc += batch_acc
+                    print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
+
+                    batch_loss = 0
+                    
+                wandb.log({
+                    "step": i+1,
+                    "batch_loss":loss.item(),
+                    "batch_acc":batch_acc
+                })
             
-            batch_loss += loss / self.ACCUM_GRAD
 
-            self.a_optimizer.zero_grad()
-            batch_loss.backward()
-
-            if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                #torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
-                self.a_optimizer.step()
-
-                train_loss += batch_loss.item()
-                train_acc += batch_acc
-                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
-
-                batch_loss = 0
-            wandb.log({
-                "step": i+1,
-                "batch_loss":loss.item(),
-                "batch_acc":batch_acc
-            })
-            
-
-        train_loss = train_loss * self.ACCUM_GRAD / num_batches
-        train_acc = train_acc * self.ACCUM_GRAD / num_batches
+        train_loss = train_loss * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
+        train_acc = train_acc * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
 
         #Run validation
         self.reward_model.eval()
-        num_batches = len(self.test_ds)
+        num_batches = len(test_ds)
         val_loss = 0
         val_acc = 0
-        for i, batch in enumerate(self.test_ds):
+        for i, batch in enumerate(test_ds):
+            mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+            for pair in mini_batch_pairs:
+                pos, neg = batch[pair[0]], batch[pair[1]]
+                labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
+                mini_batch = (pos, neg, labels)
+                #Each minibatch is an episode
+                mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
+                try:  
+                    batch_loss, batch_acc = self.forward_step(mini_batch)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    continue
+
+                if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
+                    continue
+
+                val_loss += batch_loss.item()
+                val_acc += batch_acc
             
-            #Each minibatch is an episode
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-            try:  
-                batch_loss, batch_acc = self.forward_step(batch)
-            except Exception as e:
-                print(traceback.format_exc())
-                continue
-
-            if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
-                continue
-
-            val_loss += batch_loss.item()
-            val_acc += batch_acc
-        
-        val_loss = val_loss / num_batches
-        val_acc = val_acc / num_batches
+        val_loss = val_loss / (num_batches * len(mini_batch_pairs))
+        val_acc = val_acc / (num_batches * len(mini_batch_pairs))
 
         print(f"Epoch:{epoch} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
 
         return val_loss, val_acc, train_loss, train_acc
 
-    def train(self):
+    def train(self, train_ds, test_ds):
         best_val = 99999999
         best_acc = 0
         print("Start training...")
         for epoch in range(self.args.epochs):
-            val_loss, val_acc, tr_loss, tr_acc = self.train_one_epoch(epoch+1)
+            val_loss, val_acc, tr_loss, tr_acc = self.train_one_epoch(epoch+1, train_ds, test_ds)
             #TODO:Log these in wandb
             wandb.log({
                 "Epoch":epoch+1,
@@ -231,12 +240,26 @@ class Trainer:
 
 def main(args):
 
+    if args.gpu:
+        trainer = Trainer(args, 0)
+    else:
+        trainer = Trainer(args, None)
+
+    speech_env = SpeechEnhancementAgent(n_fft=400,
+                                        hop=100,
+                                        gpu_id=0,
+                                        args=None,
+                                        reward_model=None)
+
     train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
                                       vctk_root=args.vctkroot, 
                                       set="train", 
                                       comp=args.comp,
                                       train_split=0.8, 
-                                      resample=16000, 
+                                      resample=16000,
+                                      enhance_model=trainer.actor,
+                                      env=speech_env,
+                                      gpu_id=0, 
                                       cutlen=40000)
     
     test_dataset = PreferenceDataset(jnd_root=args.jndroot, 
@@ -244,7 +267,10 @@ def main(args):
                                      set="test", 
                                      comp=args.comp,
                                      train_split=0.8, 
-                                     resample=16000, 
+                                     resample=16000,
+                                     enhance_model=trainer.actor,
+                                     env=speech_env,
+                                     gpu_id=0,  
                                      cutlen=40000)
 
     train_dataloader = DataLoader(
@@ -265,11 +291,8 @@ def main(args):
         num_workers=1,
     )
     
-    if args.gpu:
-        trainer = Trainer(train_dataloader, test_dataloader, args, 0)
-    else:
-        trainer = Trainer(train_dataloader, test_dataloader, args, None)
-    trainer.train()
+    
+    trainer.train(train_dataloader, test_dataloader)
    
 
 if __name__=='__main__':

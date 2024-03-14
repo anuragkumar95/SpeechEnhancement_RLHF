@@ -178,13 +178,13 @@ class EvalModel:
                         clean_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=clean, mode=2)
 
                         rewards[1] = {
-                            'noisy': noisy_reward_1,
-                            'clean': clean_reward_1
+                            'noisy': noisy_reward_1.detach().cpu().numpy(),
+                            'clean': clean_reward_1.detach().cpu().numpy()
                         }
 
                         rewards[2] = {
-                            'noisy': noisy_reward_2,
-                            'clean': clean_reward_2
+                            'noisy': noisy_reward_2.detach().cpu().numpy(),
+                            'clean': clean_reward_2.detach().cpu().numpy()
                         }
 
                         with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:

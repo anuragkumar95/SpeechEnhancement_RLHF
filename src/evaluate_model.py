@@ -217,8 +217,7 @@ if __name__ == '__main__':
                            ARGS.batchsize, 
                            1, 
                            40000,
-                           gpu = False,
-                           shuffle=False)
+                           gpu = False)
     
     eval.evaluate(test_ds)
 

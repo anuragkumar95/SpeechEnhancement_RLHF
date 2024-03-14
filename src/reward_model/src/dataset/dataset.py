@@ -13,7 +13,7 @@ import os
 import numpy as np
 import tempfile
 import gzip
-from src.utils import get_specs 
+from ....utils import get_specs 
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"

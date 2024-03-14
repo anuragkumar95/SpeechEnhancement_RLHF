@@ -1,8 +1,10 @@
-from model.actor import TSCNet, RewardModel
+from model.actor import TSCNet
+from model.reward_model import RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE, PPO
 
+import copy
 import os
 from data.dataset import load_data
 import torch.nn.functional as F
@@ -28,8 +30,10 @@ def args():
                         help="Root directory to Voicebank.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for results. Will create one if doesn't exist")
-    parser.add_argument("-pt", "--ckpt", type=str, required=True, default=None,
+    parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved checkpoint to evaluate.")
+    parser.add_argument("-rpt", "--reward_pt", type=str, required=False, default=None,
+                        help="Path to saved rewardmodel checkpoint to evaluate.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
     parser.add_argument("--save_actions", action='store_true', 
@@ -40,39 +44,54 @@ def args():
                         help="Flag to save critic scores")
     parser.add_argument("--save_pesq", action='store_true', 
                         help="Flag to save pesq values")
+    parser.add_argument("--save_rewards", action='store_true',
+                        help='Flag to save rewards from the reward model.')
     return parser
 
 class EvalModel:
-    def __init__(self, modes, model_pt, save_path, gpu_id=None):
+    def __init__(self, modes, save_path, model_pt=None, reward_pt=None, gpu_id=None):
         self.modes = modes
-
         self.n_fft = 400
         self.hop = 100
-
+        
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1,
-                            distribution=True, 
+                            distribution="Normal", 
                             gpu_id=gpu_id)
         
-        self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
+        self.critic = None
+        self.reward_model = None
 
-        checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
-        self.actor.load_state_dict(checkpoint['actor_state_dict'])
-        self.critic.load_state_dict(checkpoint['critic_state_dict'])
-        print(f"Loaded checkpoint from {model_pt}...")
+        if model_pt is not None:
+            self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
+            checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
+            self.actor.load_state_dict(checkpoint['actor_state_dict'])
+            self.critic.load_state_dict(checkpoint['critic_state_dict'])
+            print(f"Loaded checkpoint from {model_pt}...")
 
-        if gpu_id is not None:
-            self.actor = self.actor.to(gpu_id)
-            self.critic = self.critic.to(gpu_id)
+            if gpu_id is not None:
+                self.actor = self.actor.to(gpu_id)
+                self.critic = self.critic.to(gpu_id)
 
-        self.actor.eval()
-        self.critic.eval()
+            self.actor.eval()
+            self.critic.eval()
+
+        if reward_pt is not None:
+            self.reward_model = RewardModel(policy=copy.deepcopy(self.actor))
+            reward_checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
+            self.reward_model.load_state_dict(reward_checkpoint)
+            print(f"Loaded reward model from {reward_pt} ... ")
+            
+            if gpu_id is not None:
+                self.reward_model = self.reward_model.to(gpu_id)
+
+            self.reward_model.eval()
 
         self.env = SpeechEnhancementAgent(n_fft=self.n_fft,
                                           hop=self.hop,
                                           gpu_id=gpu_id,
                                           args=None,
-                                          reward_model=None)
+                                          reward_model=self.reward_model)
 
         self.save_path = save_path
         self.gpu_id = gpu_id
@@ -92,12 +111,13 @@ class EvalModel:
                     cl_aud, clean, noisy, _ = batch
                     inp = noisy.permute(0, 1, 3, 2)
 
-                    #Forward pass through actor to get the action(mask)
-                    action, _, _ = self.actor.get_action(inp)
+                    if self.critic is not None:
+                        #Forward pass through actor to get the action(mask)
+                        action, _, _ = self.actor.get_action(inp)
 
-                    #Apply action  to get the next state
-                    next_state = self.env.get_next_state(state=inp, 
-                                                        action=action)
+                        #Apply action  to get the next state
+                        next_state = self.env.get_next_state(state=inp, 
+                                                            action=action)
                     if mode == 'action':
                         with open(os.path.join(save_path, f"action_{i}.pickle"), 'wb') as f:
                             action = (action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy())
@@ -144,7 +164,30 @@ class EvalModel:
                         with open(os.path.join(save_path, f"pesq_{i}.pickle"), 'wb') as f:
                             pickle.dump(pesq, f)
                         print(f"pesq_{i}.pickle saved in {save_path}")
-                        
+
+                    if mode == 'rewards':
+                        rewards = {1:{}, 2:{}}
+
+                        noisy_reward_1 = self.reward_model.get_reward(inp=noisy, out=noisy, mode=1)
+                        clean_reward_1 = self.reward_model.get_reward(inp=noisy, out=clean, mode=1)
+
+                        noisy_reward_2 = self.reward_model.get_reward(inp=noisy, out=noisy, mode=2)
+                        clean_reward_2 = self.reward_model.get_reward(inp=noisy, out=clean, mode=2)
+
+                        rewards[1] = {
+                            'noisy': noisy_reward_1,
+                            'clean': clean_reward_1
+                        }
+
+                        rewards[2] = {
+                            'noisy': noisy_reward_2,
+                            'clean': clean_reward_2
+                        }
+
+                        with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
+                            pickle.dump(rewards, f)
+                        print(f"reward_{i}.pickle saved in {save_path}")
+
 
 if __name__ == '__main__':
     ARGS = args().parse_args()
@@ -158,7 +201,8 @@ if __name__ == '__main__':
         modes.append('critic_score')
     if ARGS.save_pesq:
         modes.append('pesq')
-
+    if ARGS.save_rewards:
+        modes.append('save_rewards')
 
     eval = EvalModel(modes=modes, 
                     model_pt=ARGS.ckpt, 
@@ -169,7 +213,8 @@ if __name__ == '__main__':
                            ARGS.batchsize, 
                            1, 
                            40000,
-                           gpu = False)
+                           gpu = False,
+                           shuffle=False)
     
     eval.evaluate(test_ds)
 

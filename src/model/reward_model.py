@@ -56,8 +56,11 @@ class RewardModel(nn.Module):
         inp_emb = self.conformer.get_embedding(inp)
         out_emb = self.conformer.get_embedding(out)
         
-        inp = torch.cat([inp_emb, out_emb], dim=1)
+        pos_inp = torch.cat([inp_emb, out_emb], dim=1)
+        neg_inp = torch.cat([inp_emb, inp_emb], dim=1)
         #print(f"INP:{inp.shape}")
-        rewards = self.reward_projection(inp)
+        pos_proj = self.reward_projection(pos_inp)
+        neg_proj = self.reward_projection(neg_inp)
+        rewards = F.sigmoid(pos_proj - neg_proj + self.eps)
 
         return rewards

@@ -21,6 +21,7 @@ import wandb
 import psutil
 import numpy as np
 import traceback
+import copy
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -107,7 +108,7 @@ class Trainer:
         self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
         
         if args.reward_pt is not None:
-            self.reward_model = RewardModel(policy=self.actor)
+            self.reward_model = RewardModel(policy=copy.deepcopy(self.actor))
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(reward_checkpoint)
             self.reward_model = freeze_layers(self.reward_model, 'all')

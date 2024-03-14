@@ -43,7 +43,10 @@ class REINFORCE:
                                           reward_model=reward_model)
         self.discount = discount
         self.gpu_id = gpu_id
-        self.expert = init_model.to(self.gpu_id)
+        if self.gpu_id is not None:
+            self.expert = init_model.to(self.gpu_id)
+            if reward_model is not None:
+                self.reward_model = reward_model.to(self.gpu_id)
         self.rlhf = True
         if reward_model is None:
             self.rlhf = False

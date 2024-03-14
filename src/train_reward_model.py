@@ -172,13 +172,14 @@ class Trainer:
                 train_acc += batch_acc/3
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc / 3}")
                 batch_loss = 0
-                batch_acc = 0
+                
 
             wandb.log({
                 "step": i+1,
                 "batch_loss":loss.item(),
                 "batch_acc":batch_acc/3,
             })
+            batch_acc = 0
         
         train_loss = train_loss * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
         train_acc = train_acc * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))

@@ -209,6 +209,7 @@ if __name__ == '__main__':
 
     eval = EvalModel(modes=modes, 
                     model_pt=ARGS.ckpt, 
+                    reward_pt=ARGS.reward_pt,
                     save_path=ARGS.output, 
                     pre=ARGS.pre,
                     gpu_id=0)

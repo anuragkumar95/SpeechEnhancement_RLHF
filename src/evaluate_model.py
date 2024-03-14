@@ -50,7 +50,7 @@ def args():
     return parser
 
 class EvalModel:
-    def __init__(self, modes, save_path, pre, model_pt=None, reward_pt=None, gpu_id=None):
+    def __init__(self, modes, save_path, pre, args, model_pt=None, reward_pt=None, gpu_id=None):
         self.modes = modes
         self.n_fft = 400
         self.hop = 100
@@ -70,7 +70,8 @@ class EvalModel:
                 self.actor.load_state_dict(checkpoint['generator_state_dict'])
             else:
                 self.actor.load_state_dict(checkpoint['actor_state_dict'])
-                self.critic.load_state_dict(checkpoint['critic_state_dict'])
+                if args.save_scores:
+                    self.critic.load_state_dict(checkpoint['critic_state_dict'])
             print(f"Loaded checkpoint from {model_pt}...")
 
             if gpu_id is not None:
@@ -169,22 +170,27 @@ class EvalModel:
                         print(f"pesq_{i}.pickle saved in {save_path}")
 
                     if mode == 'rewards':
+                        enhanced = next_state['noisy']
                         rewards = {1:{}, 2:{}}
                     
                         noisy_reward_1 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=noisy, mode=1)
                         clean_reward_1 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=clean, mode=1)
+                        enhanced_reward_1 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=enhanced, mode=1)
 
                         noisy_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=noisy, mode=2)
                         clean_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=clean, mode=2)
+                        enhanced_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=enhanced, mode=2)
 
                         rewards[1] = {
                             'noisy': noisy_reward_1.detach().cpu().numpy(),
-                            'clean': clean_reward_1.detach().cpu().numpy()
+                            'clean': clean_reward_1.detach().cpu().numpy(),
+                            'enhanced':enhanced_reward_1.detach().cpu().numpy()
                         }
 
                         rewards[2] = {
                             'noisy': noisy_reward_2.detach().cpu().numpy(),
-                            'clean': clean_reward_2.detach().cpu().numpy()
+                            'clean': clean_reward_2.detach().cpu().numpy(),
+                            'enhanced':enhanced_reward_1.detach().cpu().numpy()
                         }
 
                         with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
@@ -212,6 +218,7 @@ if __name__ == '__main__':
                     reward_pt=ARGS.reward_pt,
                     save_path=ARGS.output, 
                     pre=ARGS.pre,
+                    args=ARGS,
                     gpu_id=0)
     
     _, test_ds = load_data(ARGS.root, 

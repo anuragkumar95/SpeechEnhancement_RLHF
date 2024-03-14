@@ -40,7 +40,7 @@ class RewardModel(nn.Module):
    
         return loss.mean(), score
     
-    def get_reward(self, mode, inp, out):
+    def get_reward(self, inp, out, mode=2):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 

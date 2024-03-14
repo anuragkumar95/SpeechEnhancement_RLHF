@@ -246,6 +246,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
                 enhanced_aud = next_state['est_audio'].detach()
             inp = inp.reshape(-1)
             out = out.reshape(-1)
+            enhanced_aud = enhanced_aud.reshape(-1)
             label = torch.tensor([1.0, 3.0, 2.0])
             return inp[:self.cutlen], out[:self.cutlen], enhanced_aud[:self.cutlen], label
         

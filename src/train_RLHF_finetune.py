@@ -84,8 +84,7 @@ class Trainer:
                  train_ds, 
                  test_ds, 
                  args, 
-                 gpu_id, 
-                 pretrain=False):
+                 gpu_id):
         
         self.n_fft = 400
         self.hop = 100
@@ -103,13 +102,12 @@ class Trainer:
                             distribution="Normal", 
                             gpu_id=gpu_id)
         
-        self.reward_model = RewardModel(policy=self.actor)
-        
         cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
         self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
         self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
         
         if args.reward_pt is not None:
+            self.reward_model = RewardModel(policy=self.actor)
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(reward_checkpoint)
             self.reward_model = freeze_layers(self.reward_model, 'all')

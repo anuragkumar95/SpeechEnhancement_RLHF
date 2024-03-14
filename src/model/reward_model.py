@@ -49,6 +49,7 @@ class RewardModel(nn.Module):
         Returns
             Reward in the range (0, 1) for next state with reference to curr state.
         """
+        print(inp.shape, out.shape)
         inp = inp.permute(0, 1, 3, 2)
         out = out.permute(0, 1, 3, 2)
 

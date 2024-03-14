@@ -350,7 +350,7 @@ def main(rank: int, world_size: int, args):
     if args.ckpt is not None:
         pretrain=True
 
-    trainer = Trainer(train_ds, test_ds, args, rank, pretrain=pretrain)
+    trainer = Trainer(train_ds, test_ds, args, rank)
     
     trainer.train(args)
     destroy_process_group()

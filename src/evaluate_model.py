@@ -172,10 +172,10 @@ class EvalModel:
                         rewards = {1:{}, 2:{}}
                         print(noisy.shape, clean.shape)
                         noisy_reward_1 = self.reward_model.get_reward(inp=noisy, out=noisy, mode=1)
-                        clean_reward_1 = self.reward_model.get_reward(inp=noisy, out=clean, mode=1)
+                        clean_reward_1 = self.reward_model.get_reward(inp=noisy, out=clean.permute(0, 1, 3, 2), mode=1)
 
                         noisy_reward_2 = self.reward_model.get_reward(inp=noisy, out=noisy, mode=2)
-                        clean_reward_2 = self.reward_model.get_reward(inp=noisy, out=clean, mode=2)
+                        clean_reward_2 = self.reward_model.get_reward(inp=noisy, out=clean.permute(0, 1, 3, 2), mode=2)
 
                         rewards[1] = {
                             'noisy': noisy_reward_1,

@@ -32,6 +32,7 @@ def args():
                         help="Output directory for results. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved checkpoint to evaluate.")
+    parser.add_argument("--pre", action="store_true")
     parser.add_argument("-rpt", "--reward_pt", type=str, required=False, default=None,
                         help="Path to saved rewardmodel checkpoint to evaluate.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
@@ -49,7 +50,7 @@ def args():
     return parser
 
 class EvalModel:
-    def __init__(self, modes, save_path, model_pt=None, reward_pt=None, gpu_id=None):
+    def __init__(self, modes, save_path, pre, model_pt=None, reward_pt=None, gpu_id=None):
         self.modes = modes
         self.n_fft = 400
         self.hop = 100
@@ -65,8 +66,11 @@ class EvalModel:
         if model_pt is not None:
             self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
             checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
-            self.actor.load_state_dict(checkpoint['actor_state_dict'])
-            self.critic.load_state_dict(checkpoint['critic_state_dict'])
+            if pre:
+                self.actor.load_state_dict(checkpoint['generator_state_dict'])
+            else:
+                self.actor.load_state_dict(checkpoint['actor_state_dict'])
+                self.critic.load_state_dict(checkpoint['critic_state_dict'])
             print(f"Loaded checkpoint from {model_pt}...")
 
             if gpu_id is not None:
@@ -111,13 +115,12 @@ class EvalModel:
                     cl_aud, clean, noisy, _ = batch
                     inp = noisy.permute(0, 1, 3, 2)
 
-                    if self.critic is not None:
-                        #Forward pass through actor to get the action(mask)
-                        action, _, _ = self.actor.get_action(inp)
+                    #Forward pass through actor to get the action(mask)
+                    action, _, _ = self.actor.get_action(inp)
 
-                        #Apply action  to get the next state
-                        next_state = self.env.get_next_state(state=inp, 
-                                                            action=action)
+                    #Apply action  to get the next state
+                    next_state = self.env.get_next_state(state=inp, 
+                                                        action=action)
                     if mode == 'action':
                         with open(os.path.join(save_path, f"action_{i}.pickle"), 'wb') as f:
                             action = (action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy())
@@ -207,6 +210,7 @@ if __name__ == '__main__':
     eval = EvalModel(modes=modes, 
                     model_pt=ARGS.ckpt, 
                     save_path=ARGS.output, 
+                    pre=args.pre,
                     gpu_id=0)
     
     _, test_ds = load_data(ARGS.root, 

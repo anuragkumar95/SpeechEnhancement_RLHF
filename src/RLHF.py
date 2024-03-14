@@ -167,6 +167,12 @@ class REINFORCE:
         episode_loss = episode_loss / self.episode_len
         episode_return = episode_return / self.episode_len
         return episode_loss, episode_return
+    
+    def run_episode(self, batch, model, optimizer):
+        if self.episode_len == 1:
+            return self.run_one_step_episode(batch, model, optimizer)
+        else:
+            return self.run_n_step_episode(batch, model, optimizer)
 
 
 class PPO:

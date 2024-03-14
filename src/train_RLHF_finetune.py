@@ -143,6 +143,7 @@ class Trainer:
                                     beta = 1e-10 , 
                                     init_model=self.expert,
                                     discount=1.0,
+                                    episode_len=args.episode_steps,
                                     train_phase=args.train_phase,
                                     reward_model=self.reward_model,
                                     env_params={'n_fft':400,

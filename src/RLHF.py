@@ -44,7 +44,9 @@ class REINFORCE:
         self.discount = discount
         self.gpu_id = gpu_id
         self.rlhf = True
-        if reward_model is None:
+        self.reward_model = reward_model
+        self.expert = init_model
+        if self.reward_model is None:
             self.rlhf = False
         self.beta = beta
         self.gaussian_noise = GaussianStrategy(gpu_id=gpu_id)
@@ -109,7 +111,7 @@ class REINFORCE:
         next_state['cl_audio'] = cl_aud
 
         #Get enhanced output
-        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1)
+        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1).detach()
         self.t += 1
         
         #Get the reward
@@ -119,7 +121,7 @@ class REINFORCE:
             next_state['exp_est_audio'] = exp_next_state['est_audio']
             G = self.env.get_PESQ_reward(next_state)
         else:
-            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced.detach())
+            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
             #Baseline is moving average of rewards seen so far
             self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
             G = r_t - self._r_mavg - kl_penalty

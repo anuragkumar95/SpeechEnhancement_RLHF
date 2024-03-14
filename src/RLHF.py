@@ -126,7 +126,7 @@ class REINFORCE:
             r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
             #Baseline is moving average of rewards seen so far
             self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
-            G = r_t - self._r_mvg - kl_penalty
+            G = r_t - self._r_mavg - kl_penalty
         
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}")

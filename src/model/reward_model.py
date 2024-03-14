@@ -53,7 +53,7 @@ class RewardModel(nn.Module):
         
         inp_emb = self.conformer.get_embedding(inp)
         out_emb = self.conformer.get_embedding(out)
-        
+        print(inp.shape, out.shape, inp_emb.shape, out_emb.shape)
         if mode == 1:
             pos_inp = torch.cat([inp_emb, out_emb], dim=1)
             neg_inp = torch.cat([inp_emb, inp_emb], dim=1)

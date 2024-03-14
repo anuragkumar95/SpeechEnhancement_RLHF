@@ -170,7 +170,7 @@ class EvalModel:
 
                     if mode == 'rewards':
                         rewards = {1:{}, 2:{}}
-
+                        print(noisy.shape, clean.shape)
                         noisy_reward_1 = self.reward_model.get_reward(inp=noisy, out=noisy, mode=1)
                         clean_reward_1 = self.reward_model.get_reward(inp=noisy, out=clean, mode=1)
 

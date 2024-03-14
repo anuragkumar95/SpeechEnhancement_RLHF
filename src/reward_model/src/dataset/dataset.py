@@ -172,6 +172,8 @@ class PreferenceDataset(torch.utils.data.Dataset):
         if enhance_model is not None:
             self.model = enhance_model.cpu()
             self.model.eval()
+        else:
+            self.model = None
         self.paths = self.collect_paths() 
 
     def collect_paths(self):
@@ -254,7 +256,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
         out = out.reshape(-1)
 
         label = torch.tensor([1.0, 0.0])
-        return inp[:self.cutlen], out[:self.cutlen], None, label
+        return inp[:self.cutlen], out[:self.cutlen], label
         
 
 

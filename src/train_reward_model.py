@@ -143,7 +143,10 @@ class Trainer:
         for i, batch in enumerate(train_ds):   
             
             #clean, noisy, enh, _ = batch
-            mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+            if len(batch) == 4:
+                mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+            elif len(batch) == 3:
+                mini_batch_pairs = [(0, 1)]
             for pair in mini_batch_pairs:
                 pos, neg = batch[pair[0]], batch[pair[1]]
                 labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
@@ -169,7 +172,7 @@ class Trainer:
                 self.a_optimizer.step()
 
                 train_loss += batch_loss.item()
-                train_acc += batch_acc/3
+                train_acc += batch_acc
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc / 3}")
                 batch_loss = 0
                 
@@ -190,7 +193,10 @@ class Trainer:
         val_loss = 0
         val_acc = 0
         for i, batch in enumerate(test_ds):
-            mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+            if len(batch) == 4:
+                mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+            elif len(batch) == 3:
+                mini_batch_pairs = [(0, 1)]
             for pair in mini_batch_pairs:
                 pos, neg = batch[pair[0]], batch[pair[1]]
                 labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
@@ -254,8 +260,8 @@ def main(args):
                                         args=None,
                                         reward_model=None)
     
-    enhance_model = copy.deepcopy(trainer.actor)
-
+    #enhance_model = copy.deepcopy(trainer.actor)
+    enhance_model = None
     train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
                                       vctk_root=args.vctkroot, 
                                       set="train", 

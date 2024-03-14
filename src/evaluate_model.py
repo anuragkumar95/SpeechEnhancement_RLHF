@@ -190,7 +190,7 @@ class EvalModel:
                         rewards[2] = {
                             'noisy': noisy_reward_2.detach().cpu().numpy(),
                             'clean': clean_reward_2.detach().cpu().numpy(),
-                            'enhanced':enhanced_reward_1.detach().cpu().numpy()
+                            'enhanced':enhanced_reward_2.detach().cpu().numpy()
                         }
 
                         with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:

@@ -97,7 +97,6 @@ class REINFORCE:
             if self.train_phase:
                 #finetune both mag and phase
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                #exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
                 #kl divergence term
                 #kl_penalty = self.beta * (log_prob - exp_log_prob)
@@ -145,7 +144,7 @@ class REINFORCE:
             torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
             optimizer.step()
 
-        return loss, G.mean(), enhanced
+        return loss, (G, r_t.mean()), enhanced
     
     def run_n_step_episode(self, batch, model, optimizer):
         curr = None

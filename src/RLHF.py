@@ -144,7 +144,7 @@ class REINFORCE:
             torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
             optimizer.step()
 
-        return loss, (G, r_t.mean()), enhanced
+        return loss, (G.mean(), r_t.mean()), enhanced
     
     def run_n_step_episode(self, batch, model, optimizer):
         curr = None

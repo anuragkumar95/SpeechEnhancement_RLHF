@@ -276,9 +276,9 @@ class Trainer:
                 print(traceback.format_exc())
                 continue
             
-            self.G = batch_reward.item() + self.G
-            print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward}")
-            REWARDS.append(batch_reward.item())
+            self.G = batch_reward[0].item() + self.G
+            print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward[1]} | Return: {batch_reward[0]}")
+            REWARDS.append(batch_reward[1].item())
           
         
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")

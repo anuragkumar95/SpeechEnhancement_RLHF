@@ -47,7 +47,6 @@ class REINFORCE:
         self.rlhf = True
         if reward_model is None:
             self.rlhf = False
-      
         self.beta = beta
         self.gaussian_noise = GaussianStrategy(gpu_id=gpu_id)
         self.t = 0

@@ -75,3 +75,68 @@ def freeze_layers(model, layers):
                 if ((layer == name) or (layer in name)) and param.requires_grad:
                     param.requires_grad = False
     return model 
+
+def power_compress(x):
+    real = x[..., 0]
+    imag = x[..., 1]
+    spec = torch.complex(real, imag)
+    mag = torch.abs(spec)
+    phase = torch.angle(spec)
+    mag = mag**0.3
+    real_compress = mag * torch.cos(phase)
+    imag_compress = mag * torch.sin(phase)
+    return torch.stack([real_compress, imag_compress], 1)
+
+
+def power_uncompress(real, imag):
+    spec = torch.complex(real, imag)
+    mag = torch.abs(spec)
+    phase = torch.angle(spec)
+    mag = mag ** (1.0 / 0.3)
+    real_compress = mag * torch.cos(phase)
+    imag_compress = mag * torch.sin(phase)
+    return torch.stack([real_compress, imag_compress], -1)
+
+def get_specs(clean, noisy, gpu_id, n_fft, hop):
+    """
+    Create spectrograms from input waveform.
+    ARGS:
+        clean : clean waveform (batch * cut_len)
+        noisy : noisy waveform (batch * cut_len)
+
+    Return
+        noisy_spec : (b * 2 * f * t) noisy spectrogram
+        clean_spec : (b * 2 * f * t) clean spectrogram
+        clean_real : (b * 1 * f * t) real part of clean spectrogram
+        clean_imag : (b * 1 * f * t) imag part of clean spectrogram
+        clean_mag  : (b * 1 * f * t) mag of clean spectrogram
+    """
+    # Normalization
+    c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
+    noisy, clean = torch.transpose(noisy, 0, 1), torch.transpose(clean, 0, 1)
+    noisy, clean = torch.transpose(noisy * c, 0, 1), torch.transpose(
+        clean * c, 0, 1
+    )
+    
+    win = torch.hamming_window(n_fft)
+    if gpu_id is not None:
+        win = win.to(gpu_id)
+
+    noisy_spec = torch.stft(
+        noisy,
+        n_fft,
+        hop,
+        window=win,
+        onesided=True,
+    )
+    clean_spec = torch.stft(
+        clean,
+        n_fft,
+        hop,
+        window=win,
+        onesided=True,
+    )
+
+    noisy_spec = power_compress(noisy_spec)#.permute(0, 1, 3, 2)
+    clean_spec = power_compress(clean_spec)
+    return clean, clean_spec, noisy_spec

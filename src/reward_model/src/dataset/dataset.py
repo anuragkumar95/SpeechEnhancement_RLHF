@@ -170,7 +170,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
         self.gpu_id = gpu_id
         self.env = env
         if enhance_model is not None:
-            self.model = enhance_model
+            self.model = enhance_model.cpu()
             self.model.eval()
         self.paths = self.collect_paths() 
 
@@ -238,7 +238,7 @@ class PreferenceDataset(torch.utils.data.Dataset):
                 _, _, noisy_spec = get_specs(out, inp, None, 400, 100)
                 noisy_spec = noisy_spec.permute(0, 1, 3, 2)
                 #Forward pass through actor to get the action(mask)
-                action, _, _ = self.actor.get_action(noisy_spec)
+                action, _, _ = self.model.get_action(noisy_spec)
 
                 #Apply action  to get the next state
                 next_state = self.env.get_next_state(state=noisy_spec, 

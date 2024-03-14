@@ -256,7 +256,7 @@ class Trainer:
                         "episode": (i+1) + ((epoch - 1) * num_batches),
                         "G_t":batch_reward[0].item(),
                         "r_t":batch_reward[1].item(),
-                        "cumulative_G_t": batch_reward[1].item() + self.G, 
+                        "cumulative_G_t": batch_reward[0].item() + self.G, 
                         "loss":loss,
                     })
 

@@ -57,7 +57,7 @@ class RewardModel(nn.Module):
         out_emb = self.conformer.get_embedding(out)
         
         inp = torch.cat([inp_emb, out_emb], dim=1)
-        print(f"INP:{inp.shape}")
+        #print(f"INP:{inp.shape}")
         rewards = self.reward_projection(inp)
 
         return rewards

@@ -43,10 +43,6 @@ class REINFORCE:
                                           reward_model=reward_model)
         self.discount = discount
         self.gpu_id = gpu_id
-        if self.gpu_id is not None:
-            self.expert = init_model.to(self.gpu_id)
-            if reward_model is not None:
-                self.reward_model = reward_model.to(self.gpu_id)
         self.rlhf = True
         if reward_model is None:
             self.rlhf = False
@@ -99,7 +95,7 @@ class REINFORCE:
             if self.train_phase:
                 #finetune both mag and phase
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                #exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
                 #kl divergence term
                 #kl_penalty = self.beta * (log_prob - exp_log_prob)
@@ -123,7 +119,7 @@ class REINFORCE:
             next_state['exp_est_audio'] = exp_next_state['est_audio']
             G = self.env.get_PESQ_reward(next_state)
         else:
-            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
+            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced.detach())
             #Baseline is moving average of rewards seen so far
             self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
             G = r_t - self._r_mavg - kl_penalty

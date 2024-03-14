@@ -232,9 +232,6 @@ class PreferenceDataset(torch.utils.data.Dataset):
             pad = torch.zeros(1, self.cutlen - inp.shape[-1])
             inp = torch.cat([pad, inp], dim=-1)
             out = torch.cat([pad, out], dim=-1)
-
-        inp = inp.reshape(-1)
-        out = out.reshape(-1)
         
         if self.model is not None:
             with torch.no_grad():
@@ -248,10 +245,14 @@ class PreferenceDataset(torch.utils.data.Dataset):
                                                      action=action)
                 enhanced_aud = next_state['est_audio'].detach().cpu()
 
-     
+            inp = inp.reshape(-1)
+            out = out.reshape(-1)
             label = torch.tensor([1.0, 3.0, 2.0])
             return inp[:self.cutlen], out[:self.cutlen], enhanced_aud[:self.cutlen], label
         
+        inp = inp.reshape(-1)
+        out = out.reshape(-1)
+
         label = torch.tensor([1.0, 0.0])
         return inp[:self.cutlen], out[:self.cutlen], None, label
         

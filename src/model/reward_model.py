@@ -44,7 +44,7 @@ class RewardModel(nn.Module):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
-            out : spectrogram of next state (b * ch * t * f)
+            out : spectrogram of next state (b * ch * f * t)
 
         Returns
             Reward in the range (0, 1) for next state with reference to curr state.
@@ -56,7 +56,8 @@ class RewardModel(nn.Module):
         inp_emb = self.conformer.get_embedding(inp)
         out_emb = self.conformer.get_embedding(out)
         
-        inp = torch.cat([inp_emb, out_emb], dim=-1)
+        inp = torch.cat([inp_emb, out_emb], dim=1)
+        print(f"INP:{inp.shape}")
         rewards = self.reward_projection(inp)
 
         return rewards

@@ -159,25 +159,25 @@ class Trainer:
                 
                 batch_loss += loss / self.ACCUM_GRAD
 
-                self.a_optimizer.zero_grad()
-                batch_loss.backward()
+            self.a_optimizer.zero_grad()
+            batch_loss.backward()
 
-                if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
-                    #torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
-                    self.a_optimizer.step()
+            if (i+1) % self.ACCUM_GRAD == 0 or i+1 == num_batches:
+                #torch.nn.utils.clip_grad_value_(self.actor.parameters(), 5.0)
+                self.a_optimizer.step()
 
-                    train_loss += batch_loss.item()
-                    train_acc += batch_acc
-                    print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
+                train_loss += batch_loss.item()
+                train_acc += batch_acc
+                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
-                    batch_loss = 0
+                batch_loss = 0
 
-                wandb.log({
-                    "step": i+1,
-                    "batch_loss":loss.item(),
-                    "batch_acc":batch_acc
-                })
-            
+            wandb.log({
+                "step": i+1,
+                "batch_loss":loss.item(),
+                "batch_acc":batch_acc
+            })
+        
 
         train_loss = train_loss * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
         train_acc = train_acc * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))

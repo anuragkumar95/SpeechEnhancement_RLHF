@@ -210,7 +210,7 @@ if __name__ == '__main__':
     eval = EvalModel(modes=modes, 
                     model_pt=ARGS.ckpt, 
                     save_path=ARGS.output, 
-                    pre=args.pre,
+                    pre=ARGS.pre,
                     gpu_id=0)
     
     _, test_ds = load_data(ARGS.root, 

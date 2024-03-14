@@ -170,7 +170,8 @@ class REINFORCE:
     
     def run_episode(self, batch, model, optimizer):
         if self.episode_len == 1:
-            return self.run_one_step_episode(batch, model, optimizer)
+            loss, reward, _ = self.run_one_step_episode(batch, model, optimizer)
+            return loss, reward
         else:
             return self.run_n_step_episode(batch, model, optimizer)
 

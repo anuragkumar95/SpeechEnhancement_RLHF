@@ -279,7 +279,7 @@ class PPO:
         #Get previous model log_probs 
         if self.t == 0:
             self.prev_log_probs['noisy'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
-        
+        self.t += 1
         if self.train_phase:
             entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
             log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
@@ -350,7 +350,7 @@ class PPO:
         #Get previous model log_probs 
         if self.t == 0:
             self.prev_log_probs['clean'] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
-        
+        self.t += 1
         if self.train_phase:
             #finetune both mag and complex masks
             entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
@@ -408,7 +408,7 @@ class PPO:
             optimizer.step()
 
         self.prev_log_probs['clean'] = (log_probs[0].detach(), log_probs[1].detach())
-        self.t += 1
+    
 
         step_clip_loss += clip_loss.item()
         step_val_loss += v_loss.item()

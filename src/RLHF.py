@@ -214,6 +214,7 @@ class PPO:
         self.en_coef = en_coef
         self.episode_len = run_steps
         self._r_mavg = 0
+        print("RLHF:{self.rlhf}")
 
 
     def run_episode(self, batch, actor, critic, optimizer):

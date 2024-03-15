@@ -243,7 +243,7 @@ class PPO:
             exp_state = self.env.get_next_state(state=clean, action=init_action)
             state['cl_audio'] = cl_aud
             state['exp_est_audio'] = exp_state['est_audio']
-            r_c = self.env.get_RLHF_reward(state['noisy'])
+            r_c = self.env.get_RLHF_reward(state['noisy'].permute(0, 1, 3, 2))
             tgt_val_C = r_c.reshape(-1, 1)
             value_C = critic(clean).reshape(-1, 1).detach()
             adv_c = tgt_val_C - value_C
@@ -255,7 +255,7 @@ class PPO:
             exp_state = self.env.get_next_state(state=noisy, action=init_action)
             state['cl_audio'] = cl_aud
             state['exp_est_audio'] = exp_state['est_audio']
-            r_n = self.env.get_RLHF_reward(state['noisy'])
+            r_n = self.env.get_RLHF_reward(state['noisy'].permute(0, 1, 3, 2))
             tgt_val_N = r_n.reshape(-1, 1) + self.discount * tgt_val_C
             value_N = critic(noisy).reshape(-1, 1).detach()
             adv_n = tgt_val_N - value_N
@@ -311,7 +311,7 @@ class PPO:
         #Get next state and reward for the state
         next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
-        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1).detach()
+        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1).permute(0, 1, 3, 2).detach()
 
         #Get expert output
         exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)

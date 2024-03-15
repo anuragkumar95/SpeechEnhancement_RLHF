@@ -267,6 +267,7 @@ class PPO:
         step_val_loss = 0
         step_entropy_loss = 0
         step_G = 0
+        step_R = 0
 
         
         ############################## NOISY STATE ################################
@@ -337,6 +338,7 @@ class PPO:
         step_val_loss += v_loss.item()
         step_entropy_loss += entropy_loss.item()
         step_G += G.mean()
+        step_R += r_t.mean()
         
         ################################ CLEAN STATE ################################
         
@@ -412,13 +414,15 @@ class PPO:
         step_val_loss += v_loss.item()
         step_entropy_loss += entropy_loss.item()
         step_G += G.mean()
+        step_R += r_t.mean()
 
         step_clip_loss = step_clip_loss / (2 * self.episode_len)
         step_val_loss = step_val_loss / (2 * self.episode_len)
         step_entropy_loss = step_entropy_loss / (2 * self.episode_len)
         step_G = step_G / self.episode_len
+        step_R = step_R / self.episode_len
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss), step_G
+        return (step_clip_loss, step_val_loss, step_entropy_loss), (step_G, step_R)
     
     def get_expected_return(self, rewards):
         """

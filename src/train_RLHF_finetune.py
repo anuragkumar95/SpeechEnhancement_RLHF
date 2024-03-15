@@ -227,10 +227,10 @@ class Trainer:
                 print(traceback.format_exc())
                 continue
 
-            pesq += val_pesq_score
+            pesq += val_pesq_score/self.args.batchsize
             v_step += 1
             print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
-        pesq /= (v_step * batch[0].shape[0])
+        pesq = pesq / v_step 
 
         wandb.log({ 
             "epoch":epoch-1,

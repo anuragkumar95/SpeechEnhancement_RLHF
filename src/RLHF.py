@@ -210,10 +210,10 @@ class PPO:
         self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
         self.en_coef = en_coef
-        self.run_steps = run_steps
+
 
     def run_episode(self, batch, actor, critic, optimizer):
-        if self.run_steps > 1:
+        if self.episodes_len > 1:
             return self.run_n_step_episode(batch, actor, critic, optimizer)
         else:
             return self.run_one_step_episode(batch, actor, critic, optimizer)
@@ -307,6 +307,7 @@ class PPO:
         #Get next state and reward for the state
         next_state = self.env.get_next_state(state=noisy, action=a_t)
         next_state['cl_audio'] = cl_aud
+        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1).detach()
 
         #Get expert output
         exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
@@ -315,7 +316,11 @@ class PPO:
         if not self.rlhf:
             G = self.env.get_PESQ_reward(next_state)
         else:
-            G = self.env.get_RLHF_reward(next_state)
+            
+            r_t = self.env.get_RLHF_reward(enhanced)
+            #Baseline is moving average of rewards seen so far
+            self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
+            G = r_t - self._r_mavg 
 
         optimizer.zero_grad()
         clip_loss.backward()
@@ -331,8 +336,7 @@ class PPO:
         step_G += G.mean()
         
         ################################ CLEAN STATE ################################
-        enhanced = next_state['noisy'].detach()
-
+        
         #Forward pass through model to get the action(mask)
         action, log_probs, entropies = actor.get_action(enhanced)
         values = critic(enhanced)
@@ -384,7 +388,10 @@ class PPO:
         if not self.rlhf:
             G = self.env.get_PESQ_reward(next_state)
         else:
-            G = self.env.get_RLHF_reward(next_state)
+            r_t = self.env.get_RLHF_reward(enhanced)
+            #Baseline is moving average of rewards seen so far
+            self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
+            G = r_t - self._r_mavg
             
 
         optimizer.zero_grad()
@@ -403,10 +410,10 @@ class PPO:
         step_entropy_loss += entropy_loss.item()
         step_G += G.mean()
 
-        step_clip_loss = step_clip_loss / (2 * self.run_steps)
-        step_val_loss = step_val_loss / (2 * self.run_steps)
-        step_entropy_loss = step_entropy_loss / (2 * self.run_steps)
-        step_G = step_G / self.run_steps
+        step_clip_loss = step_clip_loss / (2 * self.episode_len)
+        step_val_loss = step_val_loss / (2 * self.episode_len)
+        step_entropy_loss = step_entropy_loss / (2 * self.episode_len)
+        step_G = step_G / self.episode_len
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss), step_G
     

@@ -237,7 +237,6 @@ def preprocess_batch(batch, gpu_id=None):
         clean = clean.to(gpu_id)
         noisy = noisy.to(gpu_id)
 
-    print(clean.shape, noisy.shape)
     clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
     
     return (clean, clean_spec, noisy_spec, labels)

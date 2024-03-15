@@ -102,7 +102,7 @@ class SpeechEnhancementAgent:
             Reward in the range (0, 1) for next state with reference to curr state.
         """
 
-        return self.reward_model.get_reward(inp, out) 
+        return self.reward_model.get_reward(inp) 
     
     def get_PESQ_reward(self, next_state):
         """

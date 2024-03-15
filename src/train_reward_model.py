@@ -179,7 +179,7 @@ class Trainer:
             wandb.log({
                 "step": i+1,
                 "batch_loss":batch_loss.item(),
-                "batch_acc":batch_acc/3,
+                "batch_acc":batch_acc / len(mini_batch_pairs),
             })
             batch_acc = 0
             batch_loss = 0

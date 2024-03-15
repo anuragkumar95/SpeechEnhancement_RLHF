@@ -211,6 +211,7 @@ class PPO:
         self.val_coef = val_coef
         self.en_coef = en_coef
         self.episode_len = run_steps
+        self._r_mavg = 0
 
 
     def run_episode(self, batch, actor, critic, optimizer):
@@ -240,7 +241,7 @@ class PPO:
             exp_state = self.env.get_next_state(state=clean, action=init_action)
             state['cl_audio'] = cl_aud
             state['exp_est_audio'] = exp_state['est_audio']
-            r_c = self.env.get_PESQ_reward(state)
+            r_c = self.env.get_RLHF_reward(state['noisy'])
             tgt_val_C = r_c.reshape(-1, 1)
             value_C = critic(clean).reshape(-1, 1).detach()
             adv_c = tgt_val_C - value_C
@@ -317,7 +318,6 @@ class PPO:
         if not self.rlhf:
             G = self.env.get_PESQ_reward(next_state)
         else:
-            
             r_t = self.env.get_RLHF_reward(enhanced)
             #Baseline is moving average of rewards seen so far
             self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t

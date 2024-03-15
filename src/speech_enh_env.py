@@ -91,12 +91,10 @@ class SpeechEnhancementAgent:
 
         return next_state
     
-    def get_RLHF_reward(self, inp, out):
+    def get_RLHF_reward(self, inp):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
-            out : spectrogram of next state (b * ch * t * f)
-            beta : [Float] scalar coef for kldivergence 
 
         Returns
             Reward in the range (0, 1) for next state with reference to curr state.

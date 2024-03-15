@@ -100,8 +100,8 @@ class REINFORCE:
                 exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
                 #kl divergence term
-                print(f"KL:{kl_penalty}")
                 kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2])
+                print(f"KL:{kl_penalty}, {kl_penalty.shape}")
             else:  
                 #ignore complex mask, just tune mag mask 
                 log_prob = log_probs[0]
@@ -128,7 +128,7 @@ class REINFORCE:
             G = r_t - self._r_mavg - kl_penalty
         
         G = G.reshape(-1, 1)
-        print(f"G:{G.mean().item()}")
+        print(f"G:{G.mean().item()}, {G.shape}")
 
         loss = []
         alpha = 1

@@ -294,22 +294,22 @@ class Trainer:
         for epoch in range(args.epochs):
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
             
-            if epoch_pesq >= best_pesq:
-                best_pesq = epoch_pesq
+            #if epoch_pesq >= best_pesq:
+            #    best_pesq = epoch_pesq
                 #TODO:Logic for savecheckpoint
-                if self.gpu_id == 0:
-                    checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
-                    path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
-                    if self.args.method == 'reinforce':
-                        save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                    'optim_state_dict':self.optimizer.state_dict()
-                                    }
-                    if self.args.method == 'PPO':
-                        save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                    'critic_state_dict':self.critic.state_dict(),
-                                    'optim_state_dict':self.optimizer.state_dict()
-                                    }
-                    torch.save(save_dict, path)
+            if self.gpu_id == 0:
+                checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
+                path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
+                if self.args.method == 'reinforce':
+                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                                'optim_state_dict':self.optimizer.state_dict()
+                                }
+                if self.args.method == 'PPO':
+                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                                'critic_state_dict':self.critic.state_dict(),
+                                'optim_state_dict':self.optimizer.state_dict()
+                                }
+                torch.save(save_dict, path)
                 
 
     

@@ -210,10 +210,11 @@ class PPO:
         self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
         self.en_coef = en_coef
+        self.episode_len = run_steps
 
 
     def run_episode(self, batch, actor, critic, optimizer):
-        if self.episodes_len > 1:
+        if self.episode_len > 1:
             return self.run_n_step_episode(batch, actor, critic, optimizer)
         else:
             return self.run_one_step_episode(batch, actor, critic, optimizer)

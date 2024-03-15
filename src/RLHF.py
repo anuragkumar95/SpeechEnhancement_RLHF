@@ -97,9 +97,11 @@ class REINFORCE:
             if self.train_phase:
                 #finetune both mag and phase
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
                 #kl divergence term
-                #kl_penalty = self.beta * (log_prob - exp_log_prob)
+                print(f"KL:{kl_penalty}")
+                kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2])
             else:  
                 #ignore complex mask, just tune mag mask 
                 log_prob = log_probs[0]
@@ -253,7 +255,7 @@ class PPO:
             exp_state = self.env.get_next_state(state=noisy, action=init_action)
             state['cl_audio'] = cl_aud
             state['exp_est_audio'] = exp_state['est_audio']
-            r_n = self.env.get_PESQ_reward(state)
+            r_n = self.env.get_RLHF_reward(state['noisy'])
             tgt_val_N = r_n.reshape(-1, 1) + self.discount * tgt_val_C
             value_N = critic(noisy).reshape(-1, 1).detach()
             adv_n = tgt_val_N - value_N

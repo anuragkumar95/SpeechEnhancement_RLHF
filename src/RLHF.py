@@ -269,6 +269,7 @@ class PPO:
         step_G = 0
         step_R = 0
 
+        self.t += 1
         
         ############################## NOISY STATE ################################
         #Forward pass through model to get the action(mask)
@@ -408,7 +409,6 @@ class PPO:
             optimizer.step()
 
         self.prev_log_probs['clean'] = (log_probs[0].detach(), log_probs[1].detach())
-        self.t += 1
 
         step_clip_loss += clip_loss.item()
         step_val_loss += v_loss.item()

@@ -3,10 +3,12 @@ from model.reward_model import RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE, PPO
+from torch.utils.data import DataLoader
 
 import copy
 import os
 from data.dataset import load_data
+from reward_model.src.dataset.dataset import PreferenceDataset
 import torch.nn.functional as F
 import torch
 from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
@@ -26,8 +28,12 @@ from speech_enh_env import SpeechEnhancementAgent
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--root", type=str, required=True,
-                        help="Root directory to Voicebank.")
+    parser.add_argument("-jr", "--jndroot", type=str, required=True,
+                        help="Root directory to JND Dataset.")
+    parser.add_argument("-vr", "--vctkroot", type=str, required=True,
+                        help="Root directory to VCTK Dataset.")
+    parser.add_argument("-c", "--comp", type=str, required=False,
+                        help="Root directory to JND Dataset comparision lists.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for results. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
@@ -210,12 +216,35 @@ if __name__ == '__main__':
                     args=ARGS,
                     gpu_id=0)
     
+
+    test_dataset = PreferenceDataset(jnd_root=args.jndroot, 
+                                     vctk_root=args.vctkroot, 
+                                     set="test", 
+                                     comp=args.comp,
+                                     train_split=0.8, 
+                                     resample=16000,
+                                     enhance_model=None,
+                                     env=None,
+                                     gpu_id=None,  
+                                     cutlen=40000)
+    
+    dataloader = DataLoader(
+        dataset=test_dataset,
+        batch_size=args.batchsize,
+        pin_memory=True,
+        shuffle=True,
+        drop_last=True,
+        num_workers=1,
+    )
+
+
+    """
     _, test_ds = load_data(ARGS.root, 
                            ARGS.batchsize, 
                            1, 
                            40000,
                            gpu = False)
-    
-    eval.evaluate(test_ds)
+    """
+    eval.evaluate(dataloader)
 
                     

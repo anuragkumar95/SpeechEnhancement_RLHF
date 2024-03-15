@@ -171,26 +171,15 @@ class EvalModel:
 
                     if mode == 'rewards':
                         enhanced = next_state['noisy']
-                        rewards = {1:{}, 2:{}}
                     
-                        noisy_reward_1 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=noisy, mode=1)
-                        clean_reward_1 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=clean, mode=1)
-                        enhanced_reward_1 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=enhanced.permute(0, 1, 3, 2), mode=1)
+                        noisy_reward = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2))
+                        clean_reward = self.reward_model.get_reward(inp=clean)
+                        enhanced_reward = self.reward_model.get_reward(inp=enhanced.permute(0, 1, 3, 2))
 
-                        noisy_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=noisy, mode=2)
-                        clean_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=clean, mode=2)
-                        enhanced_reward_2 = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2), out=enhanced.permute(0, 1, 3, 2), mode=2)
-
-                        rewards[1] = {
-                            'noisy': noisy_reward_1.detach().cpu().numpy(),
-                            'clean': clean_reward_1.detach().cpu().numpy(),
-                            'enhanced':enhanced_reward_1.detach().cpu().numpy()
-                        }
-
-                        rewards[2] = {
-                            'noisy': noisy_reward_2.detach().cpu().numpy(),
-                            'clean': clean_reward_2.detach().cpu().numpy(),
-                            'enhanced':enhanced_reward_2.detach().cpu().numpy()
+                        rewards = {
+                            'noisy': noisy_reward.detach().cpu().numpy(),
+                            'clean': clean_reward.detach().cpu().numpy(),
+                            'enhanced':enhanced_reward.detach().cpu().numpy()
                         }
 
                         with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:

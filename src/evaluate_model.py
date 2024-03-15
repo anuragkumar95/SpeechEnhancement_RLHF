@@ -217,10 +217,10 @@ if __name__ == '__main__':
                     gpu_id=0)
     
 
-    test_dataset = PreferenceDataset(jnd_root=args.jndroot, 
-                                     vctk_root=args.vctkroot, 
+    test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 
+                                     vctk_root=ARGS.vctkroot, 
                                      set="test", 
-                                     comp=args.comp,
+                                     comp=ARGS.comp,
                                      train_split=0.8, 
                                      resample=16000,
                                      enhance_model=None,
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     
     dataloader = DataLoader(
         dataset=test_dataset,
-        batch_size=args.batchsize,
+        batch_size=ARGS.batchsize,
         pin_memory=True,
         shuffle=True,
         drop_last=True,

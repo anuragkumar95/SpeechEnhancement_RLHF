@@ -122,7 +122,7 @@ class REINFORCE:
             next_state['exp_est_audio'] = exp_next_state['est_audio']
             G = self.env.get_PESQ_reward(next_state)
         else:
-            r_t = self.env.get_RLHF_reward(enhanced)
+            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
             #Baseline is moving average of rewards seen so far
             self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
             G = r_t - self._r_mavg - kl_penalty

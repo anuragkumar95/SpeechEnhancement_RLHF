@@ -91,16 +91,17 @@ class SpeechEnhancementAgent:
 
         return next_state
     
-    def get_RLHF_reward(self, inp):
+    def get_RLHF_reward(self, inp, out):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
+            out : spectrogram of next state (b * ch * t * f) 
 
         Returns
             Reward in the range (0, 1) for next state with reference to curr state.
         """
 
-        return self.reward_model.get_reward(inp) 
+        return self.reward_model.get_reward(out) - self.reward_model.get_reward(inp) 
     
     def get_PESQ_reward(self, next_state):
         """

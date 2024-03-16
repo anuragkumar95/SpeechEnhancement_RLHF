@@ -468,18 +468,28 @@ class PPO:
             curr = noisy
             rewards = []
             states = []
-            for _ in range(self.run_steps):
+            for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
-                action, _, _ = actor.get_action(curr)
-                init_action, _, _ = self.init_model.get_action(curr)
+                action, log_probs, _ = actor.get_action(curr)
+                init_action, ref_log_probs, _ = self.init_model.get_action(curr)
 
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
                 state['exp_est_audio'] = exp_state['est_audio']
+
+                #kl_penalty
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                log_kl = log_prob - ref_log_prob
+                kl_penalty = torch.mean(torch.exp(log_kl), dim=[1, 2]).reshape(-1, 1)
                 
                 #Store reward
-                r_t = self.env.get_PESQ_reward(state)
+                if self.rlhf:
+                    r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
+                    r_t = r_t - self.beta * kl_penalty
+                else:
+                    r_t = self.env.get_PESQ_reward(state)
                 rewards.append(r_t)
 
                 #Store state
@@ -525,6 +535,8 @@ class PPO:
             
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+            exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            kl_penalty = torch.mean(torch.exp((log_prob - exp_log_prob)), dim=[1, 2]).reshape(-1, 1)
 
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
@@ -550,7 +562,8 @@ class PPO:
             if not self.rlhf:
                 G = self.env.get_PESQ_reward(next_state)
             else:
-                G = self.env.get_RLHF_reward(next_state)
+                r_t = self.env.get_RLHF_reward(inp=states[t], out=next_state['noisy'].permute(0, 1, 3, 2))
+                G = r_t - self.beta * kl_penalty
 
             optimizer.zero_grad()
             clip_loss.backward()
@@ -568,10 +581,10 @@ class PPO:
             step_G += G.mean()
             self.t += 1
 
-        step_clip_loss = step_clip_loss / self.run_steps
-        step_val_loss = step_val_loss / self.run_steps
-        step_entropy_loss = step_entropy_loss / self.run_steps
-        step_G = step_G / self.run_steps
+        step_clip_loss = step_clip_loss / self.episode_len
+        step_val_loss = step_val_loss / self.episode_len
+        step_entropy_loss = step_entropy_loss / self.episode_len
+        step_G = step_G / self.episode_len
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss), step_G
 

@@ -456,6 +456,7 @@ class PPO:
         r_var = self._r2_mean - (self._r_mean)**2
 
         reward = (reward - self._r_mean) / r_var
+        return reward
     
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """

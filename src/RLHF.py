@@ -508,6 +508,8 @@ class PPO:
         step_val_loss = 0
         step_entropy_loss = 0
         step_G = 0
+        step_R = 0
+        step_kl = 0
 
         for t in range(len(states)):
             #Forward pass through model to get the action(mask)
@@ -579,14 +581,18 @@ class PPO:
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()
             step_G += G.mean()
+            step_R += r_t.mean()
+            step_kl += self.beta * kl_penalty
             self.t += 1
 
         step_clip_loss = step_clip_loss / self.episode_len
         step_val_loss = step_val_loss / self.episode_len
         step_entropy_loss = step_entropy_loss / self.episode_len
         step_G = step_G / self.episode_len
+        step_R = step_R / self.episode_len
+        step_kl = step_kl / self.episode_len
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss), step_G
+        return (step_clip_loss, step_val_loss, step_entropy_loss), (step_G, step_R, step_kl)
 
             
 

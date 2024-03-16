@@ -100,7 +100,7 @@ class REINFORCE:
                 exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
                 #kl divergence term
-                kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2])
+                kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
                 print(f"KL:{kl_penalty}, {kl_penalty.shape}")
             else:  
                 #ignore complex mask, just tune mag mask 

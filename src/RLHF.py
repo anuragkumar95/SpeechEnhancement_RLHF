@@ -451,6 +451,7 @@ class PPO:
         return A
     
     def scale_reward(self, reward):
+        reward = reward.detach()
         self._r_mean = (self.t * self._r_mean + reward.mean()) / (self.t + 1)
         self._r2_mean = (self.t * self._r_mean + (reward**2).mean()) / (self.t + 1)
         r_var = self._r2_mean - (self._r_mean)**2

@@ -582,7 +582,7 @@ class PPO:
             step_entropy_loss += entropy_loss.item()
             step_G += G.mean()
             step_R += r_t.mean()
-            step_kl += self.beta * kl_penalty.mean()
+            step_kl += kl_penalty.mean()
             self.t += 1
 
         step_clip_loss = step_clip_loss / self.episode_len

@@ -213,7 +213,8 @@ class PPO:
         self.val_coef = val_coef
         self.en_coef = en_coef
         self.episode_len = run_steps
-        self._r_mavg = 0
+        self._r_mean = 0
+        self._r2_mean = 0
         print(f"RLHF:{self.rlhf}")
 
 
@@ -449,6 +450,13 @@ class PPO:
             A[:, t] = a_t
         return A
     
+    def scale_reward(self, reward):
+        self._r_mean = (self.t * self._r_mean + reward.mean()) / (self.t + 1)
+        self._r2_mean = (self.t * self._r_mean + (reward**2).mean()) / (self.t + 1)
+        r_var = self._r2_mean - (self._r_mean)**2
+
+        reward = (reward - self._r_mean) / r_var
+    
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> C --> Terminal
@@ -565,6 +573,7 @@ class PPO:
                 G = self.env.get_PESQ_reward(next_state)
             else:
                 r_t = self.env.get_RLHF_reward(inp=states[t], out=next_state['noisy'].permute(0, 1, 3, 2))
+                r_t = self.scale_reward(r_t)
                 G = r_t - self.beta * kl_penalty
 
             optimizer.zero_grad()

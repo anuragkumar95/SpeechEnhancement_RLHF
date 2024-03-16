@@ -481,8 +481,8 @@ class PPO:
                 #kl_penalty
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_kl = log_prob - ref_log_prob
-                kl_penalty = torch.mean(torch.exp(log_kl), dim=[1, 2]).reshape(-1, 1)
+                kl_penalty = log_prob - ref_log_prob
+                kl_penalty = torch.mean(kl_penalty, dim=[1, 2]).reshape(-1, 1)
                 
                 #Store reward
                 if self.rlhf:
@@ -538,7 +538,7 @@ class PPO:
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
             exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-            kl_penalty = torch.mean(torch.exp((log_prob - exp_log_prob)), dim=[1, 2]).reshape(-1, 1)
+            kl_penalty = torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
 
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
@@ -571,8 +571,8 @@ class PPO:
             clip_loss.backward()
             #Update network
             if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
-                torch.nn.utils.clip_grad_norm_(critic.parameters(), 0.5)
+                torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.9)
+                torch.nn.utils.clip_grad_norm_(critic.parameters(), 0.9)
                 optimizer.step()
 
             self.prev_log_probs_n[t] = (log_probs[0].detach(), log_probs[1].detach())

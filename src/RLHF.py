@@ -381,7 +381,7 @@ class PPO:
 
             step_clip_loss += clip_loss.item()
             step_val_loss += v_loss.item()
-            step_entropy_loss += entropy_loss.item()
+            step_entropy_loss += entropy_loss.item()        
             self.t += 1
 
         step_clip_loss = step_clip_loss / self.episode_len

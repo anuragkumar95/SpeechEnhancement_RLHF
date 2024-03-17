@@ -265,10 +265,8 @@ class Trainer:
                     
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * num_batches),
-                        "G_t":batch_reward[0].item(),
-                        "r_t":batch_reward[1].item(),
                         "episode_avg_kl":batch_reward[2].item(),
-                        "cumulative_G_t": batch_reward[0].item() + self.G, 
+                        "cumulative_G_t": batch_reward[0].item(), 
                         "clip_loss":loss[0],
                         "value_loss":loss[1],
                         "entropy_loss":loss[2]
@@ -279,7 +277,7 @@ class Trainer:
                 continue
             
             self.G = batch_reward[0].item() + self.G
-            print(f"Epoch:{epoch} | Episode:{i+1} | Reward: {batch_reward[1]} | Return: {batch_reward[0]} | KL: {batch_reward[2]}")
+            print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | KL: {batch_reward[1].item()}")
             REWARDS.append(batch_reward[1].item())
           
         

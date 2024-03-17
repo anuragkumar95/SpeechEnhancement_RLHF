@@ -162,7 +162,7 @@ class Trainer:
             self.trainer = PPO(init_model=self.expert, 
                                reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
-                               beta=5e-05,
+                               beta=5e-01,
                                val_coef=1.0,
                                en_coef=0.05,
                                discount=0.98,

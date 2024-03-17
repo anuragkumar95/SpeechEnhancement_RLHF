@@ -184,7 +184,8 @@ class PPO:
                  reward_model, 
                  gpu_id=None, 
                  run_steps=1, 
-                 beta=0.2, 
+                 beta=0.2,
+                 eps=0.01, 
                  val_coef=0.02, 
                  en_coef=0.01, 
                  discount=1.0, 
@@ -200,6 +201,7 @@ class PPO:
         
         self.discount = discount
         self.beta = beta
+        self.eps = eps
         self.gpu_id = gpu_id
         self.accum_grad = accum_grad
         self.rlhf = True
@@ -441,7 +443,7 @@ class PPO:
 
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
-            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.beta, 1 + self.beta)
+            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss

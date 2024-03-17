@@ -323,12 +323,13 @@ class PPO:
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0
-
+        VALUES = torch.zeros(target_values.shape)
         for t in range(len(states)):
             #Forward pass through model to get the action(mask)
             action, log_probs, entropies = actor.get_action(states[t])
             values = critic(states[t])
             _, exp_log_probs, _ = self.init_model.get_action(states[t])
+            VALUES[:, t] = values.reshape(-1)
                 
             #Get previous model log_probs 
             if self.prev_log_probs == None:
@@ -384,6 +385,8 @@ class PPO:
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()        
             self.t += 1
+        
+        print(f"Values:{VALUES.mean(0)}")
 
         step_clip_loss = step_clip_loss / self.episode_len
         step_val_loss = step_val_loss / self.episode_len

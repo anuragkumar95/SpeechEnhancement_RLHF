@@ -315,6 +315,7 @@ class PPO:
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
             ep_kl_penalty = ep_kl_penalty / self.episode_len
+        print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
         actor.train()

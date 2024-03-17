@@ -208,8 +208,8 @@ class PPO:
         self.train_phase = params['train_phase']
         self.t = 0
         self.init_model = init_model
-        self.prev_log_probs_n = {i:None for i in range(run_steps)}
-        self.prev_log_probs = {'noisy':None, 'clean':None}
+        self.prev_log_probs = None
+        #self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
         self.en_coef = en_coef
         self.episode_len = run_steps

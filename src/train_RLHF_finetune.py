@@ -158,6 +158,9 @@ class Trainer:
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad, params), lr=args.init_lr
             )
+            self.c_optimizer = torch.optim.AdamW(
+                filter(lambda layer:layer.requires_grad, self.critic.parameters), lr=args.init_lr * 1e02
+            )
 
             self.trainer = PPO(init_model=self.expert, 
                                reward_model=self.reward_model, 
@@ -264,7 +267,7 @@ class Trainer:
                     })
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward = self.trainer.run_episode(batch, self.actor, self.critic, self.optimizer)
+                    loss, batch_reward = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer))
                     
                     if loss is not None:
                         wandb.log({

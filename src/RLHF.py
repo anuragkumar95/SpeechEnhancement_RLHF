@@ -575,8 +575,7 @@ class PPO:
                 G = self.env.get_PESQ_reward(next_state)
             else:
                 r_t = self.env.get_RLHF_reward(inp=states[t], out=next_state['noisy'].permute(0, 1, 3, 2))
-                r_t = self.scale_reward(r_t)
-                G = r_t - self.beta * kl_penalty
+                G = self.scale_reward(r_t - self.beta * kl_penalty)
 
             optimizer.zero_grad()
             clip_loss.backward()

@@ -452,10 +452,7 @@ class PPO:
     
     def scale_reward(self, reward):
         reward = reward.detach()
-        self._r_mean = (self.t * self._r_mean + reward.mean()) / (self.t + 1)
-        self._r2_mean = (self.t * self._r_mean + (reward**2).mean()) / (self.t + 1)
-        r_var = self._r2_mean - (self._r_mean)**2
-
+        r_var = min(1.0, self._r2_mean - (self._r_mean)**2)
         reward = (reward - self._r_mean) / r_var
         return reward
     
@@ -489,15 +486,15 @@ class PPO:
                 state['exp_est_audio'] = exp_state['est_audio']
 
                 #kl_penalty
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                kl_penalty = log_prob - ref_log_prob
-                kl_penalty = torch.mean(kl_penalty, dim=[1, 2]).reshape(-1, 1)
+                #log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                #ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                #kl_penalty = log_prob - ref_log_prob
+                #kl_penalty = torch.mean(kl_penalty, dim=[1, 2]).reshape(-1, 1)
                 
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
-                    r_t = r_t - self.beta * kl_penalty
+                    r_t = self.scale_reward(r_t) #- self.beta * kl_penalty
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 rewards.append(r_t)
@@ -575,7 +572,9 @@ class PPO:
                 G = self.env.get_PESQ_reward(next_state)
             else:
                 r_t = self.env.get_RLHF_reward(inp=states[t], out=next_state['noisy'].permute(0, 1, 3, 2))
-                G = r_t - self.beta * kl_penalty
+                self._r_mean = (self.t * self._r_mean + r_t.mean()) / (self.t + 1)
+                self._r2_mean = (self.t * self._r_mean + (r_t**2).mean()) / (self.t + 1)
+                G = self.scale_reward(r_t) - self.beta * kl_penalty
 
             optimizer.zero_grad()
             clip_loss.backward()

@@ -320,7 +320,7 @@ class PPO:
         for t in range(len(states)):
             values = critic(states[t])
             #value_loss
-            v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()
+            v_loss = ((target_values[:, t] - values) ** 2).mean()
 
             optimizer.zero_grad()
             v_loss.backward()
@@ -442,13 +442,7 @@ class PPO:
             #Entropy loss
             entropy_loss = entropy.mean()
 
-            if self.t < self.warm_up:
-                en_coef = 0
-                pg_loss = 0
-            else:
-                en_coef = self.en_coef
-
-            clip_loss = pg_loss - (en_coef * entropy_loss) + (self.val_coef * v_loss)
+            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 
             optimizer.zero_grad()
             clip_loss.backward()

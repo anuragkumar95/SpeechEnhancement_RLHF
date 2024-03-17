@@ -554,7 +554,7 @@ class PPO:
 
             #value_loss
             v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()
-            print(f"V_loss:{v_loss}, values:{values.mean()}")
+            print(f"V_loss:{v_loss}, values:{values.mean()}, target:{target_values[:, t].mean()}")
 
             #Entropy loss
             entropy_loss = entropy.mean()

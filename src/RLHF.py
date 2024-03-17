@@ -484,17 +484,10 @@ class PPO:
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
                 state['exp_est_audio'] = exp_state['est_audio']
-
-                #kl_penalty
-                #log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                #ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                #kl_penalty = log_prob - ref_log_prob
-                #kl_penalty = torch.mean(kl_penalty, dim=[1, 2]).reshape(-1, 1)
                 
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
-                    r_t = r_t #- self.beta * kl_penalty
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 rewards.append(r_t)
@@ -514,15 +507,13 @@ class PPO:
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0
-        step_G = 0
-        step_R = 0
         step_kl = 0
 
         for t in range(len(states)):
             #Forward pass through model to get the action(mask)
             action, log_probs, entropies = actor.get_action(states[t])
             values = critic(states[t])
-            exp_action, exp_log_probs, _ = self.init_model.get_action(states[t])
+            _, exp_log_probs, _ = self.init_model.get_action(states[t])
                 
             #Get previous model log_probs 
             if self.prev_log_probs_n[t] == None:
@@ -535,15 +526,12 @@ class PPO:
                                self.prev_log_probs_n[t][1][:, 0, :, :].permute(0, 2, 1) + \
                                self.prev_log_probs_n[t][1][:, 1, :, :].permute(0, 2, 1)
                 
-                a_t = action
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
                 log_prob, old_log_prob = log_probs[0], self.prev_log_probs_n[t][0]
-                a_t = (action[0], exp_action[-1])
             
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
-            #ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
             ratio = torch.exp(logratio)
             exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
             kl_penalty = torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1).detach()
@@ -562,22 +550,6 @@ class PPO:
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 
-            #Get next state and reward for the state
-            next_state = self.env.get_next_state(state=states[t], action=a_t)
-            next_state['cl_audio'] = cl_aud
-
-            #Get expert output
-            exp_next_state = self.env.get_next_state(state=states[t], action=exp_action)
-            next_state['exp_est_audio'] = exp_next_state['est_audio']
-
-            if not self.rlhf:
-                G = self.env.get_PESQ_reward(next_state)
-            else:
-                r_t = self.env.get_RLHF_reward(inp=states[t], out=next_state['noisy'].permute(0, 1, 3, 2))
-                #self._r_mean = (self.t * self._r_mean + r_t.mean().detach()) / (self.t + 1)
-                #self._r2_mean = (self.t * self._r_mean + (r_t**2).mean()) / (self.t + 1)
-                G = r_t - self.beta * kl_penalty
-
             optimizer.zero_grad()
             clip_loss.backward()
             #Update network
@@ -591,8 +563,6 @@ class PPO:
             step_clip_loss += clip_loss.item()
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()
-            step_G += G.mean()
-            step_R += r_t.mean()
             step_kl += kl_penalty.mean()
             self.t += 1
 
@@ -603,7 +573,7 @@ class PPO:
         step_R = step_R / self.episode_len
         step_kl = step_kl / self.episode_len
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss), (step_G, step_R, step_kl)
+        return (step_clip_loss, step_val_loss, step_entropy_loss), (target_values.mean(), step_kl)
 
             
 

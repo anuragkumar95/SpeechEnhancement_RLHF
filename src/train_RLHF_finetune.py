@@ -159,7 +159,7 @@ class Trainer:
                 filter(lambda layer:layer.requires_grad, params), lr=args.init_lr
             )
             self.c_optimizer = torch.optim.AdamW(
-                filter(lambda layer:layer.requires_grad, self.critic.parameters), lr=args.init_lr * 1e02
+                filter(lambda layer:layer.requires_grad, self.critic.parameters()), lr=args.init_lr * 1e02
             )
 
             self.trainer = PPO(init_model=self.expert, 

@@ -277,7 +277,7 @@ class PPO:
         critic.eval()
         actor.eval()
         ep_kl_penalty = 0
-        
+        VALUES = torch.zeros(target_values.shape)
         #Calculate target values and advantages
         with torch.no_grad():
             curr = noisy
@@ -320,6 +320,7 @@ class PPO:
 
         for t in range(len(states)):
             values = critic(states[t])
+            VALUES[:, t] = values.reshape(-1)
             #value_loss
             v_loss = ((target_values[:, t] - values) ** 2).mean()
 
@@ -339,9 +340,9 @@ class PPO:
                 'cummulative_G_t':target_values.mean().item(),
                 'critic_values':values.mean().item()
             })
-            print(f"G_t   : {target_values.mean(0).reshape(-1)}")
-            print(f"Values: {values.mean(0).reshape(-1)}")
-            print(f"V_LOSS:{v_loss.item()}")
+
+        print(f"G_t   : {target_values.mean(0).reshape(-1)}")
+        print(f"Values: {VALUES.mean(0).reshape(-1)}")
 
         return None, None
 

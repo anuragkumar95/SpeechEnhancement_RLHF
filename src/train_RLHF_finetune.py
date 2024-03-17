@@ -247,6 +247,7 @@ class Trainer:
                             "episode_avg_kl":batch_reward[2].item(),
                             "cumulative_G_t": batch_reward[0].item(),
                             "critic_values": batch_reward[1].item(), 
+                            "episodic_avg_r": batch_reward[3].item(),
                             "clip_loss":loss[0],
                             "value_loss":loss[1],
                             "entropy_loss":loss[2]

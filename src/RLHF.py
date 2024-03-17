@@ -542,8 +542,9 @@ class PPO:
                 log_prob, old_log_prob = log_probs[0], self.prev_log_probs_n[t][0]
                 a_t = (action[0], exp_action[-1])
             
-            logratio = log_prob - old_log_prob 
-            ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+            logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
+            #ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
+            ratio = torch.exp(logratio)
             exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
             kl_penalty = torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1).detach()
 

@@ -169,7 +169,7 @@ class Trainer:
                                val_coef=1.0,
                                en_coef=0,
                                discount=0.99,
-                               warm_up_steps=10000,
+                               warm_up_steps=5000,
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,
@@ -351,7 +351,8 @@ def main(rank: int, world_size: int, args):
         else:
             gpu = False
         train_ds, test_ds = load_data(args.root, 
-                                    args.batchsize, 
+                                    #args.batchsize, 
+                                    32,
                                     1, 
                                     args.cut_len,
                                     gpu = False)

@@ -224,7 +224,9 @@ class PPO:
         if self.episode_len > 1:
             return self.run_n_step_episode(batch, actor, critic, optimizers[0])
         else:
+            print(f"self.t : {self.t}")
             if self.t < self.warm_up:
+                print(f"Training critic")
                 self.train_critic(batch, actor, critic, optimizers[1])
             else:
                 return self.run_one_step_episode(batch, actor, critic, optimizers[0])

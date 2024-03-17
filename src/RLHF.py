@@ -545,7 +545,7 @@ class PPO:
             logratio = log_prob - old_log_prob 
             ratio = torch.mean(torch.exp(logratio).reshape(bs, -1), dim=-1)
             exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-            kl_penalty = torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
+            kl_penalty = torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1).detach()
 
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
@@ -554,6 +554,7 @@ class PPO:
 
             #value_loss
             v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()
+            print(f"V_loss:{v_loss}, values:{values.mean()}")
 
             #Entropy loss
             entropy_loss = entropy.mean()

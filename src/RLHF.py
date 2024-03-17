@@ -574,7 +574,7 @@ class PPO:
                 r_t = self.env.get_RLHF_reward(inp=states[t], out=next_state['noisy'].permute(0, 1, 3, 2))
                 self._r_mean = (self.t * self._r_mean + r_t.mean().detach()) / (self.t + 1)
                 self._r2_mean = (self.t * self._r_mean + (r_t**2).mean()) / (self.t + 1)
-                G = self.scale_reward(r_t) - self.beta * kl_penalty
+                G = self.scale_reward(r_t) - self.beta * torch.abs(kl_penalty)
 
             optimizer.zero_grad()
             clip_loss.backward()

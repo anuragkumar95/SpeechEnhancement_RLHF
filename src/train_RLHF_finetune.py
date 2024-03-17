@@ -213,35 +213,6 @@ class Trainer:
     
 
     def train_one_epoch(self, epoch):
-        #Run validation
-        self.actor.eval()
-        if self.args.method == 'PPO':
-            self.critic.eval()
-        pesq = 0
-        v_step = 0
-        with torch.no_grad():
-            for i, batch in enumerate(self.test_ds):
-                
-                #Preprocess batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-                
-                #Run validation episode
-                try:
-                    val_pesq_score = self.run_validation(self.trainer.env, batch)
-                except Exception as e:
-                    print(traceback.format_exc())
-                    continue
-
-                pesq += val_pesq_score/self.args.batchsize
-                v_step += 1
-                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
-        pesq = pesq / v_step 
-
-        wandb.log({ 
-            "epoch":epoch-1,
-            "val_pesq":original_pesq(pesq),
-        }) 
-        print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
         
         #Run training
         self.actor.train()
@@ -288,6 +259,36 @@ class Trainer:
                 self.G = batch_reward[0].item() + self.G
                 print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()} | KL: {batch_reward[2].item()}")
                 REWARDS.append(batch_reward[0].item())
+
+        #Run validation
+        self.actor.eval()
+        if self.args.method == 'PPO':
+            self.critic.eval()
+        pesq = 0
+        v_step = 0
+        with torch.no_grad():
+            for i, batch in enumerate(self.test_ds):
+                
+                #Preprocess batch
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                
+                #Run validation episode
+                try:
+                    val_pesq_score = self.run_validation(self.trainer.env, batch)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    continue
+
+                pesq += val_pesq_score/self.args.batchsize
+                v_step += 1
+                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
+        pesq = pesq / v_step 
+
+        wandb.log({ 
+            "epoch":epoch-1,
+            "val_pesq":original_pesq(pesq),
+        }) 
+        print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
 
         return REWARDS, original_pesq(pesq)
 
@@ -351,8 +352,7 @@ def main(rank: int, world_size: int, args):
         else:
             gpu = False
         train_ds, test_ds = load_data(args.root, 
-                                    #args.batchsize, 
-                                    32,
+                                    args.batchsize,
                                     1, 
                                     args.cut_len,
                                     gpu = False)

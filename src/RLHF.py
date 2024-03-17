@@ -451,7 +451,7 @@ class PPO:
                 a_t = g_t - critic(states[self.episode_len - i - 1])
             else:
                 a_t = g_t - critic(states[self.episode_len - i - 1]) + self.discount * critic(states[self.episode_len - i])
-            A[:, self.episode_len - i - 1] = a_t
+            A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
     
     def run_n_step_episode(self, batch, actor, critic, optimizer):

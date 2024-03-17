@@ -164,7 +164,7 @@ class Trainer:
                                gpu_id=gpu_id, 
                                beta=0.01,
                                val_coef=1.0,
-                               en_coef=0.05,
+                               en_coef=0,
                                discount=0.99,
                                warm_up_steps=0,
                                run_steps=args.episode_steps,

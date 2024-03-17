@@ -304,9 +304,8 @@ class PPO:
                     r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
                 else:
                     r_t = self.env.get_PESQ_reward(state)
-                #print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
+                
                 r_t = r_t - self.beta * kl_penalty
-                #print(f"G:{r_t.reshape(-1)}")
                 rewards.append(r_t)
 
                 #Store state
@@ -326,6 +325,7 @@ class PPO:
 
             optimizer.zero_grad()
             v_loss.backward()
+
             #Update network
             if not (torch.isnan(v_loss).any() or torch.isinf(v_loss).any()) and (self.t % self.accum_grad == 0):
                 torch.nn.utils.clip_grad_norm_(actor.parameters(), 5.0)
@@ -335,7 +335,9 @@ class PPO:
             self.t += 1
             wandb.log({
                 't':self.t,
-                'v_loss':v_loss.item()
+                'v_loss':v_loss.item(),
+                'cummulative_G_t':target_values.mean().item(),
+                'critic_values':values.mean().item()
             })
 
         return None, None
@@ -450,8 +452,8 @@ class PPO:
             clip_loss.backward()
             #Update network
             if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.9)
-                torch.nn.utils.clip_grad_norm_(critic.parameters(), 0.9)
+                torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                 optimizer.step()
 
             self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())

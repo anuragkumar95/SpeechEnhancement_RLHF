@@ -277,7 +277,7 @@ class PPO:
         critic.eval()
         actor.eval()
         ep_kl_penalty = 0
-        VALUES = torch.zeros(target_values.shape)
+        
         #Calculate target values and advantages
         with torch.no_grad():
             curr = noisy
@@ -317,7 +317,7 @@ class PPO:
             target_values = self.get_expected_return(rewards)
 
         critic.train()
-
+        VALUES = torch.zeros(target_values.shape)
         for t in range(len(states)):
             values = critic(states[t])
             VALUES[:, t] = values.reshape(-1)

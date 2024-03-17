@@ -467,6 +467,7 @@ class PPO:
         bs = clean.shape[0]
         critic.eval()
         actor.eval()
+        ep_kl_penalty = 0
         
         #Calculate target values and advantages
         with torch.no_grad():
@@ -482,12 +483,19 @@ class PPO:
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
                 state['exp_est_audio'] = exp_state['est_audio']
+
+                #Calculate kl_penalty
+                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                ep_kl_penalty += kl_penalty
                 
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
                 else:
                     r_t = self.env.get_PESQ_reward(state)
+                r_t = r_t - self.beta * kl_penalty
                 rewards.append(r_t)
 
                 #Store state
@@ -498,6 +506,7 @@ class PPO:
             rewards = torch.stack(rewards).reshape(bs, -1)
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
+            ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         #Start training over the unrolled batch of trajectories
         actor.train()
@@ -505,7 +514,6 @@ class PPO:
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0
-        step_kl = 0
 
         for t in range(len(states)):
             #Forward pass through model to get the action(mask)
@@ -514,20 +522,20 @@ class PPO:
             _, exp_log_probs, _ = self.init_model.get_action(states[t])
                 
             #Get previous model log_probs 
-            if self.prev_log_probs_n[t] == None:
-                self.prev_log_probs_n[t] = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+            if self.prev_log_probs == None:
+                self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = self.prev_log_probs_n[t][0] + \
-                               self.prev_log_probs_n[t][1][:, 0, :, :].permute(0, 2, 1) + \
-                               self.prev_log_probs_n[t][1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = self.prev_log_probs[0] + \
+                               self.prev_log_probs[1][:, 0, :, :].permute(0, 2, 1) + \
+                               self.prev_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], self.prev_log_probs_n[t][0]
+                log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
             
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
             ratio = torch.exp(logratio)
@@ -555,12 +563,11 @@ class PPO:
                 torch.nn.utils.clip_grad_norm_(critic.parameters(), 0.9)
                 optimizer.step()
 
-            self.prev_log_probs_n[t] = (log_probs[0].detach(), log_probs[1].detach())
+            self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
 
             step_clip_loss += clip_loss.item()
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()
-            step_kl += kl_penalty.mean()
             self.t += 1
 
         step_clip_loss = step_clip_loss / self.episode_len
@@ -568,7 +575,7 @@ class PPO:
         step_entropy_loss = step_entropy_loss / self.episode_len
         step_kl = step_kl / self.episode_len
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss), (target_values.mean(), step_kl)
+        return (step_clip_loss, step_val_loss, step_entropy_loss), (target_values.mean(), ep_kl_penalty)
 
             
 

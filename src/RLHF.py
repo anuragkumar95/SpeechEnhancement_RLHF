@@ -339,6 +339,9 @@ class PPO:
                 'cummulative_G_t':target_values.mean().item(),
                 'critic_values':values.mean().item()
             })
+            print(f"G_t   : {target_values.mean(0).reshape(-1)}")
+            print(f"Values: {values.mean(0).reshape(-1)}")
+            print(f"V_LOSS:{v_loss.item()}")
 
         return None, None
 

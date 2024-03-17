@@ -446,7 +446,7 @@ class PPO:
         #Base case: A(t) = G(t) - V(S(t)) ; t == T-1
         #Recursive case: A(t) = G(t) - V(S(t)) + discount * V(S(t+1))
         for i in range(self.episode_len):
-            g_t = returns[:, self.episode_len - i - 1]
+            g_t = returns[:, self.episode_len - i - 1].reshape(-1, 1)
             if i == 0:
                 a_t = g_t - critic(states[self.episode_len - i - 1])
             else:

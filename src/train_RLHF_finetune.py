@@ -169,7 +169,7 @@ class Trainer:
                                val_coef=1.0,
                                en_coef=0,
                                discount=0.99,
-                               warm_up_steps=0,
+                               warm_up_steps=10000,
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,

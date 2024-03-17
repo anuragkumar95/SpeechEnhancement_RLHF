@@ -304,6 +304,7 @@ class PPO:
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 r_t = r_t - self.beta * kl_penalty
+                print(f"R:{r_t.reshape(-1)}")
                 rewards.append(r_t)
 
                 #Store state

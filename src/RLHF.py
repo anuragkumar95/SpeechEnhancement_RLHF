@@ -566,8 +566,6 @@ class PPO:
         step_clip_loss = step_clip_loss / self.episode_len
         step_val_loss = step_val_loss / self.episode_len
         step_entropy_loss = step_entropy_loss / self.episode_len
-        step_G = step_G / self.episode_len
-        step_R = step_R / self.episode_len
         step_kl = step_kl / self.episode_len
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss), (target_values.mean(), step_kl)

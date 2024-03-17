@@ -430,31 +430,29 @@ class PPO:
         """
         Expects rewards to be a torch tensor.
         """
-        G_t = torch.zeros(rewards.shape).to(self.gpu_id)
-        episode_len = rewards.shape[0]
-        for i in range(episode_len):
+        G = torch.zeros(rewards.shape).to(self.gpu_id)
+        for i in range(self.episode_len):
             #Base case: G(T) = r(T)
             #Recursive: G(t) = r(t) + G(t+1)*DISCOUNT
-            r_t = rewards[:, episode_len - i - 1]
+            r_t = rewards[:, self.episode_len - i - 1]
             if i == 0:
-                G_t[:, episode_len - i - 1] = r_t
+                G[:, self.episode_len - i - 1] = r_t
             else:
-                G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
-        return G_t
+                G[:, self.episode_len - i - 1] = r_t + G[:, self.episode_len - i] * self.discount
+        return G
     
-    def get_advantages(self, rewards, states, critic): 
-        A = torch.zeros(rewards.shape).to(self.gpu_id)
-        for t in range(rewards.shape[1]-1):
-            r_t = rewards[:, t].reshape(-1, 1)
-            a_t = (r_t + self.discount * critic(states[t+1]) - critic(states[t])).reshape(-1)
-            A[:, t] = a_t
+    def get_advantages(self, returns, states, critic): 
+        A = torch.zeros(returns.shape).to(self.gpu_id)
+        #Base case: A(t) = G(t) - V(S(t)) ; t == T-1
+        #Recursive case: A(t) = G(t) - V(S(t)) + discount * V(S(t+1))
+        for i in range(self.episode_len):
+            g_t = returns[:, self.episode_len - i - 1]
+            if i == 0:
+                a_t = g_t - critic(states[self.episode_len - i - 1])
+            else:
+                a_t = g_t - critic(states[self.episode_len - i - 1]) + self.discount * critic(states[self.episode_len - i])
+            A[:, self.episode_len - i - 1] = a_t
         return A
-    
-    def scale_reward(self, reward):
-        reward = reward.detach()
-        r_var = min(1.0, self._r2_mean - (self._r_mean)**2)
-        reward = (reward - self._r_mean) / r_var
-        return reward
     
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
@@ -499,7 +497,7 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             target_values = self.get_expected_return(rewards)
-            advantages = self.get_advantages(rewards, states, critic)
+            advantages = self.get_advantages(target_values, states, critic)
 
         #Start training over the unrolled batch of trajectories
         actor.train()

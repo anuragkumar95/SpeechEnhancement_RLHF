@@ -309,26 +309,41 @@ class PPO:
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
+                
+                #Store trajectory
+                states.append(curr)
                 rewards.append(r_t - self.beta * kl_penalty)
+                for i in range(bs):
+                    act = {
+                        'action':action[i, ...].detach(),
+                        'params':params[i, ...].detach()
+                    }
+                    actions.append(act)
+                    logprobs.append(log_probs[i].detach())
+                
                 r_ts.append(r_t)
 
                 #Store state
-                states.append(curr)
-                curr = state['noisy']
+                #
+                #states.append(curr)
+                #curr = state['noisy']
 
                 #Store logprobs, action
-                logprobs.append(log_probs.detach())
-                actions.append({
-                    'action':action.detach(),
-                    'params':params.detach()
-                })
+                #logprobs.append(log_probs.detach())
+                #actions.append({
+                #    'action':action.detach(),
+                #    'params':params.detach()
+                #})
 
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
-            r_ts = torch.stack(r_ts).reshape(bs, -1)
+            r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
             ep_kl_penalty = ep_kl_penalty / self.episode_len
+            rewards = rewards.reshape(-1)
+            states = torch.stack(states)
+            print(states.shape)
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
@@ -339,6 +354,9 @@ class PPO:
         step_entropy_loss = 0
         step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
+
+        indices = [t for t in range(len(states))]
+
         for t in range(len(states)):
             #Get new logprobs and values for the sampled (state, action) pair
             action = actions[t]['action']

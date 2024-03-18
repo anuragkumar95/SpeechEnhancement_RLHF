@@ -341,7 +341,6 @@ class PPO:
 
         print(f"STATES        :{states.shape}")
         print(f"TARGET_VALS   :{b_target_values.shape}")
-        #print(f"REWARDS       :{rewards.shape}")
         print(f"ACTIONS       :{len(actions)}")
         print(f"LOGPROBS      :{len(logprobs)}")
         print(f"Policy returns:{target_values.mean(0)}")
@@ -359,40 +358,35 @@ class PPO:
         np.random.shuffle(indices)
 
         for t in range(0, len(indices), bs):
-            print(f"t:{t}, indices:{indices[t:t+bs]}")
+            #Get mini batch indices
             mb_indx = indices[t:t+bs]
+            
             #Get new logprobs and values for the sampled (state, action) pair
             mb_action = ([actions[i]['action'][0] for i in mb_indx],
                          [actions[i]['action'][1] for i in mb_indx])
             mb_action = (torch.stack(mb_action[0]).squeeze(1), torch.stack(mb_action[1]))
-            print(f"mb_action:{mb_action[0].shape, mb_action[1].shape}")
+            
             mb_params = (([actions[i]['params'][0][0].T for i in mb_indx], [actions[i]['params'][0][1].T for i in mb_indx]), 
                          ([actions[i]['params'][1][0] for i in mb_indx], [actions[i]['params'][1][1] for i in mb_indx]))
             mb_params = ((torch.stack(mb_params[0][0]), torch.stack(mb_params[0][1])), 
                          (torch.stack(mb_params[1][0]), torch.stack(mb_params[1][0])))
-            print(f"mb_params:{mb_params[0][0].shape, mb_params[0][1].shape, mb_params[1][0].shape, mb_params[1][1].shape}")
+            
             log_probs, entropies = actor.get_action_prob(mb_action, mb_params)
 
             mb_states = states[mb_indx, ...]
-            print(f"mb_states:{mb_states.shape}")
             values = critic(mb_states).reshape(-1)
             for i, val in enumerate(values):
                 b = mb_indx[i] // self.episode_len
                 ts = mb_indx[i] % self.episode_len
-                print(b, ts, VALUES.shape)
-                print(VALUES[b, ts].shape, val.shape)
                 VALUES[b, ts] = val
 
             #NOTE:TODO from below
             if self.train_phase:
-                print(f"mb_entropies:{entropies[0].shape, entropies[1].shape}")
                 entropy = entropies[0] + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                 old_logprobs = ([logprobs[i][0] for i in mb_indx],
                                 [logprobs[i][1] for i in mb_indx])
                 mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
-                print(f"mb_logprobs:{log_probs[0].shape, log_probs[1].shape}")
-                print(f"mb_old_logprobs:{mb_oldlogprobs[0].shape, mb_oldlogprobs[1].shape}")
                 old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
                 
             else:
@@ -436,7 +430,7 @@ class PPO:
             step_entropy_loss += entropy_loss.item()        
             self.t += 1
         
-        print(f"Values:{VALUES.mean()}")
+        print(f"Values:{VALUES.mean(0)}")
 
         step_clip_loss = step_clip_loss / self.episode_len
         step_pg_loss = step_pg_loss / self.episode_len

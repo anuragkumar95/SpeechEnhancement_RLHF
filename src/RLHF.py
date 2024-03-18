@@ -372,12 +372,17 @@ class PPO:
             print(f"mb_states:{mb_states.shape}")
             values = critic(mb_states)
             VALUES[:, t] = values.reshape(-1)
-            
+
             #NOTE:TODO from below
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = logprobs[t][0] + logprobs[t][1][:, 0, :, :].permute(0, 2, 1) + logprobs[t][1][:, 1, :, :].permute(0, 2, 1)
+                old_logprobs = ([logprobs[i][0] for i in mb_indx],
+                                [logprobs[i][1] for i in mb_indx])
+                mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
+                print(f"mb_logprobs:{log_probs[0].shape, log_probs[1].shape}")
+                print(f"mb_old_logprobs:{mb_oldlogprobs[0].shape, mb_oldlogprobs[1].shape}")
+                old_log_prob = mb_oldlogprobs[0] + mb_oldlogprobs[1][:, 0, :, :].permute(0, 2, 1) + mb_oldlogprobs[1][:, 1, :, :].permute(0, 2, 1)
                 
             else:
                 #ignore complex mask, just tune mag mask 

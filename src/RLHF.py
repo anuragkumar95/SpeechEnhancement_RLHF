@@ -283,6 +283,7 @@ class PPO:
         with torch.no_grad():
             curr = noisy
             rewards = []
+            r_ts = []
             states = []
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
@@ -308,6 +309,7 @@ class PPO:
                     r_t = self.env.get_PESQ_reward(state)
                 print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
                 rewards.append(r_t - self.beta * kl_penalty)
+                r_ts.append(r_t)
 
                 #Store state
                 states.append(curr)
@@ -315,6 +317,7 @@ class PPO:
 
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
+            r_ts = torch.stack(r_ts).reshape(bs, -1)
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
             ep_kl_penalty = ep_kl_penalty / self.episode_len
@@ -398,7 +401,7 @@ class PPO:
         step_val_loss = step_val_loss / self.episode_len
         step_entropy_loss = step_entropy_loss / self.episode_len
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), rewards.sum(-1).mean()), advantages.sum(-1).mean()
+        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
 
             
 

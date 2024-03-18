@@ -351,7 +351,7 @@ class PPO:
             print(f"STATES:{states.shape}")
             print(f"REWARDS:{rewards.shape}")
             print(f"ACTIONS:{len(actions)}")
-            print(f"LOGPROBS:{len(log_probs)}")
+            print(f"LOGPROBS:{len(logprobs)}")
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories

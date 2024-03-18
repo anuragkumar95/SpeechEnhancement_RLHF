@@ -130,6 +130,7 @@ class SpeechEnhancementAgent:
             pesq_reward = pesq_reward.to(self.gpu_id)
             exp_pesq_reward = exp_pesq_reward.to(self.gpu_id)
 
+        mse_reward=0
         if 'clean' in next_state:
             noisy_spec = next_state['noisy']
             clean_spec = next_state['clean']

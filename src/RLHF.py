@@ -177,7 +177,7 @@ class REINFORCE:
 
 class PPO:
     """
-    Base class for PPO ploicy gradient method.
+    Base class for PPO policy gradient method.
     """
     def __init__(self, 
                  init_model, 
@@ -222,16 +222,11 @@ class PPO:
         print(f"RLHF:{self.rlhf}")
 
 
-    def run_episode(self, batch, actor, critic, optimizers):
+    def run_episode(self, batch, actor, critic, optimizer):
         if self.episode_len <= 1:
-            return self.run_one_step_episode(batch, actor, critic, optimizers[0])
+            return self.run_one_step_episode(batch, actor, critic, optimizer)
         else:
-            print(f"self.t : {self.t}")
-            if self.t < self.warm_up:
-                print(f"Training critic")
-                return self.train_critic(batch, actor, critic, optimizers[1])
-            else:
-                return self.run_n_step_episode(batch, actor, critic, optimizers[0])
+            return self.run_n_step_episode(batch, actor, critic, optimizer)
 
     def run_one_step_episode(self, batch, actor, critic, optimizer):
         """
@@ -268,86 +263,6 @@ class PPO:
                 a_t = g_t - critic(states[self.episode_len - i - 1]) + self.discount * critic(states[self.episode_len - i])
             A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
-    
-
-    def train_critic(self, batch, actor, critic, optimizer):
-        #Preprocessed batch
-        cl_aud, clean, noisy, _ = batch
-        noisy = noisy.permute(0, 1, 3, 2)
-        clean = clean.permute(0, 1, 3, 2)
-        bs = clean.shape[0]
-        critic.eval()
-        actor.eval()
-        ep_kl_penalty = 0
-        
-        #Calculate target values and advantages
-        with torch.no_grad():
-            curr = noisy
-            rewards = []
-            states = []
-            for _ in range(self.episode_len):
-                #Unroll policy for n steps and store rewards.
-                action, log_probs, _ = actor.get_action(curr)
-                init_action, ref_log_probs, _ = self.init_model.get_action(curr)
-
-                state = self.env.get_next_state(state=curr, action=action)
-                exp_state = self.env.get_next_state(state=curr, action=init_action)
-                state['cl_audio'] = cl_aud
-                state['exp_est_audio'] = exp_state['est_audio']
-
-                #Calculate kl_penalty
-                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
-                ep_kl_penalty += kl_penalty
-                
-                #Store reward
-                if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
-                else:
-                    r_t = self.env.get_PESQ_reward(state)
-                
-                r_t = r_t - self.beta * kl_penalty
-                rewards.append(r_t)
-
-                #Store state
-                states.append(curr)
-                curr = state['noisy']
-
-            #Convert collected rewards to target_values and advantages
-            rewards = torch.stack(rewards).reshape(bs, -1)
-            target_values = self.get_expected_return(rewards)
-
-        critic.train()
-        VALUES = torch.zeros(target_values.shape)
-        for t in range(len(states)):
-            values = critic(states[t])
-            VALUES[:, t] = values.reshape(-1)
-            #value_loss
-            v_loss = ((target_values[:, t] - values) ** 2).mean()
-
-            optimizer.zero_grad()
-            v_loss.backward()
-
-            #Update network
-            if not (torch.isnan(v_loss).any() or torch.isinf(v_loss).any()) and (self.t % self.accum_grad == 0):
-                torch.nn.utils.clip_grad_norm_(actor.parameters(), 5.0)
-                torch.nn.utils.clip_grad_norm_(critic.parameters(), 5.0)
-                optimizer.step()
-
-            self.t += 1
-            wandb.log({
-                't':self.t,
-                'v_loss':v_loss.item(),
-                'cummulative_G_t':target_values.mean().item(),
-                'critic_values':values.mean().item()
-            })
-
-        print(f"G_t   : {target_values.mean(0).reshape(-1)}")
-        print(f"Values: {VALUES.mean(0).reshape(-1)}")
-
-        return None, None
-
     
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
@@ -452,6 +367,12 @@ class PPO:
             entropy_loss = entropy.mean()
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
+
+            wandb.log({
+                'ratio':ratio,
+                'pg_loss1':pg_loss1,
+                'pg_loss2':pg_loss2
+            })
 
             optimizer.zero_grad()
             clip_loss.backward()

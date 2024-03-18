@@ -244,7 +244,7 @@ class PPO:
         for i in range(self.episode_len):
             #Base case: G(T) = r(T)
             #Recursive: G(t) = r(t) + G(t+1)*DISCOUNT
-            r_t = rewards[:, self.episode_len - i - 1]
+            r_t = rewards[:, self.episode_len - i - 1].detach()
             if i == 0:
                 G[:, self.episode_len - i - 1] = r_t
             else:
@@ -258,9 +258,9 @@ class PPO:
         for i in range(self.episode_len):
             g_t = returns[:, self.episode_len - i - 1].reshape(-1, 1)
             if i == 0:
-                a_t = g_t - critic(states[self.episode_len - i - 1])
+                a_t = g_t - critic(states[self.episode_len - i - 1]).detach()
             else:
-                a_t = g_t - critic(states[self.episode_len - i - 1]) + self.discount * critic(states[self.episode_len - i])
+                a_t = g_t - critic(states[self.episode_len - i - 1]).detach() + self.discount * critic(states[self.episode_len - i]).detach()
             A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
     
@@ -285,9 +285,11 @@ class PPO:
             rewards = []
             r_ts = []
             states = []
+            logprobs = []
+            actions = []
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
-                action, log_probs, _ = actor.get_action(curr)
+                action, log_probs, _, params = actor.get_action(curr)
                 init_action, ref_log_probs, _ = self.init_model.get_action(curr)
 
                 state = self.env.get_next_state(state=curr, action=action)
@@ -299,7 +301,7 @@ class PPO:
                 #Calculate kl_penalty
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                 ep_kl_penalty += kl_penalty
                 
                 #Store reward
@@ -314,6 +316,13 @@ class PPO:
                 #Store state
                 states.append(curr)
                 curr = state['noisy']
+
+                #Store logprobs, action
+                logprobs.append(log_prob.detach())
+                actions.append({
+                    'action':action.detach(),
+                    'params':params.detach()
+                })
 
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
@@ -333,32 +342,34 @@ class PPO:
         VALUES = torch.zeros(target_values.shape)
         for t in range(len(states)):
             #Forward pass through model to get the action(mask)
-            action, log_probs, entropies = actor.get_action(states[t])
+            #action, log_probs, entropies = actor.get_action(states[t])
+            action = actions[t]['action']
+            params = actions[t]['params']
+            log_probs, entropies = actor.get_action_prob(action, params)
             values = critic(states[t])
-            _, exp_log_probs, _ = self.init_model.get_action(states[t])
+            #_, exp_log_probs, _ = self.init_model.get_action(states[t])
             VALUES[:, t] = values.reshape(-1)
                 
             #Get previous model log_probs 
-            if self.prev_log_probs == None:
-                self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
+            #if self.prev_log_probs == None:
+            #    self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
             
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = self.prev_log_probs[0] + \
-                               self.prev_log_probs[1][:, 0, :, :].permute(0, 2, 1) + \
-                               self.prev_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                #old_log_prob = self.prev_log_probs[0] + \
+                #               self.prev_log_probs[1][:, 0, :, :].permute(0, 2, 1) + \
+                #               self.prev_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = logprobs[t]
                 
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], self.prev_log_probs[0]
+                log_prob, old_log_prob = log_probs[0], logprobs[t][0]
             
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
             ratio = torch.exp(logratio)
-            exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-            kl_penalty = torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1).detach()
-
+            
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
             pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
@@ -386,7 +397,7 @@ class PPO:
                 torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                 optimizer.step()
 
-            self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
+            #self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
 
             step_clip_loss += clip_loss.item()
             step_pg_loss += pg_loss.item()

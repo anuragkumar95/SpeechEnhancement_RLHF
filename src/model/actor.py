@@ -261,14 +261,33 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
         if self.dist:
-            mask, m_logprob, m_entropy, _ = self.mask_decoder(out_2)
-            complex_out, c_logprob, c_entropy,_ = self.complex_decoder(out_2)
-            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy)
+            mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
+            complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
+            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
         
         mask = self.mask_decoder(out_2)
         complex_out = self.complex_decoder(out_2)
         return (mask, complex_out), None, None
     
+    def get_action_prob(self, action, params):
+        """
+        ARGS:
+            action : (Tuple) Tuple of mag and complex masks.
+            params : (Tuple(Tuple)) Tuple of mag and complex mus and logvars
+
+        Returns:
+            Tuple of mag and complex masks log probabilities.
+        """
+        (m_mu, c_mu), (m_logvar, c_logvar) = params
+        m_action, c_action = action
+        m_sigma = torch.abs(torch.exp(0.5 * m_logvar) + 1e-08)
+        c_sigma = torch.abs(torch.exp(0.5 * c_logvar) + 1e-08)
+        m_dist = Normal(m_mu, m_sigma)
+        c_dist = Normal(c_mu, c_sigma)
+        m_logprob = m_dist.log_prob(m_action)
+        c_logprob = c_dist.log_prob(c_action)
+        return (m_logprob, c_logprob), (m_dist.entropy(), c_dist.entropy())
+        
     def get_embedding(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         

@@ -293,6 +293,7 @@ class PPO:
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
                 state['exp_est_audio'] = exp_state['est_audio']
+                state['clean'] = clean
 
                 #Calculate kl_penalty
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)

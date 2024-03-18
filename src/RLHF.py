@@ -375,6 +375,7 @@ class PPO:
 
             #NOTE:TODO from below
             if self.train_phase:
+                print(f"mb_entropies:{entropies[0].shape, entropies[1].shape}")
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 old_logprobs = ([logprobs[i][0] for i in mb_indx],

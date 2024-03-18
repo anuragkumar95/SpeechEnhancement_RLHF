@@ -278,7 +278,7 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        (m_mu, c_mu), (m_logvar, c_logvar) = params
+        (m_mu, m_logvar), (c_mu, c_logvar) = params
         m_action, c_action = action
         m_sigma = torch.abs(torch.exp(0.5 * m_logvar) + 1e-08)
         c_sigma = torch.abs(torch.exp(0.5 * c_logvar) + 1e-08)

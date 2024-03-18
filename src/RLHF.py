@@ -346,7 +346,7 @@ class PPO:
             states = torch.stack(states)
             step, b, c, t, f = states.shape
             states = states.reshape(step * b, c, t, f)
-            print(f"STATES:{state.shape}")
+            print(f"STATES:{states.shape}")
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories

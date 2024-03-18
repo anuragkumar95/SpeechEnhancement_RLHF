@@ -302,8 +302,8 @@ class PPO:
                 print(f"REF:{ref_log_probs[0].shape, ref_log_probs[1].shape}")
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                ep_kl_penalty += kl_penalty
+                kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
+                ep_kl_penalty += kl_penalty.detach()
                 
                 #Store reward
                 if self.rlhf:

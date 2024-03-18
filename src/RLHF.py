@@ -322,6 +322,7 @@ class PPO:
                     actions.append(act)
                     print(f"log_probs:{log_probs[0].shape, log_probs[1].shape}")
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
+                    print(f"{len(logprobs)}")
                 
                 r_ts.append(r_t)
 

@@ -354,9 +354,13 @@ class PPO:
 
         for t in range(0, len(indices), bs):
             print(f"t:{t}, indices:{indices[t:t+bs]}")
+            mb_indx = indices[t:t+bs]
             #Get new logprobs and values for the sampled (state, action) pair
-            action = actions[t]['action']
-            params = actions[t]['params']
+            mb_action = ([actions[i]['action'][0] for i in mb_indx],
+                         [actions[i]['action'][1] for i in mb_indx])
+            mb_action = (torch.stack(mb_action[0]), torch.stack(mb_action[1]))
+            print(f"mb_action:{mb_action[0].shape, mb_action[1].shape}")
+            mb_params = actions[mb_indx]['params']
             log_probs, entropies = actor.get_action_prob(action, params)
             values = critic(states[t])
             VALUES[:, t] = values.reshape(-1)

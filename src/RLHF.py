@@ -379,6 +379,7 @@ class PPO:
             for i, val in enumerate(values):
                 b = mb_indx[i] // bs
                 ts = mb_indx[i] % bs
+                print(b, ts, VALUES.shape)
                 print(VALUES[b, ts].shape, val.shape)
                 VALUES[b, ts] = val
 

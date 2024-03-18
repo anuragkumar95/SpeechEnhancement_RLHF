@@ -344,7 +344,7 @@ class PPO:
         #print(f"REWARDS       :{rewards.shape}")
         print(f"ACTIONS       :{len(actions)}")
         print(f"LOGPROBS      :{len(logprobs)}")
-        print(f"Policy returns:{b_target_values.mean(0)}")
+        print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
         actor.train()
@@ -379,6 +379,7 @@ class PPO:
             for i, val in enumerate(values):
                 b = mb_indx[i] // bs
                 ts = mb_indx[i] % bs
+                print(VALUES[b, ts].shape, val.shape)
                 VALUES[b, ts] = val
 
             #NOTE:TODO from below

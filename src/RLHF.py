@@ -370,9 +370,10 @@ class PPO:
 
             mb_states = states[mb_indx, ...]
             print(f"mb_states:{mb_states.shape}")
-            values = critic(states[t])
+            values = critic(mb_states)
             VALUES[:, t] = values.reshape(-1)
-                
+            
+            #NOTE:TODO from below
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)

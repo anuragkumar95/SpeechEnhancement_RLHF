@@ -316,7 +316,8 @@ class PPO:
                 for i in range(bs):
                     act = {
                         'action':(action[0][i, ...].detach(), action[1][i, ...].detach()),
-                        'params':(params[0][i, ...].detach(), params[1][i, ...].detach())
+                        'params':((params[0][0][i, ...].detach(), params[0][1][i, ...].detach()),
+                                  (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
                     actions.append(act)
                     logprobs.append(log_probs[i].detach())

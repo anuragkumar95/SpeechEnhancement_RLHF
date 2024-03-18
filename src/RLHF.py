@@ -341,25 +341,16 @@ class PPO:
         step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
         for t in range(len(states)):
-            #Forward pass through model to get the action(mask)
-            #action, log_probs, entropies = actor.get_action(states[t])
+            #Get new logprobs and values for the sampled (state, action) pair
             action = actions[t]['action']
             params = actions[t]['params']
             log_probs, entropies = actor.get_action_prob(action, params)
             values = critic(states[t])
-            #_, exp_log_probs, _ = self.init_model.get_action(states[t])
             VALUES[:, t] = values.reshape(-1)
                 
-            #Get previous model log_probs 
-            #if self.prev_log_probs == None:
-            #    self.prev_log_probs = (exp_log_probs[0].detach(), exp_log_probs[1].detach())
-            
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                #old_log_prob = self.prev_log_probs[0] + \
-                #               self.prev_log_probs[1][:, 0, :, :].permute(0, 2, 1) + \
-                #               self.prev_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 old_log_prob = logprobs[t]
                 
             else:

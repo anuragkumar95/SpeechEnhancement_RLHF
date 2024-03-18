@@ -383,7 +383,7 @@ class PPO:
                 mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
                 print(f"mb_logprobs:{log_probs[0].shape, log_probs[1].shape}")
                 print(f"mb_old_logprobs:{mb_oldlogprobs[0].shape, mb_oldlogprobs[1].shape}")
-                old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :].permute(0, 2, 1) + mb_oldlogprobs[1][:, 1, :, :].permute(0, 2, 1)
+                old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
                 
             else:
                 #ignore complex mask, just tune mag mask 

@@ -320,23 +320,9 @@ class PPO:
                                   (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
                     actions.append(act)
-                    print(f"log_probs:{log_probs[0].shape, log_probs[1].shape}")
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
-                    print(f"{len(logprobs)}")
                 
                 r_ts.append(r_t)
-
-                #Store state
-                #
-                #states.append(curr)
-                #curr = state['noisy']
-
-                #Store logprobs, action
-                #logprobs.append(log_probs.detach())
-                #actions.append({
-                #    'action':action.detach(),
-                #    'params':params.detach()
-                #})
 
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
@@ -348,10 +334,10 @@ class PPO:
             states = torch.stack(states)
             step, b, c, t, f = states.shape
             states = states.reshape(step * b, c, t, f)
-            print(f"STATES:{states.shape}")
-            print(f"REWARDS:{rewards.shape}")
-            print(f"ACTIONS:{len(actions)}")
-            print(f"LOGPROBS:{len(logprobs)}")
+        print(f"STATES:{states.shape}")
+        print(f"REWARDS:{rewards.shape}")
+        print(f"ACTIONS:{len(actions)}")
+        print(f"LOGPROBS:{len(logprobs)}")
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
@@ -364,8 +350,10 @@ class PPO:
         VALUES = torch.zeros(target_values.shape)
 
         indices = [t for t in range(len(states))]
+        np.random.shuffle(indices)
 
-        for t in range(len(states)):
+        for t in range(0, len(indices), bs):
+            print(f"t:{t}, indices:{indices[t:t+bs]}")
             #Get new logprobs and values for the sampled (state, action) pair
             action = actions[t]['action']
             params = actions[t]['params']

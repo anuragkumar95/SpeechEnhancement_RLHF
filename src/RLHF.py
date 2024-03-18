@@ -320,7 +320,7 @@ class PPO:
                                   (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
                     actions.append(act)
-                    logprobs.append(log_probs[i].detach())
+                    logprobs.append((log_probs[0][i].detach(), log_probs[1][i].detach()))
                 
                 r_ts.append(r_t)
 

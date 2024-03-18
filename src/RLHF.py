@@ -315,8 +315,8 @@ class PPO:
                 rewards.append(r_t - self.beta * kl_penalty)
                 for i in range(bs):
                     act = {
-                        'action':action[i, ...].detach(),
-                        'params':params[i, ...].detach()
+                        'action':(action[0][i, ...].detach(), action[1][i, ...].detach()),
+                        'params':(params[0][i, ...].detach(), params[1][i, ...].detach())
                     }
                     actions.append(act)
                     logprobs.append(log_probs[i].detach())

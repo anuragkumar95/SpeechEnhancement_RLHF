@@ -377,8 +377,8 @@ class PPO:
             print(f"mb_states:{mb_states.shape}")
             values = critic(mb_states).reshape(-1)
             for i, val in enumerate(values):
-                b = mb_indx[i] // bs
-                ts = mb_indx[i] % bs
+                b = mb_indx[i] // self.episode_len
+                ts = mb_indx[i] % self.episode_len
                 print(b, ts, VALUES.shape)
                 print(VALUES[b, ts].shape, val.shape)
                 VALUES[b, ts] = val

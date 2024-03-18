@@ -281,11 +281,11 @@ class TSCNet(nn.Module):
         (m_mu, m_logvar), (c_mu, c_logvar) = params
         m_action, c_action = action
 
-        if len(m_action.shape) != len(m_mu.shape):
-            m_action = m_action.squeeze(1)
-        if m_action.shape != m_mu.shape:
-            m_action = m_action.permute(0, 2, 1)
-            
+        #if len(m_action.shape) != len(m_mu.shape):
+        #    m_action = m_action.squeeze(1)
+        #if m_action.shape != m_mu.shape:
+        #    m_action = m_action.permute(0, 2, 1)
+
         m_sigma = torch.abs(torch.exp(0.5 * m_logvar) + 1e-08)
         c_sigma = torch.abs(torch.exp(0.5 * c_logvar) + 1e-08)
         m_dist = Normal(m_mu, m_sigma)

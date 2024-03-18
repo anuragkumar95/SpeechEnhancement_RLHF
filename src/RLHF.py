@@ -384,6 +384,10 @@ class PPO:
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
+
+                print(f"log_prob:{log_probs[0].mean(), log_probs[1].mean()}")
+
+
                 old_logprobs = ([logprobs[i][0] for i in mb_indx],
                                 [logprobs[i][1] for i in mb_indx])
                 mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
@@ -394,7 +398,7 @@ class PPO:
                 entropy = entropies[0]
                 log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
             
-            print(f"logprob:{log_prob.mean()}, old_logprob:{old_log_prob.mean()}")
+            print(f"old_logprob:{old_log_prob.mean()}")
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
             ratio = torch.exp(logratio)
             

@@ -381,7 +381,6 @@ class PPO:
                 ts = mb_indx[i] % self.episode_len
                 VALUES[b, ts] = val
 
-            #NOTE:TODO from below
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
@@ -395,6 +394,7 @@ class PPO:
                 entropy = entropies[0]
                 log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
             
+            print(f"logprob:{log_prob.mean()}, old_logprob:{old_log_prob.mean()}")
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
             ratio = torch.exp(logratio)
             

@@ -343,7 +343,7 @@ class PPO:
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             rewards = rewards.reshape(-1)
             states = torch.stack(states)
-            print(states.shape)
+            print(f"STATE:{states.shape}")
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories

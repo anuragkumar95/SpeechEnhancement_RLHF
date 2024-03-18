@@ -266,9 +266,8 @@ class PPO:
     
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
-        Imagine the episode N --> C --> Terminal
-        So for target values, we consider Noisy --> Clean --> Terminal
-        and for current iteration values we consider Noisy --> Enhanced --> Terminal
+        Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
+        Here the noisy signal is enhanced n times in an episode. 
         """
         #Preprocessed batch
         cl_aud, clean, noisy, _ = batch
@@ -318,7 +317,7 @@ class PPO:
                 curr = state['noisy']
 
                 #Store logprobs, action
-                logprobs.append(log_prob.detach())
+                logprobs.append(log_probs.detach())
                 actions.append({
                     'action':action.detach(),
                     'params':params.detach()
@@ -351,7 +350,7 @@ class PPO:
             if self.train_phase:
                 entropy = entropies[0] + entropies[1][:, 0, :, :].permute(0, 2, 1) + entropies[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                old_log_prob = logprobs[t]
+                old_log_prob = logprobs[t][0] + logprobs[t][1][:, 0, :, :].permute(0, 2, 1) + logprobs[t][1][:, 1, :, :].permute(0, 2, 1)
                 
             else:
                 #ignore complex mask, just tune mag mask 
@@ -374,11 +373,11 @@ class PPO:
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 
-            wandb.log({
-                'ratio':ratio.mean(),
-                'pg_loss1':pg_loss1.mean(),
-                'pg_loss2':pg_loss2.mean()
-            })
+            #wandb.log({
+            #    'ratio':ratio.mean(),
+            #    'pg_loss1':pg_loss1.mean(),
+            #    'pg_loss2':pg_loss2.mean()
+            #})
 
             optimizer.zero_grad()
             clip_loss.backward()
@@ -387,8 +386,6 @@ class PPO:
                 torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
                 torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                 optimizer.step()
-
-            #self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
 
             step_clip_loss += clip_loss.item()
             step_pg_loss += pg_loss.item()

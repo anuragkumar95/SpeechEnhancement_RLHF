@@ -289,7 +289,8 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
-                init_action, ref_log_probs, _, _ = self.init_model.get_action(curr)
+                init_action, _, _, ref_params = self.init_model.get_action(curr)
+                ref_log_probs, _ = self.init_model.get_action_probs(action, ref_params)
 
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
@@ -332,7 +333,6 @@ class PPO:
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             
             #flatten all
-            #b_rewards = rewards.reshape(-1)
             b_target_values = target_values.reshape(-1)
             b_advantages = advantages.reshape(-1)
             states = torch.stack(states)

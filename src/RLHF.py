@@ -335,10 +335,11 @@ class PPO:
             step, b, c, t, f = states.shape
             states = states.reshape(step * b, c, t, f)
 
-        print(f"STATES:{states.shape}")
-        print(f"REWARDS:{rewards.shape}")
-        print(f"ACTIONS:{len(actions)}")
-        print(f"LOGPROBS:{len(logprobs)}")
+        print(f"STATES        :{states.shape}")
+        print(f"TARGET_VALS   :{target_values.shape}")
+        print(f"REWARDS       :{rewards.shape}")
+        print(f"ACTIONS       :{len(actions)}")
+        print(f"LOGPROBS      :{len(logprobs)}")
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
@@ -371,7 +372,7 @@ class PPO:
             mb_states = states[mb_indx, ...]
             print(f"mb_states:{mb_states.shape}")
             values = critic(mb_states)
-            VALUES[:, t] = values.reshape(-1)
+            VALUES[:, t // bs] = values.reshape(-1)
 
             #NOTE:TODO from below
             if self.train_phase:

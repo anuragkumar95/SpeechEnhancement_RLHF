@@ -330,7 +330,11 @@ class PPO:
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
             ep_kl_penalty = ep_kl_penalty / self.episode_len
-            rewards = rewards.reshape(-1)
+            
+            #flatten all
+            #b_rewards = rewards.reshape(-1)
+            b_target_values = target_values.reshape(-1)
+            b_advantages = advantages.reshape(-1)
             states = torch.stack(states)
             step, b, c, t, f = states.shape
             states = states.reshape(step * b, c, t, f)
@@ -371,8 +375,11 @@ class PPO:
 
             mb_states = states[mb_indx, ...]
             print(f"mb_states:{mb_states.shape}")
-            values = critic(mb_states)
-            VALUES[:, t // bs] = values.reshape(-1)
+            values = critic(mb_states).reshape(-1)
+            for i, val in enumerate(values):
+                b = mb_indx[i] // bs
+                ts = mb_indx[i] % bs
+                VALUES[b, ts] = val
 
             #NOTE:TODO from below
             if self.train_phase:
@@ -389,18 +396,18 @@ class PPO:
             else:
                 #ignore complex mask, just tune mag mask 
                 entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], logprobs[t][0]
+                log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
             
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
             ratio = torch.exp(logratio)
             
             #Policy loss
-            pg_loss1 = -advantages[:, t] * ratio
-            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+            pg_loss1 = -b_advantages[mb_indx] * ratio
+            pg_loss2 = -b_advantages[mb_indx] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss
-            v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()
+            v_loss = 0.5 * ((b_target_values[mb_indx] - values) ** 2).mean()
 
             #Entropy loss
             entropy_loss = entropy.mean()
@@ -427,7 +434,7 @@ class PPO:
             step_entropy_loss += entropy_loss.item()        
             self.t += 1
         
-        print(f"Values:{VALUES.mean(0)}")
+        print(f"Values:{VALUES.mean()}")
 
         step_clip_loss = step_clip_loss / self.episode_len
         step_pg_loss = step_pg_loss / self.episode_len

@@ -134,7 +134,7 @@ class SpeechEnhancementAgent:
         if 'clean' in next_state:
             noisy_spec = next_state['noisy']
             clean_spec = next_state['clean']
-            if noisy_spec.shape == clean_spec.shape:
+            if noisy_spec.shape != clean_spec.shape:
                 clean_spec = clean_spec.permute(0, 1, 3, 2)
             mse = (clean_spec - noisy_spec)**2
             mse_reward = -mse.mean().detach()

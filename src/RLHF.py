@@ -360,7 +360,7 @@ class PPO:
                          [actions[i]['action'][1] for i in mb_indx])
             mb_action = (torch.stack(mb_action[0]).squeeze(1), torch.stack(mb_action[1]))
             print(f"mb_action:{mb_action[0].shape, mb_action[1].shape}")
-            mb_params = (([actions[i]['params'][0][0].permute(0, 2, 1) for i in mb_indx], [actions[i]['params'][0][1].permute(0, 2, 1)  for i in mb_indx]), 
+            mb_params = (([actions[i]['params'][0][0].T for i in mb_indx], [actions[i]['params'][0][1].T for i in mb_indx]), 
                          ([actions[i]['params'][1][0] for i in mb_indx], [actions[i]['params'][1][1] for i in mb_indx]))
             mb_params = ((torch.stack(mb_params[0][0]), torch.stack(mb_params[0][1])), 
                          (torch.stack(mb_params[1][0]), torch.stack(mb_params[1][0])))

@@ -410,6 +410,7 @@ class PPO:
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0
+        step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
         for t in range(len(states)):
             #Forward pass through model to get the action(mask)
@@ -463,6 +464,7 @@ class PPO:
             self.prev_log_probs = (log_probs[0].detach(), log_probs[1].detach())
 
             step_clip_loss += clip_loss.item()
+            step_pg_loss += pg_loss.item()
             step_val_loss += v_loss.item()
             step_entropy_loss += entropy_loss.item()        
             self.t += 1
@@ -470,10 +472,11 @@ class PPO:
         print(f"Values:{VALUES.mean(0)}")
 
         step_clip_loss = step_clip_loss / self.episode_len
+        step_pg_loss = step_pg_loss / self.episode_len
         step_val_loss = step_val_loss / self.episode_len
         step_entropy_loss = step_entropy_loss / self.episode_len
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), rewards.sum(-1).mean())
+        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, ), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), rewards.sum(-1).mean()), advantages.sum(-1).mean()
 
             
 

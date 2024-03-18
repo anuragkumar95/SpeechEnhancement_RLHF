@@ -239,7 +239,7 @@ class Trainer:
                     })
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer))
+                    loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer))
                     
                     if loss is not None:
                         wandb.log({
@@ -248,8 +248,10 @@ class Trainer:
                             "cumulative_G_t": batch_reward[0].item(),
                             "critic_values": batch_reward[1].item(), 
                             "episodic_avg_r": batch_reward[3].item(),
+                            "advantages":adv,
                             "clip_loss":loss[0],
                             "value_loss":loss[1],
+                            "pg_loss":loss[3],
                             "entropy_loss":loss[2]
                         })
 

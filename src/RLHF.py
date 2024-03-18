@@ -290,7 +290,6 @@ class PPO:
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
                 init_action, _, _, ref_params = self.init_model.get_action(curr)
-                print(action[0].shape, init_action[0].shape, ref_params[0][0].shape, log_probs[0].shape)
                 ref_log_probs, _ = self.init_model.get_action_prob(action, ref_params)
 
                 state = self.env.get_next_state(state=curr, action=action)
@@ -300,6 +299,7 @@ class PPO:
                 state['clean'] = clean
 
                 #Calculate kl_penalty
+                print(f"REF:{ref_log_probs[0].shape, ref_log_probs[1].shape}")
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()

@@ -289,7 +289,7 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
-                init_action, ref_log_probs, _ = self.init_model.get_action(curr)
+                init_action, ref_log_probs, _, _ = self.init_model.get_action(curr)
 
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)

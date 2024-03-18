@@ -76,6 +76,7 @@ def args():
 
 wandb.login()
 
+torch.manual_seed(123)
 
 class Trainer:
     """

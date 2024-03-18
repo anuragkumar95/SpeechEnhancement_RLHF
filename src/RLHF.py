@@ -334,6 +334,7 @@ class PPO:
             states = torch.stack(states)
             step, b, c, t, f = states.shape
             states = states.reshape(step * b, c, t, f)
+
         print(f"STATES:{states.shape}")
         print(f"REWARDS:{rewards.shape}")
         print(f"ACTIONS:{len(actions)}")
@@ -367,7 +368,7 @@ class PPO:
             print(f"mb_params:{mb_params[0][0].shape, mb_params[0][1].shape, mb_params[1][0].shape, mb_params[1][1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_action, mb_params)
 
-            mb_states = torch.stack(states[mb_indx])
+            mb_states = states[mb_indx, ...]
             print(f"mb_states:{mb_states.shape}")
             values = critic(states[t])
             VALUES[:, t] = values.reshape(-1)

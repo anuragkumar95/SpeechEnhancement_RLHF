@@ -226,7 +226,7 @@ class PPO:
 
     def run_episode(self, batch, actor, critic, optimizer):
         if self.episode_len <= 1:
-            return self.run_one_step_episode(batch, actor, critic, optimizer)
+            return self.run_n_step_episode(batch, actor, critic, optimizer)
         else:
             return self.run_n_step_episode(batch, actor, critic, optimizer)
 

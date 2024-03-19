@@ -298,11 +298,12 @@ class PPO:
                 init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
                 print(f"REF1:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
                 print(f"INIT:{init_action[0].shape, init_action[0].mean()} ACT:{action[0].shape, action[0].mean()}")
-                print(f"REF_PARAMS:{ref_params[0][0].shape, ref_params[0][1].shape}")
+              
                 ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
-                #(m_mu, m_var), (c_mu, c_var) = ref_params
+                log_probs2, _ = self.init_model.get_action_prob(curr, action)
                 
                 print(f"REF2:{ref_log_probs2[0].mean()}")
+                print(f"LOG2:{log_probs2[0].mean()}")
                 
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
@@ -330,11 +331,7 @@ class PPO:
                 for i in range(bs):
                     act = {
                         'action':(action[0][i, ...].detach(), action[1][i, ...].detach()),
-                        #'params':((params[0][0][i, ...].detach(), params[0][1][i, ...].detach()),
-                        #          (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
-                    #print(f"ACTION:{action[0][i, ...].shape, action[1][i, ...].shape, action[0].shape, action[1].shape}")
-                    #print(f"PARAMS:{params[0][0][i, ...].shape, params[0][1][i, ...].shape, params[1][0][i, ...].shape, params[1][1][i, ...].shape}")
                     actions.append(act)
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
                 
@@ -375,21 +372,12 @@ class PPO:
         for t in range(0, len(indices), bs):
             #Get mini batch indices
             mb_indx = indices[t:t+bs]
-            
+            mb_states = states[mb_indx, ...]
+
             #Get new logprobs and values for the sampled (state, action) pair
             mb_action = ([actions[i]['action'][0] for i in mb_indx],
                          [actions[i]['action'][1] for i in mb_indx])
             mb_action = (torch.stack(mb_action[0]).squeeze(1), torch.stack(mb_action[1]))
-            
-            #mb_params = (([actions[i]['params'][0][0].T for i in mb_indx], [actions[i]['params'][0][1].T for i in mb_indx]), 
-            #             ([actions[i]['params'][1][0] for i in mb_indx], [actions[i]['params'][1][1] for i in mb_indx]))
-            #mb_params = ((torch.stack(mb_params[0][0]), torch.stack(mb_params[0][1])), 
-            #             (torch.stack(mb_params[1][0]), torch.stack(mb_params[1][0])))
-            
-            #print(f"mb_action:{mb_action[0].shape, mb_params[0][0].shape, mb_params[0][1].shape}")
-            #print(f"mb_action:{mb_action[1].shape, mb_params[1][0].shape, mb_params[1][1].shape}")
-
-            mb_states = states[mb_indx, ...]
 
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
             values = critic(mb_states).reshape(-1)

@@ -312,7 +312,6 @@ class PPO:
                 state['clean'] = clean
 
                 #Calculate kl_penalty
-                
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
@@ -336,6 +335,7 @@ class PPO:
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
                 
                 r_ts.append(r_t)
+                curr = state['noisy']
 
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)

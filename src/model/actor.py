@@ -160,8 +160,8 @@ class MaskDecoder(nn.Module):
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var)
             x = self.prelu_out(x)
-            #return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_entropy, (x_mu, x_var)
-            return x.unsqueeze(1), x_logprob, x_entropy, (x_mu, x_var)
+            return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_entropy, (x_mu, x_var)
+            
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
@@ -282,10 +282,16 @@ class TSCNet(nn.Module):
         (m_mu, m_logvar), (c_mu, c_logvar) = params
         m_action, c_action = action
 
-        if len(m_action.shape) != len(m_mu.shape):
-            m_action = m_action.squeeze(1)
+
+        print(m_action.shape, m_mu.shape, m_logvar.shape)
+        if len(m_action.shape) > len(m_mu.shape):
+            m_mu = m_mu.unsqueeze(1)
+            m_logvar = m_logvar.unsqueeze(1)
+        print(m_action.shape, m_mu.shape, m_logvar.shape)
         if m_action.shape != m_mu.shape:
-           m_action = m_action.permute(0, 2, 1)
+           m_mu = m_mu.permute(0, 1, 3, 2)
+           m_logvar = m_logvar.permute(0, 1, 3, 2)
+        print(m_action.shape, m_mu.shape, m_logvar.shape)
 
         m_sigma = torch.abs(torch.exp(0.5 * m_logvar) + 1e-08)
         c_sigma = torch.abs(torch.exp(0.5 * c_logvar) + 1e-08)

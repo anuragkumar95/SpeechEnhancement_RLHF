@@ -170,7 +170,7 @@ class MaskDecoder(nn.Module):
             
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-            return self.prelu_out(x).permute(0, 2, 1).unsqueeze(1)
+            return self.prelu_out(x)
 
 class ComplexDecoder(nn.Module):
     def __init__(self, num_channel=64, distribution=None, K=None):

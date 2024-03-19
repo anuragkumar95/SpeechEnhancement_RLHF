@@ -292,9 +292,13 @@ class PPO:
             states = []
             logprobs = []
             actions = []
-            for _ in range(self.episode_len):
+            s_act = None
+            for i in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
+                print(f"CURR: {curr.shape, (noisy-curr).mean()}")
                 action, log_probs, _, _ = actor.get_action(curr)
+                if i == 0:
+                    s_act = action
                 init_action, _, _, _ = self.init_model.get_action(curr)
               
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
@@ -384,6 +388,7 @@ class PPO:
             #mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
             
             mb_action = actions[t]
+            print(f"equal:{(s_act-mb_action).mean()}")
             print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
             values = critic(mb_states).reshape(-1)

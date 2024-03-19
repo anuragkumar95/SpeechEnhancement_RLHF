@@ -165,8 +165,8 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
-            x = self.prelu_out(x)
-            return x, x_logprob, x_entropy, (x_mu, x_var)
+            x_out = self.prelu_out(x)
+            return (x, x_out), x_logprob, x_entropy, (x_mu, x_var)
             
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
@@ -293,7 +293,7 @@ class TSCNet(nn.Module):
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
        
-        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, action[0])
+        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, action[0][0])
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_2, action[1])
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

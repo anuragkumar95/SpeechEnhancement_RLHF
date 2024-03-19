@@ -388,7 +388,7 @@ class PPO:
             #mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
             
             mb_action = actions[t]
-            print(f"equal:{(s_act-mb_action).mean()}")
+            print(f"equal:{(s_act[0][0]-mb_action[0][0]).mean()}")
             print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
             values = critic(mb_states).reshape(-1)

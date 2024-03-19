@@ -263,6 +263,7 @@ class TSCNet(nn.Module):
         if self.dist:
             mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
             complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
+            print(f"MASK:{mask.shape}, MU:{params[0].shape}")
             return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
         
         mask = self.mask_decoder(out_2)

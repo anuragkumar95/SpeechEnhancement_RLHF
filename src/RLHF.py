@@ -368,11 +368,13 @@ class PPO:
                          [actions[i]['action'][1] for i in mb_indx])
             mb_action = (torch.stack(mb_action[0]).squeeze(1), torch.stack(mb_action[1]))
             
-            mb_params = (([actions[i]['params'][0][0].T for i in mb_indx], [actions[i]['params'][0][1].T for i in mb_indx]), 
+            mb_params = (([actions[i]['params'][0][0] for i in mb_indx], [actions[i]['params'][0][1] for i in mb_indx]), 
                          ([actions[i]['params'][1][0] for i in mb_indx], [actions[i]['params'][1][1] for i in mb_indx]))
             mb_params = ((torch.stack(mb_params[0][0]), torch.stack(mb_params[0][1])), 
                          (torch.stack(mb_params[1][0]), torch.stack(mb_params[1][0])))
             
+            print(f"mb_action:{mb_action[0].shape, mb_params[0][0].shape, mb_params[0][1].shape}")
+            print(f"mb_action:{mb_action[1].shape, mb_params[1][0].shape, mb_params[1][1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_action, mb_params)
 
             mb_states = states[mb_indx, ...]

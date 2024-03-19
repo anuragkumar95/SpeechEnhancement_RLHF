@@ -321,6 +321,7 @@ class PPO:
                         'params':((params[0][0][i, ...].detach(), params[0][1][i, ...].detach()),
                                   (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
+                    print(f"ACTION:{action[0][i, ...].shape, action[1][i, ...].shape, action[0].shape, action[1].shape}")
                     print(f"PARAMS:{params[0][0][i, ...].shape, params[0][1][i, ...].shape, params[1][0][i, ...].shape, params[1][1][i, ...].shape}")
                     actions.append(act)
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))

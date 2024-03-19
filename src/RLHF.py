@@ -289,11 +289,10 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
-                print(f"A:{action[0].shape, action[1].shape}")
-                print(f"P:{params[0][0].shape, params[0][1].shape}")
                 init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
-                #ref_log_probs, _ = self.init_model.get_action_prob(action, ref_params)
-
+                print(f"REF1:{ref_log_probs.mean()}")
+                ref_log_probs2, _ = self.init_model.get_action_prob(init_action, ref_params)
+                print(f"REF2:{ref_log_probs2.mean()}")
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
@@ -301,7 +300,7 @@ class PPO:
                 state['clean'] = clean
 
                 #Calculate kl_penalty
-                #print(f"REF:{ref_log_probs[0].shape, ref_log_probs[1].shape}")
+                
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
@@ -371,13 +370,13 @@ class PPO:
                          [actions[i]['action'][1] for i in mb_indx])
             mb_action = (torch.stack(mb_action[0]).squeeze(1), torch.stack(mb_action[1]))
             
-            mb_params = (([actions[i]['params'][0][0] for i in mb_indx], [actions[i]['params'][0][1] for i in mb_indx]), 
+            mb_params = (([actions[i]['params'][0][0].T for i in mb_indx], [actions[i]['params'][0][1].T for i in mb_indx]), 
                          ([actions[i]['params'][1][0] for i in mb_indx], [actions[i]['params'][1][1] for i in mb_indx]))
             mb_params = ((torch.stack(mb_params[0][0]), torch.stack(mb_params[0][1])), 
                          (torch.stack(mb_params[1][0]), torch.stack(mb_params[1][0])))
             
-            print(f"mb_action:{mb_action[0].shape, mb_params[0][0].shape, mb_params[0][1].shape}")
-            print(f"mb_action:{mb_action[1].shape, mb_params[1][0].shape, mb_params[1][1].shape}")
+            #print(f"mb_action:{mb_action[0].shape, mb_params[0][0].shape, mb_params[0][1].shape}")
+            #print(f"mb_action:{mb_action[1].shape, mb_params[1][0].shape, mb_params[1][1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_action, mb_params)
 
             mb_states = states[mb_indx, ...]

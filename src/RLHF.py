@@ -297,7 +297,7 @@ class PPO:
                 action, log_probs, _, params = actor.get_action(curr)
                 init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
                 print(f"REF1:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
-                print(f"INIT:{init_action[0].shape, init_action[0].mean()}")
+                print(f"INIT:{init_action[0].shape, init_action[0].mean()} ACT:{action[0].shape, action[0].mean()}")
                 print(f"REF_PARAMS:{ref_params[0][0].shape, ref_params[0][1].shape}")
                 ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
                 #(m_mu, m_var), (c_mu, c_var) = ref_params

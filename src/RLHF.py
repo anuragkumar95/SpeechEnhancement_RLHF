@@ -282,7 +282,7 @@ class PPO:
         clean = clean.permute(0, 1, 3, 2)
         bs = clean.shape[0]
         ep_kl_penalty = 0
-        actor = actor.eval()
+        actor = actor.train()
         critic = critic.train()
         self.init_model = self.init_model.eval()
         a_optim, c_optim = optimizer

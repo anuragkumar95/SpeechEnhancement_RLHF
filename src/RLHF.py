@@ -395,7 +395,8 @@ class PPO:
             
             mb_action = actions[t]
             #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
-            log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
+            #log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
+            action, log_probs, entropies, _ = actor.get_action(mb_states)
      
             values = critic(mb_states).reshape(-1)
             #for i, val in enumerate(values):

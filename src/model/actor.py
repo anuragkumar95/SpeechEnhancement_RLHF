@@ -356,6 +356,7 @@ class TSCNet(nn.Module):
             mask = self.mask_decoder(out_2)
             complex_out = self.complex_decoder(out_2)
         
+        mask = mask.permute(0, 2, 1).unsqueeze(1)
         out_mag = mask * mag
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)

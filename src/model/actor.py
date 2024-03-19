@@ -142,15 +142,16 @@ class MaskDecoder(nn.Module):
         self.gpu_id = gpu_id
         self.dist = distribution
 
-    def sample(self, mu, logvar):
+    def sample(self, mu, logvar, x=None):
         sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         N = Normal(mu, sigma)
-        x = N.rsample()
+        if x is None:
+            x = N.rsample()
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy
 
-    def forward(self, x):
+    def forward(self, x, action=None):
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.conv_1(x)
@@ -158,7 +159,7 @@ class MaskDecoder(nn.Module):
         if self.dist is not None:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-            x, x_logprob, x_entropy = self.sample(x_mu, x_var)
+            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
             x = self.prelu_out(x)
             return x.permute(0, 2, 1).unsqueeze(1), x_logprob, x_entropy, (x_mu.permute(0, 2, 1).unsqueeze(1), x_var.permute(0, 2, 1).unsqueeze(1))
             
@@ -185,15 +186,16 @@ class ComplexDecoder(nn.Module):
             self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.out_dist = distribution
        
-    def sample(self, mu, logvar):
+    def sample(self, mu, logvar, x=None):
         sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         N = Normal(mu, sigma)
-        x = N.rsample()
+        if x is None:
+            x = N.rsample()
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy
 
-    def forward(self, x):
+    def forward(self, x, action=None):
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
@@ -201,7 +203,7 @@ class ComplexDecoder(nn.Module):
         if self.out_dist == "Normal":
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
-            x, x_logprob, x_entropy = self.sample(x_mu, x_var)
+            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
             return x, x_logprob, x_entropy, (x_mu, x_var)
         
         if self.out_dist == "Categorical":
@@ -270,7 +272,7 @@ class TSCNet(nn.Module):
         complex_out = self.complex_decoder(out_2)
         return (mask, complex_out), None, None
     
-    def get_action_prob(self, action, params):
+    def get_action_prob(self, x, action=None):
         """
         ARGS:
             action : (Tuple) Tuple of mag and complex masks.
@@ -279,29 +281,21 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        (m_mu, m_logvar), (c_mu, c_logvar) = params
-        m_action, c_action = action
-
-
-        print(m_action.shape, m_mu.shape, m_logvar.shape)
-        if len(m_action.shape) > len(m_mu.shape):
-            m_mu = m_mu.unsqueeze(1)
-            m_logvar = m_logvar.unsqueeze(1)
-        print(m_action.shape, m_mu.shape, m_logvar.shape)
-        if m_action.shape != m_mu.shape:
-           m_mu = m_mu.permute(0, 1, 3, 2)
-           m_logvar = m_logvar.permute(0, 1, 3, 2)
-        print(m_action.shape, m_mu.shape, m_logvar.shape)
-
-        m_sigma = torch.abs(torch.exp(0.5 * m_logvar) + 1e-08)
-        c_sigma = torch.abs(torch.exp(0.5 * c_logvar) + 1e-08)
-
-        m_dist = Normal(m_mu, m_sigma)
-        c_dist = Normal(c_mu, c_sigma)
-        m_logprob = m_dist.log_prob(m_action)
-        c_logprob = c_dist.log_prob(c_action)
+        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
-        return (m_logprob, c_logprob), (m_dist.entropy(), c_dist.entropy())
+        x_in = torch.cat([mag, x], dim=1)
+
+        out_1 = self.dense_encoder(x_in)
+        out_2 = self.TSCB_1(out_1)
+        #out_3 = self.TSCB_2(out_2)
+        #out_4 = self.TSCB_3(out_3)
+        #out_5 = self.TSCB_4(out_4)
+       
+        mask, m_logprob, m_entropy, params = self.mask_decoder(out_2, action[0])
+        complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2, action[1])
+        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
+        
+        #return (m_logprob, c_logprob), (m_dist.entropy(), c_dist.entropy())
         
     def get_embedding(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)

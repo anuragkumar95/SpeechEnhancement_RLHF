@@ -290,9 +290,9 @@ class PPO:
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
                 init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
-                print(f"REF1:{ref_log_probs.mean()}")
+                print(f"REF1:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
                 ref_log_probs2, _ = self.init_model.get_action_prob(init_action, ref_params)
-                print(f"REF2:{ref_log_probs2.mean()}")
+                print(f"REF2:{ref_log_probs2[0].mean(), ref_log_probs2[1].mean()}")
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud

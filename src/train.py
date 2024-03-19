@@ -300,7 +300,7 @@ class Trainer:
             + args.loss_weights[1] * loss_mag
             + args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
-            + 0.000001 * kld_loss
+            #+ 0.000001 * kld_loss
         )
         """
         if generator_outputs["tgt_k_real"] is not None:

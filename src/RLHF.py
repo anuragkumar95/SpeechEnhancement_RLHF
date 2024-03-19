@@ -291,7 +291,7 @@ class PPO:
                 action, log_probs, _, _ = actor.get_action(curr)
                 init_action, ref_log_probs, _, _ = self.init_model.get_action(curr)
                 print(f"REF1:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
-                ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
+                ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action.squeeze(1).permute(0, 2, 1))
                 print(f"REF2:{ref_log_probs2[0].mean(), ref_log_probs2[1].mean()}")
                 
                 state = self.env.get_next_state(state=curr, action=action)

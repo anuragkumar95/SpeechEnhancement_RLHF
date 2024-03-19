@@ -205,9 +205,9 @@ class ComplexDecoder(nn.Module):
 
         if self.out_dist == "Normal":
             x_mu = self.conv_mu(x)
-            x_var = self.conv_var(x)
-            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
-            return x, x_logprob, x_entropy, (x_mu, x_var)
+            #x_var = self.conv_var(x)
+            x, x_logprob, x_entropy = self.sample(x_mu, action)
+            return x, x_logprob, x_entropy, x_mu
         
         if self.out_dist == "Categorical":
             #Limit the value of the output to be between 1, -1

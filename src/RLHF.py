@@ -323,6 +323,9 @@ class PPO:
                 #Store trajectory
                 states.append(curr)
                 rewards.append(r_t - self.beta * kl_penalty)
+                actions.append(action)
+                logprobs.append(log_probs)
+                """
                 for i in range(bs):
                     act = {
                         'action':((action[0][0][i, ...].detach(), 
@@ -331,7 +334,7 @@ class PPO:
                     }
                     actions.append(act)
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
-                
+                """
                 r_ts.append(r_t)
                 curr = state['noisy']
 
@@ -343,16 +346,17 @@ class PPO:
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             
             #flatten all
-            b_target_values = target_values.reshape(-1)
-            b_advantages = advantages.reshape(-1)
-            states = torch.stack(states)
-            step, b, c, t, f = states.shape
-            states = states.reshape(step * b, c, t, f)
+            #b_target_values = target_values.reshape(-1)
+            #b_advantages = advantages.reshape(-1)
+            #states = torch.stack(states)
+            #step, b, c, t, f = states.shape
+            #states = states.reshape(step * b, c, t, f)
 
-        print(f"STATES        :{states.shape}")
-        print(f"TARGET_VALS   :{b_target_values.shape}")
-        print(f"ACTIONS       :{len(actions)}")
-        print(f"LOGPROBS      :{len(logprobs)}")
+        print(f"STATES      :{len(states)}")
+        print(f"TARGET_VALS :{target_values.shape}")
+        print(f"ACTIONS     :{len(actions)}")
+        print(f"LOGPROBS    :{len(logprobs)}")
+        print(f"ADVANTAGES  :{advantages.shape}")
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
@@ -364,38 +368,41 @@ class PPO:
         step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
 
-        indices = [t for t in range(len(states))]
-        np.random.shuffle(indices)
+        #indices = [t for t in range(len(states))]
+        #np.random.shuffle(indices)
 
-        for t in range(0, len(indices), bs):
+        #for t in range(0, len(indices), bs):
+        for t, mb_states in enumerate(states):
             #Get mini batch indices
-            mb_indx = indices[t:t+bs]
-            mb_states = states[mb_indx, ...]
+            #mb_indx = indices[t:t+bs]
+            #mb_states = states[mb_indx, ...]
 
             #Get new logprobs and values for the sampled (state, action) pair
-            mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
-                          [actions[i]['action'][0][1] for i in mb_indx]),
-                         [actions[i]['action'][1] for i in mb_indx])
-            mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
+            #mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
+            #              [actions[i]['action'][0][1] for i in mb_indx]),
+            #             [actions[i]['action'][1] for i in mb_indx])
+            #mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
+            
+            mb_action = actions[t]
             print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
             values = critic(mb_states).reshape(-1)
-            for i, val in enumerate(values):
-                b = mb_indx[i] // self.episode_len
-                ts = mb_indx[i] % self.episode_len
-                VALUES[b, ts] = val
+            #for i, val in enumerate(values):
+            #    b = mb_indx[i] // self.episode_len
+            #    ts = mb_indx[i] % self.episode_len
+            VALUES[:, t] = values
 
             if self.train_phase:
-                entropy = 0
-                #entropy = entropies[0] + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
+                entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                 log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
 
                 print(f"log_prob:{log_probs[0].mean(), log_probs[1].mean()}")
 
 
-                old_logprobs = ([logprobs[i][0] for i in mb_indx],
-                                [logprobs[i][1] for i in mb_indx])
-                mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
+                #old_logprobs = ([logprobs[i][0] for i in mb_indx],
+                #                [logprobs[i][1] for i in mb_indx])
+                #mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
+                mb_oldlogprobs = logprobs[t]
                 old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
                 
             else:
@@ -408,15 +415,15 @@ class PPO:
             ratio = torch.exp(logratio)
             
             #Policy loss
-            pg_loss1 = -b_advantages[mb_indx] * ratio
-            pg_loss2 = -b_advantages[mb_indx] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+            pg_loss1 = -advantages[:, t] * ratio
+            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss
-            v_loss = 0.5 * ((b_target_values[mb_indx] - values) ** 2).mean()
+            v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()
 
             #Entropy loss
-            entropy_loss = entropy#.mean()
+            entropy_loss = entropy.mean()
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 

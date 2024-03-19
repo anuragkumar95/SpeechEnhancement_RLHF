@@ -323,7 +323,7 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
         if self.dist == "Normal":
-            mask, _, _, _ = self.mask_decoder(out_2)
+            (_, mask), _, _, _ = self.mask_decoder(out_2)
             complex_out, _, _, _ = self.complex_decoder(out_2)
         
         if self.dist == "Categorical":

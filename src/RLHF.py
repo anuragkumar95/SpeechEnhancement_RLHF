@@ -485,7 +485,7 @@ class PPO:
                 log_probs, _ = actor.get_action_prob(curr, action)
                 print(f"MAG_PROBS2:{log_probs[0].min(), log_probs[0].max(), log_probs[0].mean()}")
                 print(f"COMP_PROBS2:{log_probs[1].min(), log_probs[1].max(), log_probs[1].mean()}")
-                m_logprobs = self.get_action_prob(m_mu, m_var, action[0])
+                m_logprobs = self.get_action_prob(m_mu, m_var, action[0][0])
                 c_logprobs = self.get_action_prob(c_mu, c_var, action[1])
                 print(f"MAG_PROBS3:{m_logprobs.min(), m_logprobs.max(), m_logprobs.mean()}")
                 print(f"COMP_PROBS3:{c_logprobs.min(), c_logprobs.max(), c_logprobs.mean()}")

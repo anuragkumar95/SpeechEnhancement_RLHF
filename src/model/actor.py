@@ -281,17 +281,19 @@ class TSCNet(nn.Module):
         (m_mu, m_logvar), (c_mu, c_logvar) = params
         m_action, c_action = action
 
-        #if len(m_action.shape) != len(m_mu.shape):
-        #    m_action = m_action.squeeze(1)
-        #if m_action.shape != m_mu.shape:
-        #    m_action = m_action.permute(0, 2, 1)
+        if len(m_action.shape) != len(m_mu.shape):
+            m_action = m_action.squeeze(1)
+        if m_action.shape != m_mu.shape:
+           m_action = m_action.permute(0, 2, 1)
 
         m_sigma = torch.abs(torch.exp(0.5 * m_logvar) + 1e-08)
         c_sigma = torch.abs(torch.exp(0.5 * c_logvar) + 1e-08)
+
         m_dist = Normal(m_mu, m_sigma)
         c_dist = Normal(c_mu, c_sigma)
         m_logprob = m_dist.log_prob(m_action)
         c_logprob = c_dist.log_prob(c_action)
+        
         return (m_logprob, c_logprob), (m_dist.entropy(), c_dist.entropy())
         
     def get_embedding(self, x):

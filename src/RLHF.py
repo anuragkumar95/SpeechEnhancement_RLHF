@@ -314,8 +314,8 @@ class PPO:
                 #Calculate kl_penalty
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_ratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
-                ratio = torch.exp(log_ratio)
+                logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                ratio = torch.exp(logratio)
                 #kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
                 with torch.no_grad():
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html

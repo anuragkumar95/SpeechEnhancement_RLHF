@@ -29,7 +29,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from speech_enh_env import SpeechEnhancementAgent
 
-torch.manual_seed(4)
+torch.manual_seed(111)
 
 def args():
     parser = argparse.ArgumentParser()

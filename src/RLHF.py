@@ -428,7 +428,7 @@ class PPO:
             pg_loss1 = -advantages[:, t] * ratio
             pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
             if pg_loss1.mean() == pg_loss2.mean():
-                pg_loss = pg_loss1
+                pg_loss = pg_loss1.mean()
             else:
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 

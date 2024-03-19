@@ -290,11 +290,8 @@ class TSCNet(nn.Module):
 
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
-        #out_3 = self.TSCB_2(out_2)
-        #out_4 = self.TSCB_3(out_3)
-        #out_5 = self.TSCB_4(out_4)
        
-        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, action[0].squeeze(1).permute(0, 2, 1))
+        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, action[0].squeeze(1).permute(0, 2, 1).contiguous())
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_2, action[1])
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

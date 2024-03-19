@@ -429,7 +429,7 @@ class PPO:
             v_loss = 0.5 * ((b_target_values[mb_indx] - values) ** 2).mean()
 
             #Entropy loss
-            entropy_loss = entropy.mean()
+            entropy_loss = entropy#.mean()
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
 

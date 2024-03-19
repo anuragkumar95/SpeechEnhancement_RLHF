@@ -144,9 +144,9 @@ class MaskDecoder(nn.Module):
 
     def sample(self, mu, logvar, x=None):
         sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
-        print(f"mu:{mu.mean()}, sigma:{sigma.mean()}")
-        if x is not None:
-            print(f"x:{x.shape, x.mean()}")
+        #print(f"mu:{mu.mean()}, sigma:{sigma.mean()}")
+        #if x is not None:
+        #    print(f"x:{x.shape, x.mean()}")
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -163,8 +163,8 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
-            x = self.prelu_out(x).permute(0, 2, 1)
-            return x.unsqueeze(1), x_logprob, x_entropy, (x_mu.permute(0, 2, 1).unsqueeze(1), x_var.permute(0, 2, 1).unsqueeze(1))
+            x = self.prelu_out(x)
+            return x, x_logprob, x_entropy, (x_mu, x_var)
             
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)

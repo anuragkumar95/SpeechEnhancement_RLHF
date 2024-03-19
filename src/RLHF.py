@@ -269,7 +269,7 @@ class PPO:
         sigma = torch.exp(0.5 * logvar) + 1e-08
         dist = Normal(mu, sigma)
         return dist.log_prob(action)
-
+    '''
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -451,9 +451,46 @@ class PPO:
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
 
-            
+    '''
 
-                
+    def run_n_step_episode(self, batch, actor, critic, optimizer):
+        """
+        Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
+        Here the noisy signal is enhanced n times in an episode. 
+        """
+        #Preprocessed batch
+        cl_aud, clean, noisy, _ = batch
+        noisy = noisy.permute(0, 1, 3, 2)
+        clean = clean.permute(0, 1, 3, 2)
+        bs = clean.shape[0]
+        critic.eval()
+        actor.eval()
+        ep_kl_penalty = 0
+        print(f"NOISY:{noisy.shape}, CLEAN:{clean.shape}")
+        #Calculate target values and advantages
+        with torch.no_grad():
+            curr = noisy
+            for _ in range(self.episode_len):
+                #Unroll policy for n steps and store rewards.
+                action, log_probs, _, params = actor.get_action(curr)
+                print(f"ACTION:{action.min(), action.max(), action.mean()}")
+                print(f"MAG_PROBS:{log_probs[0].min(), log_probs[0].max(), log_probs[0].mean()}")
+                print(f"COMP_PROBS:{log_probs[1].min(), log_probs[1].max(), log_probs[1].mean()}")
+                (m_mu, m_var), (c_mu, c_var) = params
+                print(f"M_MU:{m_mu.min(), m_mu.max(), m_mu.mean()}")
+                print(f"M_VAR:{m_var.min(), m_var.max(), m_var.mean()}")
+                print(f"C_MU:{c_mu.min(), c_mu.max(), c_mu.mean()}")
+                print(f"C_VAR:{c_var.min(), c_var.max(), c_var.mean()}")
+                log_probs, _ = actor.get_action_prob(curr, action)
+                print(f"MAG_PROBS2:{log_probs[0].min(), log_probs[0].max(), log_probs[0].mean()}")
+                print(f"COMP_PROBS2:{log_probs[1].min(), log_probs[1].max(), log_probs[1].mean()}")
+                m_logprobs = self.get_action_prob(m_mu, m_var, action[0])
+                c_logprobs = self.get_action_prob(c_mu, c_var, action[1])
+                print(f"MAG_PROBS3:{m_logprobs.min(), m_logprobs.max(), m_logprobs.mean()}")
+                print(f"COMP_PROBS3:{c_logprobs.min(), c_logprobs.max(), c_logprobs.mean()}")
+
+
+        return (0, 0, 0, 0), (0 ,0 ,0 ,0, 0)          
 
             
 

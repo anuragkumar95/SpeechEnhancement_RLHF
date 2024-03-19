@@ -285,6 +285,7 @@ class PPO:
         actor = actor.eval()
         critic = critic.train()
         self.init_model = self.init_model.eval()
+        a_optim, c_optim = optimizer
         
         #Calculate target values and advantages
         with torch.no_grad():
@@ -297,7 +298,7 @@ class PPO:
             
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
-                print(f"CURR: {curr.shape, (noisy-curr).mean()}")
+                #print(f"CURR: {curr.shape, (noisy-curr).mean()}")
                 action, log_probs, _, _ = actor.get_action(curr)
                 init_action, _, _, _ = self.init_model.get_action(curr)
               
@@ -393,7 +394,7 @@ class PPO:
             #mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
             
             mb_action = actions[t]
-            print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
+            #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
      
             values = critic(mb_states).reshape(-1)
@@ -438,21 +439,25 @@ class PPO:
             #Entropy loss
             entropy_loss = entropy.mean()
 
-            clip_loss = pg_loss - (self.en_coef * entropy_loss) + (self.val_coef * v_loss)
+            clip_loss = pg_loss - (self.en_coef * entropy_loss) #+ (self.val_coef * v_loss)
 
-            wandb.log({
-                'ratio':ratio.mean(),
-                'pg_loss1':pg_loss1.mean(),
-                'pg_loss2':pg_loss2.mean()
-            })
+            #wandb.log({
+            #    'ratio':ratio.mean(),
+            #    'pg_loss1':pg_loss1.mean(),
+            #    'pg_loss2':pg_loss2.mean()
+            #})
 
-            optimizer.zero_grad()
+            #optimizer.zero_grad()
+            a_optim.zero_grad()
+            c_optim.zero_grad()
             clip_loss.backward()
+            v_loss.backward()
             #Update network
             if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                 torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
                 torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
-                optimizer.step()
+                a_optim.step()
+                c_optim.step()
 
             step_clip_loss += clip_loss.item()
             step_pg_loss += pg_loss.item()

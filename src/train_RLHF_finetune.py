@@ -157,9 +157,12 @@ class Trainer:
         if args.method == 'PPO':
             self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
             self.critic = self.critic.to(gpu_id)
-            params = list(self.actor.parameters()) + list(self.critic.parameters())
+            #params = list(self.actor.parameters()) + list(self.critic.parameters())
             self.optimizer = torch.optim.AdamW(
-                filter(lambda layer:layer.requires_grad, params), lr=args.init_lr
+                filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
+            )
+            self.c_optimizer = torch.optim.AdamW(
+                filter(lambda layer:layer.requires_grad, self.critic.parameters()), lr=1e-05
             )
 
             self.trainer = PPO(init_model=self.expert, 
@@ -196,8 +199,8 @@ class Trainer:
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
-        action, _, _ = self.actor.get_action(inp)
-        exp_action, _, _ = self.expert.get_action(inp)
+        action, _, _, _ = self.actor.get_action(inp)
+        exp_action, _, _, _ = self.expert.get_action(inp)
 
         if self.args.train_phase:
             a_t = action
@@ -239,7 +242,7 @@ class Trainer:
                     })
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, self.optimizer)
+                    loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer))
                     
                     if loss is not None:
                         wandb.log({

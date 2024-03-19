@@ -269,7 +269,7 @@ class PPO:
         sigma = torch.exp(0.5 * logvar) + 1e-08
         dist = Normal(mu, sigma)
         return dist.log_prob(action)
-    '''
+    
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -294,17 +294,13 @@ class PPO:
             actions = []
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
-                action, log_probs, _, params = actor.get_action(curr)
-                init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
-                print(f"REF1:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
-                print(f"INIT:{init_action[0].shape, init_action[0].mean()} ACT:{action[0].shape, action[0].mean()}")
+                action, log_probs, _, _ = actor.get_action(curr)
+                init_action, _, _, _ = self.init_model.get_action(curr)
               
-                ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
-                log_probs2, _ = self.init_model.get_action_prob(curr, action)
-                
-                print(f"REF2:{ref_log_probs2[0].mean(), ref_log_probs2[1].mean()}")
-                print(f"LOG2:{log_probs2[0].mean(), log_probs2[1].mean()}")
-                
+                ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
+                print(f"NEW:{log_probs[0].mean(), log_probs[1].mean()}")
+                print(f"REF:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
+     
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
@@ -375,10 +371,11 @@ class PPO:
             mb_states = states[mb_indx, ...]
 
             #Get new logprobs and values for the sampled (state, action) pair
-            mb_action = ([actions[i]['action'][0] for i in mb_indx],
+            mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
+                          [actions[i]['action'][0][1] for i in mb_indx]),
                          [actions[i]['action'][1] for i in mb_indx])
-            mb_action = (torch.stack(mb_action[0]).squeeze(1), torch.stack(mb_action[1]))
-
+            mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
+            print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
             values = critic(mb_states).reshape(-1)
             for i, val in enumerate(values):
@@ -451,7 +448,7 @@ class PPO:
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
 
-    '''
+    
 
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """

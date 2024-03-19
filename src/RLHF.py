@@ -314,9 +314,15 @@ class PPO:
                 #Calculate kl_penalty
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
-                ep_kl_penalty += kl_penalty.detach()
-                
+                log_ratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                ratio = torch.exp(log_ratio)
+                #kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
+                with torch.no_grad():
+                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
+                    #old_approx_kl = (-logratio).mean()
+                    approx_kl = ((ratio - 1) - logratio).mean()
+                    ep_kl_penalty += approx_kl.detach()
+
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    

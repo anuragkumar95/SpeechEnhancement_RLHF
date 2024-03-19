@@ -357,7 +357,7 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss, e_loss = self.calculate_generator_loss(generator_outputs)
+        loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
@@ -383,7 +383,7 @@ class Trainer:
 
         wandb.log({
             'step_gen_loss':loss,
-            'step_gen_kld_loss': e_loss / self.ACCUM_GRAD,
+            #'step_gen_kld_loss': e_loss / self.ACCUM_GRAD,
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })
@@ -405,14 +405,14 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss, ce_loss = self.calculate_generator_loss(generator_outputs)
+        loss = self.calculate_generator_loss(generator_outputs)
 
         discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)
         if discrim_loss_metric is None:
             discrim_loss_metric = torch.tensor([0.0])
         
 
-        return loss, ce_loss, discrim_loss_metric, pesq
+        return loss, discrim_loss_metric, pesq
 
     def test(self):
         self.model.eval()
@@ -423,7 +423,7 @@ class Trainer:
         for idx, batch in enumerate(self.test_ds):
             step = idx + 1
             try:
-                loss, ce_loss, disc_loss, pesq = self.test_step(batch)
+                loss, disc_loss, pesq = self.test_step(batch)
             except Exception as e:
                 print(e)
                 continue

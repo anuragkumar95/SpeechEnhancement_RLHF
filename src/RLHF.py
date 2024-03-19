@@ -427,7 +427,10 @@ class PPO:
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
             pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
-            pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+            if pg_loss1 == pg_loss2:
+                pg_loss = pg_loss1
+            else:
+                pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
             #value_loss
             v_loss = 0.5 * ((target_values[:, t] - values) ** 2).mean()

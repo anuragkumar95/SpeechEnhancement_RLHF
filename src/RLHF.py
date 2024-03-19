@@ -300,7 +300,7 @@ class PPO:
                 print(f"INIT:{init_action[0].shape, init_action[0].mean()}")
                 #ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
                 (m_mu, m_var), (c_mu, c_var) = ref_params
-                ref_log_prob_m2 = self.get_action_prob(m_mu, m_var, action[0].squeeze(1))
+                ref_log_prob_m2 = self.get_action_prob(m_mu, m_var, init_action[0].squeeze(1))
                 print(f"REF2:{ref_log_prob_m2.mean()}")
                 
                 state = self.env.get_next_state(state=curr, action=action)

@@ -281,8 +281,6 @@ class PPO:
         noisy = noisy.permute(0, 1, 3, 2)
         clean = clean.permute(0, 1, 3, 2)
         bs = clean.shape[0]
-        critic.eval()
-        actor.eval()
         ep_kl_penalty = 0
         
         #Calculate target values and advantages
@@ -293,13 +291,11 @@ class PPO:
             states = []
             logprobs = []
             actions = []
-            s_act = None
-            for i in range(self.episode_len):
+            
+            for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 print(f"CURR: {curr.shape, (noisy-curr).mean()}")
                 action, log_probs, _, _ = actor.get_action(curr)
-                if i == 0:
-                    s_act = action
                 init_action, _, _, _ = self.init_model.get_action(curr)
               
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
@@ -365,7 +361,7 @@ class PPO:
         print(f"Policy returns:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
-        critic.train()
+        #critic.train()
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0
@@ -388,11 +384,9 @@ class PPO:
             #mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
             
             mb_action = actions[t]
-            print(f"equal:{(s_act[0][0]-mb_action[0][0]).mean()}")
             print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
-            actor.eval()
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
-            actor.train()
+     
             values = critic(mb_states).reshape(-1)
             #for i, val in enumerate(values):
             #    b = mb_indx[i] // self.episode_len

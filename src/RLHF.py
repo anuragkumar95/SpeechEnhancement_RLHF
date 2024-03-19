@@ -302,8 +302,8 @@ class PPO:
                 ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
                 log_probs2, _ = self.init_model.get_action_prob(curr, action)
                 
-                print(f"REF2:{ref_log_probs2[0].mean()}")
-                print(f"LOG2:{log_probs2[0].mean()}")
+                print(f"REF2:{ref_log_probs2[0].mean(), ref_log_probs2[1].mean()}")
+                print(f"LOG2:{log_probs2[0].mean(), log_probs2[1].mean()}")
                 
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)

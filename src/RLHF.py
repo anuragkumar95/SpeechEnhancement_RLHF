@@ -399,7 +399,7 @@ class PPO:
                 VALUES[b, ts] = val
 
             if self.train_phase:
-                entropy = entropies[0] + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
+                #entropy = entropies[0] + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
 
                 print(f"log_prob:{log_probs[0].mean(), log_probs[1].mean()}")

@@ -115,7 +115,7 @@ class Trainer:
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(reward_checkpoint)
             self.reward_model = freeze_layers(self.reward_model, 'all')
-            self.reward_model.eval()
+            #self.reward_model.eval()
         else:
             self.reward_model = None
         
@@ -125,7 +125,7 @@ class Trainer:
         
         #Set expert to eval and freeze all layers.
         self.expert = freeze_layers(self.expert, 'all')
-        self.expert.eval()
+        #self.expert.eval()
      
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 

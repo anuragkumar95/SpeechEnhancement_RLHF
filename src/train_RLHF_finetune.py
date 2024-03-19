@@ -29,6 +29,8 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from speech_enh_env import SpeechEnhancementAgent
 
+torch.manual_seed(123)
+
 def args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--root", type=str, required=True,

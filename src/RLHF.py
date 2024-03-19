@@ -26,6 +26,7 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
+torch.manual_seed(123)
 
 class REINFORCE:
     def __init__(self, 

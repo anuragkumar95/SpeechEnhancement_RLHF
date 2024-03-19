@@ -315,13 +315,13 @@ class PPO:
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
-                ratio = torch.exp(logratio)
+                #ratio = torch.exp(logratio)
                 kl_penalty = logratio.detach()
                 #with torch.no_grad():
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html
                     #old_approx_kl = (-logratio).mean()
                 #    kl_penalty = ((ratio - 1) - logratio).mean().detach()
-                #    ep_kl_penalty += kl_penalty.detach()
+                ep_kl_penalty += kl_penalty
 
                 #Store reward
                 if self.rlhf:

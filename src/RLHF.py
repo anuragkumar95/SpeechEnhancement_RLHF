@@ -441,11 +441,11 @@ class PPO:
 
             clip_loss = pg_loss - (self.en_coef * entropy_loss) #+ (self.val_coef * v_loss)
 
-            #wandb.log({
-            #    'ratio':ratio.mean(),
-            #    'pg_loss1':pg_loss1.mean(),
-            #    'pg_loss2':pg_loss2.mean()
-            #})
+            wandb.log({
+                'ratio':ratio.mean(),
+                'pg_loss1':pg_loss1.mean(),
+                'pg_loss2':pg_loss2.mean()
+            })
 
             #optimizer.zero_grad()
             a_optim.zero_grad()

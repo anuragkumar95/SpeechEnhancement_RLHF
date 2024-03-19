@@ -178,7 +178,7 @@ class Trainer:
             est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1)).squeeze(-1)
 
         else:
-            est_real, est_imag, kld_loss = self.model(noisy_spec)
+            est_real, est_imag = self.model(noisy_spec)
         
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
@@ -194,7 +194,7 @@ class Trainer:
         )
 
         return {
-            "kld_loss": kld_loss,
+            #"kld_loss": kld_loss,
             "est_real": est_real,
             "est_imag": est_imag,
             "est_mag": est_mag,
@@ -293,7 +293,7 @@ class Trainer:
             torch.abs(generator_outputs["est_audio"] - generator_outputs["clean"])
         )
 
-        kld_loss = generator_outputs["kld_loss"]
+        #kld_loss = generator_outputs["kld_loss"]
 
         loss = (
             args.loss_weights[0] * loss_ri
@@ -313,7 +313,7 @@ class Trainer:
             loss = loss + ce_loss 
             return loss, ce_loss
         """
-        return loss, 0.000001*kld_loss
+        return loss#, 0.000001*kld_loss
 
     def calculate_discriminator_loss(self, generator_outputs):
 

@@ -473,7 +473,8 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
-                print(f"ACTION:{action.min(), action.max(), action.mean()}")
+                print(f"MAG_ACTION:{action[0].min(), action[0].max(), action[0].mean()}")
+                print(f"COMP_ACTION:{action[1].min(), action[1].max(), action[1].mean()}")
                 print(f"MAG_PROBS:{log_probs[0].min(), log_probs[0].max(), log_probs[0].mean()}")
                 print(f"COMP_PROBS:{log_probs[1].min(), log_probs[1].max(), log_probs[1].mean()}")
                 (m_mu, m_var), (c_mu, c_var) = params

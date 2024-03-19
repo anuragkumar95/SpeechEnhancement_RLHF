@@ -283,7 +283,7 @@ class PPO:
         bs = clean.shape[0]
         ep_kl_penalty = 0
         actor = actor.eval()
-        critic = critic.eval()
+        critic = critic.train()
         self.init_model = self.init_model.eval()
         
         #Calculate target values and advantages

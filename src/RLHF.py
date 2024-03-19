@@ -20,6 +20,7 @@ import traceback
 from speech_enh_env import  SpeechEnhancementAgent, GaussianStrategy
 import torch
 import wandb
+from torch.distributions import Normal
 
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -264,6 +265,11 @@ class PPO:
             A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
     
+    def get_action_prob(self, mu, logvar, action):
+        sigma = torch.exp(0.5 * logvar) + 1e-08
+        dist = Normal(mu, sigma)
+        return dist.log_prob(action)
+
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -288,12 +294,14 @@ class PPO:
             actions = []
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
-                action, log_probs, _, _ = actor.get_action(curr)
-                init_action, ref_log_probs, _, _ = self.init_model.get_action(curr)
+                action, log_probs, _, params = actor.get_action(curr)
+                init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
                 print(f"REF1:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
                 print(f"INIT:{init_action[0].shape, init_action[0].mean()}")
-                ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
-                print(f"REF2:{ref_log_probs2[0].mean(), ref_log_probs2[1].mean()}")
+                #ref_log_probs2, _ = self.init_model.get_action_prob(curr, init_action)
+                (m_mu, m_var), (c_mu, c_var) = ref_params
+                ref_log_prob_m2 = self.get_action_prob(m_mu, m_var, action[0].squeeze(1))
+                print(f"REF2:{ref_log_prob_m2.mean()}")
                 
                 state = self.env.get_next_state(state=curr, action=action)
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
@@ -321,8 +329,8 @@ class PPO:
                 for i in range(bs):
                     act = {
                         'action':(action[0][i, ...].detach(), action[1][i, ...].detach()),
-                        'params':((params[0][0][i, ...].detach(), params[0][1][i, ...].detach()),
-                                  (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
+                        #'params':((params[0][0][i, ...].detach(), params[0][1][i, ...].detach()),
+                        #          (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
                     #print(f"ACTION:{action[0][i, ...].shape, action[1][i, ...].shape, action[0].shape, action[1].shape}")
                     #print(f"PARAMS:{params[0][0][i, ...].shape, params[0][1][i, ...].shape, params[1][0][i, ...].shape, params[1][1][i, ...].shape}")

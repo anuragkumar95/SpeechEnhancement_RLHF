@@ -150,6 +150,8 @@ class MaskDecoder(nn.Module):
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
+        else:
+            x = x.to(self.gpu_id)
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy

@@ -289,6 +289,8 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
+                print(f"A:{action[0].shape, action[1].shape}")
+                print(f"P:{params[0][0].shape, params[0][1].shape}")
                 init_action, ref_log_probs, _, ref_params = self.init_model.get_action(curr)
                 #ref_log_probs, _ = self.init_model.get_action_prob(action, ref_params)
 
@@ -299,7 +301,7 @@ class PPO:
                 state['clean'] = clean
 
                 #Calculate kl_penalty
-                print(f"REF:{ref_log_probs[0].shape, ref_log_probs[1].shape}")
+                #print(f"REF:{ref_log_probs[0].shape, ref_log_probs[1].shape}")
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 kl_penalty = torch.mean(log_prob, dim=[1, 2]) - torch.mean(ref_log_prob, dim=[1, 2])
@@ -321,8 +323,8 @@ class PPO:
                         'params':((params[0][0][i, ...].detach(), params[0][1][i, ...].detach()),
                                   (params[1][0][i, ...].detach(), params[1][1][i, ...].detach()))
                     }
-                    print(f"ACTION:{action[0][i, ...].shape, action[1][i, ...].shape, action[0].shape, action[1].shape}")
-                    print(f"PARAMS:{params[0][0][i, ...].shape, params[0][1][i, ...].shape, params[1][0][i, ...].shape, params[1][1][i, ...].shape}")
+                    #print(f"ACTION:{action[0][i, ...].shape, action[1][i, ...].shape, action[0].shape, action[1].shape}")
+                    #print(f"PARAMS:{params[0][0][i, ...].shape, params[0][1][i, ...].shape, params[1][0][i, ...].shape, params[1][1][i, ...].shape}")
                     actions.append(act)
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
                 

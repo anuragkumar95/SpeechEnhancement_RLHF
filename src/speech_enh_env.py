@@ -57,7 +57,7 @@ class SpeechEnhancementAgent:
 
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
     
-        out_mag = mask.permute(0, 1, 3, 2) * mag
+        out_mag = mask * mag
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)
 

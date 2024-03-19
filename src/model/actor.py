@@ -144,6 +144,7 @@ class MaskDecoder(nn.Module):
 
     def sample(self, mu, logvar, x=None):
         sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
+        print(f"mu:{mu.mean()}, sigma:{sigma.mean()}")
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -160,8 +161,8 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
-            x = self.prelu_out(x)
-            return x.unsqueeze(1), x_logprob, x_entropy, (x_mu.unsqueeze(1), x_var.unsqueeze(1))
+            x = self.prelu_out(x).permute(0, 2, 1)
+            return x.unsqueeze(1), x_logprob, x_entropy, (x_mu.permute(0, 2, 1).unsqueeze(1), x_var.permute(0, 2, 1).unsqueeze(1))
             
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
@@ -291,7 +292,7 @@ class TSCNet(nn.Module):
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
        
-        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, action[0])
+        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, action[0].permute(0, 1, 3, 2))
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_2, action[1])
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

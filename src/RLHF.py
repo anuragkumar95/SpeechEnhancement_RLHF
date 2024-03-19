@@ -213,7 +213,7 @@ class PPO:
         self.train_phase = params['train_phase']
         self.t = 0
         self.warm_up = warm_up_steps
-        self.init_model = init_model
+        self.init_model = init_model.train()
         self.prev_log_probs = None
         #self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
@@ -282,6 +282,9 @@ class PPO:
         clean = clean.permute(0, 1, 3, 2)
         bs = clean.shape[0]
         ep_kl_penalty = 0
+        actor = actor.eval()
+        critic = critic.eval()
+        self.init_model = self.init_model.eval()
         
         #Calculate target values and advantages
         with torch.no_grad():

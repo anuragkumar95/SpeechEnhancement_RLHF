@@ -326,7 +326,7 @@ class PPO:
                 with torch.no_grad():
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html
                     old_approx_kl = (-kl_penalty).mean()
-                    kl_penalty = ((ratio - 1) - logratio).mean().detach()
+                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
                 ep_kl_penalty += kl_penalty
 
                 #Store reward

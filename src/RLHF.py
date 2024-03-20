@@ -298,16 +298,17 @@ class PPO:
             
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
-                #print(f"CURR: {curr.shape, (noisy-curr).mean()}")
                 action, log_probs, _, params = actor.get_action(curr)
                 (p_mu, p_var), (pc_mu, pc_var) = params
                 init_action, _, _, ref_params = self.init_model.get_action(curr)
                 (r_mu, r_var), (rc_mu, rc_var) = ref_params
+                ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
+
                 print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
                 print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
                 print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
                 print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
-                ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
+               
                 print(f"NEW:{log_probs[0].mean(), log_probs[1].mean()}")
                 print(f"REF:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
      
@@ -322,10 +323,10 @@ class PPO:
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                 ratio = torch.exp(kl_penalty)
-                #kl_penalty = self.beta * logratio.detach()
+               
                 with torch.no_grad():
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    old_approx_kl = (-kl_penalty).mean()
+                    #old_approx_kl = (-kl_penalty).mean()
                     kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
                 ep_kl_penalty += kl_penalty
 
@@ -341,16 +342,6 @@ class PPO:
                 rewards.append(r_t - self.beta * kl_penalty)
                 actions.append(action)
                 logprobs.append(log_probs)
-                """
-                for i in range(bs):
-                    act = {
-                        'action':((action[0][0][i, ...].detach(), 
-                                   action[0][1][i, ...].detach()), 
-                                  action[1][i, ...].detach()),
-                    }
-                    actions.append(act)
-                    logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
-                """
                 r_ts.append(r_t)
                 curr = state['noisy']
 
@@ -364,13 +355,6 @@ class PPO:
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
 
             ep_kl_penalty = ep_kl_penalty / self.episode_len
-            
-            #flatten all
-            #b_target_values = target_values.reshape(-1)
-            #b_advantages = advantages.reshape(-1)
-            #states = torch.stack(states)
-            #step, b, c, t, f = states.shape
-            #states = states.reshape(step * b, c, t, f)
 
         print(f"STATES      :{len(states)}")
         print(f"TARGET_VALS :{target_values.shape}")
@@ -387,40 +371,17 @@ class PPO:
         step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
 
-        #indices = [t for t in range(len(states))]
-        #np.random.shuffle(indices)
-
-        #for t in range(0, len(indices), bs):
         for t, mb_states in enumerate(states):
             #Get mini batch indices
-            #mb_indx = indices[t:t+bs]
-            #mb_states = states[mb_indx, ...]
-
-            #Get new logprobs and values for the sampled (state, action) pair
-            #mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
-            #              [actions[i]['action'][0][1] for i in mb_indx]),
-            #             [actions[i]['action'][1] for i in mb_indx])
-            #mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
-            
             mb_action = actions[t]
-            #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
             log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
-            #action, log_probs, entropies, _ = actor.get_action(mb_states)
      
             values = critic(mb_states).reshape(-1)
-            #for i, val in enumerate(values):
-            #    b = mb_indx[i] // self.episode_len
-            #    ts = mb_indx[i] % self.episode_len
             VALUES[:, t] = values
 
             if self.train_phase:
                 entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                 log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
-
-
-                #old_logprobs = ([logprobs[i][0] for i in mb_indx],
-                #                [logprobs[i][1] for i in mb_indx])
-                #mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
                 mb_oldlogprobs = logprobs[t]
                 old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
                 
@@ -434,7 +395,6 @@ class PPO:
             logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
             ratio = torch.exp(logratio)
             print(f"Ratio:{ratio}")
-
 
             #Policy loss
             pg_loss1 = -advantages[:, t] * ratio
@@ -485,7 +445,217 @@ class PPO:
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
-
-                
-
+    
+'''
+def run_n_step_episode(self, batch, actor, critic, optimizer):
+        """
+        Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
+        Here the noisy signal is enhanced n times in an episode. 
+        """
+        #Preprocessed batch
+        cl_aud, clean, noisy, _ = batch
+        noisy = noisy.permute(0, 1, 3, 2)
+        clean = clean.permute(0, 1, 3, 2)
+        bs = clean.shape[0]
+        ep_kl_penalty = 0
+        actor = actor.eval()
+        critic = critic.train()
+        self.init_model = self.init_model.eval()
+        a_optim, c_optim = optimizer
         
+        #Calculate target values and advantages
+        with torch.no_grad():
+            curr = noisy
+            rewards = []
+            r_ts = []
+            states = []
+            logprobs = []
+            actions = []
+            
+            for _ in range(self.episode_len):
+                #Unroll policy for n steps and store rewards.
+                #print(f"CURR: {curr.shape, (noisy-curr).mean()}")
+                action, log_probs, _, params = actor.get_action(curr)
+                (p_mu, p_var), (pc_mu, pc_var) = params
+                init_action, _, _, ref_params = self.init_model.get_action(curr)
+                (r_mu, r_var), (rc_mu, rc_var) = ref_params
+                print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
+                print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
+                print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
+                print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
+                ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
+                print(f"NEW:{log_probs[0].mean(), log_probs[1].mean()}")
+                print(f"REF:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
+     
+                state = self.env.get_next_state(state=curr, action=action)
+                exp_state = self.env.get_next_state(state=curr, action=init_action)
+                state['cl_audio'] = cl_aud
+                state['exp_est_audio'] = exp_state['est_audio']
+                state['clean'] = clean
+
+                #Calculate kl_penalty
+                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                ratio = torch.exp(kl_penalty)
+                #kl_penalty = self.beta * logratio.detach()
+                with torch.no_grad():
+                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
+                    old_approx_kl = (-kl_penalty).mean()
+                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
+                ep_kl_penalty += kl_penalty
+
+                #Store reward
+                if self.rlhf:
+                    r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
+                else:
+                    r_t = self.env.get_PESQ_reward(state)
+                print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
+                
+                #Store trajectory
+                #states.append(curr)
+                rewards.append(r_t - self.beta * kl_penalty)
+                #actions.append(action)
+                #logprobs.append(log_probs)
+                
+                for i in range(bs):
+                    states.append(curr[i, ...])
+                    act = ((action[0][0][i, ...].detach(), action[0][1][i, ...].detach()), action[1][i, ...].detach())
+                    actions.append(act)
+                    logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
+                
+                r_ts.append(r_t)
+                curr = state['noisy']
+
+            #Convert collected rewards to target_values and advantages
+            rewards = torch.stack(rewards).reshape(bs, -1)
+            r_ts = torch.stack(r_ts).reshape(-1)
+            target_values = self.get_expected_return(rewards)
+            advantages = self.get_advantages(target_values, states, critic)
+
+            #Normalize advantages
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
+
+            ep_kl_penalty = ep_kl_penalty / self.episode_len
+            
+            #flatten all
+            b_target_values = target_values.reshape(-1)
+            b_advantages = advantages.reshape(-1)
+            states = torch.stack(states)
+            step, b, c, t, f = states.shape
+            states = states.reshape(step * b, c, t, f)
+
+        print(f"STATES      :{len(states)}")
+        print(f"TARGET_VALS :{target_values.shape}")
+        print(f"ACTIONS     :{len(actions)}")
+        print(f"LOGPROBS    :{len(logprobs)}")
+        print(f"ADVANTAGES  :{advantages.shape}")
+        print(f"Policy returns:{target_values.mean(0)}")
+
+        #Start training over the unrolled batch of trajectories
+        #critic.train()
+        step_clip_loss = 0
+        step_val_loss = 0
+        step_entropy_loss = 0
+        step_pg_loss = 0
+        VALUES = torch.zeros(target_values.shape)
+
+        indices = [t for t in range(len(states))]
+        np.random.shuffle(indices)
+
+        for t in range(0, len(indices), bs):
+        #for t, mb_states in enumerate(states):
+            #Get mini batch indices
+            mb_indx = indices[t:t+bs]
+            mb_states = states[mb_indx, ...]
+
+            #Get new logprobs and values for the sampled (state, action) pair
+            mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
+                          [actions[i]['action'][0][1] for i in mb_indx]),
+                         [actions[i]['action'][1] for i in mb_indx])
+            mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
+            
+            #mb_action = actions[t]
+            #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
+            log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
+            #action, log_probs, entropies, _ = actor.get_action(mb_states)
+     
+            values = critic(mb_states).reshape(-1)
+            for i, val in enumerate(values):
+                b = mb_indx[i] // self.episode_len
+                ts = mb_indx[i] % self.episode_len
+                VALUES[b, ts] = val
+            #VALUES[:, t] = values
+
+            if self.train_phase:
+                entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
+                log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
+
+
+                #old_logprobs = ([logprobs[i][0] for i in mb_indx],
+                #                [logprobs[i][1] for i in mb_indx])
+                #mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
+                mb_oldlogprobs = logprobs[t]
+                old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
+                
+            else:
+                #ignore complex mask, just tune mag mask 
+                entropy = entropies[0]
+                log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
+            
+            print(f"log_prob:{log_prob.mean()}")
+            print(f"old_logprob:{old_log_prob.mean()}")
+            logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
+            ratio = torch.exp(logratio)
+            print(f"Ratio:{ratio}")
+
+            #Policy loss
+            pg_loss1 = -advantages[:, t] * ratio
+            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+            if pg_loss1.mean() == pg_loss2.mean():
+                pg_loss = pg_loss1.mean()
+            else:
+                pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+            #value_loss
+            v_loss = 0.5 * ((b_target_values[mb_indx] - values) ** 2).mean()
+
+            #Entropy loss
+            entropy_loss = entropy.mean()
+
+            clip_loss = pg_loss - (self.en_coef * entropy_loss) #+ (self.val_coef * v_loss)
+
+            wandb.log({
+                'ratio':ratio.mean(),
+                'pg_loss1':pg_loss1.mean(),
+                'pg_loss2':pg_loss2.mean()
+            })
+
+            #optimizer.zero_grad()
+            a_optim.zero_grad()
+            c_optim.zero_grad()
+            clip_loss.backward()
+            v_loss.backward()
+            #Update network
+            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
+                torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
+                a_optim.step()
+                c_optim.step()
+
+            step_clip_loss += clip_loss.item()
+            step_pg_loss += pg_loss.item()
+            step_val_loss += v_loss.item()
+            #step_entropy_loss += entropy_loss.item()        
+            self.t += 1
+        
+        print(f"Values:{VALUES.mean(0)}")
+
+        step_clip_loss = step_clip_loss / self.episode_len
+        step_pg_loss = step_pg_loss / self.episode_len
+        step_val_loss = step_val_loss / self.episode_len
+        #step_entropy_loss = step_entropy_loss / self.episode_len
+        
+                    
+        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
+'''         

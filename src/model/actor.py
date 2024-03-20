@@ -143,7 +143,7 @@ class MaskDecoder(nn.Module):
         self.dist = distribution
 
     def sample(self, mu, logvar, x=None):
-        logvar = torch.clamp(logvar, min=-0.1)
+        logvar = torch.clamp(logvar, min=-0.01)
         sigma = torch.abs(torch.exp(logvar))
         #sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         sigma = torch.ones(mu.shape).to(self.gpu_id)
@@ -191,7 +191,7 @@ class ComplexDecoder(nn.Module):
         self.gpu_id = gpu_id
        
     def sample(self, mu, logvar, x=None):
-        logvar = torch.clamp(logvar, min=-0.1)
+        logvar = torch.clamp(logvar, min=-0.01)
         sigma = torch.abs(torch.exp(logvar))
         #sigma = torch.ones(mu.shape).to(self.gpu_id)
         N = Normal(mu, sigma)

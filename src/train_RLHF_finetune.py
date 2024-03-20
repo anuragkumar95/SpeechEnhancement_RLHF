@@ -144,7 +144,7 @@ class Trainer:
             )
 
             self.trainer = REINFORCE(gpu_id=gpu_id, 
-                                    beta = 0.25 , 
+                                    beta = 0.001 , 
                                     init_model=self.expert,
                                     discount=1.0,
                                     episode_len=args.episode_steps,

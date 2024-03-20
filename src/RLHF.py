@@ -299,15 +299,15 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
-                (p_mu, p_var), (pc_mu, pc_var) = params
+                #(p_mu, p_var), (pc_mu, pc_var) = params
                 init_action, _, _, ref_params = self.init_model.get_action(curr)
-                (r_mu, r_var), (rc_mu, rc_var) = ref_params
+                #(r_mu, r_var), (rc_mu, rc_var) = ref_params
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
 
-                print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
-                print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
-                print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
-                print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
+                #print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
+                #print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
+                #print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
+                #print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
                
                 print(f"NEW:{log_probs[0].mean(), log_probs[1].mean()}")
                 print(f"REF:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
@@ -341,7 +341,8 @@ class PPO:
                 states.append(curr)
                 rewards.append(r_t - self.beta * kl_penalty)
                 actions.append(action)
-                logprobs.append(log_probs)
+                #logprobs.append(log_probs)
+                logprobs.append(ref_log_probs)
                 r_ts.append(r_t)
                 curr = state['noisy']
 

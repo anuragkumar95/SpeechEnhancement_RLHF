@@ -83,11 +83,19 @@ class REINFORCE:
 
         #Forward pass through model to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
-        action, log_probs, _, _ = model.get_action(noisy)
+        action, log_probs, _, params = model.get_action(noisy)
+        (p_mu, p_var), (pc_mu, pc_var) = params
 
         #Forward pass through expert model
-        exp_action, _, _, _ = self.expert.get_action(noisy)
+        exp_action, _, _, ref_params = self.expert.get_action(noisy)
         exp_log_probs, _ = self.expert.get_action_prob(noisy, action)
+        (r_mu, r_var), (rc_mu, rc_var) = ref_params
+
+        print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
+        print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
+        print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
+        print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
+                       
 
         kl_penalty = 0
         
@@ -105,6 +113,8 @@ class REINFORCE:
                 
                 #kl divergence term
                 #kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
+                print(f"new_logprob:{log_prob.mean()}")
+                print(f"ref_logprob:{exp_log_prob.mean()}")
                 kl_penalty = torch.mean(log_prob - exp_log_prob, dim=[1, 2]).detach()
                 ratio = torch.exp(kl_penalty)
                

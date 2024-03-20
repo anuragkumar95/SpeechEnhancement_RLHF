@@ -299,9 +299,12 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 #print(f"CURR: {curr.shape, (noisy-curr).mean()}")
-                action, log_probs, _, _ = actor.get_action(curr)
-                init_action, _, _, _ = self.init_model.get_action(curr)
-              
+                action, log_probs, _, params = actor.get_action(curr)
+                init_action, _, _, ref_params = self.init_model.get_action(curr)
+
+                print(f"NEW_PARAMS: MU: {params[0].min(), params[0].max(), params[0].mean()} | VAR: {params[1].min(), params[1].max(), params[1].mean()}")
+                print(f"REF_PARAMS: MU: {ref_params[0].min(), ref_params[0].max(), ref_params[0].mean()} | VAR: {ref_params[1].min(), ref_params[1].max(), ref_params[1].mean()}")
+                
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
                 print(f"NEW:{log_probs[0].mean(), log_probs[1].mean()}")
                 print(f"REF:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")

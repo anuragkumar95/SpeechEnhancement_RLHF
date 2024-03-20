@@ -151,7 +151,7 @@ class MaskDecoder(nn.Module):
             x = N.rsample()
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
-        return x, x_logprob, x_entropy
+        return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
         x = self.dense_block(x)
@@ -161,9 +161,9 @@ class MaskDecoder(nn.Module):
         if self.dist is not None:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
+            x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
             x_out = self.prelu_out(x)
-            return (x, x_out), x_logprob, x_entropy, (x_mu, x_var)
+            return (x, x_out), x_logprob, x_entropy, params
             
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
@@ -197,7 +197,7 @@ class ComplexDecoder(nn.Module):
             x = N.rsample()
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
-        return x, x_logprob, x_entropy
+        return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
         x = self.dense_block(x)
@@ -207,8 +207,8 @@ class ComplexDecoder(nn.Module):
         if self.out_dist == "Normal":
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
-            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
-            return x, x_logprob, x_entropy, (x_mu, x_var)
+            x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
+            return x, x_logprob, x_entropy, params
         
         if self.out_dist == "Categorical":
             #Limit the value of the output to be between 1, -1

@@ -116,10 +116,10 @@ class REINFORCE:
                 print(f"new_logprob:{log_prob.mean()}")
                 print(f"ref_logprob:{exp_log_prob.mean()}")
                 kl_penalty = torch.mean(log_prob - exp_log_prob, dim=[1, 2]).detach()
-                ratio = torch.exp(kl_penalty)
+                #ratio = torch.exp(kl_penalty)
                
-                with torch.no_grad():
-                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
+                #with torch.no_grad():
+                    #kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
                 print(f"KL:{kl_penalty}, {kl_penalty.shape}")
 
             else:  
@@ -168,7 +168,7 @@ class REINFORCE:
             torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
             optimizer.step()
 
-        return loss, (G.mean(), r_t.mean()), enhanced
+        return loss, (G.mean(), r_t.mean(), kl_penalty), enhanced
     
     def run_n_step_episode(self, batch, model, optimizer):
         curr = None

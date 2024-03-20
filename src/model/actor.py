@@ -135,14 +135,16 @@ class MaskDecoder(nn.Module):
         self.prelu = nn.PReLU(out_channel)
         if distribution == "Normal":
             self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
-            #self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
+            self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
         else:
             self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
         self.gpu_id = gpu_id
         self.dist = distribution
 
-    def sample(self, mu, x=None):
+    def sample(self, mu, logvar, x=None):
+        logvar = torch.clamp(logvar, min=0.1)
+        sigma = torch.abs(torch.exp(logvar) + 1e-08)
         #sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         sigma = torch.ones(mu.shape).to(self.gpu_id)
         N = Normal(mu, sigma)
@@ -159,7 +161,7 @@ class MaskDecoder(nn.Module):
         x = self.prelu(self.norm(x))
         if self.dist is not None:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
-            #x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
+            x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy = self.sample(x_mu, action)
             x_out = self.prelu_out(x)
             return (x, x_out), x_logprob, x_entropy, x_mu
@@ -188,9 +190,10 @@ class ComplexDecoder(nn.Module):
         self.out_dist = distribution
         self.gpu_id = gpu_id
        
-    def sample(self, mu, x=None):
-        #sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
-        sigma = torch.ones(mu.shape).to(self.gpu_id)
+    def sample(self, mu, logvar, x=None):
+        logvar = torch.clamp(logvar, min=0.1)
+        sigma = torch.abs(torch.exp(logvar) + 1e-08)
+        #sigma = torch.ones(mu.shape).to(self.gpu_id)
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -205,7 +208,7 @@ class ComplexDecoder(nn.Module):
 
         if self.out_dist == "Normal":
             x_mu = self.conv_mu(x)
-            #x_var = self.conv_var(x)
+            x_var = self.conv_var(x)
             x, x_logprob, x_entropy = self.sample(x_mu, action)
             return x, x_logprob, x_entropy, x_mu
         

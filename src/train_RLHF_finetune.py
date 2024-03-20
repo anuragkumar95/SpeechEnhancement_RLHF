@@ -239,6 +239,7 @@ class Trainer:
                         "r_t":batch_reward[1].item(),
                         "loss":loss,
                     })
+                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0]} | Reward: {batch_reward[1]} | KL: {batch_reward[2]}")
 
                 if self.args.method == 'PPO':
                     loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer))
@@ -257,13 +258,15 @@ class Trainer:
                             "entropy_loss":loss[2]
                         })
 
+                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()} | KL: {batch_reward[2].item()}")
+                
+
             except Exception as e:
                 print(traceback.format_exc())
                 continue
             
             if loss is not None:
                 self.G = batch_reward[0].item() + self.G
-                print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()} | KL: {batch_reward[2].item()}")
                 REWARDS.append(batch_reward[0].item())
 
         #Run validation

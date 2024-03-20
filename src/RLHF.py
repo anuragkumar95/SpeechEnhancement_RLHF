@@ -359,6 +359,10 @@ class PPO:
             r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
+
+            #Normalize advantages
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
+
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             
             #flatten all

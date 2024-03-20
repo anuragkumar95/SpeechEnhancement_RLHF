@@ -341,8 +341,8 @@ class PPO:
                 states.append(curr)
                 rewards.append(r_t - self.beta * kl_penalty)
                 actions.append(action)
-                #logprobs.append(log_probs)
-                logprobs.append(ref_log_probs)
+                logprobs.append(log_probs)
+                #logprobs.append(ref_log_probs)
                 r_ts.append(r_t)
                 curr = state['noisy']
 

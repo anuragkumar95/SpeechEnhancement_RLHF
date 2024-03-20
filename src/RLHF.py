@@ -79,14 +79,15 @@ class REINFORCE:
         Runs an epoch using REINFORCE.
         """
         #Preprocessed batch
-        cl_aud, _, noisy, _ = batch
+        cl_aud, clean, noisy, _ = batch
 
         #Forward pass through model to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
         action, log_probs, _ = model.get_action(noisy)
 
         #Forward pass through expert model
-        exp_action, exp_log_probs, _ = self.expert.get_action(noisy)
+        exp_action, _, _, _ = self.expert.get_action(noisy)
+        exp_log_probs, _ = self.expert.get_action_prob(noisy, action)
 
         kl_penalty = 0
         
@@ -101,9 +102,16 @@ class REINFORCE:
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 a_t = action
+                
                 #kl divergence term
-                kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
+                #kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
+                kl_penalty = torch.mean(log_prob - exp_log_prob, dim=[1, 2]).detach()
+                ratio = torch.exp(kl_penalty)
+               
+                with torch.no_grad():
+                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
                 print(f"KL:{kl_penalty}, {kl_penalty.shape}")
+
             else:  
                 #ignore complex mask, just tune mag mask 
                 log_prob = log_probs[0]
@@ -122,12 +130,14 @@ class REINFORCE:
             #Apply exp_mask to get next state
             exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
             next_state['exp_est_audio'] = exp_next_state['est_audio']
-            G = self.env.get_PESQ_reward(next_state)
+            next_state['clean'] = clean
+            r_t = self.env.get_PESQ_reward(next_state)
         else:
             r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
-            #Baseline is moving average of rewards seen so far
-            self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
-            G = r_t - self._r_mavg - kl_penalty
+
+        #Baseline is moving average of rewards seen so far
+        self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
+        G = r_t - self._r_mavg - self.beta * kl_penalty
         
         G = G.reshape(-1, 1)
         print(f"G:{G.mean().item()}, {G.shape}")

@@ -143,8 +143,10 @@ class MaskDecoder(nn.Module):
         self.dist = distribution
 
     def sample(self, mu, logvar, x=None):
-        logvar = torch.clamp(logvar, min=0.1)
-        sigma = torch.abs(torch.exp(logvar) + 1e-08)
+        _sign_ = (logvar < 0).int() * -1.0
+        logvar = torch.clamp(torch.abs(logvar), min=0.1)
+        logvar = _sign_ * logvar
+        sigma = torch.abs(torch.exp(logvar))
         #sigma = torch.abs(torch.exp(0.5 * logvar) + 1e-08)
         sigma = torch.ones(mu.shape).to(self.gpu_id)
         N = Normal(mu, sigma)
@@ -162,9 +164,9 @@ class MaskDecoder(nn.Module):
         if self.dist is not None:
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-            x, x_logprob, x_entropy = self.sample(x_mu, action)
+            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
             x_out = self.prelu_out(x)
-            return (x, x_out), x_logprob, x_entropy, x_mu
+            return (x, x_out), x_logprob, x_entropy, (x_mu, x_var)
             
         else:
             x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
@@ -191,8 +193,10 @@ class ComplexDecoder(nn.Module):
         self.gpu_id = gpu_id
        
     def sample(self, mu, logvar, x=None):
-        logvar = torch.clamp(logvar, min=0.1)
-        sigma = torch.abs(torch.exp(logvar) + 1e-08)
+        _sign_ = (logvar < 0).int() * -1.0
+        logvar = torch.clamp(torch.abs(logvar), min=0.1)
+        logvar = _sign_ * logvar
+        sigma = torch.abs(torch.exp(logvar))
         #sigma = torch.ones(mu.shape).to(self.gpu_id)
         N = Normal(mu, sigma)
         if x is None:
@@ -209,8 +213,8 @@ class ComplexDecoder(nn.Module):
         if self.out_dist == "Normal":
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
-            x, x_logprob, x_entropy = self.sample(x_mu, action)
-            return x, x_logprob, x_entropy, x_mu
+            x, x_logprob, x_entropy = self.sample(x_mu, x_var, action)
+            return x, x_logprob, x_entropy, (x_mu, x_var)
         
         if self.out_dist == "Categorical":
             #Limit the value of the output to be between 1, -1

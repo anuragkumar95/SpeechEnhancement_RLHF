@@ -83,7 +83,7 @@ class REINFORCE:
 
         #Forward pass through model to get the action(mask)
         noisy = noisy.permute(0, 1, 3, 2)
-        action, log_probs, _ = model.get_action(noisy)
+        action, log_probs, _, _ = model.get_action(noisy)
 
         #Forward pass through expert model
         exp_action, _, _, _ = self.expert.get_action(noisy)

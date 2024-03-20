@@ -320,9 +320,9 @@ class PPO:
                 #Calculate kl_penalty
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                 #ratio = torch.exp(logratio)
-                kl_penalty = self.beta * logratio.detach()
+                #kl_penalty = self.beta * logratio.detach()
                 #with torch.no_grad():
                     # calculate approx_kl http://joschu.net/blog/kl-approx.html
                     #old_approx_kl = (-logratio).mean()
@@ -338,7 +338,7 @@ class PPO:
                 
                 #Store trajectory
                 states.append(curr)
-                rewards.append(r_t - kl_penalty)
+                rewards.append(r_t - self.beta * kl_penalty)
                 actions.append(action)
                 logprobs.append(log_probs)
                 """

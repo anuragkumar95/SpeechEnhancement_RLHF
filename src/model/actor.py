@@ -213,8 +213,8 @@ class ComplexDecoder(nn.Module):
             x_1 = self.conv_1(x).permute(0, 2, 3, 1)
             x_2 = self.conv_2(x).permute(0, 2, 3, 1)
 
-            x_1_logits = F.sigmoid(x_1)
-            x_2_logits = F.sigmoid(x_2) 
+            x_1_logits = F.sigmoid(x_1).unsqueeze(1)
+            x_2_logits = F.sigmoid(x_2).unsqueeze(1) 
             
             x_logits = torch.cat([x_1_logits, x_2_logits], dim=1)
             dist = Categorical(logits=x_logits)

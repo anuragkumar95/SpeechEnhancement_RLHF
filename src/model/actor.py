@@ -326,6 +326,7 @@ class TSCNet(nn.Module):
             complex_out_indices, _, _ = self.complex_decoder(out_2)
             
             complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
+            print(f"C_INDX:{complex_out_indices.shape} | C_VALS:{complex_mask.shape}")
             complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
 
             print(f"C_INDX:{complex_out_indices.shape} | C_VALS:{complex_mask.shape} | C_OUT:{complex_out.shape}")

@@ -322,7 +322,7 @@ class TSCNet(nn.Module):
             complex_out, _, _, _ = self.complex_decoder(out_2)
         
         if self.dist == "Categorical":
-            mask, _, _, _ = self.mask_decoder(out_2)            
+            (_, mask), _, _, _ = self.mask_decoder(out_2)            
             complex_out_indices, _, _ = self.complex_decoder(out_2)
             
             complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)

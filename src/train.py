@@ -462,7 +462,7 @@ class Trainer:
 
 
 def main(rank: int, world_size: int, args):
-    ddp_setup(rank, world_size)
+    #ddp_setup(rank, world_size)
     if rank == 0:
         print(args)
         available_gpus = [
@@ -471,7 +471,7 @@ def main(rank: int, world_size: int, args):
         print(available_gpus)
 
     train_ds, test_ds = dataloader.load_data(
-            args.data_dir, args.batch_size, 1, args.cut_len, gpu=True
+            args.data_dir, args.batch_size, 1, args.cut_len, gpu=args.gpu,
         )
 
 

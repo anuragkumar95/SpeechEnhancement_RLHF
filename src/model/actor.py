@@ -347,12 +347,7 @@ class TSCNet(nn.Module):
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
-        #kld_loss_mag = -0.5 * (1 + mask_var + mask_mu**2 + torch.exp(mask_var)).mean()
-        #kld_loss_comp = -0.5 * (1 + c_var + c_mu**2 + torch.exp(c_var)).mean()
-
-        #kld_loss = kld_loss_mag + kld_loss_comp
-
-        return final_real, final_imag#, kld_loss
+        return final_real, final_imag
         
 
     

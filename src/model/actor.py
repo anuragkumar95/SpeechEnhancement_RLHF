@@ -213,9 +213,6 @@ class ComplexDecoder(nn.Module):
             x_1 = self.conv_1(x).permute(0, 2, 3, 1)
             x_2 = self.conv_2(x).permute(0, 2, 3, 1)
 
-            #sample using gumbel_softmax trick
-            #x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
-            #x_2_probs = F.gumbel_softmax(x_2, tau=0.5, hard=False).unsqueeze(1)
             x_1_logits = F.sigmoid(x_1)
             x_2_logits = F.sigmoid(x_2) 
             
@@ -225,7 +222,6 @@ class ComplexDecoder(nn.Module):
             x_logprob = dist.log_prob(x_out)
             x_entropy = dist.entropy()
 
-            #Figure out a way to create output domain change from (-1, 1)
             return x_out, x_logprob, x_entropy
         
         if self.out_dist is None:
@@ -326,14 +322,12 @@ class TSCNet(nn.Module):
             complex_out, _, _, _ = self.complex_decoder(out_2)
         
         if self.dist == "Categorical":
-            mask, _, _ = self.mask_decoder(out_2)            
+            mask, _, _, _ = self.mask_decoder(out_2)            
             complex_out_indices, _, _ = self.complex_decoder(out_2)
-
-            #complex_out_real_indices = complex_out_indices[:, 0, :, :, :].unsqueeze(1)
-            #complex_out_imag_indices = complex_out_indices[:, 1, :, :, :].unsqueeze(1)
             
             complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
             complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
+
             print(f"C_INDX:{complex_out_indices.shape} | C_VALS:{complex_mask.shape} | C_OUT:{complex_out.shape}")
         
         if self.dist == "None":

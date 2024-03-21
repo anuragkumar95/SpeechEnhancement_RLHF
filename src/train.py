@@ -152,33 +152,7 @@ class Trainer:
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
 
-        target_k_real = None
-        target_k_imag = None
-
-        if self.dist == "Categorical":
-            est_reals, est_imags, real_probs, imag_probs, logits = self.model(noisy_spec)
-            dist_reals = []
-            dist_imags = []
-            for i in range(est_reals.shape[-1]):
-                dist_real = (est_reals[..., i] - clean_real.permute(0, 1, 3, 2)) ** 2
-                dist_imag = (est_imags[..., i] - clean_imag.permute(0, 1, 3, 2)) ** 2
-                dist_reals.append(dist_real)
-                dist_imags.append(dist_imag)
-
-            dist_reals = torch.stack(dist_reals, dim=-1)
-            dist_imags = torch.stack(dist_imags, dim=-1)
-
-            target_k_real = torch.argmin(dist_reals, dim=-1)
-            target_k_imag = torch.argmin(dist_imags, dim=-1)
-
-            pred_k_real = torch.argmax(real_probs, dim=-1)
-            pred_k_imag = torch.argmax(imag_probs, dim=-1)
-
-            est_real = torch.gather(est_reals, -1, pred_k_real.unsqueeze(-1)).squeeze(-1)
-            est_imag = torch.gather(est_imags, -1, pred_k_imag.unsqueeze(-1)).squeeze(-1)
-
-        else:
-            est_real, est_imag = self.model(noisy_spec)
+        est_real, est_imag = self.model(noisy_spec)
         
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)

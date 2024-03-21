@@ -4,7 +4,7 @@ import torch.nn as nn
 from model.critic import QNet
 import torch.nn.functional as F
 
-from torch.distributions import Normal
+from torch.distributions import Normal, Categorical
 from torch.nn.utils import rnn
 
 
@@ -217,15 +217,16 @@ class ComplexDecoder(nn.Module):
             #x_1_probs = F.gumbel_softmax(x_1, tau=0.5, hard=False).unsqueeze(1)
             #x_2_probs = F.gumbel_softmax(x_2, tau=0.5, hard=False).unsqueeze(1)
             x_1_logits = F.sigmoid(x_1)
-            x_2_logits = F.sigmoid(x_2)
-
-            x_1_probs = F.softmax(x_1_logits, dim=-1).unsqueeze(1)
-            x_2_probs = F.softmax(x_2_logits, dim=-1).unsqueeze(1)  
+            x_2_logits = F.sigmoid(x_2) 
             
             x_logits = torch.cat([x_1_logits, x_2_logits], dim=1)
-            x_probs = torch.cat([x_1_probs, x_2_probs], dim=1)
+            dist = Categorical(logits=x_logits)
+            x_out = dist.sample()
+            x_logprob = dist.log_prob(x_out)
+            x_entropy = dist.entropy()
+
             #Figure out a way to create output domain change from (-1, 1)
-            return x_probs, x_logits
+            return x_out, x_logprob, x_entropy
         
         if self.out_dist is None:
             x = self.conv(x)
@@ -326,29 +327,14 @@ class TSCNet(nn.Module):
         
         if self.dist == "Categorical":
             mask, _, _ = self.mask_decoder(out_2)            
-            complex_out_probs, complex_out_logits = self.complex_decoder(out_2)
+            complex_out_indices, _, _ = self.complex_decoder(out_2)
 
-            complex_out_real_probs = complex_out_probs[:, 0, :, :, :].unsqueeze(1)
-            complex_out_imag_probs = complex_out_probs[:, 1, :, :, :].unsqueeze(1)
+            #complex_out_real_indices = complex_out_indices[:, 0, :, :, :].unsqueeze(1)
+            #complex_out_imag_indices = complex_out_indices[:, 1, :, :, :].unsqueeze(1)
             
             complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
-
-            out_mag = mask * mag
-            mag_real = out_mag * torch.cos(noisy_phase)
-            mag_imag = out_mag * torch.sin(noisy_phase)
-
-            final_reals = []
-            final_imags = []
-            for i in range(complex_mask.shape[-1]):
-                final_real = mag_real + complex_mask[:, 0, :, :, i].unsqueeze(1)
-                final_imag = mag_imag + complex_mask[:, 1, :, :, i].unsqueeze(1)
-                final_reals.append(final_real)
-                final_imags.append(final_imag)
-            final_reals = torch.stack(final_reals, dim=-1)
-            final_imags = torch.stack(final_imags, dim=-1)
-
-            return final_reals, final_imags, complex_out_real_probs, complex_out_imag_probs, complex_out_logits
-            
+            complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
+            print(f"C_INDX:{complex_out_indices.shape} | C_VALS:{complex_mask.shape} | C_OUT:{complex_out.shape}")
         
         if self.dist == "None":
             mask = self.mask_decoder(out_2)

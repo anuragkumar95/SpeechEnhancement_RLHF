@@ -208,7 +208,8 @@ class EvalModel:
 
         out = torch.zeros(inp.shape)
         for i in range(0, inp.shape[-1], cutlen):
-
+            if inp.shape[-1] - i < 201:
+                continue
             end = min(i+cutlen, out.shape[-1])
             wav_inp = torch.tensor(inp[:, i: end])
            

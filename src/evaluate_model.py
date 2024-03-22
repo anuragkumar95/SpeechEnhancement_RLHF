@@ -222,7 +222,7 @@ class EvalModel:
             action, _, _, _ = self.actor.get_action(noisy)
 
             #Apply action  to get the next state
-            next_state = self.env.get_next_state(state=inp, 
+            next_state = self.env.get_next_state(state=noisy, 
                                                  action=action)
             est_audio = next_state['est_audio']
             out[:, i:i+cutlen] = est_audio

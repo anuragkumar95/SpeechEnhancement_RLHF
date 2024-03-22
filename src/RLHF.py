@@ -277,6 +277,7 @@ class PPO:
         A = torch.zeros(returns.shape).to(self.gpu_id)
         #Base case: A(t) = G(t) - V(S(t)) ; t == T-1
         #Recursive case: A(t) = G(t) - V(S(t)) + discount * V(S(t+1))
+        print(f"State:{states[0].shape}")
         for i in range(self.episode_len):
             g_t = returns[:, self.episode_len - i - 1].reshape(-1, 1)
             if i == 0:

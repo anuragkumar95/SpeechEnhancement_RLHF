@@ -4,12 +4,14 @@ from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE, PPO
 from torch.utils.data import DataLoader
+import torchaudio
 
 import copy
 import os
 from data.dataset import load_data
 from reward_model.src.dataset.dataset import PreferenceDataset
 import torch.nn.functional as F
+import torchaudio.functional as AF
 import torch
 from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
 import logging
@@ -19,7 +21,7 @@ import wandb
 import psutil
 import numpy as np
 import traceback
-
+from tqdm import tqdm
 import torch
 import os
 
@@ -41,6 +43,8 @@ def args():
     parser.add_argument("--pre", action="store_true")
     parser.add_argument("-rpt", "--reward_pt", type=str, required=False, default=None,
                         help="Path to saved rewardmodel checkpoint to evaluate.")
+    parser.add_argument("--audio_dir", type=str, required=False, default=None,
+                        help="directory to noisy audios to be enhanced. Required with flag --save_audios")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
     parser.add_argument("--save_actions", action='store_true', 
@@ -53,6 +57,8 @@ def args():
                         help="Flag to save pesq values")
     parser.add_argument("--save_rewards", action='store_true',
                         help='Flag to save rewards from the reward model.')
+    parser.add_argument("--save_audios", action='store_true',
+                        help='Flag to save enhanced audios from the model.')
     return parser
 
 class EvalModel:
@@ -123,7 +129,7 @@ class EvalModel:
                     inp = noisy.permute(0, 1, 3, 2)
 
                     #Forward pass through actor to get the action(mask)
-                    action, _, _ = self.actor.get_action(inp)
+                    action, _, _, _ = self.actor.get_action(inp)
 
                     #Apply action  to get the next state
                     next_state = self.env.get_next_state(state=inp, 
@@ -192,10 +198,53 @@ class EvalModel:
                             pickle.dump(rewards, f)
                         print(f"reward_{i}.pickle saved in {save_path}")
 
+    def generate_clean_audio(self, cutlen, src_path, save_dir):
+
+        filename = src_path.split('/')[-1]
+        #load noisy audio
+        inp, i_sr = torchaudio.load(src_path)
+        if i_sr != 16000:
+            inp = AF.resample(inp, orig_freq=i_sr, new_freq=16000)
+
+        out = torch.zeros(inp.shape).reshape(1, -1)
+
+        for i in range(0, len(inp), cutlen):
+            wav_inp = torch.tensor(inp[i: i+cutlen]).reshape(1, -1)
+            dummy_clean = torch.ones(wav_inp.shape)
+            dummy_label = torch.zeros(1, 1)
+            batch = (wav_inp, dummy_clean, dummy_label)
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+
+            _, _, noisy, _ = batch
+            noisy = noisy.permute(0, 1, 3, 2)
+
+            #Forward pass through actor to get the action(mask)
+            action, _, _, _ = self.actor.get_action(noisy)
+
+            #Apply action  to get the next state
+            next_state = self.env.get_next_state(state=inp, 
+                                                 action=action)
+            est_audio = next_state['est_audio']
+            out[:, i:i+cutlen] = est_audio
+        
+        torchaudio.save(uri=f"{save_dir}/{filename}",
+                        src=out,
+                        channels_first=True,
+                        format="wav")
+        
+    def enhance_audio(self, src_dir):
+
+        save_path = f"{self.save_path}/audios"
+        os.makedirs(save_path, exist_ok=True)
+
+        for file in tqdm(os.listdir(src_dir)):
+            path = os.path.join(src_dir, file)
+            self.generate_clean_audio(cutlen=32000, src_path=path, save_dir=save_path)
+
 
 if __name__ == '__main__':
     ARGS = args().parse_args()
-
+    
     modes = []
     if ARGS.save_actions:
         modes.append('action')
@@ -207,7 +256,7 @@ if __name__ == '__main__':
         modes.append('pesq')
     if ARGS.save_rewards:
         modes.append('rewards')
-
+        
     eval = EvalModel(modes=modes, 
                     model_pt=ARGS.ckpt, 
                     reward_pt=ARGS.reward_pt,
@@ -216,35 +265,39 @@ if __name__ == '__main__':
                     args=ARGS,
                     gpu_id=0)
     
-
-    test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 
-                                     vctk_root=ARGS.vctkroot, 
-                                     set="test", 
-                                     comp=ARGS.comp,
-                                     train_split=0.8, 
-                                     resample=16000,
-                                     enhance_model=None,
-                                     env=None,
-                                     gpu_id=None,  
-                                     cutlen=40000)
+    if ARGS.save_audios:
+        eval.enhance_audio(src_dir=ARGS.audio_dir,
+                           save_dir=ARGS.output)
     
-    dataloader = DataLoader(
-        dataset=test_dataset,
-        batch_size=ARGS.batchsize,
-        pin_memory=True,
-        shuffle=True,
-        drop_last=True,
-        num_workers=1,
-    )
+    else:
+        test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 
+                                        vctk_root=ARGS.vctkroot, 
+                                        set="test", 
+                                        comp=ARGS.comp,
+                                        train_split=0.8, 
+                                        resample=16000,
+                                        enhance_model=None,
+                                        env=None,
+                                        gpu_id=None,  
+                                        cutlen=40000)
+        
+        dataloader = DataLoader(
+            dataset=test_dataset,
+            batch_size=ARGS.batchsize,
+            pin_memory=True,
+            shuffle=True,
+            drop_last=True,
+            num_workers=1,
+        )
 
 
-    """
-    _, test_ds = load_data(ARGS.root, 
-                           ARGS.batchsize, 
-                           1, 
-                           40000,
-                           gpu = False)
-    """
-    eval.evaluate(dataloader)
+        """
+        _, test_ds = load_data(ARGS.root, 
+                            ARGS.batchsize, 
+                            1, 
+                            40000,
+                            gpu = False)
+        """
+        eval.evaluate(dataloader)
 
                     

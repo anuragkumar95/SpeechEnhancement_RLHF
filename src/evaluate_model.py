@@ -206,12 +206,13 @@ class EvalModel:
         if i_sr != 16000:
             inp = AF.resample(inp, orig_freq=i_sr, new_freq=16000)
 
-        out = torch.zeros(inp.shape).reshape(1, -1)
+        out = torch.zeros(inp.shape)
         print(f"INP_WAV:{inp.shape}")
-        for i in range(0, len(inp), cutlen):
+        for i in range(0, inp.shape[-1], cutlen):
             end = min(i+cutlen, out.shape[-1])
             print(f"Start:{i}, End:{end}")
-            wav_inp = torch.tensor(inp[i: end]).reshape(1, -1)
+            wav_inp = torch.tensor(inp[:, i: end])
+            print(f"Inp_chunk:{wav_inp.shape}")
             dummy_clean = torch.ones(wav_inp.shape)
             dummy_label = torch.zeros(1, 1)
             batch = (wav_inp, dummy_clean, dummy_label)

@@ -361,8 +361,8 @@ class PPO:
                 states.append(curr)
                 rewards.append(r_t - self.beta * kl_penalty)
                 actions.append(action)
-                #logprobs.append(log_probs)
-                logprobs.append(ref_log_probs)
+                logprobs.append(log_probs)
+                #logprobs.append(ref_log_probs)
                 r_ts.append(r_t)
                 curr = state['noisy']
 
@@ -373,7 +373,7 @@ class PPO:
             advantages = self.get_advantages(target_values, states, critic)
 
             #Normalize advantages
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
+            #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
 
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 

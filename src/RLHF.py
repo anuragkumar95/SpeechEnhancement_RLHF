@@ -291,7 +291,8 @@ class PPO:
         sigma = torch.exp(0.5 * logvar) + 1e-08
         dist = Normal(mu, sigma)
         return dist.log_prob(action)
-    '''
+    
+    
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -469,7 +470,7 @@ class PPO:
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
     
-'''
+    '''
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -677,4 +678,4 @@ class PPO:
         step_val_loss = step_val_loss / self.episode_len 
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
-             
+    '''         

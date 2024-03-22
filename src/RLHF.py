@@ -552,6 +552,7 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
+            print(rewards.shape)
             target_values = self.get_expected_return(rewards)
             advantages = self.get_advantages(target_values, states, critic)
 
@@ -598,27 +599,21 @@ class PPO:
                             [actions[i]['action'][1] for i in mb_indx])
                 mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
                 
-                #mb_action = actions[t]
-                #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
-                #action, log_probs, entropies, _ = actor.get_action(mb_states)
         
                 values = critic(mb_states).reshape(-1)
                 for i, val in enumerate(values):
                     b = mb_indx[i] // self.episode_len
                     ts = mb_indx[i] % self.episode_len
                     VALUES[b, ts] = val
-                #VALUES[:, t] = values
 
                 if self.train_phase:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
 
-
                     old_logprobs = ([logprobs[i][0] for i in mb_indx],
                                     [logprobs[i][1] for i in mb_indx])
                     mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
-                    #mb_oldlogprobs = logprobs[t]
                     old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
                     
                 else:
@@ -676,9 +671,7 @@ class PPO:
 
         step_clip_loss = step_clip_loss / self.episode_len
         step_pg_loss = step_pg_loss / self.episode_len
-        step_val_loss = step_val_loss / self.episode_len
-        #step_entropy_loss = step_entropy_loss / self.episode_len
-        
+        step_val_loss = step_val_loss / self.episode_len 
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
              

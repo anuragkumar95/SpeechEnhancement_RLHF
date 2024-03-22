@@ -292,7 +292,7 @@ class PPO:
         dist = Normal(mu, sigma)
         return dist.log_prob(action)
     
-    
+
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -375,7 +375,8 @@ class PPO:
             advantages = self.get_advantages(target_values, states, critic)
 
             #Normalize advantages
-            #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
+            
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         print(f"STATES      :{len(states)}")

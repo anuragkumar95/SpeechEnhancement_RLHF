@@ -585,92 +585,93 @@ class PPO:
         indices = [t for t in range(len(states))]
         np.random.shuffle(indices)
 
-        for t in range(0, len(indices), bs):
-        #for t, mb_states in enumerate(states):
-            #Get mini batch indices
-            mb_indx = indices[t:t+bs]
-            mb_states = states[mb_indx, ...]
-
-            #Get new logprobs and values for the sampled (state, action) pair
-            mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
-                          [actions[i]['action'][0][1] for i in mb_indx]),
-                         [actions[i]['action'][1] for i in mb_indx])
-            mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
+        for step in range(5):
+            for t in range(0, len(indices), bs):
             
-            #mb_action = actions[t]
-            #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
-            log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
-            #action, log_probs, entropies, _ = actor.get_action(mb_states)
-     
-            values = critic(mb_states).reshape(-1)
-            for i, val in enumerate(values):
-                b = mb_indx[i] // self.episode_len
-                ts = mb_indx[i] % self.episode_len
-                VALUES[b, ts] = val
-            #VALUES[:, t] = values
+                #Get mini batch indices
+                mb_indx = indices[t:t+bs]
+                mb_states = states[mb_indx, ...]
 
-            if self.train_phase:
-                entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
-                log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
-
-
-                old_logprobs = ([logprobs[i][0] for i in mb_indx],
-                                [logprobs[i][1] for i in mb_indx])
-                mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
-                #mb_oldlogprobs = logprobs[t]
-                old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
+                #Get new logprobs and values for the sampled (state, action) pair
+                mb_action = (([actions[i]['action'][0][0] for i in mb_indx],
+                            [actions[i]['action'][0][1] for i in mb_indx]),
+                            [actions[i]['action'][1] for i in mb_indx])
+                mb_action = ((torch.stack(mb_action[0][0]), torch.stack(mb_action[0][1])), torch.stack(mb_action[1]))
                 
-            else:
-                #ignore complex mask, just tune mag mask 
-                entropy = entropies[0]
-                log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
-            
-            print(f"log_prob:{log_prob.mean()}")
-            print(f"old_logprob:{old_log_prob.mean()}")
-            logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
-            ratio = torch.exp(logratio)
-            print(f"Ratio:{ratio}")
-
-            #Policy loss
-            pg_loss1 = -b_advantages[t] * ratio
-            pg_loss2 = -b_advantages[t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
-            if pg_loss1.mean() == pg_loss2.mean():
-                pg_loss = pg_loss1.mean()
-            else:
-                pg_loss = torch.max(pg_loss1, pg_loss2).mean()
-
-            #value_loss
-            v_loss = 0.5 * ((b_target_values[mb_indx] - values) ** 2).mean()
-
-            #Entropy loss
-            entropy_loss = entropy.mean()
-
-            clip_loss = pg_loss - (self.en_coef * entropy_loss) #+ (self.val_coef * v_loss)
-
-            wandb.log({
-                'ratio':ratio.mean(),
-                'pg_loss1':pg_loss1.mean(),
-                'pg_loss2':pg_loss2.mean()
-            })
-
-            #optimizer.zero_grad()
-            a_optim.zero_grad()
-            c_optim.zero_grad()
-            clip_loss.backward()
-            v_loss.backward()
-            #Update network
-            if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-                torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
-                a_optim.step()
-                c_optim.step()
-
-            step_clip_loss += clip_loss.item()
-            step_pg_loss += pg_loss.item()
-            step_val_loss += v_loss.item()
-            #step_entropy_loss += entropy_loss.item()        
-            self.t += 1
+                #mb_action = actions[t]
+                #print(f"mb_action:{mb_action[0][0].shape, mb_action[0][1].shape, mb_action[1].shape}")
+                log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
+                #action, log_probs, entropies, _ = actor.get_action(mb_states)
         
+                values = critic(mb_states).reshape(-1)
+                for i, val in enumerate(values):
+                    b = mb_indx[i] // self.episode_len
+                    ts = mb_indx[i] % self.episode_len
+                    VALUES[b, ts] = val
+                #VALUES[:, t] = values
+
+                if self.train_phase:
+                    entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
+                    log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
+
+
+                    old_logprobs = ([logprobs[i][0] for i in mb_indx],
+                                    [logprobs[i][1] for i in mb_indx])
+                    mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
+                    #mb_oldlogprobs = logprobs[t]
+                    old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
+                    
+                else:
+                    #ignore complex mask, just tune mag mask 
+                    entropy = entropies[0]
+                    log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
+                
+                print(f"log_prob:{log_prob.mean()}")
+                print(f"old_logprob:{old_log_prob.mean()}")
+                logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
+                ratio = torch.exp(logratio)
+                print(f"Ratio:{ratio}")
+
+                #Policy loss
+                pg_loss1 = -b_advantages[t] * ratio
+                pg_loss2 = -b_advantages[t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+                if pg_loss1.mean() == pg_loss2.mean():
+                    pg_loss = pg_loss1.mean()
+                else:
+                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+                #value_loss
+                v_loss = 0.5 * ((b_target_values[mb_indx] - values) ** 2).mean()
+
+                #Entropy loss
+                entropy_loss = entropy.mean()
+
+                clip_loss = pg_loss - (self.en_coef * entropy_loss) #+ (self.val_coef * v_loss)
+
+                wandb.log({
+                    'ratio':ratio.mean(),
+                    'pg_loss1':pg_loss1.mean(),
+                    'pg_loss2':pg_loss2.mean()
+                })
+
+                #optimizer.zero_grad()
+                a_optim.zero_grad()
+                c_optim.zero_grad()
+                clip_loss.backward()
+                v_loss.backward()
+                #Update network
+                if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
+                    torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
+                    a_optim.step()
+                    c_optim.step()
+
+                step_clip_loss += clip_loss.item()
+                step_pg_loss += pg_loss.item()
+                step_val_loss += v_loss.item()
+                #step_entropy_loss += entropy_loss.item()        
+                self.t += 1
+            
         print(f"Values:{VALUES.mean(0)}")
 
         step_clip_loss = step_clip_loss / self.episode_len
@@ -680,4 +681,4 @@ class PPO:
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
-'''         
+             

@@ -231,8 +231,9 @@ class EvalModel:
             end_len = min(end, i+est_audio.shape[-1])
             out[:, i : i + end_len] = est_audio
         
-        torchaudio.save(uri=f"{save_dir}/{filename}",
-                        src=out,
+        torchaudio.save(f"{save_dir}/{filename}",
+                        out,
+                        16000,
                         channels_first=True,
                         format="wav")
         

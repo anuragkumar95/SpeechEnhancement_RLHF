@@ -292,7 +292,7 @@ class PPO:
         dist = Normal(mu, sigma)
         return dist.log_prob(action)
     
-
+    
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -545,10 +545,11 @@ class PPO:
                 #logprobs.append(log_probs)
                 
                 for i in range(bs):
-                    states.append(curr[i, ...].unsqueeze(1))
-                    act = ((action[0][0][i, ...].detach(), action[0][1][i, ...].detach()), action[1][i, ...].detach())
+                    states.append(curr[i, ...].unsqueeze(0))
+                    act = ((action[0][0][i, ...].unsqueeze(0).detach(), action[0][1][i, ...].unsqueeze(0).detach()), 
+                           action[1][i, ...].unsqueeze(0).detach())
                     actions.append(act)
-                    logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
+                    logprobs.append((log_probs[0][i, ...].unsqueeze(0).detach(), log_probs[1][i, ...].unsqueeze(0).detach()))
                 
                 r_ts.append(r_t)
                 curr = state['noisy']
@@ -557,7 +558,7 @@ class PPO:
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)
-            b_states = torch.stack(states)
+            b_states = torch.stack(states, dim=0)
             print(f"states:{b_states.shape}")
             step, b, c, t, f = states.shape
             b_states = b_states.reshape(step * b, c, t, f)
@@ -596,7 +597,7 @@ class PPO:
             
                 #Get mini batch indices
                 mb_indx = indices[t:t+bs]
-                mb_states = torch.stack(states[mb_indx, ...],)
+                mb_states = torch.stack(states[mb_indx, ...], dim=0)
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = (([actions[i]['action'][0][0] for i in mb_indx],

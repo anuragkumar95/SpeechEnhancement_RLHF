@@ -5,6 +5,7 @@ from model.critic import QNet
 from RLHF import REINFORCE, PPO
 from torch.utils.data import DataLoader
 import torchaudio
+import soundfile as sf
 
 import copy
 import os
@@ -198,54 +199,59 @@ class EvalModel:
                             pickle.dump(rewards, f)
                         print(f"reward_{i}.pickle saved in {save_path}")
 
-    def generate_clean_audio(self, cutlen, src_path, save_dir):
+    def enhance_one_track(self, audio_path, saved_dir, cut_len, n_fft=400, hop=100):
+        name = os.path.split(audio_path)[-1]
+        noisy, sr = torchaudio.load(audio_path)
+        assert sr == 16000
+        noisy = noisy.cuda()
 
-        filename = src_path.split('/')[-1]
-        #load noisy audio
-        inp, i_sr = torchaudio.load(src_path)
-        if i_sr != 16000:
-            inp = AF.resample(inp, orig_freq=i_sr, new_freq=16000)
+        c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
+        noisy = torch.transpose(noisy, 0, 1)
+        noisy = torch.transpose(noisy * c, 0, 1)
 
-        out = torch.zeros(inp.shape)
-        for i in range(0, inp.shape[-1], cutlen):
-            if inp.shape[-1] - i < 201:
-                continue
-            end = min(i+cutlen, out.shape[-1])
-            wav_inp = torch.tensor(inp[:, i: end])
-           
-            dummy_clean = torch.ones(wav_inp.shape)
-            dummy_label = torch.zeros(1, 1)
-            batch = (wav_inp, dummy_clean, dummy_label)
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+        length = noisy.size(-1)
+        frame_num = int(np.ceil(length / 100))
+        padded_len = frame_num * 100
+        padding_len = padded_len - length
+        noisy = torch.cat([noisy, noisy[:, :padding_len]], dim=-1)
+        if padded_len > cut_len:
+            batch_size = int(np.ceil(padded_len / cut_len))
+            while 100 % batch_size != 0:
+                batch_size += 1
+            noisy = torch.reshape(noisy, (batch_size, -1))
 
-            _, _, noisy, _ = batch
-            noisy = noisy.permute(0, 1, 3, 2)
+        noisy_spec = torch.stft(
+            noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True
+        )
+        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
+        est_real, est_imag = self.actor(noisy_spec)
+        est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
 
-            #Forward pass through actor to get the action(mask)
-            action, _, _, _ = self.actor.get_action(noisy)
-
-            #Apply action  to get the next state
-            next_state = self.env.get_next_state(state=noisy, 
-                                                 action=action)
-            est_audio = next_state['est_audio']
-            end_len = min(end, i + est_audio.shape[-1])
-            out[:, i : end_len] = est_audio
+        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+        est_audio = torch.istft(
+            est_spec_uncompress,
+            n_fft,
+            hop,
+            window=torch.hamming_window(n_fft).cuda(),
+            onesided=True,
+        )
+        est_audio = est_audio / c
+        est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
+        assert len(est_audio) == length
         
-        torchaudio.save(f"{save_dir}/{filename}",
-                        out,
-                        16000,
-                        channels_first=True,
-                        format="wav")
+        saved_path = os.path.join(saved_dir, name)
+        sf.write(saved_path, est_audio, sr)
+
         
     def enhance_audio(self, src_dir):
 
         save_path = f"{self.save_path}/audios"
         os.makedirs(save_path, exist_ok=True)
 
-        for file in tqdm(os.listdir(src_dir)):
-            path = os.path.join(src_dir, file)
-            self.generate_clean_audio(cutlen=40000, src_path=path, save_dir=save_path)
-
+        for audio in tqdm(src_dir):
+            noisy_path = os.path.join(src_dir, audio)
+            self.enhance_one_track(noisy_path, save_path, 16000 * 16, 400, 100, True)
+           
 
 if __name__ == '__main__':
     ARGS = args().parse_args()

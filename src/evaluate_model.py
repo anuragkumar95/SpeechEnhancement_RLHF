@@ -201,6 +201,7 @@ class EvalModel:
 
     def enhance_one_track(self, audio_path, saved_dir, cut_len, n_fft=400, hop=100):
         name = os.path.split(audio_path)[-1]
+        print(f"PATH:{audio_path}")
         noisy, sr = torchaudio.load(audio_path)
         assert sr == 16000
         noisy = noisy.cuda()

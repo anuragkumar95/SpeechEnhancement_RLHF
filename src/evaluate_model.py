@@ -201,7 +201,6 @@ class EvalModel:
 
     def enhance_one_track(self, audio_path, saved_dir, cut_len, n_fft=400, hop=100):
         name = os.path.split(audio_path)[-1]
-        print(f"PATH:{audio_path}")
         noisy, sr = torchaudio.load(audio_path)
         assert sr == 16000
         noisy = noisy.cuda()
@@ -250,7 +249,6 @@ class EvalModel:
         os.makedirs(save_path, exist_ok=True)
         with torch.no_grad():
             for audio in tqdm(os.listdir(src_dir)):
-                print(f"src:{src_dir}, audio:{audio}")
                 noisy_path = os.path.join(src_dir, audio)
                 self.enhance_one_track(noisy_path, save_path, 16000 * 16)
            

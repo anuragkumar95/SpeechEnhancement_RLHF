@@ -506,6 +506,7 @@ class PPO:
                 print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
                 print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
                 print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
+                
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
                 print(f"NEW:{log_probs[0].mean(), log_probs[1].mean()}")
                 print(f"REF:{ref_log_probs[0].mean(), ref_log_probs[1].mean()}")
@@ -542,7 +543,7 @@ class PPO:
                 #logprobs.append(log_probs)
                 
                 for i in range(bs):
-                    states.append(curr[i, ...])
+                    states.append(curr[i, ...].unsqueeze(1))
                     act = ((action[0][0][i, ...].detach(), action[0][1][i, ...].detach()), action[1][i, ...].detach())
                     actions.append(act)
                     logprobs.append((log_probs[0][i, ...].detach(), log_probs[1][i, ...].detach()))
@@ -553,9 +554,12 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
-            print(rewards.shape)
             target_values = self.get_expected_return(rewards)
-            advantages = self.get_advantages(target_values, states, critic)
+            b_states = torch.stack(states)
+            print(f"states:{b_states.shape}")
+            step, b, c, t, f = states.shape
+            b_states = b_states.reshape(step * b, c, t, f)
+            advantages = self.get_advantages(target_values, b_states, critic)
 
             #Normalize advantages
             #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
@@ -565,9 +569,7 @@ class PPO:
             #flatten all
             b_target_values = target_values.reshape(-1)
             b_advantages = advantages.reshape(-1)
-            states = torch.stack(states)
-            step, b, c, t, f = states.shape
-            states = states.reshape(step * b, c, t, f)
+            
 
         print(f"STATES      :{len(states)}")
         print(f"TARGET_VALS :{target_values.shape}")
@@ -592,7 +594,7 @@ class PPO:
             
                 #Get mini batch indices
                 mb_indx = indices[t:t+bs]
-                mb_states = states[mb_indx, ...]
+                mb_states = torch.stack(states[mb_indx, ...],)
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = (([actions[i]['action'][0][0] for i in mb_indx],

@@ -250,7 +250,7 @@ class EvalModel:
 
         for audio in tqdm(src_dir):
             noisy_path = os.path.join(src_dir, audio)
-            self.enhance_one_track(noisy_path, save_path, 16000 * 16, 400, 100, True)
+            self.enhance_one_track(noisy_path, save_path, 16000 * 16)
            
 
 if __name__ == '__main__':

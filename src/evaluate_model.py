@@ -207,9 +207,11 @@ class EvalModel:
             inp = AF.resample(inp, orig_freq=i_sr, new_freq=16000)
 
         out = torch.zeros(inp.shape).reshape(1, -1)
-
+        print(f"INP_WAV:{inp.shape}")
         for i in range(0, len(inp), cutlen):
-            wav_inp = torch.tensor(inp[i: i+cutlen]).reshape(1, -1)
+            end = min(i+cutlen, out.shape[-1])
+            print(f"Start:{i}, End:{end}")
+            wav_inp = torch.tensor(inp[i: end]).reshape(1, -1)
             dummy_clean = torch.ones(wav_inp.shape)
             dummy_label = torch.zeros(1, 1)
             batch = (wav_inp, dummy_clean, dummy_label)
@@ -225,6 +227,7 @@ class EvalModel:
             next_state = self.env.get_next_state(state=noisy, 
                                                  action=action)
             est_audio = next_state['est_audio']
+            print(f"EST_Audio:{est_audio.shape}")
             out[:, i:i+cutlen] = est_audio
         
         torchaudio.save(uri=f"{save_dir}/{filename}",

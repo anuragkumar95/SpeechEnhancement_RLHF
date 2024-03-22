@@ -248,11 +248,11 @@ class EvalModel:
 
         save_path = f"{self.save_path}/audios"
         os.makedirs(save_path, exist_ok=True)
-
-        for audio in tqdm(os.listdir(src_dir)):
-            print(f"src:{src_dir}, audio:{audio}")
-            noisy_path = os.path.join(src_dir, audio)
-            self.enhance_one_track(noisy_path, save_path, 16000 * 16)
+        with torch.no_grad():
+            for audio in tqdm(os.listdir(src_dir)):
+                print(f"src:{src_dir}, audio:{audio}")
+                noisy_path = os.path.join(src_dir, audio)
+                self.enhance_one_track(noisy_path, save_path, 16000 * 16)
            
 
 if __name__ == '__main__':

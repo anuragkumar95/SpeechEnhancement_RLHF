@@ -228,7 +228,8 @@ class EvalModel:
                                                  action=action)
             est_audio = next_state['est_audio']
             print(f"EST_Audio:{est_audio.shape}")
-            out[:, i:i+cutlen] = est_audio
+            end_len = min(end, i+est_audio.shape[-1])
+            out[:, i : i + end_len] = est_audio
         
         torchaudio.save(uri=f"{save_dir}/{filename}",
                         src=out,

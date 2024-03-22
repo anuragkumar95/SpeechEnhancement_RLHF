@@ -374,7 +374,6 @@ class PPO:
 
             #Normalize advantages
             #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
-
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         print(f"STATES      :{len(states)}")

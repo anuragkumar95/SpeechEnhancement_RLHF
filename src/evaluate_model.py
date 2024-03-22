@@ -242,7 +242,7 @@ class EvalModel:
 
         for file in tqdm(os.listdir(src_dir)):
             path = os.path.join(src_dir, file)
-            self.generate_clean_audio(cutlen=32000, src_path=path, save_dir=save_path)
+            self.generate_clean_audio(cutlen=40000, src_path=path, save_dir=save_path)
 
 
 if __name__ == '__main__':

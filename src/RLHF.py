@@ -392,7 +392,7 @@ class PPO:
         step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
 
-        for step in range(3):
+        for step in range(5):
             for t, mb_states in enumerate(states):
                 #Get mini batch indices
                 mb_action = actions[t]

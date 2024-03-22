@@ -266,8 +266,7 @@ if __name__ == '__main__':
                     gpu_id=0)
     
     if ARGS.save_audios:
-        eval.enhance_audio(src_dir=ARGS.audio_dir,
-                           save_dir=ARGS.output)
+        eval.enhance_audio(src_dir=ARGS.audio_dir)
     
     else:
         test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 

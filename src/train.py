@@ -255,9 +255,7 @@ class Trainer:
 
         loss_mag = F.mse_loss(
             generator_outputs["est_mag"], generator_outputs["clean_mag"]
-        ) #+ F.mse_loss(
-        #    torch.log(generator_outputs["est_mag"]), torch.log(generator_outputs["clean_mag"])
-        #)
+        ) 
 
         loss_ri = F.mse_loss(
             generator_outputs["est_real"], generator_outputs["clean_real"]

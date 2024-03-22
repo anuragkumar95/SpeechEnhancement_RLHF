@@ -218,7 +218,10 @@ class ComplexDecoder(nn.Module):
             
             x_logits = torch.cat([x_1_logits, x_2_logits], dim=1)
             dist = Categorical(logits=x_logits)
-            x_out = dist.sample()
+            if action is None:
+                x_out = dist.sample()
+            else:
+                x_out = action
             x_logprob = dist.log_prob(x_out)
             x_entropy = dist.entropy()
 
@@ -252,6 +255,7 @@ class TSCNet(nn.Module):
         self.dist = distribution
 
     def get_action(self, x):
+        b, ch, t, f = x.size()
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         x_in = torch.cat([mag, x], dim=1)
@@ -261,9 +265,16 @@ class TSCNet(nn.Module):
         #out_3 = self.TSCB_2(out_2)
         #out_4 = self.TSCB_3(out_3)
         #out_5 = self.TSCB_4(out_4)
-        if self.dist:
+        if self.dist=='Normal':
             mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
             complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
+            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
+
+        if self.dist == 'Categorical':
+            mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
+            complex_out_indices, c_logprob, c_entropy = self.complex_decoder(out_2)
+            complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
+            complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
             return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
         
         mask = self.mask_decoder(out_2)
@@ -326,10 +337,7 @@ class TSCNet(nn.Module):
             complex_out_indices, _, _ = self.complex_decoder(out_2)
             
             complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
-            print(f"C_INDX:{complex_out_indices.shape} | C_VALS:{complex_mask.shape}")
             complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
-
-            print(f"C_INDX:{complex_out_indices.shape} | C_VALS:{complex_mask.shape} | C_OUT:{complex_out.shape}")
         
         if self.dist == "None":
             mask = self.mask_decoder(out_2)

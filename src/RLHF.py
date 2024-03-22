@@ -290,7 +290,7 @@ class PPO:
         sigma = torch.exp(0.5 * logvar) + 1e-08
         dist = Normal(mu, sigma)
         return dist.log_prob(action)
-    
+    '''
     def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -469,7 +469,7 @@ class PPO:
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
     
 '''
-def run_n_step_episode(self, batch, actor, critic, optimizer):
+    def run_n_step_episode(self, batch, actor, critic, optimizer):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
         Here the noisy signal is enhanced n times in an episode. 
@@ -556,7 +556,7 @@ def run_n_step_episode(self, batch, actor, critic, optimizer):
             advantages = self.get_advantages(target_values, states, critic)
 
             #Normalize advantages
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
+            #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-08)
 
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             
@@ -614,10 +614,10 @@ def run_n_step_episode(self, batch, actor, critic, optimizer):
                 log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
 
 
-                #old_logprobs = ([logprobs[i][0] for i in mb_indx],
-                #                [logprobs[i][1] for i in mb_indx])
-                #mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
-                mb_oldlogprobs = logprobs[t]
+                old_logprobs = ([logprobs[i][0] for i in mb_indx],
+                                [logprobs[i][1] for i in mb_indx])
+                mb_oldlogprobs = (torch.stack(old_logprobs[0]), torch.stack(old_logprobs[1]))
+                #mb_oldlogprobs = logprobs[t]
                 old_log_prob = mb_oldlogprobs[0].permute(0, 2, 1) + mb_oldlogprobs[1][:, 0, :, :] + mb_oldlogprobs[1][:, 1, :, :]
                 
             else:
@@ -632,8 +632,8 @@ def run_n_step_episode(self, batch, actor, critic, optimizer):
             print(f"Ratio:{ratio}")
 
             #Policy loss
-            pg_loss1 = -advantages[:, t] * ratio
-            pg_loss2 = -advantages[:, t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+            pg_loss1 = -b_advantages[t] * ratio
+            pg_loss2 = -b_advantages[t] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
             if pg_loss1.mean() == pg_loss2.mean():
                 pg_loss = pg_loss1.mean()
             else:

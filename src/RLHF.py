@@ -293,7 +293,7 @@ class PPO:
         return dist.log_prob(action)
     
     
-    def run_n_step_episode(self, batch, actor, critic, optimizer):
+    def run_n_step_episode(self, batch, actor, critic, optimizer, n_epochs=3):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
         Here the noisy signal is enhanced n times in an episode. 
@@ -396,7 +396,7 @@ class PPO:
         step_pg_loss = 0
         VALUES = torch.zeros(target_values.shape)
 
-        for step in range(3):
+        for step in range(n_epochs):
             for t, mb_states in enumerate(states):
                 #Get mini batch indices
                 mb_action = actions[t]

@@ -169,7 +169,7 @@ class Trainer:
                                reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
                                beta=0.0,
-                               eps=0.01,
+                               eps=0.02,
                                val_coef=1.0,
                                en_coef=0.0,
                                discount=0.99,

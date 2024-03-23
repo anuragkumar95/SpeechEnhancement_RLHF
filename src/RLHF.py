@@ -244,7 +244,7 @@ class PPO:
         print(f"RLHF:{self.rlhf}")
 
 
-    def run_episode(self, batch, actor, critic, optimizer, n_epochs):
+    def run_episode(self, batch, actor, critic, optimizer, n_epochs=3):
         if self.episode_len <= 1:
             return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
         else:

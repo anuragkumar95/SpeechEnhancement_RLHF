@@ -19,15 +19,15 @@ def args():
                         help="Root directory containing noise wav files.")
     parser.add_argument("-o", "--output", type=str, required=False,
                         help="Directory to save dataset")
-    parser.add_argument("--nisqa_pt", type=str, required=False,
-                        help="Path to NISQA checkpoint.")
+    #parser.add_argument("--nisqa_pt", type=str, required=False,
+    #                    help="Path to NISQA checkpoint.")
     
 """
 python run_predict.py --mode predict_file --pretrained_model weights/nisqa.tar --deg /path/to/wav/file.wav --output_dir /path/to/dir/with/results
 """
-class RANKING:
+class MixturesDataset:
     """
-    This class generates a ranking dataset for reward model training.
+    This class generates a dataset for reward model training.
     """
     def __init__(self, clean_dir, noise_dir, nisqa_pt, out_dir, snr_low=-10, snr_high=10, K=5):
         self.clean_dir = clean_dir
@@ -41,12 +41,14 @@ class RANKING:
         snr = self.snr.sample()
 
         #calculate the amount of noise to add to get a specific snr
-        alpha = (noise * torch.exp(snr / 20) - clean) / noise
+        p_clean = (clean ** 2).mean()
+        p_noise = (noise ** 2).mean()
+
+        p_ratio = p_clean / p_noise
+        alpha = torch.sqrt(p_ratio * (10 ** (-snr / 10)))
         signal = clean + alpha * noise
         
         return signal
-    
-    def get_nisqa_score()
     
     def generate_mixtures(self, n_size=15000):
 
@@ -83,9 +85,8 @@ class RANKING:
 if __name__ == "__main__":
     ARGS = args().parse_args()
 
-    ranks = RANKING(clean_dir=ARGS.clean_dir, 
-                    noise_dir=ARGS.noise_dir, 
-                    nisqa_pt=ARGS.nisqa_pt, 
-                    out_dir=ARGS.output)
+    ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
+                            noise_dir=ARGS.noise_dir,  
+                            out_dir=ARGS.output)
     
-    ranks.generate_rankings(n_size=15000)
+    ranks.generate_mixtures(n_size=15000)

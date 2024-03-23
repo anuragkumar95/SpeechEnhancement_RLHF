@@ -358,14 +358,16 @@ class PPO:
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
+                r_ts.append(r_t)
+                if self.beta > 0:
+                    r_t = r_t = self.beta * kl_penalty
                 
                 #Store trajectory
                 states.append(curr)
-                rewards.append(r_t - self.beta * kl_penalty)
+                rewards.append(r_t)
+
                 actions.append(action)
                 logprobs.append(log_probs)
-                #logprobs.append(ref_log_probs)
-                r_ts.append(r_t)
                 curr = state['noisy']
 
             #Convert collected rewards to target_values and advantages
@@ -443,16 +445,19 @@ class PPO:
                     'pg_loss2':pg_loss2.mean()
                 })
 
-                #optimizer.zero_grad()
+                #Update network
+
                 a_optim.zero_grad()
                 c_optim.zero_grad()
                 clip_loss.backward()
                 v_loss.backward()
-                #Update network
+                
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-                    torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                     a_optim.step()
+                    
+                if not (torch.isnan(v_loss).any() or torch.isinf(v_loss).any()) and (self.t % self.accum_grad == 0):
+                    torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                     c_optim.step()
 
                 step_clip_loss += clip_loss.item()

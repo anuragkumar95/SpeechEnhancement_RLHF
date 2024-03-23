@@ -434,7 +434,7 @@ class PPO:
                 #Entropy loss
                 entropy_loss = entropy.mean()
 
-                clip_loss = pg_loss - (self.en_coef * entropy_loss) #+ (self.val_coef * v_loss)
+                clip_loss = pg_loss - (self.en_coef * entropy_loss)
 
                 wandb.log({
                     'step':step * 1 + t, 
@@ -457,8 +457,7 @@ class PPO:
 
                 step_clip_loss += clip_loss.item()
                 step_pg_loss += pg_loss.item()
-                step_val_loss += v_loss.item()
-                #step_entropy_loss += entropy_loss.item()        
+                step_val_loss += v_loss.item()       
                 self.t += 1
         
         print(f"Values:{VALUES.mean(0)}")

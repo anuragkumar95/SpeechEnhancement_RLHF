@@ -245,18 +245,8 @@ class PPO:
 
 
     def run_episode(self, batch, actor, critic, optimizer, n_epochs=3):
-        if self.episode_len <= 1:
-            return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
-        else:
-            return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
+        return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
 
-    def run_one_step_episode(self, batch, actor, critic, optimizer):
-        """
-        Imagine the episode N --> C --> Terminal
-        So for target values, we consider Noisy --> Clean --> Terminal
-        and for current iteration values we consider Noisy --> Enhanced --> Terminal
-        """
-        pass
     
     def get_expected_return(self, rewards):
         """

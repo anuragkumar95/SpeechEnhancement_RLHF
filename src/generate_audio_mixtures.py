@@ -13,18 +13,23 @@ import soundfile as sf
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--clean_dir", type=str, required=True,
+    parser.add_argument("--clean_dir", type=str, required=False,
                         help="Root directory containing clean wav files.")
-    parser.add_argument("--noise_dir", type=str, required=True,
+    parser.add_argument("--noise_dir", type=str, required=False,
                         help="Root directory containing noise wav files.")
+    parser.add_argument("--mixture_dir", type=str, required=False,
+                        help="Root directory containing mixture wav files.")
+    parser.add_argument("--mos_file", type=str, required=False,
+                        help="Path to file containing mos scores.")
     parser.add_argument("-o", "--output", type=str, required=False,
                         help="Directory to save dataset")
-    #parser.add_argument("--nisqa_pt", type=str, required=False,
-    #                    help="Path to NISQA checkpoint.")
+    parser.add_argument("-n", "--n_size", type=int, required=False, default=10000, 
+                        help="Number of mixtures to be produced.")
+    parser.add_argument("--mix_aud", action='store_true', required=False,
+                        help="Set this flag to mix audios")
+    parser.add_argument("--generate_ranks", action='store_true', required=False,
+                        help="Set this flag to generate_ranks")
     
-"""
-python run_predict.py --mode predict_file --pretrained_model weights/nisqa.tar --deg /path/to/wav/file.wav --output_dir /path/to/dir/with/results
-"""
 class MixturesDataset:
     """
     This class generates a dataset for reward model training.
@@ -46,7 +51,7 @@ class MixturesDataset:
 
         p_ratio = p_clean / p_noise
         alpha = torch.sqrt(p_ratio * (10 ** (-snr / 10)))
-        signal = clean + alpha * noise
+        signal = clean + (alpha * noise)
         
         return signal
     
@@ -65,7 +70,7 @@ class MixturesDataset:
 
             assert c_sr == 16000
  
-            for _ in range(self.K):
+            for i in range(self.K):
                 #sample noise
                 idx = np.random.choice(n_noise_samples)
                 noise_file = noise_files[idx]
@@ -78,15 +83,46 @@ class MixturesDataset:
                 signal = self.mix_audios(clean, noise)
 
                 #save
-                sf.write(os.path.join(self.save_dir, clean_files[cidx]), signal, 16000)
+                sf.write(os.path.join(self.save_dir, f"{clean_files[cidx]}-{i}"), signal, 16000)
 
+
+def generate_ranking(mos_file, mixture_dir, save_dir):
+    mixture_ids = {}
+    for file in os.listdir(mixture_dir):
+        _id_ = file.split('-')[0]
+        if _id_ not in mixture_ids:
+            mixture_ids[_id_] = []
+        mixture_ids[_id_].append(file)
+
+    mos = {}
+    with open(mos_file, 'r') as f:
+        lines = f.readines()
+        for line in lines:
+            file_name, mos_score, _, _, _, _ = line.split(',')
+            mos[file_name] = float(mos_score)
+
+    with open(os.path.join(save_dir, 'ranks'), 'w') as f:
+        for _id_ in mixture_ids:
+            ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
+            sorted_ranks = sorted(ranks, key=lambda x:x[1])
+            sorted_file_ids = [i[0] for i in sorted_ranks]
+            line = " ".join(sorted_file_ids)
+            f.write(f"{line}\n")
 
 
 if __name__ == "__main__":
+
     ARGS = args().parse_args()
 
-    ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
-                            noise_dir=ARGS.noise_dir,  
-                            out_dir=ARGS.output)
-    
-    ranks.generate_mixtures(n_size=15000)
+    if ARGS.mix_aud:
+        ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
+                                noise_dir=ARGS.noise_dir,  
+                                out_dir=ARGS.output)
+        
+        ranks.generate_mixtures(n_size=ARGS.n_size)
+
+    if ARGS.generate_ranks:
+        generate_ranking(mos_file=ARGS.mos_file, 
+                         mixture_dir=ARGS.mixture_dir, 
+                         save_dir=ARGS.output)
+

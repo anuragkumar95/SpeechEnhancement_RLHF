@@ -352,7 +352,7 @@ class PPO:
                 print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
                 r_ts.append(r_t)
                 if self.beta > 0:
-                    r_t = r_t = self.beta * kl_penalty
+                    r_t = r_t - self.beta * kl_penalty
                 
                 #Store trajectory
                 states.append(curr)

@@ -60,6 +60,10 @@ def args():
                         help="Save path suffix")
     parser.add_argument("--method", type=str, default='reinforce', required=False,
                         help="RL Algo to run. Choose between (reinforce/PPO)")
+    parser.add_argument("--beta", type=float, default=0.0, required=False,
+                        help="KL weight")
+    parser.add_argument("--lmbda", type=float, default=0.0, required=False,
+                        help="Supervised pretrainig loss weight for PPO.")
     parser.add_argument("--episode_steps", type=int, default=1, required=False,
                         help="No. of steps in episode to run for PPO")
     
@@ -168,10 +172,11 @@ class Trainer:
             self.trainer = PPO(init_model=self.expert, 
                                reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
-                               beta=0,
+                               beta=args.beta,
                                eps=0.01,
                                val_coef=1.0,
                                en_coef=0,
+                               lmbda=args.lmbda, 
                                discount=0.99,
                                warm_up_steps=0,
                                run_steps=args.episode_steps,
@@ -283,6 +288,7 @@ class Trainer:
                             "advantages":adv,
                             "clip_loss":loss[0],
                             "value_loss":loss[1],
+                            "pretrain_loss":loss[4],
                             "pg_loss":loss[3],
                             "entropy_loss":loss[2]
                         })

@@ -26,7 +26,7 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
-
+torch.manual_seed(123)
 
 class REINFORCE:
     def __init__(self, 
@@ -209,7 +209,8 @@ class PPO:
                  beta=0.2,
                  eps=0.01, 
                  val_coef=0.02, 
-                 en_coef=0.01, 
+                 en_coef=0.01,
+                 lmbda=0,  
                  discount=1.0, 
                  accum_grad=1,
                  warm_up_steps=1000, 
@@ -223,6 +224,7 @@ class PPO:
         
         self.discount = discount
         self.beta = beta
+        self.lmbda = lmbda
         self.eps = eps
         self.gpu_id = gpu_id
         self.accum_grad = accum_grad
@@ -328,7 +330,7 @@ class PPO:
                 exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
                 state['exp_est_audio'] = exp_state['est_audio']
-                state['clean'] = clean
+                #state['clean'] = clean
 
                 #Calculate kl_penalty
                 ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
@@ -360,6 +362,9 @@ class PPO:
                 logprobs.append(log_probs)
                 curr = state['noisy']
 
+            #Store the last enhanced state
+            states.append(curr)
+
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
@@ -371,12 +376,12 @@ class PPO:
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
-        print(f"STATES      :{len(states)}")
-        print(f"TARGET_VALS :{target_values.shape}")
-        print(f"ACTIONS     :{len(actions)}")
-        print(f"LOGPROBS    :{len(logprobs)}")
-        print(f"ADVANTAGES  :{advantages.shape}")
-        print(f"Policy returns:{target_values.mean(0)}")
+        print(f"STATES        :{len(states)}")
+        print(f"TARGET_VALS   :{target_values.shape}")
+        print(f"ACTIONS       :{len(actions)}")
+        print(f"LOGPROBS      :{len(logprobs)}")
+        print(f"ADVANTAGES    :{advantages.shape}")
+        print(f"POLICY RETURNS:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
         #critic.train()
@@ -384,10 +389,11 @@ class PPO:
         step_val_loss = 0
         step_entropy_loss = 0
         step_pg_loss = 0
+        step_sup_loss = 0
         VALUES = torch.zeros(target_values.shape)
 
         for step in range(n_epochs):
-            for t, mb_states in enumerate(states):
+            for t, mb_states in enumerate(states[:-1]):
                 #Get mini batch indices
                 mb_action = actions[t]
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
@@ -426,7 +432,11 @@ class PPO:
                 #Entropy loss
                 entropy_loss = entropy.mean()
 
-                clip_loss = pg_loss - (self.en_coef * entropy_loss)
+                #Supervised loss
+                enhanced = states[t+1]
+                supervised_loss = ((clean - enhanced) ** 2).mean()
+
+                clip_loss = pg_loss - (self.en_coef * entropy_loss) + self.lmbda * supervised_loss
 
                 wandb.log({
                     'step':step * 1 + t, 
@@ -436,7 +446,6 @@ class PPO:
                 })
 
                 #Update network
-
                 a_optim.zero_grad()
                 c_optim.zero_grad()
                 clip_loss.backward()
@@ -452,18 +461,23 @@ class PPO:
 
                 step_clip_loss += clip_loss.item()
                 step_pg_loss += pg_loss.item()
-                step_val_loss += v_loss.item()       
+                step_sup_loss += supervised_loss.item()
+                step_val_loss += v_loss.item() 
+                step_entropy_loss += entropy_loss.item()      
                 self.t += 1
         
         print(f"Values:{VALUES.mean(0)}")
 
         step_clip_loss = step_clip_loss / self.episode_len
         step_pg_loss = step_pg_loss / self.episode_len
-        step_val_loss = step_val_loss / self.episode_len
-        #step_entropy_loss = step_entropy_loss / self.episode_len
+        step_val_loss = step_val_loss / self.episode_len                 
+        step_sup_loss = step_sup_loss / self.episode_len
+        step_entropy_loss = step_entropy_loss / self.episode_len
         
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), advantages.sum(-1).mean()
+        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \
+               (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty.mean(), r_ts.sum(-1).mean()), \
+               advantages.sum(-1).mean()
     
     '''
     def run_n_step_episode(self, batch, actor, critic, optimizer):

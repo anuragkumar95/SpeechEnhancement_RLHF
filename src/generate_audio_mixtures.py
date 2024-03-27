@@ -36,11 +36,10 @@ class MixturesDataset:
     """
     This class generates a dataset for reward model training.
     """
-    def __init__(self, clean_dir, noise_dir, nisqa_pt, out_dir, snr_low=-10, snr_high=10, K=5):
+    def __init__(self, clean_dir, noise_dir, out_dir, snr_low=-10, snr_high=10, K=5):
         self.clean_dir = clean_dir
         self.noise_dir = noise_dir
         self.save_dir = out_dir
-        self.nisqa_pt = nisqa_pt
         self.K = K
         self.snr = torch.distributions.Uniform(snr_low, snr_high)
 

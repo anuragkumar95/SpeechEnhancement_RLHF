@@ -87,7 +87,7 @@ class MixturesDataset:
                 if n_sr != c_sr:
                     noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
-                assert n_sr == c_sr
+                #assert n_sr == c_sr
 
                 #mix them
                 signal = self.mix_audios(clean, noise)

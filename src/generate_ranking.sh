@@ -5,6 +5,8 @@ ranking_dir=~/MixtureRanking/ranking
 nisqa_pt=~/NISQA/weights/nisqa.tar
 n=15000
 
+makedir -p $mixture_dir
+
 ### Generate audio mixtures
 python ./generate_audio_mixtures.py --clean_dir $clean_dir --noise_dir $noise_dir --output $mixture_dir -n $n --mix_aud
 

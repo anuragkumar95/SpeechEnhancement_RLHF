@@ -60,7 +60,7 @@ class MixturesDataset:
         alpha = torch.sqrt(p_ratio * (10 ** (-snr / 10)))
         signal = clean + (alpha * noise)
         
-        return signal.reshape(-1).cpu().numpy()
+        return signal.reshape(-1).cpu().numpy(), snr
     
     def generate_mixtures(self, n_size=15000):
 
@@ -90,10 +90,10 @@ class MixturesDataset:
                 #assert n_sr == c_sr
 
                 #mix them
-                signal = self.mix_audios(clean, noise)
+                signal, snr = self.mix_audios(clean, noise)
 
                 #save
-                sf.write(os.path.join(self.save_dir, f"{clean_files[cidx][:-len('.wav')]}-{i}.wav"), signal, 16000)
+                sf.write(os.path.join(self.save_dir, f"{clean_files[cidx][:-len('.wav')]}-{i}_snr_{snr}.wav"), signal, 16000)
 
 
 def generate_ranking(mos_file, mixture_dir, save_dir):

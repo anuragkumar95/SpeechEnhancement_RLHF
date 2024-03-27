@@ -30,6 +30,7 @@ def args():
                         help="Set this flag to mix audios")
     parser.add_argument("--generate_ranks", action='store_true', required=False,
                         help="Set this flag to generate_ranks")
+    return parser
     
 class MixturesDataset:
     """

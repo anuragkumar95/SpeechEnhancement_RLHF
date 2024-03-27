@@ -69,7 +69,7 @@ class MixturesDataset:
         n_clean_examples = len(clean_files)
         n_noise_samples = len(noise_files)
 
-        for i in range(n_size):
+        for i in tqdm(range(n_size)):
             #sample a clean audio
             cidx = np.random.choice(n_clean_examples)
             clean_file = os.path.join(self.clean_dir, clean_files[cidx])

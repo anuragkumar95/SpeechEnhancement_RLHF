@@ -1,8 +1,8 @@
-clean_dir = ~/speech-datasets/VoiceBank
-noise_dir = path/to/dir
-mixture_dir = ~/MixtureRanking/mixtures
-ranking_dir = ~/MixtureRanking/ranking
-nisqa_pt = ~/NISQA/weights/nisqa.tar
+clean_dir=~/speech-datasets/VoiceBank/train/clean
+noise_dir=~/NOISEUS/noise
+mixture_dir=~/MixtureRanking/mixtures
+ranking_dir=~/MixtureRanking/ranking
+nisqa_pt=~/NISQA/weights/nisqa.tar
 n = 15000
 
 ### Generate audio mixtures

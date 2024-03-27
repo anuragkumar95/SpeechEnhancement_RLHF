@@ -60,7 +60,7 @@ class MixturesDataset:
         alpha = torch.sqrt(p_ratio * (10 ** (-snr / 10)))
         signal = clean + (alpha * noise)
         
-        return signal.cpu().numpy()
+        return signal.reshape(-1).cpu().numpy()
     
     def generate_mixtures(self, n_size=15000):
 

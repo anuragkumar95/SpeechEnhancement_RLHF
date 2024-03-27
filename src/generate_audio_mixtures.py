@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 import torch
 import torchaudio
+import torchaudio.functional as F
 from tqdm import tqdm
 import soundfile as sf
 
@@ -43,6 +44,12 @@ class MixturesDataset:
         self.snr = torch.distributions.Uniform(snr_low, snr_high)
 
     def mix_audios(self, clean, noise):
+        
+        if clean.shape[-1] != noise.shape[-1]:
+            while noise.shape[-1] >= clean.shape[-1]:
+                noise = torch.cat([noise, noise], dim=-1)
+        noise = noise[:, :clean.shape[-1]]
+
         snr = self.snr.sample()
 
         #calculate the amount of noise to add to get a specific snr
@@ -53,7 +60,7 @@ class MixturesDataset:
         alpha = torch.sqrt(p_ratio * (10 ** (-snr / 10)))
         signal = clean + (alpha * noise)
         
-        return signal
+        return signal.cpu().numpy()
     
     def generate_mixtures(self, n_size=15000):
 
@@ -76,6 +83,9 @@ class MixturesDataset:
                 noise_file = noise_files[idx]
                 noise_file = os.path.join(self.noise_dir, noise_files[idx])
                 noise, n_sr = torchaudio.load(noise_file)
+
+                if n_sr != c_sr:
+                    noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
                 assert n_sr == c_sr
 

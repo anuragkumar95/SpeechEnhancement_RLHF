@@ -4,13 +4,18 @@
 """
 
 import os
+import ray
+import logging
 import argparse
 import numpy as np
 import torch
 import torchaudio
 import torchaudio.functional as F
-from tqdm import tqdm
+#from tqdm import tqdm
 import soundfile as sf
+from ray.experimental import tqdm_ray
+
+torch.manual_seed(123)
 
 def args():
     parser = argparse.ArgumentParser()
@@ -39,9 +44,12 @@ class MixturesDataset:
     def __init__(self, clean_dir, noise_dir, out_dir, snr_low=-10, snr_high=10, K=5):
         self.clean_dir = clean_dir
         self.noise_dir = noise_dir
+        self.clean_files = os.listdir(clean_dir)
+        self.noise_files = os.listdir(noise_dir)
         self.save_dir = out_dir
         self.K = K
         self.snr = torch.distributions.Uniform(snr_low, snr_high)
+        ray.init(ignore_reinit_error=True, logging_level=logging.ERROR)
 
     def mix_audios(self, clean, noise):
         
@@ -62,38 +70,46 @@ class MixturesDataset:
         
         return signal.reshape(-1).cpu().numpy(), snr
     
-    def generate_mixtures(self, n_size=15000):
+    @ray.remote
+    def generate_k_samples(self, bar, n_clean_examples, n_noise_samples):
+        #sample a clean audio
+        cidx = np.random.choice(n_clean_examples)
+        clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
+        clean, c_sr = torchaudio.load(clean_file)
 
-        clean_files = os.listdir(self.clean_dir)
-        noise_files = os.listdir(self.noise_dir)
-        n_clean_examples = len(clean_files)
-        n_noise_samples = len(noise_files)
+        assert c_sr == 16000
 
-        for i in tqdm(range(n_size)):
-            #sample a clean audio
-            cidx = np.random.choice(n_clean_examples)
-            clean_file = os.path.join(self.clean_dir, clean_files[cidx])
-            clean, c_sr = torchaudio.load(clean_file)
+        for i in range(self.K):
+            #sample noise
+            idx = np.random.choice(n_noise_samples)
+            noise_file = self.noise_files[idx]
+            noise_file = os.path.join(self.noise_dir, self.noise_files[idx])
+            noise, n_sr = torchaudio.load(noise_file)
 
-            assert c_sr == 16000
- 
-            for i in range(self.K):
-                #sample noise
-                idx = np.random.choice(n_noise_samples)
-                noise_file = noise_files[idx]
-                noise_file = os.path.join(self.noise_dir, noise_files[idx])
-                noise, n_sr = torchaudio.load(noise_file)
+            if n_sr != c_sr:
+                noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
-                if n_sr != c_sr:
-                    noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
+            #assert n_sr == c_sr
 
-                #assert n_sr == c_sr
+            #mix them
+            signal, snr = self.mix_audios(clean, noise)
 
-                #mix them
-                signal, snr = self.mix_audios(clean, noise)
+            #save
+            sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_snr_{snr}.wav"), signal, 16000)
+        bar.update.remote(1)
+    
+    def generate_mixtures(self, n_size=5000):
+        n_clean_examples = len(self.clean_files)
+        n_noise_samples = len(self.noise_files)
 
-                #save
-                sf.write(os.path.join(self.save_dir, f"{clean_files[cidx][:-len('.wav')]}-{i}_snr_{snr}.wav"), signal, 16000)
+        remote_tqdm = ray.remote(tqdm_ray.tqdm)
+        bar = remote_tqdm.remote(total=n_size)
+        
+        futures = [self.generate_k_samples.remote(bar, n_clean_examples, n_noise_samples) for _ in range(n_size)]
+        ray.get(futures)
+        bar.close()
+        #ray.shutdown()
+        
 
 
 def generate_ranking(mos_file, mixture_dir, save_dir):

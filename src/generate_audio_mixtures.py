@@ -11,9 +11,9 @@ import numpy as np
 import torch
 import torchaudio
 import torchaudio.functional as F
-#from tqdm import tqdm
+from tqdm import tqdm
 import soundfile as sf
-from ray.experimental import tqdm_ray
+#from ray.experimental import tqdm_ray
 
 torch.manual_seed(123)
 
@@ -37,6 +37,12 @@ def args():
                         help="Set this flag to generate_ranks")
     return parser
     
+
+def to_iterator(obj_ids):
+    while obj_ids:
+        done, obj_ids = ray.wait(obj_ids)
+        yield ray.get(done[0])
+
 class MixturesDataset:
     """
     This class generates a dataset for reward model training.
@@ -59,6 +65,7 @@ class MixturesDataset:
         noise = noise[:, :clean.shape[-1]]
 
         snr = self.snr.sample()
+        snr = float("{:.2f}".format(snr))
 
         #calculate the amount of noise to add to get a specific snr
         p_clean = (clean ** 2).mean()
@@ -71,7 +78,7 @@ class MixturesDataset:
         return signal.reshape(-1).cpu().numpy(), snr
     
     @ray.remote
-    def generate_k_samples(self, bar, n_clean_examples, n_noise_samples):
+    def generate_k_samples(self, n_clean_examples, n_noise_samples):
         #sample a clean audio
         cidx = np.random.choice(n_clean_examples)
         clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
@@ -101,14 +108,15 @@ class MixturesDataset:
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)
         n_noise_samples = len(self.noise_files)
-
-        remote_tqdm = ray.remote(tqdm_ray.tqdm)
-        bar = remote_tqdm.remote(total=n_size)
         
-        futures = [self.generate_k_samples.remote(bar, n_clean_examples, n_noise_samples) for _ in range(n_size)]
+        futures = [self.generate_k_samples.remote(n_clean_examples, n_noise_samples) for _ in range(n_size)]
+        
+        ret = []
+        for fut in tqdm(to_iterator(futures), total=len(futures)):
+            ret.append(fut)
+        
         ray.get(futures)
-        bar.close()
-        #ray.shutdown()
+        ray.shutdown()
         
 
 

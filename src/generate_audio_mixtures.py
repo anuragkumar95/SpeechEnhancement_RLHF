@@ -38,11 +38,6 @@ def args():
     return parser
     
 
-def to_iterator(obj_ids):
-    while obj_ids:
-        done, obj_ids = ray.wait(obj_ids)
-        yield ray.get(done[0])
-
 class MixturesDataset:
     """
     This class generates a dataset for reward model training.
@@ -55,7 +50,6 @@ class MixturesDataset:
         self.save_dir = out_dir
         self.K = K
         self.snr = torch.distributions.Uniform(snr_low, snr_high)
-        ray.init(ignore_reinit_error=True, logging_level=logging.ERROR)
 
     def mix_audios(self, clean, noise):
         
@@ -77,7 +71,6 @@ class MixturesDataset:
         
         return signal.reshape(-1).cpu().numpy(), snr
     
-    @ray.remote
     def generate_k_samples(self, n_clean_examples, n_noise_samples):
         #sample a clean audio
         cidx = np.random.choice(n_clean_examples)
@@ -96,29 +89,18 @@ class MixturesDataset:
             if n_sr != c_sr:
                 noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
-            #assert n_sr == c_sr
-
             #mix them
             signal, snr = self.mix_audios(clean, noise)
 
             #save
-            sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_snr_{snr}.wav"), signal, 16000)
-        bar.update.remote(1)
+            sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_{self.noise_files[idx][:-len('.wav')]}_snr_{snr}.wav"), signal, 16000)
     
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)
         n_noise_samples = len(self.noise_files)
         
-        futures = [self.generate_k_samples.remote(n_clean_examples, n_noise_samples) for _ in range(n_size)]
-        
-        ret = []
-        for fut in tqdm(to_iterator(futures), total=len(futures)):
-            ret.append(fut)
-        
-        ray.get(futures)
-        ray.shutdown()
-        
-
+        for _ in range(n_size):
+            self.generate_k_samples(n_clean_examples, n_noise_samples)
 
 def generate_ranking(mos_file, mixture_dir, save_dir):
     mixture_ids = {}

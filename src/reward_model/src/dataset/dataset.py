@@ -307,6 +307,8 @@ class HumanAlignedDataset(Dataset):
         rank_1, path_1 = pair[0]
         rank_2, path_2 = pair[1]
 
+        print(f"PATH_1:{path_1}, PATH_2:{path_2}")
+
         x_1, sr_1 = torchaudio.load(path_1)
         x_2, sr_2 = torchaudio.load(path_2)
 
@@ -315,10 +317,17 @@ class HumanAlignedDataset(Dataset):
         x_1 = x_1[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
         x_2 = x_2[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
 
+        print(f"Before padding x1:{x_1.shape}, x2:{x_2.shape}")
+
         if x_1.shape[-1] < self.cutlen: 
             pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
             x_1 = torch.cat([pad, x_1], dim=-1)
             x_2 = torch.cat([pad, x_2], dim=-1)
+
+            print(f"After padding x1:{x_1.shape}, x2:{x_2.shape}")
+
+        x_1 = x_1.reshape(-1)
+        x_2 = x_2.reshape(-1)
 
         label = torch.tensor([1.0, 0.0])
         return x_1[:self.cutlen], x_2[:self.cutlen], label

@@ -152,7 +152,7 @@ class Trainer:
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
 
-        est_real, est_imag = self.model(noisy_spec)
+        est_real, est_imag, kld_loss = self.model(noisy_spec)
         
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
@@ -168,7 +168,7 @@ class Trainer:
         )
 
         return {
-            #"kld_loss": kld_loss,
+            "kld_loss": kld_loss,
             "est_real": est_real,
             "est_imag": est_imag,
             "est_mag": est_mag,
@@ -176,10 +176,6 @@ class Trainer:
             "clean_imag": clean_imag,
             "clean_mag": clean_mag,
             "est_audio": est_audio, 
-            #"tgt_k_real": target_k_real,
-            #"tgt_k_imag": target_k_imag,
-            #"real_probs": real_probs,
-            #"imag_probs": imag_probs
         }
     
     def load_checkpoint(self, path):
@@ -265,27 +261,17 @@ class Trainer:
             torch.abs(generator_outputs["est_audio"] - generator_outputs["clean"])
         )
 
-        #kld_loss = generator_outputs["kld_loss"]
+        kld_loss = generator_outputs.get("kld_loss", 0)
 
         loss = (
             args.loss_weights[0] * loss_ri
             + args.loss_weights[1] * loss_mag
             + args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
-            #+ 0.000001 * kld_loss
+            + 0.01 * kld_loss
         )
-        """
-        if generator_outputs["tgt_k_real"] is not None:
-            tgt_real = generator_outputs["tgt_k_real"]
-            tgt_imag = generator_outputs["tgt_k_imag"]
-            real_probs = generator_outputs["real_probs"].permute(0, 4, 1, 2, 3)
-            imag_probs = generator_outputs["imag_probs"].permute(0, 4, 1, 2, 3)
-            ce_loss = F.cross_entropy(real_probs, tgt_real) + F.cross_entropy(imag_probs, tgt_imag)
         
-            loss = loss + ce_loss 
-            return loss, ce_loss
-        """
-        return loss#, 0.000001*kld_loss
+        return loss, kld_loss
 
     def calculate_discriminator_loss(self, generator_outputs):
 
@@ -329,7 +315,7 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss = self.calculate_generator_loss(generator_outputs)
+        loss, kld_loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
@@ -355,7 +341,7 @@ class Trainer:
 
         wandb.log({
             'step_gen_loss':loss,
-            #'step_gen_kld_loss': e_loss / self.ACCUM_GRAD,
+            'step_gen_kld_loss': kld_loss / self.ACCUM_GRAD,
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })

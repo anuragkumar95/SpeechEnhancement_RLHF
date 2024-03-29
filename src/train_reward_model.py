@@ -121,7 +121,7 @@ class Trainer:
         loss, score = self.reward_model(pos=x_1, neg=x_2)
         y_preds = (score < 0.5).float()
         labels = torch.argmax(labels, dim=-1)
-        print(f"PREDS:{y_preds}")
+        print(f"PREDS:{y_preds.reshape(-1)}")
         print(f"LABELS:{labels}")
         acc = self.accuracy(y_preds, labels.float())
 

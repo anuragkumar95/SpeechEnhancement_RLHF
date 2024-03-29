@@ -114,7 +114,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir):
     with open(mos_file, 'r') as f:
         lines = f.readlines()
         for line in lines:
-            file_name, mos_score, _, _, _, _ = line.split(',')
+            file_name, mos_score, _, _, _, _, _ = line.split(',')
             mos[file_name] = float(mos_score)
 
     with open(os.path.join(save_dir, 'ranks'), 'w') as f:

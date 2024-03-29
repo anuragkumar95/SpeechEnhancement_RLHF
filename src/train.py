@@ -268,7 +268,7 @@ class Trainer:
             + args.loss_weights[1] * loss_mag
             + args.loss_weights[2] * time_loss
             + args.loss_weights[3] * gen_loss_GAN
-            + 0.01 * kld_loss
+            + 0.0001 * kld_loss
         )
         
         return loss, kld_loss

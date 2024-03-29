@@ -73,14 +73,14 @@ class Trainer:
         
         self.model = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            distribution="Categorical",
+                            distribution="Normal",
                             K=K,
                             gpu_id=gpu_id)
         self.batchsize = batchsize
         
         self.log_wandb = log_wandb
         self.gpu_id = gpu_id
-        self.dist = "Categorical"
+        self.dist = "Normal"
         self.discriminator = Discriminator(ndf=16)
 
         self.ce_loss = K_way_CrossEntropy()
@@ -306,7 +306,7 @@ class Trainer:
         clean = batch[0].to(self.gpu_id)
         noisy = batch[1].to(self.gpu_id)
         one_labels = torch.ones(clean.shape[0]).to(self.gpu_id)
-        #print(f"train_step: clean={clean.sum()}, noisy={noisy.sum()}")
+        
         #Run generator
         generator_outputs = self.forward_generator_step(
             clean,
@@ -455,7 +455,7 @@ def main(rank: int, world_size: int, args):
         print(available_gpus)
 
     train_ds, test_ds = dataloader.load_data(
-            args.data_dir, args.batch_size, 1, args.cut_len, gpu=args.gpu,
+            args.data_dir, args.batch_size, 1, args.cut_len, gpu=False,
         )
 
 

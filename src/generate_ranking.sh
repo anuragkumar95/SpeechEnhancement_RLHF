@@ -20,4 +20,4 @@ python ~/NISQA/run_predict.py --mode predict_dir --pretrained_model $nisqa_pt --
 echo "Generating ranks..."
 
 ### Generate ranking files
-#python ./generate_audio_mixtures.py --mixture_dir $mixture_dir --mos_file $ranking_dir/*.csv --save_dir $ranking_dir --generate_ranks
+#python ./generate_audio_mixtures.py --mixture_dir $mixture_dir --mos_file $ranking_dir/NISQA_results.csv -o $ranking_dir --generate_ranks

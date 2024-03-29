@@ -294,8 +294,6 @@ def main(args):
                                       clean_dir=args.clean_dir, 
                                       rank=os.path.join(args.rank_dir, 'test.ranks'),  
                                       cutlen=40000)
-    
-    print(f"TRAIN:{len(train_dataset)} TEST:{len(test_dataset)}")
 
     train_dataloader = DataLoader(
         dataset=train_dataset,
@@ -315,6 +313,7 @@ def main(args):
         num_workers=1,
     )
     
+    print(f"TRAIN:{len(train_dataloader)} TEST:{len(test_dataloader)}")
     
     trainer.train(train_dataloader, test_dataloader)
    

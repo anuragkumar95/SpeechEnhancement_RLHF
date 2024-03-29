@@ -314,6 +314,8 @@ class HumanAlignedDataset(Dataset):
 
         assert sr_1 == sr_2
 
+        print(f"Before limit x1:{x_1.shape}, x2:{x_2.shape}")
+
         x_1 = x_1[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
         x_2 = x_2[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
 

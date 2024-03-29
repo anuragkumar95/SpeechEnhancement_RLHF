@@ -120,7 +120,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir):
     with open(os.path.join(save_dir, 'ranks'), 'w') as f:
         for _id_ in mixture_ids:
             ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
-            sorted_ranks = sorted(ranks, key=lambda x:x[1])
+            sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
             sorted_file_ids = [i[0] for i in sorted_ranks]
             line = " ".join(sorted_file_ids)
             f.write(f"{line}\n")

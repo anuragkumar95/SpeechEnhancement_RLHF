@@ -282,7 +282,7 @@ class HumanAlignedDataset(Dataset):
         with open(self.ranks, 'r') as f:
             lines = f.readlines()
             for line in tqdm(lines):
-                files = line.split(' ')
+                files = line.strip().split(' ')
                 clean_id = files[0].split('-')[0]
 
                 #Put them all in a single list
@@ -307,24 +307,15 @@ class HumanAlignedDataset(Dataset):
         rank_1, path_1 = pair[0]
         rank_2, path_2 = pair[1]
 
-        path_1 = path_1.replace('`', '')
-        path_2 = path_2.replace('`', '')
-
-        #print(f"PATH_1:{path_1}, PATH_2:{path_2}")
-
         x_1, sr_1 = torchaudio.load(path_1)
         x_2, sr_2 = torchaudio.load(path_2)
 
         assert sr_1 == sr_2
 
-        #print(f"Before limit x1:{x_1.shape}, x2:{x_2.shape}")
-
         if x_1.shape[-1] < self.cutlen: 
             pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
             x_1 = torch.cat([pad, x_1], dim=-1)
             x_2 = torch.cat([pad, x_2], dim=-1)
-
-            #print(f"After padding x1:{x_1.shape}, x2:{x_2.shape}")
 
         x_1 = x_1.reshape(-1)
         x_2 = x_2.reshape(-1)

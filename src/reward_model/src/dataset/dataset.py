@@ -316,11 +316,6 @@ class HumanAlignedDataset(Dataset):
 
         print(f"Before limit x1:{x_1.shape}, x2:{x_2.shape}")
 
-        x_1 = x_1[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
-        x_2 = x_2[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
-
-        print(f"Before padding x1:{x_1.shape}, x2:{x_2.shape}")
-
         if x_1.shape[-1] < self.cutlen: 
             pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
             x_1 = torch.cat([pad, x_1], dim=-1)

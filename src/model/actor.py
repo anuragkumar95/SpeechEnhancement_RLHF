@@ -356,7 +356,7 @@ class TSCNet(nn.Module):
         kld_loss_mag = -0.5 * (1 + torch.log(m_var) - m_mean**2 - m_var)
         kl_loss_comp = -0.5 * (1 + torch.log(c_var) - c_mean**2 - c_var)
 
-        kld_loss = torch.sum(kld_loss_mag + kl_loss_comp[:, 0, :, :] + kl_loss_comp[:, 1, :, :], dim=[1, 2, 3]).mean()
+        kld_loss = torch.sum(kld_loss_mag + kl_loss_comp[:, 0, :, :] + kl_loss_comp[:, 1, :, :], dim=[1, 2]).mean()
 
         return final_real, final_imag, kld_loss
         

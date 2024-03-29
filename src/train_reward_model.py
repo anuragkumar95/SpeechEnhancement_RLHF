@@ -282,12 +282,12 @@ def main(args):
     """
     train_dataset = HumanAlignedDataset(mixture_dir=args.mix_dir,
                                         clean_dir=args.clean_dir, 
-                                        rank=os.path.join(args.rank_dir, 'train.rank'),  
+                                        rank=os.path.join(args.rank_dir, 'train.ranks'),  
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=args.mix_dir,
                                       clean_dir=args.clean_dir, 
-                                      rank=os.path.join(args.rank_dir, 'test.rank'),  
+                                      rank=os.path.join(args.rank_dir, 'test.ranks'),  
                                       cutlen=40000)
 
     train_dataloader = DataLoader(

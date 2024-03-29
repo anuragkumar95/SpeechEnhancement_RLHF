@@ -307,6 +307,9 @@ class HumanAlignedDataset(Dataset):
         rank_1, path_1 = pair[0]
         rank_2, path_2 = pair[1]
 
+        path_1 = path_1.replace('`', '')
+        path_2 = path_2.replace('`', '')
+
         #print(f"PATH_1:{path_1}, PATH_2:{path_2}")
 
         x_1, sr_1 = torchaudio.load(path_1)

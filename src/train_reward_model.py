@@ -8,7 +8,7 @@ from model.reward_model import RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
 from RLHF import REINFORCE
-from reward_model.src.dataset.dataset import PreferenceDataset
+from reward_model.src.dataset.dataset import HumanAlignedDataset
 from torch.utils.data import DataLoader
 import copy
 
@@ -32,12 +32,12 @@ from speech_enh_env import SpeechEnhancementAgent
 
 def ARGS():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-jr", "--jndroot", type=str, required=True,
-                        help="Root directory to JND Dataset.")
-    parser.add_argument("-vr", "--vctkroot", type=str, required=True,
-                        help="Root directory to VCTK Dataset.")
-    parser.add_argument("-c", "--comp", type=str, required=False,
-                        help="Root directory to JND Dataset comparision lists.")
+    parser.add_argument("-mix", "--mix_dir", type=str, required=True,
+                        help="Root directory to audio mixtures.")
+    parser.add_argument("-clean", "--clean_dir", type=str, required=True,
+                        help="Root directory to clean audio files.")
+    parser.add_argument("-rank", "--rank_dir", type=str, required=False,
+                        help="Root directory to rank files.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")
     parser.add_argument("-o", "--output", type=str, required=True,
@@ -52,13 +52,8 @@ def ARGS():
                         help="Gradient accumulation steps.")
     parser.add_argument("--gpu", action='store_true',
                         help="Set this flag for single gpu training.")
-
-    parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
-                    help="weights of RI components, magnitude, time loss, and Metric Disc")
-    
     parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
-    parser.add_argument("--cut_len", type=int, default=16000*2, help="cut length, default is 2 seconds in denoise "
-                                                                    "and dereverberation")
+    
     return parser
 
 wandb.login()
@@ -253,7 +248,7 @@ def main(args):
         trainer = Trainer(args, 0)
     else:
         trainer = Trainer(args, None)
-
+    """
     speech_env = SpeechEnhancementAgent(n_fft=400,
                                         hop=100,
                                         gpu_id=None,
@@ -261,7 +256,8 @@ def main(args):
                                         reward_model=None)
     
     #enhance_model = copy.deepcopy(trainer.actor)
-    enhance_model = None
+    #enhance_model = None
+    
     train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
                                       vctk_root=args.vctkroot, 
                                       set="train", 
@@ -283,6 +279,16 @@ def main(args):
                                      env=speech_env,
                                      gpu_id=0,  
                                      cutlen=40000)
+    """
+    train_dataset = HumanAlignedDataset(mixture_dir=args.mix_dir,
+                                        clean_dir=args.clean_dir, 
+                                        rank=os.path.join(args.rank_dir, 'train.rank'),  
+                                        cutlen=40000)
+    
+    test_dataset = HumanAlignedDataset(mixture_dir=args.mix_dir,
+                                      clean_dir=args.clean_dir, 
+                                      rank=os.path.join(args.rank_dir, 'test.rank'),  
+                                      cutlen=40000)
 
     train_dataloader = DataLoader(
         dataset=train_dataset,

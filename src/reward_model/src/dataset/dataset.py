@@ -5,14 +5,15 @@ Created on 23rd Nov, 2023
 """
 
 import torch
-
+import itertools
+import random
 from torch.utils.data import Dataset, DataLoader
 import torchaudio
 import torchaudio.functional as F
 import os
 import numpy as np
-import tempfile
-import gzip
+
+from tqdm import tqdm
 from ..utils import get_specs 
 
 
@@ -257,7 +258,70 @@ class PreferenceDataset(torch.utils.data.Dataset):
 
         label = torch.tensor([1.0, 0.0])
         return inp[:self.cutlen], out[:self.cutlen], label
+    
+
+
+
+class HumanAlignedDataset(Dataset):
+    """
+    Ranking Dataset created using the NISQA MOS ratings.
+    """
+    def __init__(self,
+                 mixture_dir,
+                 clean_dir, 
+                 rank,  
+                 cutlen=40000):
+        self.mixture_dir = mixture_dir
+        self.clean_dir = clean_dir
+        self.ranks = rank
+        self.cutlen = cutlen
+        self.pairs = self.map_ranks_to_pairs()
         
+    def map_ranks_to_pairs(self):
+        PAIRS = []
+        with open(self.ranks, 'r') as f:
+            lines = f.readlines()
+            for line in tqdm(lines):
+                files = line.split(' ')
+                clean_id = files[0].split('-')[0]
+
+                #Put them all in a single list
+                files = [(0, os.path.join(self.clean_dir, f"{clean_id}.wav"))] + \
+                        [(i+1, os.path.join(self.mixture_dir, file)) for i, file in enumerate(line.split(' '))]
+
+                #Find all possible combination of pairs from the ranking list
+                #Since files is sorted, generated pairs will always have preferred 
+                #rank indexed 1st within the pair
+                pairs = itertools.combinations(files, 2)
+
+                PAIRS.extend(pairs)
+
+        return PAIRS
+    
+    def __len__(self):
+        return len(self.pairs)
+    
+    def __getitem__(self, idx):
+        pair = self.pairs[idx]
+
+        rank_1, path_1 = pair[0]
+        rank_2, path_2 = pair[1]
+
+        x_1, sr_1 = torchaudio.load(path_1)
+        x_2, sr_2 = torchaudio.load(path_2)
+
+        assert sr_1 == sr_2
+
+        x_1 = x_1[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
+        x_2 = x_2[:, min(x_1.shape[-1], x_2.shape[-1], self.cutlen)]
+
+        if x_1.shape[-1] < self.cutlen: 
+            pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
+            x_1 = torch.cat([pad, x_1], dim=-1)
+            x_2 = torch.cat([pad, x_2], dim=-1)
+
+        label = torch.tensor([1.0, 0.0])
+        return x_1[:self.cutlen], x_2[:self.cutlen], label
 
 
 def load_data(root=None, 

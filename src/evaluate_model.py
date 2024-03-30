@@ -29,6 +29,9 @@ import os
 import pickle
 from speech_enh_env import SpeechEnhancementAgent
 
+torch.manual_seed(123)
+
+
 def args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-jr", "--jndroot", type=str, required=True,
@@ -168,10 +171,10 @@ class EvalModel:
                         enh_aud = next_state['est_audio'].detach().cpu().numpy()
                         
                         n_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), noisy_aud.detach().cpu().numpy())
-                        n_pesq = (n_pesq * pesq_mask).mean()
+                        n_pesq = (n_pesq * pesq_mask)
 
                         e_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), enh_aud)
-                        e_pesq = (e_pesq * pesq_mask).mean()
+                        e_pesq = (e_pesq * pesq_mask)
 
                         pesq = {
                             'noisy':original_pesq(n_pesq),
@@ -295,7 +298,7 @@ if __name__ == '__main__':
             dataset=test_dataset,
             batch_size=ARGS.batchsize,
             pin_memory=True,
-            shuffle=True,
+            shuffle=False,
             drop_last=True,
             num_workers=1,
         )

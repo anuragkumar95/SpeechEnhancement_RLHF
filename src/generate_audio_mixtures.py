@@ -35,6 +35,8 @@ def args():
                         help="Set this flag to mix audios")
     parser.add_argument("--generate_ranks", action='store_true', required=False,
                         help="Set this flag to generate_ranks")
+    parser.add_argument("--set", required=False, default='train',
+                        help="Set this flag to generate_ranks for train set")
     return parser
     
 
@@ -105,7 +107,7 @@ class MixturesDataset:
 
         done_idxs = {}
         
-        for _ in range(n_size):
+        for _ in tqdm(range(n_size)):
             done = self.generate_k_samples(n_clean_examples, n_noise_samples, done_idxs)
             done_idxs[done] = 1
 
@@ -148,5 +150,5 @@ if __name__ == "__main__":
         generate_ranking(mos_file=ARGS.mos_file, 
                          mixture_dir=ARGS.mixture_dir, 
                          save_dir=ARGS.output,
-                         train_test_split=0.8)
+                         set=ARGS.set)
 

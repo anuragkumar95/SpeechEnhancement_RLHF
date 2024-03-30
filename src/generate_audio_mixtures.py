@@ -71,9 +71,11 @@ class MixturesDataset:
         
         return signal.reshape(-1).cpu().numpy(), snr
     
-    def generate_k_samples(self, n_clean_examples, n_noise_samples):
+    def generate_k_samples(self, n_clean_examples, n_noise_samples, done_idxs):
         #sample a clean audio
         cidx = np.random.choice(n_clean_examples)
+        while cidx in done_idxs:
+           cidx = np.random.choice(n_clean_examples) 
         clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
         clean, c_sr = torchaudio.load(clean_file)
 
@@ -94,24 +96,26 @@ class MixturesDataset:
 
             #save
             sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_{self.noise_files[idx][:-len('.wav')]}_snr_{snr}.wav"), signal, 16000)
+        
+        return cidx
     
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)
         n_noise_samples = len(self.noise_files)
+
+        done_idxs = {}
         
         for _ in range(n_size):
-            self.generate_k_samples(n_clean_examples, n_noise_samples)
+            done = self.generate_k_samples(n_clean_examples, n_noise_samples, done_idxs)
+            done_idxs[done] = 1
 
-def generate_ranking(mos_file, mixture_dir, save_dir, train_test_split=0.8):
+def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
     for file in os.listdir(mixture_dir):
         _id_ = file.split('-')[0]
         if _id_ not in mixture_ids:
             mixture_ids[_id_] = []
         mixture_ids[_id_].append(file)
-
-    train_mixture_ids = list(mixture_ids.keys())[:int(train_test_split * len(mixture_ids))]
-    test_mixture_ids = list(mixture_ids.keys())[int(train_test_split * len(mixture_ids)):]
 
     mos = {}
     with open(mos_file, 'r') as f:
@@ -120,16 +124,8 @@ def generate_ranking(mos_file, mixture_dir, save_dir, train_test_split=0.8):
             file_name, mos_score, _, _, _, _, _ = line.split(',')
             mos[file_name] = float(mos_score)
 
-    with open(os.path.join(save_dir, 'train.ranks'), 'w') as f:
-        for _id_ in train_mixture_ids:
-            ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
-            sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
-            sorted_file_ids = [i[0] for i in sorted_ranks]
-            line = " ".join(sorted_file_ids)
-            f.write(f"{line}\n")
-
-    with open(os.path.join(save_dir, 'test.ranks'), 'w') as f:
-        for _id_ in test_mixture_ids:
+    with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:
+        for _id_ in mixture_ids:
             ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
             sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
             sorted_file_ids = [i[0] for i in sorted_ranks]

@@ -142,7 +142,9 @@ if __name__ == "__main__":
     if ARGS.mix_aud:
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noise_dir=ARGS.noise_dir,  
-                                out_dir=ARGS.output)
+                                out_dir=ARGS.output,
+                                snr_low=-10, 
+                                snr_high=20)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)
 

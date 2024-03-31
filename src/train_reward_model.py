@@ -162,7 +162,7 @@ class Trainer:
         
     def train_one_epoch(self, epoch, train_ds, test_ds):
         #Run training
-        self.reward_model.train()
+        #self.reward_model.train()
         num_batches = len(train_ds)
         train_loss = 0
         train_acc = 0
@@ -172,7 +172,7 @@ class Trainer:
         best_val_loss = 9999999
     
         for i, batch in enumerate(train_ds):   
-            
+            self.reward_model.train()
             #pos, neg, labels = batch
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             try:  

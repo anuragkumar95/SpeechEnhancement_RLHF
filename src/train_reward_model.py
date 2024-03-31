@@ -126,6 +126,41 @@ class Trainer:
         acc = self.accuracy(y_preds, labels.float())
 
         return loss, acc
+    
+    def run_validation(self, test_ds):
+        #Run validation
+        self.reward_model.eval()
+        num_batches = len(test_ds)
+        val_loss = 0
+        val_acc = 0
+        with torch.no_grad():
+            for i, batch in enumerate(test_ds):
+                if len(batch) == 4:
+                    mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
+                elif len(batch) == 3:
+                    mini_batch_pairs = [(0, 1)]
+                for pair in mini_batch_pairs:
+                    pos, neg = batch[pair[0]], batch[pair[1]]
+                    labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
+                    mini_batch = (pos, neg, labels)
+                    mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
+                    try:  
+                        batch_loss, batch_acc = self.forward_step(mini_batch)
+                    except Exception as e:
+                        print(traceback.format_exc())
+                        continue
+
+                    if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
+                        continue
+
+                    val_loss += batch_loss.item()
+                    val_acc += batch_acc
+            
+        val_loss = val_loss / (num_batches * len(mini_batch_pairs))
+        val_acc = val_acc / (num_batches * len(mini_batch_pairs))
+        return val_loss, val_acc 
+        
+
 
     def train_one_epoch(self, epoch, train_ds, test_ds):
         #Run training
@@ -170,7 +205,16 @@ class Trainer:
                 train_loss += batch_loss.item()
                 train_acc += batch_acc
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss / len(mini_batch_pairs)} | Acc: {batch_acc / len(mini_batch_pairs)}")
-    
+
+            if (i+1) % 1000  == 0:
+                #Run validation every 1000 steps
+                val_loss, val_acc = self.run_validation(test_ds)
+                wandb.log({
+                    'step': i+1,
+                    'val_acc':val_acc,
+                    'val_loss':val_loss
+                })
+
             wandb.log({
                 "step": i+1,
                 "batch_loss":batch_loss.item(),
@@ -182,40 +226,14 @@ class Trainer:
         train_loss = train_loss * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
         train_acc = train_acc * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
 
-       
-        #Run validation
-        self.reward_model.eval()
-        num_batches = len(test_ds)
-        val_loss = 0
-        val_acc = 0
-        with torch.no_grad():
-            for i, batch in enumerate(test_ds):
-                if len(batch) == 4:
-                    mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
-                elif len(batch) == 3:
-                    mini_batch_pairs = [(0, 1)]
-                for pair in mini_batch_pairs:
-                    pos, neg = batch[pair[0]], batch[pair[1]]
-                    labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
-                    mini_batch = (pos, neg, labels)
-                    mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
-                    try:  
-                        batch_loss, batch_acc = self.forward_step(mini_batch)
-                    except Exception as e:
-                        print(traceback.format_exc())
-                        continue
-
-                    if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
-                        continue
-
-                    val_loss += batch_loss.item()
-                    val_acc += batch_acc
-            
-        val_loss = val_loss / (num_batches * len(mini_batch_pairs))
-        val_acc = val_acc / (num_batches * len(mini_batch_pairs))
-
+        val_loss, val_acc = self.run_validation(test_ds)
+        wandb.log({
+            'epoch': epoch,
+            'val_acc':val_acc,
+            'val_loss':val_loss
+        })
         print(f"Epoch:{epoch} | Step:{i+1} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
-
+        
         return val_loss, val_acc, train_loss, train_acc
 
     def train(self, train_ds, test_ds):

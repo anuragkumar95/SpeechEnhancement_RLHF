@@ -246,7 +246,7 @@ class EvalModel:
             pad = np.zeros((1, length - len(est_audio)))
             est_audio = est_audio.reshape(1, -1)
             print(est_audio.shape, pad.shape)
-            est_audio = np.cat([est_audio, pad], axis=0)
+            est_audio = np.concatenate([est_audio, pad], axis=0)
             est_audio = est_audio.reshape(-1)
 
         assert len(est_audio) == length, f"est:{len(est_audio)}, inp:{length}"

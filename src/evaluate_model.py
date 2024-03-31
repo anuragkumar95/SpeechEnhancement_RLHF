@@ -34,9 +34,9 @@ torch.manual_seed(123)
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-jr", "--jndroot", type=str, required=True,
+    parser.add_argument("-jr", "--jndroot", type=str, required=False,
                         help="Root directory to JND Dataset.")
-    parser.add_argument("-vr", "--vctkroot", type=str, required=True,
+    parser.add_argument("-vr", "--vctkroot", type=str, required=False,
                         help="Root directory to VCTK Dataset.")
     parser.add_argument("-c", "--comp", type=str, required=False,
                         help="Root directory to JND Dataset comparision lists.")
@@ -306,7 +306,7 @@ if __name__ == '__main__':
 
 
         """
-        _, test_ds = load_data(ARGS.root, 
+        train_ds, test_ds = load_data(ARGS.vctkroot, 
                             ARGS.batchsize, 
                             1, 
                             40000,

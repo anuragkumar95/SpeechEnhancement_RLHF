@@ -225,6 +225,7 @@ class EvalModel:
         else:
             batch_size = 1
         bs = 2
+        print(batch_size)
         if batch_size > bs:
             est_audios = []
             for i in range(0, batch_size, bs):
@@ -272,7 +273,7 @@ class EvalModel:
             )
             est_audio = est_audio / c
             est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
-            
+
         assert len(est_audio) == length
         saved_path = os.path.join(saved_dir, name)
         sf.write(saved_path, est_audio, sr)

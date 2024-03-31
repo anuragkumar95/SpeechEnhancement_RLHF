@@ -270,12 +270,10 @@ def main(args):
                                      cutlen=40000)
     """
     train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train'),
-                                        clean_dir=os.path.join(args.clean_dir, 'train', 'clean'), 
                                         rank=os.path.join(args.rank_dir, 'train.ranks'),  
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test'),
-                                      clean_dir=os.path.join(args.clean_dir, 'test', 'clean'), 
                                       rank=os.path.join(args.rank_dir, 'test.ranks'),  
                                       cutlen=40000)
 

@@ -268,11 +268,9 @@ class HumanAlignedDataset(Dataset):
     """
     def __init__(self,
                  mixture_dir,
-                 clean_dir, 
                  rank,  
                  cutlen=40000):
         self.mixture_dir = mixture_dir
-        self.clean_dir = clean_dir
         self.ranks = rank
         self.cutlen = cutlen
         self.pairs = self.map_ranks_to_pairs()
@@ -283,11 +281,9 @@ class HumanAlignedDataset(Dataset):
             lines = f.readlines()
             for line in tqdm(lines):
                 files = line.strip().split(' ')
-                clean_id = files[0].split('-')[0]
 
                 #Put them all in a single list
-                files = [(0, os.path.join(self.clean_dir, f"{clean_id}.wav"))] + \
-                        [(i+1, os.path.join(self.mixture_dir, file)) for i, file in enumerate(line.split(' '))]
+                files = [(i, os.path.join(self.mixture_dir, file)) for i, file in enumerate(line.split(' '))]
 
                 #Find all possible combination of pairs from the ranking list
                 #Since files is sorted, generated pairs will always have preferred 
@@ -304,8 +300,8 @@ class HumanAlignedDataset(Dataset):
     def __getitem__(self, idx):
         pair = self.pairs[idx]
 
-        rank_1, path_1 = pair[0]
-        rank_2, path_2 = pair[1]
+        _, path_1 = pair[0]
+        _, path_2 = pair[1]
 
         path_1 = path_1.strip()
         path_2 = path_2.strip()

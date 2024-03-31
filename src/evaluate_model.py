@@ -225,7 +225,7 @@ class EvalModel:
         else:
             batch_size = 1
         bs = 2
-        print(noisy.shape)
+        print(f"inp:{noisy.shape}")
         if batch_size > bs:
             est_audios = []
             for i in range(0, batch_size, bs):
@@ -249,6 +249,7 @@ class EvalModel:
                 )
                 est_audio = est_audio / c
                 est_audio = torch.flatten(est_audio)#[:length].cpu().numpy()
+                print(f"chunk_out:{est_audio.shape}")
                 est_audios.append(est_audio)
 
             est_audio = torch.cat(est_audios, dim=0)

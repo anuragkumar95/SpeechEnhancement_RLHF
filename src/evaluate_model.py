@@ -244,7 +244,7 @@ class EvalModel:
 
         if len(est_audio) < length:
             pad = np.zeros(length - len(est_audio))
-            est_audio = np.stack([est_audio, pad], dim=-1)
+            est_audio = np.stack([est_audio, pad], axis=-1)
 
         assert len(est_audio) == length, f"est:{len(est_audio)}, inp:{length}"
         saved_path = os.path.join(saved_dir, name)

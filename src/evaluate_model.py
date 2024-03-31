@@ -245,7 +245,6 @@ class EvalModel:
         if len(est_audio) < length:
             pad = np.zeros((1, length - len(est_audio)))
             est_audio = est_audio.reshape(1, -1)
-            print(est_audio.shape, pad.shape)
             est_audio = np.concatenate([est_audio, pad], axis=-1)
             est_audio = est_audio.reshape(-1)
 

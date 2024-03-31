@@ -160,8 +160,6 @@ class Trainer:
         val_acc = val_acc / (num_batches * len(mini_batch_pairs))
         return val_loss, val_acc 
         
-
-
     def train_one_epoch(self, epoch, train_ds, test_ds):
         #Run training
         self.reward_model.train()
@@ -170,30 +168,24 @@ class Trainer:
         train_acc = 0
         batch_loss = 0
         batch_acc = 0
+
+        best_val_loss = 9999999
     
         for i, batch in enumerate(train_ds):   
             
-            #clean, noisy, enh, _ = batch
-            if len(batch) == 4:
-                mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
-            elif len(batch) == 3:
-                mini_batch_pairs = [(0, 1)]
-            for pair in mini_batch_pairs:
-                pos, neg = batch[pair[0]], batch[pair[1]]
-                labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
-                mini_batch = (pos, neg, labels)
-                mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
-                try:  
-                    loss, acc = self.forward_step(mini_batch)
-                except Exception as e:
-                    print(traceback.format_exc())
-                    continue
-                
-                if torch.isnan(loss).any() or torch.isinf(loss).any():
-                    continue
-                
-                batch_loss += loss / self.ACCUM_GRAD
-                batch_acc += acc
+            #pos, neg, labels = batch
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            try:  
+                loss, acc = self.forward_step(batch)
+            except Exception as e:
+                print(traceback.format_exc())
+                continue
+            
+            if torch.isnan(loss).any() or torch.isinf(loss).any():
+                continue
+            
+            batch_loss += loss / self.ACCUM_GRAD
+            batch_acc += acc
 
             self.a_optimizer.zero_grad()
             batch_loss.backward()
@@ -204,62 +196,40 @@ class Trainer:
 
                 train_loss += batch_loss.item()
                 train_acc += batch_acc
-                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss / len(mini_batch_pairs)} | Acc: {batch_acc / len(mini_batch_pairs)}")
+                print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
-            if (i+1) % 1000  == 0:
+            if (i) % 2000  == 0 or i+1 == num_batches:
                 #Run validation every 1000 steps
                 val_loss, val_acc = self.run_validation(test_ds)
                 wandb.log({
-                    'step': i+1,
+                    'step': (i+1)*epoch,
                     'val_acc':val_acc,
                     'val_loss':val_loss
                 })
+                print(f"Epoch:{epoch} | Step:{i+1} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
+
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    if self.gpu_id == 0:
+                        checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
+                        path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
+                        torch.save(self.reward_model.state_dict(), path)
 
             wandb.log({
                 "step": i+1,
                 "batch_loss":batch_loss.item(),
-                "batch_acc":batch_acc / len(mini_batch_pairs),
+                "batch_acc":batch_acc,
             })
             batch_acc = 0
             batch_loss = 0
         
-        train_loss = train_loss * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
-        train_acc = train_acc * self.ACCUM_GRAD / (num_batches * len(mini_batch_pairs))
-
-        val_loss, val_acc = self.run_validation(test_ds)
-        wandb.log({
-            'epoch': epoch,
-            'val_acc':val_acc,
-            'val_loss':val_loss
-        })
-        print(f"Epoch:{epoch} | Step:{i+1} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
-        
-        return val_loss, val_acc, train_loss, train_acc
+        train_loss = train_loss * self.ACCUM_GRAD / num_batches
+        train_acc = train_acc * self.ACCUM_GRAD / num_batches
 
     def train(self, train_ds, test_ds):
-        best_val = 99999999
-        best_acc = 0
         print("Start training...")
         for epoch in range(self.args.epochs):
-            val_loss, val_acc, tr_loss, tr_acc = self.train_one_epoch(epoch+1, train_ds, test_ds)
-            #TODO:Log these in wandb
-            wandb.log({
-                "Epoch":epoch+1,
-                "Val_loss":val_loss,
-                "Train_loss":tr_loss,
-                "Val_acc":val_acc,
-                "Train_acc":tr_acc
-            })
-            
-            if val_loss <= best_val or val_acc >= best_acc:
-                best_val = val_loss
-                best_acc = val_acc
-                #TODO:Logic for savecheckpoint
-                if self.gpu_id == 0:
-                    checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
-                    path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
-                    torch.save(self.reward_model.state_dict(), path)
-                #TODO:May need a LR scheduler as well
+            self.train_one_epoch(epoch+1, train_ds, test_ds)
 
 def main(args):
 

@@ -109,7 +109,11 @@ class MixturesDataset:
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
     for file in os.listdir(mixture_dir):
-        _id_ = file.split('-')[0]
+        file_id = file[:-len(".wav")]
+        if "enh" not in file_id:
+            _id_ = file_id.split('-')[0]
+        else:
+            _id_ = file_id[len("enh_"):]
         if _id_ not in mixture_ids:
             mixture_ids[_id_] = []
         mixture_ids[_id_].append(file)
@@ -123,11 +127,12 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
 
     with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:
         for _id_ in mixture_ids:
-            ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
-            sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
-            sorted_file_ids = [i[0] for i in sorted_ranks]
-            line = " ".join(sorted_file_ids)
-            f.write(f"{line}\n")
+            if len(mixture_ids[_id_]) > 1:
+                ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
+                sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
+                sorted_file_ids = [i[0] for i in sorted_ranks]
+                line = " ".join(sorted_file_ids)
+                f.write(f"{line}\n")
 
 
 if __name__ == "__main__":

@@ -244,6 +244,7 @@ class EvalModel:
 
         if len(est_audio) < length:
             pad = np.zeros(length - len(est_audio))
+            print(est_audio.shape, pad.shape)
             est_audio = np.stack([est_audio, pad], axis=-1)
 
         assert len(est_audio) == length, f"est:{len(est_audio)}, inp:{length}"

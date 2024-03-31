@@ -223,22 +223,33 @@ class EvalModel:
                 batch_size += 1
             noisy = torch.reshape(noisy, (batch_size, -1))
 
-        noisy_spec = torch.stft(
-            noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True
-        )
-        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
-        est_real, est_imag, _ = self.actor(noisy_spec)
-        est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
+        bs = 2
+        est_audios = []
+        for i in range(0, batch_size, bs):
+            start = i
+            end = min(i + bs, batch_size)
+            mb_noisy = noisy[start : end, :]
+            noisy_spec = torch.stft(
+                noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True
+            )
+            noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
+            est_real, est_imag, _ = self.actor(noisy_spec)
+            est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
 
-        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-        est_audio = torch.istft(
-            est_spec_uncompress,
-            n_fft,
-            hop,
-            window=torch.hamming_window(n_fft).cuda(),
-            onesided=True,
-        )
-        est_audio = est_audio / c
+            est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+            est_audio = torch.istft(
+                est_spec_uncompress,
+                n_fft,
+                hop,
+                window=torch.hamming_window(n_fft).cuda(),
+                onesided=True,
+            )
+            est_audio = est_audio / c
+            est_audio = torch.flatten(est_audio)#[:length].cpu().numpy()
+            est_audios.append(est_audio)
+
+        est_audio = torch.cat(est_audios, dim=0)
+        print(est_audio.shape)
         est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
         assert len(est_audio) == length
         

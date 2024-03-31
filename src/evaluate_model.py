@@ -226,7 +226,7 @@ class EvalModel:
             batch_size = 1
         bs = 2
         print(f"inp:{noisy.shape}")
-        if batch_size > bs:
+        if batch_size >= bs:
             est_audios = []
             for i in range(0, batch_size, bs):
                 start = i

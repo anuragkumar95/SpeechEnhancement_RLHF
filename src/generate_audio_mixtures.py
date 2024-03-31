@@ -73,11 +73,8 @@ class MixturesDataset:
         
         return signal.reshape(-1).cpu().numpy(), snr
     
-    def generate_k_samples(self, n_clean_examples, n_noise_samples, done_idxs):
-        #sample a clean audio
-        cidx = np.random.choice(n_clean_examples)
-        while cidx in done_idxs:
-           cidx = np.random.choice(n_clean_examples) 
+    def generate_k_samples(self, cidx, n_noise_samples):
+    
         clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
         clean, c_sr = torchaudio.load(clean_file)
 
@@ -98,18 +95,16 @@ class MixturesDataset:
 
             #save
             sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_{self.noise_files[idx][:-len('.wav')]}_snr_{snr}.wav"), signal, 16000)
-        
-        return cidx
+
     
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)
         n_noise_samples = len(self.noise_files)
-
-        done_idxs = {}
+        #sample clean indexes
+        cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
         
-        for _ in tqdm(range(n_size)):
-            done = self.generate_k_samples(n_clean_examples, n_noise_samples, done_idxs)
-            done_idxs[done] = 1
+        for i in tqdm(range(n_size)):
+            self.generate_k_samples(cidxs[i], n_noise_samples)
 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}

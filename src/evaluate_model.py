@@ -225,7 +225,7 @@ class EvalModel:
         else:
             batch_size = 1
         bs = 2
-        print(batch_size)
+        print(noisy.shape)
         if batch_size > bs:
             est_audios = []
             for i in range(0, batch_size, bs):

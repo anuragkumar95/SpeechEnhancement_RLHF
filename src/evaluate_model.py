@@ -260,7 +260,10 @@ class EvalModel:
         with torch.no_grad():
             for audio in tqdm(os.listdir(src_dir)):
                 noisy_path = os.path.join(src_dir, audio)
-                self.enhance_one_track(noisy_path, save_path, 16000 * 10)
+                try:
+                    self.enhance_one_track(noisy_path, save_path, 16000 * 10)
+                except:
+                    continue
            
 
 if __name__ == '__main__':

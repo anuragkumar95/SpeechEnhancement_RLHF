@@ -283,6 +283,7 @@ if __name__ == '__main__':
         eval.enhance_audio(src_dir=ARGS.audio_dir)
     
     else:
+        """
         test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 
                                         vctk_root=ARGS.vctkroot, 
                                         set="test", 
@@ -310,7 +311,7 @@ if __name__ == '__main__':
                             1, 
                             40000,
                             gpu = False)
-        """
-        eval.evaluate(dataloader)
+
+        eval.evaluate(test_ds)
 
                     

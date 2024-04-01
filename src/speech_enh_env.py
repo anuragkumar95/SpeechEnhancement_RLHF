@@ -109,7 +109,7 @@ class SpeechEnhancementAgent:
             state : spectrogram of curr state (b * ch * t * f) 
     
         Returns
-            Reward in the range (0, 1) for curr state
+            Reward for curr state
         """
         
         reward = self.reward_model.get_reward(state)

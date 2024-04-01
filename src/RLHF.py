@@ -338,16 +338,15 @@ class PPO:
                 kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                 ratio = torch.exp(kl_penalty)
                
-                with torch.no_grad():
-                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    #old_approx_kl = (-kl_penalty).mean()
-                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
+               
+                # calculate approx_kl http://joschu.net/blog/kl-approx.html
+                #old_approx_kl = (-kl_penalty).mean()
+                kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
                 ep_kl_penalty += kl_penalty
 
                 #Store reward
                 if self.rlhf:
-                    with torch.no_grad():
-                        r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
+                    r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))    
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")

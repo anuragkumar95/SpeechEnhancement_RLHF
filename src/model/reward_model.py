@@ -48,6 +48,6 @@ class RewardModel(nn.Module):
         proj = self.reward_projection(inp_emb)
 
         #Restrict rewards to be in range (0, 1)
-        rewards = F.sigmoid(proj)
+        #rewards = F.sigmoid(proj)
 
-        return rewards
+        return proj

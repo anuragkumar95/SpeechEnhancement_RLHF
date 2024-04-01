@@ -101,8 +101,19 @@ class SpeechEnhancementAgent:
         Returns
             Reward in the range (0, 1) for next state with reference to curr state.
         """
-
         return self.reward_model.get_reward(out) - self.reward_model.get_reward(inp) 
+    
+    def get_RLHF_reward(self, state):
+        """
+        ARGS:
+            state : spectrogram of curr state (b * ch * t * f) 
+    
+        Returns
+            Reward in the range (0, 1) for curr state
+        """
+        
+        reward = self.reward_model.get_reward(state)
+        return reward
     
     def get_PESQ_reward(self, next_state):
         """

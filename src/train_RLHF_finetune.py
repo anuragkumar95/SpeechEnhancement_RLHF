@@ -119,7 +119,8 @@ class Trainer:
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(reward_checkpoint)
             self.reward_model = freeze_layers(self.reward_model, 'all')
-            #self.reward_model.eval()
+            self.reward_model.eval()
+            print(f"Loaded reward model from {args.reward_pt}...")
         else:
             self.reward_model = None
         

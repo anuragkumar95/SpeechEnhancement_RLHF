@@ -382,7 +382,7 @@ class PPO:
 
         #Start training over the unrolled batch of trajectories
         #Set models to train
-        actor = actor.train()
+        #actor = actor.train()
         critic = critic.train()
         
         step_clip_loss = 0

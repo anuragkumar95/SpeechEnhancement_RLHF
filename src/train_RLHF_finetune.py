@@ -341,7 +341,7 @@ class Trainer:
             step = len(self.train_ds)            
         if self.gpu_id == 0:
             checkpoint_prefix = f"{self.args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{step}.pt"
-            path = os.path.join(args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
+            path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
             if self.args.method == 'reinforce':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 
                             'optim_state_dict':self.optimizer.state_dict()

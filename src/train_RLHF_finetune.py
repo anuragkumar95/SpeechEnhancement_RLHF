@@ -393,7 +393,7 @@ def main(rank: int, world_size: int, args):
     pretrain=False
     if args.ckpt is not None:
         pretrain=True
-
+    print(args)
     trainer = Trainer(train_ds, test_ds, args, rank)
     
     trainer.train()

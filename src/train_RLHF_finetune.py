@@ -395,7 +395,7 @@ def main(rank: int, world_size: int, args):
 
     trainer = Trainer(train_ds, test_ds, args, rank)
     
-    trainer.train(args)
+    trainer.train()
     destroy_process_group()
 
 

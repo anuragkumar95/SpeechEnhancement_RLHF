@@ -244,7 +244,7 @@ class Trainer:
                 pesq += val_pesq_score
                 v_step += 1
                 print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
-        pesq = pesq / (v_step * args.batchsize)
+        pesq = pesq / (v_step * self.args.batchsize)
 
         wandb.log({ 
             "epoch":epoch-1,
@@ -274,7 +274,7 @@ class Trainer:
         
         epochs_per_episode = 5
         
-        run_validation_step = 1000 / (epochs_per_episode * args.episode_steps)
+        run_validation_step = 1000 / (epochs_per_episode * self.args.episode_steps)
         
         for i, batch in enumerate(self.train_ds):   
            

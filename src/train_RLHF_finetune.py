@@ -326,12 +326,12 @@ class Trainer:
 
         return REWARDS, original_pesq(pesq)
 
-    def train(self, args):
+    def train(self):
         """
         Run epochs, collect validation results and save checkpoints. 
         """
         print("Start training...")
-        for epoch in range(args.epochs):
+        for epoch in range(self.args.epochs):
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
             self.save(epoch, epoch_pesq)
 
@@ -339,8 +339,8 @@ class Trainer:
         if step is None:
             step = len(self.train_ds)            
         if self.gpu_id == 0:
-            checkpoint_prefix = f"{args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{step}.pt"
-            path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
+            checkpoint_prefix = f"{self.args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{step}.pt"
+            path = os.path.join(args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
             if self.args.method == 'reinforce':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 
                             'optim_state_dict':self.optimizer.state_dict()

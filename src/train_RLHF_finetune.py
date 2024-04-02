@@ -274,7 +274,8 @@ class Trainer:
         
         epochs_per_episode = 5
         
-        run_validation_step = 1000 / (epochs_per_episode * self.args.episode_steps)
+        run_validation_step = 1000 // (epochs_per_episode * self.args.episode_steps)
+        print(f"Run validation at every step:{run_validation_step}")
         
         for i, batch in enumerate(self.train_ds):   
            

@@ -251,7 +251,7 @@ class Trainer:
             "episode": step, 
             "val_pesq":original_pesq(pesq),
         }) 
-        print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
+        print(f"Epoch:{epoch} | Step:{step} | VAL_PESQ:{original_pesq(pesq)}")
         
         self.actor.train()
         if self.args.method == 'PPO':

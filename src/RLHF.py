@@ -26,7 +26,7 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
-torch.manual_seed(123)
+torch.manual_seed(111)
 
 class REINFORCE:
     def __init__(self, 
@@ -279,12 +279,6 @@ class PPO:
             A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
     
-    def get_action_prob(self, mu, logvar, action):
-        sigma = torch.exp(0.5 * logvar) + 1e-08
-        dist = Normal(mu, sigma)
-        return dist.log_prob(action)
-    
-    
     def run_n_step_episode(self, batch, actor, critic, optimizer, n_epochs=3):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -296,9 +290,12 @@ class PPO:
         clean = clean.permute(0, 1, 3, 2)
         bs = clean.shape[0]
         ep_kl_penalty = 0
+
+        #Set models to eval
         actor = actor.eval()
-        critic = critic.train()
+        critic = critic.eval()
         self.init_model = self.init_model.eval()
+
         a_optim, c_optim = optimizer
         
         #Calculate target values and advantages
@@ -313,9 +310,9 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, params = actor.get_action(curr)
-                (p_mu, p_var), (pc_mu, pc_var) = params
+                #(p_mu, p_var), (pc_mu, pc_var) = params
                 init_action, _, _, ref_params = self.init_model.get_action(curr)
-                (r_mu, r_var), (rc_mu, rc_var) = ref_params
+                #(r_mu, r_var), (rc_mu, rc_var) = ref_params
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
 
                 #print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
@@ -346,7 +343,6 @@ class PPO:
 
                 #Store reward
                 if self.rlhf:
-                    #r_t = self.env.get_RLHF_reward(inp=curr, out=state['noisy'].permute(0, 1, 3, 2))  
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
                 else:
                     r_t = self.env.get_PESQ_reward(state)
@@ -385,7 +381,10 @@ class PPO:
         print(f"POLICY RETURNS:{target_values.mean(0)}")
 
         #Start training over the unrolled batch of trajectories
-        #critic.train()
+        #Set models to train
+        actor = actor.train()
+        critic = critic.train()
+        
         step_clip_loss = 0
         step_val_loss = 0
         step_entropy_loss = 0

@@ -193,7 +193,7 @@ class Trainer:
         
         wandb.init(project=args.exp)
     
-    def run_validation(self, env, batch):
+    def run_validation_step(self, env, batch):
         """
         Runs a vlidation loop for a batch.
         Predict mask for each frame one at a time 
@@ -221,8 +221,7 @@ class Trainer:
                                      next_state['est_audio'].detach().cpu().numpy())
         return (pesq*pesq_mask).sum()
     
-
-    def train_one_epoch(self, epoch):
+    def run_validation(self, epoch, step):
         #Run validation
         self.actor.eval()
         if self.args.method == 'PPO':
@@ -237,28 +236,45 @@ class Trainer:
                 
                 #Run validation episode
                 try:
-                    val_pesq_score = self.run_validation(self.trainer.env, batch)
+                    val_pesq_score = self.run_validation_step(self.trainer.env, batch)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
 
-                pesq += val_pesq_score/self.args.batchsize
+                pesq += val_pesq_score
                 v_step += 1
                 print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
-        pesq = pesq / v_step 
+        pesq = pesq / (v_step * args.batchsize)
 
         wandb.log({ 
             "epoch":epoch-1,
+            "episode": step, 
             "val_pesq":original_pesq(pesq),
         }) 
         print(f"Epoch:{epoch} | VAL_PESQ:{original_pesq(pesq)}")
+        
+        self.actor.train()
+        if self.args.method == 'PPO':
+            self.critic.train()
+        
+        return pesq
+    
+
+    def train_one_epoch(self, epoch):
+
+        num_batches = len(self.train_ds)
+        
+        pesq = self.run_validation(epoch, (epoch-1) * num_batches)
 
         #Run training
         self.actor.train()
         if self.args.method == 'PPO':
             self.critic.train()
         REWARDS = []
-        num_batches = len(self.train_ds)
+        
+        epochs_per_episode = 5
+        
+        run_validation_step = 1000 / (epochs_per_episode * args.episode_steps)
         
         for i, batch in enumerate(self.train_ds):   
            
@@ -277,7 +293,7 @@ class Trainer:
                     print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0]} | Reward: {batch_reward[1]} | KL: {batch_reward[2]}")
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=5)
+                    loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
                     
                     if loss is not None:
                         wandb.log({
@@ -295,7 +311,10 @@ class Trainer:
                         })
 
                     print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()} | KL: {batch_reward[2].item()}")
-                
+
+                    if (i+1) % run_validation_step == 0:
+                        step_pesq = self.run_validation(epoch, i+1)
+                        self.save(epoch, original_pesq(step_pesq), i+1)
 
             except Exception as e:
                 print(traceback.format_exc())
@@ -311,29 +330,27 @@ class Trainer:
         """
         Run epochs, collect validation results and save checkpoints. 
         """
-        best_pesq = -1
         print("Start training...")
         for epoch in range(args.epochs):
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
-            
-            #if epoch_pesq >= best_pesq:
-            #    best_pesq = epoch_pesq
-                #TODO:Logic for savecheckpoint
-            if self.gpu_id == 0:
-                checkpoint_prefix = f"{args.exp}_PESQ_{epoch_pesq}_epoch_{epoch}.pt"
-                path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
-                if self.args.method == 'reinforce':
-                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                'optim_state_dict':self.optimizer.state_dict()
-                                }
-                if self.args.method == 'PPO':
-                    save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                                'critic_state_dict':self.critic.state_dict(),
-                                'optim_state_dict':self.optimizer.state_dict()
-                                }
-                torch.save(save_dict, path)
-                
+            self.save(epoch, epoch_pesq)
 
+    def save(self, epoch, pesq, step=None):
+        if step is None:
+            step = len(self.train_ds)            
+        if self.gpu_id == 0:
+            checkpoint_prefix = f"{args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{step}.pt"
+            path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
+            if self.args.method == 'reinforce':
+                save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                            'optim_state_dict':self.optimizer.state_dict()
+                            }
+            if self.args.method == 'PPO':
+                save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                            'critic_state_dict':self.critic.state_dict(),
+                            'optim_state_dict':self.optimizer.state_dict()
+                            }
+            torch.save(save_dict, path)
     
 def ddp_setup(rank, world_size):
     """

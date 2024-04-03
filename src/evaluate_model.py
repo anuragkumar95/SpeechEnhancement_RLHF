@@ -346,7 +346,7 @@ if __name__ == '__main__':
 
             test_ds = DataLoader(
                 dataset=test_dataset,
-                batch_size=args.batchsize,
+                batch_size=ARGS.batchsize,
                 pin_memory=True,
                 shuffle=False,
                 drop_last=True,

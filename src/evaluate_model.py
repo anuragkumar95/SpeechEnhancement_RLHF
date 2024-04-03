@@ -206,23 +206,24 @@ class EvalModel:
     def evaluate_reward_model(self, dataset):
         save_path = f"{self.save_path}/rewards"
         os.makedirs(save_path, exist_ok=True)
-        for i, batch in enumerate(dataset):
-            pos, neg, labels, paths = batch
-            batch = (pos, neg, labels)
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-            _, pos, neg, _ = batch
-            pos_reward = self.reward_model.get_reward(inp=pos.permute(0, 1, 3, 2))
-            neg_reward = self.reward_model.get_reward(inp=neg.permute(0, 1, 3, 2))
+        with torch.no_grad():
+            for i, batch in enumerate(dataset):
+                pos, neg, labels, paths = batch
+                batch = (pos, neg, labels)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                _, pos, neg, _ = batch
+                pos_reward = self.reward_model.get_reward(inp=pos.permute(0, 1, 3, 2))
+                neg_reward = self.reward_model.get_reward(inp=neg.permute(0, 1, 3, 2))
 
-            reward = {
-                'file':paths,
-                'pos_reward':pos_reward,
-                'neg_reward':neg_reward,
-            }
+                reward = {
+                    'file':paths,
+                    'pos_reward':pos_reward,
+                    'neg_reward':neg_reward,
+                }
 
-            with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
-                pickle.dump(reward, f)
-            print(f"reward_{i}.pickle saved in {save_path}")
+                with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
+                    pickle.dump(reward, f)
+                print(f"reward_{i}.pickle saved in {save_path}")
 
 
     def enhance_one_track(self, audio_path, saved_dir, cut_len, n_fft=400, hop=100):

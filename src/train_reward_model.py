@@ -135,29 +135,24 @@ class Trainer:
         val_acc = 0
         with torch.no_grad():
             for i, batch in enumerate(test_ds):
-                if len(batch) == 4:
-                    mini_batch_pairs = [(0, 1), (2, 1), (0, 2)]
-                elif len(batch) == 3:
-                    mini_batch_pairs = [(0, 1)]
-                for pair in mini_batch_pairs:
-                    pos, neg = batch[pair[0]], batch[pair[1]]
-                    labels = torch.tensor([1.0, 0.0]).repeat(self.args.batchsize, 1)
-                    mini_batch = (pos, neg, labels)
-                    mini_batch = preprocess_batch(mini_batch, gpu_id=self.gpu_id)
-                    try:  
-                        batch_loss, batch_acc = self.forward_step(mini_batch)
-                    except Exception as e:
-                        print(traceback.format_exc())
-                        continue
+                
+                pos, neg, labels, _ = batch
+                batch = (pos, neg, labels)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                try:  
+                    batch_loss, batch_acc = self.forward_step(batch)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    continue
 
-                    if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
-                        continue
+                if torch.isnan(batch_loss).any() or torch.isinf(batch_loss).any():
+                    continue
 
-                    val_loss += batch_loss.item()
-                    val_acc += batch_acc
+                val_loss += batch_loss.item()
+                val_acc += batch_acc
             
-        val_loss = val_loss / (num_batches * len(mini_batch_pairs))
-        val_acc = val_acc / (num_batches * len(mini_batch_pairs))
+        val_loss = val_loss / num_batches
+        val_acc = val_acc / num_batches
         return val_loss, val_acc 
         
     def train_one_epoch(self, epoch, train_ds, test_ds):
@@ -173,7 +168,8 @@ class Trainer:
     
         for i, batch in enumerate(train_ds):   
             self.reward_model.train()
-            #pos, neg, labels = batch
+            pos, neg, labels, _ = batch
+            batch = (pos, neg, labels)
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             try:  
                 loss, acc = self.forward_step(batch)

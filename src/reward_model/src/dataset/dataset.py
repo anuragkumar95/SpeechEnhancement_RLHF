@@ -320,7 +320,7 @@ class HumanAlignedDataset(Dataset):
         x_2 = x_2.reshape(-1)
 
         label = torch.tensor([1.0, 0.0])
-        return x_1[:self.cutlen], x_2[:self.cutlen], label
+        return x_1[:self.cutlen], x_2[:self.cutlen], label, (path_1, path_2)
 
 
 def load_data(root=None, 

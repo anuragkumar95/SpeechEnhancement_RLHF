@@ -66,7 +66,7 @@ def args():
     return parser
 
 class EvalModel:
-    def __init__(self, modes, save_path, pre, args, model_pt=None, reward_pt=None, gpu_id=None):
+    def __init__(self, modes, save_path, pre, args, model_pt=None, reward_pt=None, gpu_id=None, ranking=False):
         self.modes = modes
         self.n_fft = 400
         self.hop = 100
@@ -116,6 +116,7 @@ class EvalModel:
 
         self.save_path = save_path
         self.gpu_id = gpu_id
+        self.ranking = ranking
 
     def evaluate(self, dataset):
         
@@ -201,6 +202,28 @@ class EvalModel:
                         with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
                             pickle.dump(rewards, f)
                         print(f"reward_{i}.pickle saved in {save_path}")
+
+    def evaluate_reward_model(self, dataset):
+        save_path = f"{self.save_path}/rewards"
+        os.makedirs(save_path, exist_ok=True)
+        for i, batch in enumerate(dataset):
+            pos, neg, labels, paths = batch
+            batch = (pos, neg, labels)
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+
+            pos_reward = self.reward_model.get_reward(inp=pos.permute(0, 1, 3, 2))
+            neg_reward = self.reward_model.get_reward(inp=neg.permute(0, 1, 3, 2))
+
+            reward = {
+                'file':paths,
+                'pos_reward':pos_reward,
+                'neg_reward':neg_reward,
+            }
+
+            with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
+                pickle.dump(reward, f)
+            print(f"reward_{i}.pickle saved in {save_path}")
+
 
     def enhance_one_track(self, audio_path, saved_dir, cut_len, n_fft=400, hop=100):
         name = os.path.split(audio_path)[-1]
@@ -325,10 +348,12 @@ if __name__ == '__main__':
                 dataset=test_dataset,
                 batch_size=args.batchsize,
                 pin_memory=True,
-                shuffle=True,
+                shuffle=False,
                 drop_last=True,
                 num_workers=1,
             )
+
+            eval.evaluate_reward_model(test_ds)
         
         else:
             train_ds, test_ds = load_data(ARGS.vctkroot, 
@@ -337,6 +362,6 @@ if __name__ == '__main__':
                                 40000,
                                 gpu = False)
 
-        eval.evaluate(test_ds)
+            eval.evaluate(test_ds)
 
                     

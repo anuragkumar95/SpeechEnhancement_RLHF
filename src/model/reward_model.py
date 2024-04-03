@@ -32,7 +32,7 @@ class RewardModel(nn.Module):
         score = F.sigmoid(pos_proj - neg_proj)
         #score = torch.cat([pos_proj, neg_proj], dim=-1)
         #probs = F.softmax(score)
-        loss = -torch.log(score + self.eps)
+        loss = -torch.log(score + self.eps).mean()
         #loss = self.loss(score, labels) 
    
         return loss, score, None

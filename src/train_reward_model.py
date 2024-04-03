@@ -199,7 +199,7 @@ class Trainer:
                 train_acc += batch_acc
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
-            if (i) % 1000  == 0:
+            if (i+1) % 3000  == 0:
                 #Run validation every 1000 steps
                 val_loss, val_acc = self.run_validation(test_ds)
                 wandb.log({
@@ -212,7 +212,7 @@ class Trainer:
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     if self.gpu_id == 0:
-                        checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
+                        checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}_step_{i+1}.pt"
                         path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
                         torch.save(self.reward_model.state_dict(), path)
 
@@ -231,6 +231,23 @@ class Trainer:
         print("Start training...")
         for epoch in range(self.args.epochs):
             self.train_one_epoch(epoch+1, train_ds, test_ds)
+
+            #Run last validation
+            val_loss, val_acc = self.run_validation(test_ds)
+            wandb.log({
+                'epoch':epoch+1, 
+                'val_acc':val_acc,
+                'val_loss':val_loss
+            })
+            print(f"Epoch:{epoch} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
+
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                if self.gpu_id == 0:
+                    checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
+                    path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
+                    torch.save(self.reward_model.state_dict(), path)
+        
 
 def main(args):
 

@@ -217,8 +217,8 @@ class EvalModel:
 
                 reward = {
                     'file':paths,
-                    'pos_reward':pos_reward,
-                    'neg_reward':neg_reward,
+                    'pos_reward':pos_reward.detach().cpu().numpy(),
+                    'neg_reward':neg_reward.detach().cpu().numpy(),
                 }
 
                 with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:

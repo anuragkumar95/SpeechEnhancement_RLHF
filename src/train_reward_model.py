@@ -80,7 +80,7 @@ class Trainer:
         #Freeze the policy
         #self.actor = freeze_layers(self.actor, 'all')
         #print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
-        del cmgan_expert_checkpoint 
+        #del cmgan_expert_checkpoint 
 
         self.reward_model = RewardModel(in_channels=2)
 

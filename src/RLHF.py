@@ -404,10 +404,11 @@ class PPO:
                     entropy = entropies[0]
                     log_prob, old_log_prob = log_probs[0], mb_oldlogprobs[0].permute(0, 2, 1)
                 
-                print(f"log_prob:{log_prob.mean()}")
-                print(f"old_logprob:{old_log_prob.mean()}")
                 logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2]) 
                 ratio = torch.exp(logratio)
+                
+                print(f"log_prob:{log_prob.mean()}")
+                print(f"old_logprob:{old_log_prob.mean()}")
                 print(f"Ratio:{ratio}")
 
                 #Policy loss

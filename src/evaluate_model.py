@@ -10,7 +10,7 @@ import soundfile as sf
 import copy
 import os
 from data.dataset import load_data
-from reward_model.src.dataset.dataset import PreferenceDataset
+from reward_model.src.dataset.dataset import HumanAlignedDataset
 import torch.nn.functional as F
 import torchaudio.functional as AF
 import torch
@@ -34,8 +34,8 @@ torch.manual_seed(123)
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-jr", "--jndroot", type=str, required=False,
-                        help="Root directory to JND Dataset.")
+    parser.add_argument("-rr", "--rankroot", type=str, default='None', required=False,
+                        help="Root directory to ranking dataset.")
     parser.add_argument("-vr", "--vctkroot", type=str, required=False,
                         help="Root directory to VCTK Dataset.")
     parser.add_argument("-c", "--comp", type=str, required=False,
@@ -316,11 +316,26 @@ if __name__ == '__main__':
 
 
         """
-        train_ds, test_ds = load_data(ARGS.vctkroot, 
-                            ARGS.batchsize, 
-                            1, 
-                            40000,
-                            gpu = False)
+        if ARGS.rankroot is not None:
+            test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures', 'test'),
+                                               rank=os.path.join(ARGS.rankroot, 'ranking', 'test.ranks'),  
+                                               cutlen=40000)
+
+            test_ds = DataLoader(
+                dataset=test_dataset,
+                batch_size=args.batchsize,
+                pin_memory=True,
+                shuffle=True,
+                drop_last=True,
+                num_workers=1,
+            )
+        
+        else:
+            train_ds, test_ds = load_data(ARGS.vctkroot, 
+                                ARGS.batchsize, 
+                                1, 
+                                40000,
+                                gpu = False)
 
         eval.evaluate(test_ds)
 

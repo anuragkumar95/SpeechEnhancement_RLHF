@@ -210,7 +210,7 @@ class EvalModel:
             pos, neg, labels, paths = batch
             batch = (pos, neg, labels)
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-
+            pos, neg, _ = batch
             pos_reward = self.reward_model.get_reward(inp=pos.permute(0, 1, 3, 2))
             neg_reward = self.reward_model.get_reward(inp=neg.permute(0, 1, 3, 2))
 

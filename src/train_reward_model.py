@@ -69,20 +69,20 @@ class Trainer:
     
         self.ACCUM_GRAD = args.accum_grad
 
-        self.actor = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1,
-                            distribution="Normal", 
-                            gpu_id=gpu_id)
+        #self.actor = TSCNet(num_channel=64, 
+        #                    num_features=self.n_fft // 2 + 1,
+        #                    distribution="Normal", 
+        #                    gpu_id=gpu_id)
         
         
-        cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
-        self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+        #cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+        #self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
         #Freeze the policy
-        self.actor = freeze_layers(self.actor, 'all')
-        print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
+        #self.actor = freeze_layers(self.actor, 'all')
+        #print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 
 
-        self.reward_model = RewardModel(policy=self.actor)
+        self.reward_model = RewardModel(in_channels=2)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr
@@ -119,9 +119,11 @@ class Trainer:
             labels = labels.to(self.gpu_id)
 
         labels = torch.argmax(labels, dim=-1)
-        loss, _, probs = self.reward_model(pos=x_1, neg=x_2, labels=labels)
-        #y_preds = (score < 0.5).float()
-        y_preds = torch.argmax(probs, dim=-1)
+        loss, score, probs = self.reward_model(pos=x_1, neg=x_2, labels=labels)
+        if probs is None:
+            y_preds = (score < 0.5).float()
+        else:
+            y_preds = torch.argmax(probs, dim=-1)
         
         print(f"PREDS:{y_preds.reshape(-1)}")
         print(f"LABELS:{labels}")

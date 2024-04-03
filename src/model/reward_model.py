@@ -16,8 +16,9 @@ class RewardModel(nn.Module):
         self.conformer = policy
         self.reward_projection = QNet(ndf=16, in_channel=64, out_channel=1)
         self.eps = 1e-08
+        self.loss = torch.nn.CrossEntropyLoss(reduce='mean')
         
-    def forward(self, pos, neg):
+    def forward(self, pos, neg, labels):
 
         x_pos = pos.permute(0, 1, 3, 2)
         x_neg = neg.permute(0, 1, 3, 2)
@@ -25,13 +26,16 @@ class RewardModel(nn.Module):
         pos_emb = self.conformer.get_embedding(x_pos)
         neg_emb = self.conformer.get_embedding(x_neg)
         
-        pos_proj = self.reward_projection(pos_emb)
-        neg_proj = self.reward_projection(neg_emb)
+        pos_proj = F.sigmoid(self.reward_projection(pos_emb))
+        neg_proj = F.sigmoid(self.reward_projection(neg_emb))
 
-        score = F.sigmoid(pos_proj - neg_proj)
-        loss = -torch.log(score + self.eps)
+        #score = F.sigmoid(pos_proj - neg_proj)
+        score = torch.cat([pos_proj, neg_proj], dim=-1)
+        probs = F.softmax(score)
+        #loss = -torch.log(score + self.eps)
+        loss = self.loss(score, labels) 
    
-        return loss.mean(), score
+        return loss, score, probs
     
     def get_reward(self, inp):
         """
@@ -48,6 +52,6 @@ class RewardModel(nn.Module):
         proj = self.reward_projection(inp_emb)
 
         #Restrict rewards to be in range (0, 1)
-        #rewards = F.sigmoid(proj)
+        rewards = F.sigmoid(proj)
 
-        return proj
+        return rewards

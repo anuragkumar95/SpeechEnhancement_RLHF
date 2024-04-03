@@ -118,9 +118,11 @@ class Trainer:
             x_2 = x_2.to(self.gpu_id)
             labels = labels.to(self.gpu_id)
 
-        loss, score = self.reward_model(pos=x_1, neg=x_2)
-        y_preds = (score < 0.5).float()
         labels = torch.argmax(labels, dim=-1)
+        loss, _, probs = self.reward_model(pos=x_1, neg=x_2, labels=labels)
+        #y_preds = (score < 0.5).float()
+        y_preds = torch.argmax(probs, dim=-1)
+        
         print(f"PREDS:{y_preds.reshape(-1)}")
         print(f"LABELS:{labels}")
         acc = self.accuracy(y_preds, labels.float())
@@ -141,6 +143,7 @@ class Trainer:
                 batch = preprocess_batch(batch, gpu_id=self.gpu_id)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)
+
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
@@ -194,11 +197,11 @@ class Trainer:
                 train_acc += batch_acc
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
-            if (i) % 2000  == 0 or i+1 == num_batches:
+            if (i) % 1000  == 0 or i+1 == num_batches:
                 #Run validation every 1000 steps
                 val_loss, val_acc = self.run_validation(test_ds)
                 wandb.log({
-                    'step': (i+1)*epoch,
+                    'STEP': (num_batches * (epoch-1)) + i + 1,
                     'val_acc':val_acc,
                     'val_loss':val_loss
                 })

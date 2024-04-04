@@ -237,6 +237,7 @@ class EvalModel:
         noisy, sr = torchaudio.load(audio_path)
         assert sr == 16000
         curr = noisy.cuda()
+        print("curr:",curr.shape)
         for step in range(self.args.n_steps):
             
             saved_dir = os.path.join(saved_dir, f"{step}")
@@ -257,7 +258,7 @@ class EvalModel:
                     batch_size += 1
                 noisy = torch.reshape(noisy, (batch_size, -1))
             
-            
+            print("noisy:",noisy.shape)
             noisy_spec = torch.stft(
                 noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True
             )
@@ -278,7 +279,7 @@ class EvalModel:
             est_audio = est_audio / c
             curr = torch.flatten(est_audio)[:length]
             est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
-
+            print("curr:",curr.shape)
             if len(est_audio) < length:
                 pad = np.zeros((1, length - len(est_audio)))
                 est_audio = est_audio.reshape(1, -1)

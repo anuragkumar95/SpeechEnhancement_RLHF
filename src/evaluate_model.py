@@ -98,7 +98,7 @@ class EvalModel:
             self.critic.eval()
 
         if reward_pt is not None:
-            self.reward_model = RewardModel(policy=copy.deepcopy(self.actor))
+            self.reward_model = RewardModel(in_channels=2)
             reward_checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(reward_checkpoint)
             print(f"Loaded reward model from {reward_pt} ... ")

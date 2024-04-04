@@ -217,8 +217,9 @@ class Trainer:
     def train(self, train_ds, test_ds):
         print("Start training...")
         best_val_loss = 99999
+        best_val_acc = 0
         for epoch in range(self.args.epochs):
-            best_val_loss, best_val_acc = self.train_one_epoch(epoch+1, train_ds, test_ds, best_val_loss)
+            best_val_loss, best_val_acc = self.train_one_epoch(epoch+1, train_ds, test_ds, best_val_loss, best_val_acc)
 
             #Run last validation
             val_loss, val_acc = self.run_validation(test_ds)

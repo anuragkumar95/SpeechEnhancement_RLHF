@@ -301,6 +301,8 @@ class EvalModel:
                 try:
                     self.enhance_one_track(noisy_path, save_path, 16000 * 10)
                 except:
+                    import traceback
+                    print(traceback.format_exc())
                     continue
            
 

@@ -276,8 +276,7 @@ class EvalModel:
                 onesided=True,
             )
             est_audio = est_audio / c
-            curr = est_audio
-
+            curr = torch.flatten(est_audio)[:length]
             est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
 
             if len(est_audio) < length:

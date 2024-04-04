@@ -34,8 +34,6 @@ def ARGS():
     parser = argparse.ArgumentParser()
     parser.add_argument("-mix", "--mix_dir", type=str, required=True,
                         help="Root directory to audio mixtures.")
-    parser.add_argument("-clean", "--clean_dir", type=str, required=True,
-                        help="Root directory to clean audio files.")
     parser.add_argument("-rank", "--rank_dir", type=str, required=False,
                         help="Root directory to rank files.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")

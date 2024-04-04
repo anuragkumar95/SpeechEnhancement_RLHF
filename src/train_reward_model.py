@@ -146,7 +146,7 @@ class Trainer:
         self.reward_model.train()
         return val_loss, val_acc 
         
-    def train_one_epoch(self, epoch, train_ds, test_ds, best_val_loss):
+    def train_one_epoch(self, epoch, train_ds, test_ds, best_val_loss, best_val_acc):
         #Run training
         num_batches = len(train_ds)
         train_loss = 0
@@ -191,8 +191,13 @@ class Trainer:
                 })
                 print(f"Epoch:{epoch} | Step:{i+1} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
 
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
+                if val_loss < best_val_loss or best_val_acc < val_acc:
+                    if val_loss < best_val_loss:
+                        best_val_loss = val_loss
+
+                    if val_acc > best_val_acc:
+                        best_val_acc = val_acc
+
                     if self.gpu_id == 0:
                         checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}_step_{i+1}.pt"
                         path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)
@@ -209,13 +214,13 @@ class Trainer:
         train_loss = train_loss * self.ACCUM_GRAD / num_batches
         train_acc = train_acc * self.ACCUM_GRAD / num_batches
 
-        return best_val_loss
+        return best_val_loss, best_val_acc
 
     def train(self, train_ds, test_ds):
         print("Start training...")
         best_val_loss = 99999
         for epoch in range(self.args.epochs):
-            best_val_loss = self.train_one_epoch(epoch+1, train_ds, test_ds, best_val_loss)
+            best_val_loss, best_val_acc = self.train_one_epoch(epoch+1, train_ds, test_ds, best_val_loss)
 
             #Run last validation
             val_loss, val_acc = self.run_validation(test_ds)
@@ -226,8 +231,13 @@ class Trainer:
             })
             print(f"Epoch:{epoch} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
 
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
+            if val_loss < best_val_loss or best_val_acc < val_acc:
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+
+                if val_acc > best_val_acc:
+                    best_val_acc = val_acc
+               
                 if self.gpu_id == 0:
                     checkpoint_prefix = f"{args.exp}_valLoss_{val_loss}_val_acc_{val_acc}_epoch_{epoch}.pt"
                     path = os.path.join(args.output, f"{args.exp}_{args.suffix}", checkpoint_prefix)

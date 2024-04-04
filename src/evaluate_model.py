@@ -314,20 +314,36 @@ if __name__ == '__main__':
     if ARGS.save_audios:
         eval.enhance_audio(src_dir=ARGS.audio_dir)
     
-    else:
+    
+    """
+    test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 
+                                    vctk_root=ARGS.vctkroot, 
+                                    set="test", 
+                                    comp=ARGS.comp,
+                                    train_split=0.8, 
+                                    resample=16000,
+                                    enhance_model=None,
+                                    env=None,
+                                    gpu_id=None,  
+                                    cutlen=40000)
+    
+    dataloader = DataLoader(
+        dataset=test_dataset,
+        batch_size=ARGS.batchsize,
+        pin_memory=True,
+        shuffle=False,
+        drop_last=True,
+        num_workers=1,
+    )
+
+
         """
-        test_dataset = PreferenceDataset(jnd_root=ARGS.jndroot, 
-                                        vctk_root=ARGS.vctkroot, 
-                                        set="test", 
-                                        comp=ARGS.comp,
-                                        train_split=0.8, 
-                                        resample=16000,
-                                        enhance_model=None,
-                                        env=None,
-                                        gpu_id=None,  
-                                        cutlen=40000)
-        
-        dataloader = DataLoader(
+    if ARGS.rankroot is not None:
+        test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures', 'test'),
+                                            rank=os.path.join(ARGS.rankroot, 'ranking', 'test.ranks'),  
+                                            cutlen=40000)
+
+        test_ds = DataLoader(
             dataset=test_dataset,
             batch_size=ARGS.batchsize,
             pin_memory=True,
@@ -336,31 +352,15 @@ if __name__ == '__main__':
             num_workers=1,
         )
 
+        eval.evaluate_reward_model(test_ds)
+    
+    else:
+        train_ds, test_ds = load_data(ARGS.vctkroot, 
+                            ARGS.batchsize, 
+                            1, 
+                            40000,
+                            gpu = False)
 
-        """
-        if ARGS.rankroot is not None:
-            test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures', 'test'),
-                                               rank=os.path.join(ARGS.rankroot, 'ranking', 'test.ranks'),  
-                                               cutlen=40000)
-
-            test_ds = DataLoader(
-                dataset=test_dataset,
-                batch_size=ARGS.batchsize,
-                pin_memory=True,
-                shuffle=False,
-                drop_last=True,
-                num_workers=1,
-            )
-
-            eval.evaluate_reward_model(test_ds)
-        
-        else:
-            train_ds, test_ds = load_data(ARGS.vctkroot, 
-                                ARGS.batchsize, 
-                                1, 
-                                40000,
-                                gpu = False)
-
-            eval.evaluate(test_ds)
+        eval.evaluate(test_ds)
 
                     

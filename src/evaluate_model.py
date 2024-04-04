@@ -49,6 +49,8 @@ def args():
                         help="directory to noisy audios to be enhanced. Required with flag --save_audios")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
                         help="Training batchsize.")
+    parser.add_argument("--n_steps", type=int, required=False, default=1,
+                        help="No. of steps of enhancement per batch.")
     parser.add_argument("--save_actions", action='store_true', 
                         help="Flag to save actions")
     parser.add_argument("--save_specs", action='store_true', 
@@ -115,91 +117,97 @@ class EvalModel:
         self.save_path = save_path
         self.gpu_id = gpu_id
         self.ranking = ranking
+        self.args = args
 
     def evaluate(self, dataset):
         
         with torch.no_grad():
-                for i, batch in enumerate(dataset):
-                    
-                    _, noisy_aud, _ = batch
-                    #Preprocess batch
-                    batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            for i, batch in enumerate(dataset):
+                
+                _, noisy_aud, _ = batch
+                #Preprocess batch
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
 
-                    cl_aud, clean, noisy, _ = batch
-                    inp = noisy.permute(0, 1, 3, 2)
+                cl_aud, clean, noisy, _ = batch
+                curr = noisy.permute(0, 1, 3, 2)
 
+                for i in range(self.args.n_steps):
                     #Forward pass through actor to get the action(mask)
-                    action, _, _, _ = self.actor.get_action(inp)
+                    action, _, _, _ = self.actor.get_action(curr)
 
                     #Apply action  to get the next state
-                    next_state = self.env.get_next_state(state=inp, 
+                    next_state = self.env.get_next_state(state=curr, 
                                                         action=action)
-                    for mode in self.modes:
-                        save_path = f"{self.save_path}/{mode}"
-                        os.makedirs(save_path, exist_ok=True)
-                        if mode == 'action':
-                            with open(os.path.join(save_path, f"action_{i}.pickle"), 'wb') as f:
-                                action = (action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy())
-                                pickle.dump(action, f)
-                            print(f"action_{i}.pickle saved in {save_path}")
+                    curr = next_state['noisy']
+                
 
-                        if mode == 'spectogram':
-                            with open(os.path.join(save_path, f"spec_{i}.pickle"), 'wb') as f:
-                                spec = {
-                                    'enhanced': next_state['noisy'].detach().cpu().numpy(),
-                                    'noisy'   : noisy.detach().cpu().numpy(),
-                                    'clean'   : clean.detach().cpu().numpy()
-                                }
-                                pickle.dump(spec, f)
-                            print(f"spec_{i}.pickle saved in {save_path}")
 
-                        if mode == 'critic_score':
-                            score_clean = self.critic(clean)
-                            score_noisy = self.critic(noisy)
-                            score_enhanced = self.critic(next_state['noisy'])
-                            scores = {
-                                'enhanced' : score_enhanced.detach().cpu().numpy(),
-                                'noisy'    : score_noisy.detach().cpu().numpy(),
-                                'clean'    : score_clean.detach().cpu().numpy()
+                for mode in self.modes:
+                    save_path = f"{self.save_path}/{mode}"
+                    os.makedirs(save_path, exist_ok=True)
+                    if mode == 'action':
+                        with open(os.path.join(save_path, f"action_{i}.pickle"), 'wb') as f:
+                            action = (action[0].detach().cpu().numpy(), action[1].detach().cpu().numpy())
+                            pickle.dump(action, f)
+                        print(f"action_{i}.pickle saved in {save_path}")
+
+                    if mode == 'spectogram':
+                        with open(os.path.join(save_path, f"spec_{i}.pickle"), 'wb') as f:
+                            spec = {
+                                'enhanced': next_state['noisy'].detach().cpu().numpy(),
+                                'noisy'   : noisy.detach().cpu().numpy(),
+                                'clean'   : clean.detach().cpu().numpy()
                             }
-                            with open(os.path.join(save_path, f"score_{i}.pickle"), 'wb') as f:
-                                pickle.dump(scores, f)
-                            print(f"score_{i}.pickle saved in {save_path}")
+                            pickle.dump(spec, f)
+                        print(f"spec_{i}.pickle saved in {save_path}")
 
-                        if mode == 'pesq':
-                            enh_aud = next_state['est_audio'].detach().cpu().numpy()
-                            
-                            n_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), noisy_aud.detach().cpu().numpy())
-                            n_pesq = (n_pesq * pesq_mask)
+                    if mode == 'critic_score':
+                        score_clean = self.critic(clean)
+                        score_noisy = self.critic(noisy)
+                        score_enhanced = self.critic(next_state['noisy'])
+                        scores = {
+                            'enhanced' : score_enhanced.detach().cpu().numpy(),
+                            'noisy'    : score_noisy.detach().cpu().numpy(),
+                            'clean'    : score_clean.detach().cpu().numpy()
+                        }
+                        with open(os.path.join(save_path, f"score_{i}.pickle"), 'wb') as f:
+                            pickle.dump(scores, f)
+                        print(f"score_{i}.pickle saved in {save_path}")
 
-                            e_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), enh_aud)
-                            e_pesq = (e_pesq * pesq_mask)
-
-                            pesq = {
-                                'noisy':original_pesq(n_pesq),
-                                'enhanced':original_pesq(e_pesq),
-                            }
-
-                            with open(os.path.join(save_path, f"pesq_{i}.pickle"), 'wb') as f:
-                                pickle.dump(pesq, f)
-                            print(f"pesq_{i}.pickle saved in {save_path}")
-
-                        if mode == 'rewards':
-                            enhanced = next_state['noisy']
+                    if mode == 'pesq':
+                        enh_aud = next_state['est_audio'].detach().cpu().numpy()
                         
-                            noisy_reward = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2))
-                            clean_reward = self.reward_model.get_reward(inp=clean)
-                            enhanced_reward = self.reward_model.get_reward(inp=enhanced.permute(0, 1, 3, 2))
+                        n_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), noisy_aud.detach().cpu().numpy())
+                        n_pesq = (n_pesq * pesq_mask)
 
-                            rewards = {
-                                'noisy': noisy_reward.detach().cpu().numpy(),
-                                'clean': clean_reward.detach().cpu().numpy(),
-                                'enhanced':enhanced_reward.detach().cpu().numpy()
-                            }
+                        e_pesq, pesq_mask = batch_pesq(cl_aud.detach().cpu().numpy(), enh_aud)
+                        e_pesq = (e_pesq * pesq_mask)
 
-                            with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
-                                pickle.dump(rewards, f)
-                            print(f"reward_{i}.pickle saved in {save_path}")
+                        pesq = {
+                            'noisy':original_pesq(n_pesq),
+                            'enhanced':original_pesq(e_pesq),
+                        }
+
+                        with open(os.path.join(save_path, f"pesq_{i}.pickle"), 'wb') as f:
+                            pickle.dump(pesq, f)
+                        print(f"pesq_{i}.pickle saved in {save_path}")
+
+                    if mode == 'rewards':
+                        enhanced = next_state['noisy']
+                    
+                        noisy_reward = self.reward_model.get_reward(inp=noisy.permute(0, 1, 3, 2))
+                        clean_reward = self.reward_model.get_reward(inp=clean)
+                        enhanced_reward = self.reward_model.get_reward(inp=enhanced.permute(0, 1, 3, 2))
+
+                        rewards = {
+                            'noisy': noisy_reward.detach().cpu().numpy(),
+                            'clean': clean_reward.detach().cpu().numpy(),
+                            'enhanced':enhanced_reward.detach().cpu().numpy()
+                        }
+
+                        with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
+                            pickle.dump(rewards, f)
+                        print(f"reward_{i}.pickle saved in {save_path}")
 
     def evaluate_reward_model(self, dataset):
         save_path = f"{self.save_path}/rewards"

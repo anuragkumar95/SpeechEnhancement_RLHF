@@ -160,7 +160,7 @@ class Trainer:
         val_acc = val_acc / num_batches
         return val_loss, val_acc 
         
-    def train_one_epoch(self, epoch, train_ds, test_ds):
+    def train_one_epoch(self, epoch, train_ds, test_ds, best_val_loss):
         #Run training
         #self.reward_model.train()
         num_batches = len(train_ds)
@@ -168,8 +168,6 @@ class Trainer:
         train_acc = 0
         batch_loss = 0
         batch_acc = 0
-
-        best_val_loss = 9999999
     
         for i, batch in enumerate(train_ds):   
             self.reward_model.train()
@@ -227,10 +225,13 @@ class Trainer:
         train_loss = train_loss * self.ACCUM_GRAD / num_batches
         train_acc = train_acc * self.ACCUM_GRAD / num_batches
 
+        return best_val_loss
+
     def train(self, train_ds, test_ds):
         print("Start training...")
+        best_val_loss = 99999
         for epoch in range(self.args.epochs):
-            self.train_one_epoch(epoch+1, train_ds, test_ds)
+            best_val_loss = self.train_one_epoch(epoch+1, train_ds, test_ds, best_val_loss)
 
             #Run last validation
             val_loss, val_acc = self.run_validation(test_ds)

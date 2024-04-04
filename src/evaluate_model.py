@@ -34,7 +34,7 @@ torch.manual_seed(123)
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-rr", "--rankroot", type=str, default='None', required=False,
+    parser.add_argument("-rr", "--rankroot", type=str, default=None, required=False,
                         help="Root directory to ranking dataset.")
     parser.add_argument("-vr", "--vctkroot", type=str, required=False,
                         help="Root directory to VCTK Dataset.")

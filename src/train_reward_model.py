@@ -42,8 +42,6 @@ def ARGS():
     parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
-    parser.add_argument("-pt", "--ckpt", type=str, required=True, default=None,
-                        help="Path to saved cmgan checkpoint.")
     parser.add_argument("--epochs", type=int, required=False, default=5,
                         help="No. of epochs to be trained.")
     parser.add_argument("--batchsize", type=int, required=False, default=4,
@@ -68,19 +66,6 @@ class Trainer:
         self.hop = 100
     
         self.ACCUM_GRAD = args.accum_grad
-
-        #self.actor = TSCNet(num_channel=64, 
-        #                    num_features=self.n_fft // 2 + 1,
-        #                    distribution="Normal", 
-        #                    gpu_id=gpu_id)
-        
-        
-        #cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
-        #self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
-        #Freeze the policy
-        #self.actor = freeze_layers(self.actor, 'all')
-        #print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
-        #del cmgan_expert_checkpoint 
 
         self.reward_model = RewardModel(in_channels=2)
 
@@ -158,11 +143,11 @@ class Trainer:
             
         val_loss = val_loss / num_batches
         val_acc = val_acc / num_batches
+        self.reward_model.train()
         return val_loss, val_acc 
         
     def train_one_epoch(self, epoch, train_ds, test_ds, best_val_loss):
         #Run training
-        #self.reward_model.train()
         num_batches = len(train_ds)
         train_loss = 0
         train_acc = 0
@@ -170,7 +155,6 @@ class Trainer:
         batch_acc = 0
     
         for i, batch in enumerate(train_ds):   
-            self.reward_model.train()
             pos, neg, labels, _ = batch
             batch = (pos, neg, labels)
             batch = preprocess_batch(batch, gpu_id=self.gpu_id)
@@ -256,38 +240,7 @@ def main(args):
         trainer = Trainer(args, 0)
     else:
         trainer = Trainer(args, None)
-    """
-    speech_env = SpeechEnhancementAgent(n_fft=400,
-                                        hop=100,
-                                        gpu_id=None,
-                                        args=None,
-                                        reward_model=None)
-    
-    #enhance_model = copy.deepcopy(trainer.actor)
-    #enhance_model = None
-    
-    train_dataset = PreferenceDataset(jnd_root=args.jndroot, 
-                                      vctk_root=args.vctkroot, 
-                                      set="train", 
-                                      comp=args.comp,
-                                      train_split=0.8, 
-                                      resample=16000,
-                                      enhance_model=enhance_model,
-                                      env=speech_env,
-                                      gpu_id=0, 
-                                      cutlen=40000)
-    
-    test_dataset = PreferenceDataset(jnd_root=args.jndroot, 
-                                     vctk_root=args.vctkroot, 
-                                     set="test", 
-                                     comp=args.comp,
-                                     train_split=0.8, 
-                                     resample=16000,
-                                     enhance_model=enhance_model,
-                                     env=speech_env,
-                                     gpu_id=0,  
-                                     cutlen=40000)
-    """
+ 
     train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train'),
                                         rank=os.path.join(args.rank_dir, 'train.ranks'),  
                                         cutlen=40000)

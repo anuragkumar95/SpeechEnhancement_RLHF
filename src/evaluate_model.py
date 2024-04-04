@@ -237,12 +237,12 @@ class EvalModel:
         noisy, sr = torchaudio.load(audio_path)
         assert sr == 16000
         curr = noisy.cuda()
-        print("curr:",curr.shape)
+        
         for step in range(self.args.n_steps):
             
             saved_dir = os.path.join(saved_dir, f"{step}")
             os.makedirs(saved_dir, exist_ok=True)
-
+            print("curr:",curr.shape)
             c = torch.sqrt(curr.size(-1) / torch.sum((curr**2.0), dim=-1))
             noisy = torch.transpose(curr, 0, 1)
             noisy = torch.transpose(curr * c, 0, 1)

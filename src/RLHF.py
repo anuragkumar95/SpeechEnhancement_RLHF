@@ -689,11 +689,11 @@ class PPO:
         
         print(f"Values:{VALUES.mean(0)}")
 
-        step_clip_loss = step_clip_loss / self.episode_len
-        step_pg_loss = step_pg_loss / self.episode_len
-        step_val_loss = step_val_loss / self.episode_len                 
-        step_sup_loss = step_sup_loss / self.episode_len
-        step_entropy_loss = step_entropy_loss / self.episode_len
+        step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
+        step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
+        step_val_loss = step_val_loss / (n_epochs * self.episode_len)                
+        step_sup_loss = step_sup_loss / (n_epochs * self.episode_len)
+        step_entropy_loss = step_entropy_loss / (n_epochs * self.episode_len)
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \

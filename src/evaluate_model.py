@@ -140,8 +140,6 @@ class EvalModel:
                                                         action=action)
                     curr = next_state['noisy']
                 
-
-
                     for mode in self.modes:
                         save_path = f"{self.save_path}/{step}/{mode}"
                         os.makedirs(save_path, exist_ok=True)
@@ -242,6 +240,7 @@ class EvalModel:
             
             saved_dir = os.path.join(saved_dir, f"{step}")
             os.makedirs(saved_dir, exist_ok=True)
+
             c = torch.sqrt(curr.size(-1) / torch.sum((curr**2.0), dim=-1))
             noisy = torch.transpose(curr, 0, 1)
             noisy = torch.transpose(noisy * c, 0, 1)
@@ -285,6 +284,7 @@ class EvalModel:
 
             assert len(est_audio) == length, f"est:{len(est_audio)}, inp:{length}"
             saved_path = os.path.join(saved_dir, name)
+            print(f"Saving in {saved_path}...")
             sf.write(saved_path, est_audio, sr)
 
         

@@ -563,6 +563,7 @@ class PPO:
             states = torch.stack(states)
             enhanced = states[1:, ...].reshape(-1, ch, t, f)
             states = states[:-1, ...].reshape(-1, ch, t, f)
+            clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
             
             actions = (([a[0][0] for a in actions], 
                         [a[0][1] for a in actions]), 
@@ -580,6 +581,8 @@ class PPO:
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         print(f"STATES        :{states.shape}")
+        print(f"ENHANCED      :{enhanced.shape}")
+        print(f"CLEAN         :{clean.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
         print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")

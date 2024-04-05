@@ -506,7 +506,7 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, _ = actor.get_action(curr)
-                print(f"action:{action[0].shape, action[1].shape}")
+                print(f"action:{action[0][1].shape, action[1].shape}")
                 init_action, _, _, _ = self.init_model.get_action(curr)
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
      
@@ -563,8 +563,8 @@ class PPO:
             enhanced = states[1:, ...].reshape(-1, ch, t, f)
             states = states[:-1, ...].reshape(-1, ch, t, f)
             
-            actions = ([a[0] for a in actions], [a[1] for a in actions])
-            actions = (torch.stack(actions[0]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, t, f))
+            actions = ([a[0][1] for a in actions], [a[1] for a in actions])
+            actions = (torch.stack(actions[0][1]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, t, f))
             log_probs = torch.stack(log_probs).reshape(-1, t, f)
             
             #Normalize advantages
@@ -603,7 +603,7 @@ class PPO:
                 mb_states = torch.stack(states[mb_indx, ...], dim=0)
 
                 #Get new logprobs and values for the sampled (state, action) pair
-                mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
+                mb_action = (([], actions[0][mb_indx, ...]), actions[1][mb_indx, ...])
                 
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
         

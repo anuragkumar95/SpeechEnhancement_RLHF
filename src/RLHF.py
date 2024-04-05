@@ -600,7 +600,7 @@ class PPO:
             
                 #Get mini batch indices
                 mb_indx = indices[t:t+bs]
-                mb_states = torch.stack(states[mb_indx, ...], dim=0)
+                mb_states = states[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = (([], actions[0][mb_indx, ...]), actions[1][mb_indx, ...])

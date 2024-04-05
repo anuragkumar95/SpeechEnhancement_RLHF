@@ -658,8 +658,9 @@ class PPO:
                 mb_clean = clean[mb_indx, ...]
                 supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean()
 
-                clip_loss = pg_loss - (self.en_coef * entropy_loss) + self.lmbda * supervised_loss
-
+                clip_loss = pg_loss  + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)
+                
+                print(f"clip_loss:{clip_loss.item()} pg_loss:{pg_loss}")
                 wandb.log({
                     'ratio':ratio.mean(),
                     'pg_loss1':pg_loss1.mean(),

@@ -576,7 +576,7 @@ class PPO:
             logprobs = torch.stack(logprobs).reshape(-1, f, t)
             
             #Normalize advantages
-            advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-08)
+            b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-08)
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 

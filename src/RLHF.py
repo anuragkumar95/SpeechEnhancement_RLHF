@@ -623,7 +623,7 @@ class PPO:
                 if self.train_phase:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
-                    old_log_prob = logprobs[mb_indx, ...]
+                    old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
                 else:
                     #ignore complex mask, just tune mag mask 
                     raise NotImplementedError

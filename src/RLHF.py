@@ -665,7 +665,6 @@ class PPO:
                     'ratio':ratio.mean(),
                     'pg_loss1':pg_loss1.mean(),
                     'pg_loss2':pg_loss2.mean(),
-                    'pretrain_loss':supervised_loss.item()
                 })
 
                 #optimizer.zero_grad()

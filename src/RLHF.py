@@ -655,7 +655,8 @@ class PPO:
 
                 #Supervised loss
                 mb_enhanced = enhanced[mb_indx, ...]
-                supervised_loss = ((clean - mb_enhanced) ** 2).mean()
+                mb_clean = clean[mb_indx, ...]
+                supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean()
 
                 clip_loss = pg_loss - (self.en_coef * entropy_loss) + self.lmbda * supervised_loss
 

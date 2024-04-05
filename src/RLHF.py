@@ -548,6 +548,7 @@ class PPO:
                 curr = state['noisy']
 
             #Store the last enhanced state
+            print(f"curr:{curr.shape}")
             states.append(curr)
 
             #Convert collected rewards to target_values and advantages
@@ -564,7 +565,7 @@ class PPO:
             states = states[:-1, ...].reshape(-1, ch, t, f)
             
             actions = ([a[0][1] for a in actions], [a[1] for a in actions])
-            actions = (torch.stack(actions[0]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, f, t))
+            actions = (torch.stack(actions[0]).reshape(-1, f, t), torch.stack(actions[1]).reshape(-1, ch, f, t))
             logprobs = torch.stack(logprobs).reshape(-1, f, t)
             
             #Normalize advantages

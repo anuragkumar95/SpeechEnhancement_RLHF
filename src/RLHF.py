@@ -623,7 +623,6 @@ class PPO:
                 if self.train_phase:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = torch.mean(log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :], dim=[1, 2])
-
                     old_log_prob = logprobs[mb_indx, ...]
                 else:
                     #ignore complex mask, just tune mag mask 

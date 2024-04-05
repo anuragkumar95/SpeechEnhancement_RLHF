@@ -622,7 +622,7 @@ class PPO:
 
                 if self.train_phase:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
-                    log_prob = torch.mean(log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :], dim=[1, 2])
+                    log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                     old_log_prob = logprobs[mb_indx, ...]
                 else:
                     #ignore complex mask, just tune mag mask 
@@ -630,9 +630,10 @@ class PPO:
                 
                 print(f"log_prob:{log_prob.mean(), log_prob.shape}")
                 print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
+
                 logratio = log_prob - old_log_prob
                 ratio = torch.exp(logratio)
-                print(f"Ratio:{ratio}")
+                print(f"Ratio:{torch.mean(ratio, dim=[1, 2])}")
 
                 #Policy loss
                 pg_loss1 = -b_advantages[mb_indx] * ratio

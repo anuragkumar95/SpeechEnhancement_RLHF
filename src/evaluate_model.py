@@ -245,7 +245,7 @@ class EvalModel:
             print("curr:",curr.shape)
             c = torch.sqrt(curr.size(-1) / torch.sum((curr**2.0), dim=-1))
             noisy = torch.transpose(curr, 0, 1)
-            noisy = torch.transpose(curr * c, 0, 1)
+            noisy = torch.transpose(noisy * c, 0, 1)
 
             length = noisy.size(-1)
             frame_num = int(np.ceil(length / 100))

@@ -628,8 +628,8 @@ class PPO:
                     #ignore complex mask, just tune mag mask 
                     raise NotImplementedError
                 
-                print(f"log_prob:{log_prob.mean()}")
-                print(f"old_logprob:{old_log_prob.mean()}")
+                print(f"log_prob:{log_prob.mean(), log_prob.shape}")
+                print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
                 logratio = log_prob - old_log_prob
                 ratio = torch.exp(logratio)
                 print(f"Ratio:{ratio}")

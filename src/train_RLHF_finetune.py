@@ -264,8 +264,8 @@ class Trainer:
 
         num_batches = len(self.train_ds)
         
-        pesq = self.run_validation(epoch, (epoch-1) * num_batches)
-
+        #pesq = self.run_validation(epoch, (epoch-1) * num_batches)
+        pesq=0
         #Run training
         self.actor.train()
         if self.args.method == 'PPO':

@@ -565,7 +565,7 @@ class PPO:
             
             actions = ([a[0][1] for a in actions], [a[1] for a in actions])
             actions = (torch.stack(actions[0]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, t, f))
-            log_probs = torch.stack(log_probs).reshape(-1, t, f)
+            logprobs = torch.stack(logprobs).reshape(-1, t, f)
             
             #Normalize advantages
             advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-08)
@@ -617,7 +617,7 @@ class PPO:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
 
-                    old_log_prob = log_probs[mb_indx, ...]
+                    old_log_prob = logprobs[mb_indx, ...]
                 else:
                     #ignore complex mask, just tune mag mask 
                     raise NotImplementedError

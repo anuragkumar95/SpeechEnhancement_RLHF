@@ -274,7 +274,7 @@ class Trainer:
             self.critic.train()
         REWARDS = []
         
-        epochs_per_episode = 5
+        epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 1000 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")

@@ -544,7 +544,8 @@ class PPO:
                 rewards.append(r_t)
 
                 actions.append(action)
-                logprobs.append(log_prob)
+                #logprobs.append(log_prob)
+                logprobs.append(ref_log_prob)
                 curr = state['noisy']
 
             #Store the last enhanced state

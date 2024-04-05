@@ -242,7 +242,6 @@ class EvalModel:
             
             saved_dir = os.path.join(saved_dir, f"{step}")
             os.makedirs(saved_dir, exist_ok=True)
-            print("curr:",curr.shape)
             c = torch.sqrt(curr.size(-1) / torch.sum((curr**2.0), dim=-1))
             noisy = torch.transpose(curr, 0, 1)
             noisy = torch.transpose(noisy * c, 0, 1)
@@ -258,7 +257,6 @@ class EvalModel:
                     batch_size += 1
                 noisy = torch.reshape(noisy, (batch_size, -1))
             
-            print("noisy:",noisy.shape)
             noisy_spec = torch.stft(
                 noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True
             )
@@ -279,7 +277,6 @@ class EvalModel:
             est_audio = est_audio / c
             curr = est_audio[:, :length]
             est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
-            print("out:",curr.shape)
             if len(est_audio) < length:
                 pad = np.zeros((1, length - len(est_audio)))
                 est_audio = est_audio.reshape(1, -1)

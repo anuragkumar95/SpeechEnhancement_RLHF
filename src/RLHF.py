@@ -636,8 +636,9 @@ class PPO:
                 print(f"Ratio:{torch.mean(ratio, dim=[1, 2])}")
 
                 #Policy loss
-                pg_loss1 = -b_advantages[mb_indx] * ratio
-                pg_loss2 = -b_advantages[mb_indx] * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+                #pg_loss1 = -b_advantages[mb_indx] * ratio
+                pg_loss1 = torch.einsum('b, btf -> btf', -b_advantages[mb_indx], ratio)
+                pg_loss2 = torch.einsum('b, btf -> btf', -b_advantages[mb_indx], torch.clamp(ratio, 1 - self.eps, 1 + self.eps))
                 if pg_loss1.mean() == pg_loss2.mean():
                     pg_loss = pg_loss1.mean()
                 else:

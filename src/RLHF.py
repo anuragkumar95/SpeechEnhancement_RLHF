@@ -506,7 +506,7 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, _ = actor.get_action(curr)
-                print(f"action:{action[0][1].shape, action[1].shape}")
+                print(f"action:{action[0][0].shape, action[0][1].shape, action[1].shape}")
                 init_action, _, _, _ = self.init_model.get_action(curr)
                 ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
      
@@ -564,8 +564,14 @@ class PPO:
             enhanced = states[1:, ...].reshape(-1, ch, t, f)
             states = states[:-1, ...].reshape(-1, ch, t, f)
             
-            actions = ([a[0][1] for a in actions], [a[1] for a in actions])
-            actions = (torch.stack(actions[0]).reshape(-1, f, t), torch.stack(actions[1]).reshape(-1, ch, f, t))
+            actions = (([a[0][0] for a in actions], 
+                        [a[0][1] for a in actions]), 
+                       [a[1] for a in actions])
+            
+            actions = ((torch.stack(actions[0][0]).reshape(-1, f, t), 
+                       torch.stack(actions[0][1]).reshape(-1, f, t)),
+                       torch.stack(actions[1]).reshape(-1, ch, t, f))
+            
             logprobs = torch.stack(logprobs).reshape(-1, f, t)
             
             #Normalize advantages

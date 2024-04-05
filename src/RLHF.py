@@ -581,7 +581,7 @@ class PPO:
 
         print(f"STATES        :{states.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
-        print(f"ACTIONS       :{actions[0].shape, actions[1].shape}")
+        print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
         print(f"ADVANTAGES    :{b_advantages.shape}")
         print(f"POLICY RETURNS:{target_values.mean(0)}")

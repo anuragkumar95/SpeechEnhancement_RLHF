@@ -576,7 +576,7 @@ class PPO:
             logprobs = torch.stack(logprobs).reshape(-1, f, t)
             
             #Normalize advantages
-            b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-08)
+            #b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-08)
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
@@ -638,10 +638,13 @@ class PPO:
                 ratio = torch.exp(logratio)
                 print(f"Ratio:{torch.mean(ratio, dim=[1, 2])}")
 
-                #Policy loss
-                #pg_loss1 = -b_advantages[mb_indx] * ratio
-                pg_loss1 = torch.einsum('b, btf -> btf', -b_advantages[mb_indx], ratio)
-                pg_loss2 = torch.einsum('b, btf -> btf', -b_advantages[mb_indx], torch.clamp(ratio, 1 - self.eps, 1 + self.eps))
+                #Normalize advantages across minibatch
+                mb_adv = b_advantages[mb_indx]
+                mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
+
+                #Policy gradient loss
+                pg_loss1 = torch.einsum('b, btf -> btf', -mb_adv, ratio)
+                pg_loss2 = torch.einsum('b, btf -> btf', -mb_adv, torch.clamp(ratio, 1 - self.eps, 1 + self.eps))
                 if pg_loss1.mean() == pg_loss2.mean():
                     pg_loss = pg_loss1.mean()
                 else:

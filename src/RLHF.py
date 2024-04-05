@@ -564,8 +564,8 @@ class PPO:
             states = states[:-1, ...].reshape(-1, ch, t, f)
             
             actions = ([a[0][1] for a in actions], [a[1] for a in actions])
-            actions = (torch.stack(actions[0]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, t, f))
-            logprobs = torch.stack(logprobs).reshape(-1, t, f)
+            actions = (torch.stack(actions[0]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, f, t))
+            logprobs = torch.stack(logprobs).reshape(-1, f, t)
             
             #Normalize advantages
             advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-08)

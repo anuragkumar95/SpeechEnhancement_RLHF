@@ -610,7 +610,7 @@ class PPO:
                 mb_states = states[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
-                mb_action = ((actions[1][mb_indx, ...], actions[0][mb_indx, ...]), actions[1][mb_indx, ...])
+                mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
                 
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
         

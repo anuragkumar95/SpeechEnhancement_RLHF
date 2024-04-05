@@ -564,7 +564,7 @@ class PPO:
             states = states[:-1, ...].reshape(-1, ch, t, f)
             
             actions = ([a[0][1] for a in actions], [a[1] for a in actions])
-            actions = (torch.stack(actions[0][1]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, t, f))
+            actions = (torch.stack(actions[0]).reshape(-1, ch, t, f), torch.stack(actions[1]).reshape(-1, ch, t, f))
             log_probs = torch.stack(log_probs).reshape(-1, t, f)
             
             #Normalize advantages

@@ -593,7 +593,6 @@ class PPO:
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         print(f"STATES        :{states.shape}")
-        #print(f"ENHANCED      :{enhanced.shape}")
         print(f"CLEAN         :{clean.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
         print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
@@ -674,7 +673,6 @@ class PPO:
                 #Supervised loss
                 mb_act, _, _, _ = actor.get_action(mb_states)
                 mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
-                #mb_enhanced = enhanced[mb_indx, ...]
                 
                 mb_enhanced = mb_next_state['noisy']
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)

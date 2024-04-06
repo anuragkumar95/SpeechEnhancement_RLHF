@@ -181,7 +181,7 @@ class Trainer:
                                en_coef=0,
                                lmbda=args.lmbda, 
                                discount=0.99,
-                               warm_up_steps=1000,
+                               warm_up_steps=0,
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,

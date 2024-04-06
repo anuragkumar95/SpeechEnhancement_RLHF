@@ -518,8 +518,8 @@ class PPO:
                 state['cl_audio'] = cl_aud
                 if self.init_model is not None:
                     state['exp_est_audio'] = exp_state['est_audio']
-                if not self.rlhf:
-                    state['clean'] = clean
+                #if not self.rlhf:
+                #    state['clean'] = clean
 
                 #Calculate kl_penalty
                 ref_log_prob = None

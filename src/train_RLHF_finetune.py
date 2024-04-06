@@ -116,6 +116,9 @@ class Trainer:
             cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
             self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+            #Set expert to eval and freeze all layers.
+            self.expert = freeze_layers(self.expert, 'all')
+            #self.expert.eval()
         
         if args.reward_pt is not None:
             self.reward_model = RewardModel(in_channels=2)
@@ -130,10 +133,6 @@ class Trainer:
         #Freeze complex decoder and reward model
         if not args.train_phase:
             self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
-        
-        #Set expert to eval and freeze all layers.
-        self.expert = freeze_layers(self.expert, 'all')
-        #self.expert.eval()
      
         print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         del cmgan_expert_checkpoint 

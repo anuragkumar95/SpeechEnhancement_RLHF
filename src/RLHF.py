@@ -652,7 +652,8 @@ class PPO:
 
                 #Normalize advantages across minibatch
                 mb_adv = b_advantages[mb_indx]
-                mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
+                if bs > 1:
+                    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 
                 #Policy gradient loss
                 pg_loss1 = -mb_adv * ratio
@@ -674,7 +675,7 @@ class PPO:
                 supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean()
 
                 if self.warm_up > 0:
-                    pg_loss = 0
+                    pg_loss = torch.tensor(0.0).to(self.gpu_id)
                     self.warm_up -= 1
 
                 clip_loss = pg_loss  + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)

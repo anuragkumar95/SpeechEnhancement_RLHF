@@ -235,7 +235,7 @@ class PPO:
         self.train_phase = params['train_phase']
         self.t = 0
         self.warm_up = warm_up_steps
-        self.init_model = init_model.train()
+        self.init_model = init_model.eval()
         self.prev_log_probs = None
         #self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
@@ -506,38 +506,38 @@ class PPO:
             for _ in range(self.episode_len):
                 #Unroll policy for n steps and store rewards.
                 action, log_probs, _, _ = actor.get_action(curr)
-                print(f"action:{action[0][0].shape, action[0][1].shape, action[1].shape}")
-                init_action, _, _, _ = self.init_model.get_action(curr)
-                ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
+                #print(f"action:{action[0][0].shape, action[0][1].shape, action[1].shape}")
+                #init_action, _, _, _ = self.init_model.get_action(curr)
+                #ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
      
                 state = self.env.get_next_state(state=curr, action=action)
-                exp_state = self.env.get_next_state(state=curr, action=init_action)
+                #exp_state = self.env.get_next_state(state=curr, action=init_action)
                 state['cl_audio'] = cl_aud
-                state['exp_est_audio'] = exp_state['est_audio']
+                #state['exp_est_audio'] = exp_state['est_audio']
                 #state['clean'] = clean
 
                 #Calculate kl_penalty
-                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                #ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 print(f"log_prob:{log_prob.shape}")
-                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                ratio = torch.exp(kl_penalty)
+                #kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                #ratio = torch.exp(kl_penalty)
                
                
                 # calculate approx_kl http://joschu.net/blog/kl-approx.html
                 #old_approx_kl = (-kl_penalty).mean()
-                kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
-                ep_kl_penalty += kl_penalty
+                #kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
+                #ep_kl_penalty += kl_penalty
 
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
                 else:
                     r_t = self.env.get_PESQ_reward(state)
-                print(f"R:{r_t.reshape(-1)} | KL:{kl_penalty.reshape(-1)}")
+                print(f"R:{r_t.reshape(-1)} }")
                 r_ts.append(r_t)
-                if self.beta > 0:
-                    r_t = torch.max(r_t - self.beta * kl_penalty, 0)
+                #if self.beta > 0:
+                #    r_t = torch.max(r_t - self.beta * kl_penalty, 0)
                 
                 #Store trajectory
                 states.append(curr)

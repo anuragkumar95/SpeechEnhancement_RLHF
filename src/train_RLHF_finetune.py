@@ -112,9 +112,10 @@ class Trainer:
                             distribution="Normal", 
                             gpu_id=gpu_id)
         
-        cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
-        self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
-        self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+        if args.ckpt is not None:
+            cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+            self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+            self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
         
         if args.reward_pt is not None:
             self.reward_model = RewardModel(in_channels=2)

@@ -313,7 +313,7 @@ class Trainer:
                             "entropy_loss":loss[2]
                         })
 
-                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()} | KL: {batch_reward[2].item()}")
+                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")# | KL: {batch_reward[2].item()}")
 
                     if (i+1) % run_validation_step == 0:
                         step_pesq = self.run_validation(epoch, i+1)

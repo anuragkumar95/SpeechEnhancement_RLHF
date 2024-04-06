@@ -139,7 +139,8 @@ class Trainer:
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)
-            self.expert = self.expert.to(gpu_id)
+            if self.expert is not None:
+                self.expert = self.expert.to(gpu_id)
             if self.reward_model is not None:
                 self.reward_model = self.reward_model.to(gpu_id)
 

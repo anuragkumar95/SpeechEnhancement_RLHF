@@ -208,7 +208,8 @@ class Trainer:
 
         #Forward pass through actor to get the action(mask)
         action, _, _, _ = self.actor.get_action(inp)
-        exp_action, _, _, _ = self.expert.get_action(inp)
+        if self.expert is not None:
+            exp_action, _, _, _ = self.expert.get_action(inp)
 
         if self.args.train_phase:
             a_t = action

@@ -497,98 +497,98 @@ class PPO:
         a_optim, c_optim = optimizer
         
         #Calculate target values and advantages
-        with torch.no_grad():
-            curr = noisy
-            rewards = []
-            r_ts = []
-            states = []
-            logprobs = []
-            actions = []
+        #with torch.no_grad():
+        curr = noisy
+        rewards = []
+        r_ts = []
+        states = []
+        logprobs = []
+        actions = []
+        
+        for _ in range(self.episode_len):
+            #Unroll policy for n steps and store rewards.
+            action, log_probs, _, _ = actor.get_action(curr)
             
-            for _ in range(self.episode_len):
-                #Unroll policy for n steps and store rewards.
-                action, log_probs, _, _ = actor.get_action(curr)
-                
-                if self.init_model is not None:
-                    init_action, _, _, _ = self.init_model.get_action(curr)
-                    ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
-                    exp_state = self.env.get_next_state(state=curr, action=init_action)
-     
-                state = self.env.get_next_state(state=curr, action=action)
-                state['cl_audio'] = cl_aud
-                if self.init_model is not None:
-                    state['exp_est_audio'] = exp_state['est_audio']
-                #if not self.rlhf:
-                #    state['clean'] = clean
+            if self.init_model is not None:
+                init_action, _, _, _ = self.init_model.get_action(curr)
+                ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
+                exp_state = self.env.get_next_state(state=curr, action=init_action)
+    
+            state = self.env.get_next_state(state=curr, action=action)
+            state['cl_audio'] = cl_aud
+            if self.init_model is not None:
+                state['exp_est_audio'] = exp_state['est_audio']
+            #if not self.rlhf:
+            #    state['clean'] = clean
 
-                #Calculate kl_penalty
-                ref_log_prob = None
-                if self.init_model is not None:
-                    ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                print(f"log_prob:{log_prob.shape}")
+            #Calculate kl_penalty
+            ref_log_prob = None
+            if self.init_model is not None:
+                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            print(f"log_prob:{log_prob.shape}")
 
-                if ref_log_prob is not None:
-                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                    ratio = torch.exp(kl_penalty)
-               
-                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    #old_approx_kl = (-kl_penalty).mean()
-                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
-                    ep_kl_penalty += kl_penalty
-                else:
-                    kl_penalty = None
+            if ref_log_prob is not None:
+                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                ratio = torch.exp(kl_penalty)
+            
+                # calculate approx_kl http://joschu.net/blog/kl-approx.html
+                #old_approx_kl = (-kl_penalty).mean()
+                kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
+                ep_kl_penalty += kl_penalty
+            else:
+                kl_penalty = None
 
-                #Store reward
-                if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
-                else:
-                    r_t = self.env.get_PESQ_reward(state)
+            #Store reward
+            if self.rlhf:
+                r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
+            else:
+                r_t = self.env.get_PESQ_reward(state)
 
-                print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
-                r_ts.append(r_t)
+            print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
+            r_ts.append(r_t)
 
-                if self.beta > 0:
-                    r_t = torch.max(r_t - self.beta * kl_penalty, 0)
-                
-                #Store trajectory
-                states.append(curr)
-                rewards.append(r_t)
-
-                actions.append(action)
-                logprobs.append(log_prob)
-                #logprobs.append(ref_log_prob)
-                curr = state['noisy']
-
-            #Store the last enhanced state
-            print(f"curr:{curr.shape}")
+            if self.beta > 0:
+                r_t = torch.max(r_t - self.beta * kl_penalty, 0)
+            
+            #Store trajectory
             states.append(curr)
+            rewards.append(r_t)
 
-            #Convert collected rewards to target_values and advantages
-            rewards = torch.stack(rewards).reshape(bs, -1)
-            r_ts = torch.stack(r_ts).reshape(-1)
-            
-            target_values = self.get_expected_return(rewards)
-            b_target = target_values.reshape(-1)
-            advantages = self.get_advantages(target_values, states, critic)
-            b_advantages = advantages.reshape(-1)
-            
-            states = torch.stack(states)
-            enhanced = states[1:, ...].reshape(-1, ch, t, f)
-            states = states[:-1, ...].reshape(-1, ch, t, f)
-            clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
-            
-            actions = (([a[0][0] for a in actions], 
-                        [a[0][1] for a in actions]), 
-                       [a[1] for a in actions])
-            
-            actions = ((torch.stack(actions[0][0]).reshape(-1, f, t), 
-                       torch.stack(actions[0][1]).reshape(-1, f, t)),
-                       torch.stack(actions[1]).reshape(-1, ch, t, f))
-            
-            logprobs = torch.stack(logprobs).reshape(-1, f, t)
-            
-            ep_kl_penalty = ep_kl_penalty / self.episode_len
+            actions.append(action)
+            logprobs.append(log_prob)
+            #logprobs.append(ref_log_prob)
+            curr = state['noisy']
+
+        #Store the last enhanced state
+        print(f"curr:{curr.shape}")
+        states.append(curr)
+
+        #Convert collected rewards to target_values and advantages
+        rewards = torch.stack(rewards).reshape(bs, -1).detach()
+        r_ts = torch.stack(r_ts).reshape(-1).detach()
+        
+        target_values = self.get_expected_return(rewards)
+        b_target = target_values.reshape(-1)
+        advantages = self.get_advantages(target_values, states, critic).detach()
+        b_advantages = advantages.reshape(-1)
+        
+        states = torch.stack(states)
+        enhanced = states[1:, ...].reshape(-1, ch, t, f)
+        states = states[:-1, ...].reshape(-1, ch, t, f).detach()
+        clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
+        
+        actions = (([a[0][0] for a in actions], 
+                    [a[0][1] for a in actions]), 
+                    [a[1] for a in actions])
+        
+        actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
+                    torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                    torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
+        
+        logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
+        
+        ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         print(f"STATES        :{states.shape}")
         print(f"ENHANCED      :{enhanced.shape}")

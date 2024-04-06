@@ -119,7 +119,10 @@ class Trainer:
             #Set expert to eval and freeze all layers.
             self.expert = freeze_layers(self.expert, 'all')
             #self.expert.eval()
+            del cmgan_expert_checkpoint 
+            print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         
+        self.reward_model = None
         if args.reward_pt is not None:
             self.reward_model = RewardModel(in_channels=2)
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
@@ -127,16 +130,12 @@ class Trainer:
             self.reward_model = freeze_layers(self.reward_model, 'all')
             self.reward_model.eval()
             print(f"Loaded reward model from {args.reward_pt}...")
-        else:
-            self.reward_model = None
+            del reward_checkpoint
+            
         
         #Freeze complex decoder and reward model
         if not args.train_phase:
             self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
-     
-        print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
-        del cmgan_expert_checkpoint 
-        del reward_checkpoint
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)

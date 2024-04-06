@@ -20,6 +20,7 @@ import traceback
 from speech_enh_env import  SpeechEnhancementAgent, GaussianStrategy
 import torch
 import wandb
+import copy
 from torch.distributions import Normal
 
 import torch.multiprocessing as mp
@@ -575,7 +576,7 @@ class PPO:
         
         states = torch.stack(states)
         enhanced = states[1:, ...].reshape(-1, ch, t, f)
-        states = states[:-1, ...].reshape(-1, ch, t, f).detach()
+        states = states[:-1, ...].reshape(-1, ch, t, f).clone().detach()
         clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
         
         actions = (([a[0][0] for a in actions], 
@@ -678,7 +679,7 @@ class PPO:
                     pg_loss = torch.tensor(0.0).to(self.gpu_id)
                     self.warm_up -= 1
 
-                clip_loss = pg_loss  + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)
+                clip_loss = pg_loss + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)
                 
                 print(f"clip_loss:{clip_loss.item()} pg_loss:{pg_loss}")
                 wandb.log({

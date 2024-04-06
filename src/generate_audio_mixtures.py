@@ -13,6 +13,7 @@ import torchaudio
 import torchaudio.functional as F
 from tqdm import tqdm
 import soundfile as sf
+import itertools
 #from ray.experimental import tqdm_ray
 
 torch.manual_seed(123)
@@ -106,6 +107,7 @@ class MixturesDataset:
         for i in tqdm(range(n_size)):
             self.generate_k_samples(cidxs[i], n_noise_samples)
 
+"""
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
     for file in os.listdir(mixture_dir):
@@ -133,7 +135,31 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
                 sorted_file_ids = [i[0] for i in sorted_ranks]
                 line = " ".join(sorted_file_ids)
                 f.write(f"{line}\n")
+"""
 
+def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
+    mos = []
+    with open(mos_file, 'r') as f:
+        lines = f.readlines()
+        for line in lines[1:]:
+            file_name, mos_score, _, _, _, _, _ = line.split(',')
+            #mos[file_name] = float(mos_score)
+            mos.append((file_name, float(mos_score)))
+            
+
+    mos = sorted(mos, key=lambda x:x[1], reverse=True)
+
+    if set == 'train':
+        n = 45000
+    if set == 'test':
+        n = 1000
+    with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:
+        for i in range(n):
+            ranks = itertools.combinations(mos, 5)
+            sorted_file_ids = [i[0] for i in ranks]
+            line = " ".join(sorted_file_ids)
+            f.write(f"{line}\n")
+        
 
 if __name__ == "__main__":
 

@@ -534,7 +534,7 @@ class PPO:
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
                 else:
                     r_t = self.env.get_PESQ_reward(state)
-                print(f"R:{r_t.reshape(-1)} }")
+                print(f"R:{r_t.reshape(-1)}")
                 r_ts.append(r_t)
                 #if self.beta > 0:
                 #    r_t = torch.max(r_t - self.beta * kl_penalty, 0)

@@ -38,7 +38,7 @@ def args():
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
-    parser.add_argument("-pt", "--ckpt", type=str, required=True, default=None,
+    parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved checkpoint to fine-tune.")
     parser.add_argument("--reward_pt", type=str, required=False, default=None,
                         help="path to the reward model checkpoint.")

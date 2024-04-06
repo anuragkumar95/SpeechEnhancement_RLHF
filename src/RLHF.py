@@ -671,6 +671,10 @@ class PPO:
                 mb_clean = clean[mb_indx, ...]
                 supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean()
 
+                if self.warm_up > 0:
+                    pg_loss = 0
+                    self.warm_up -= 1
+
                 clip_loss = pg_loss  + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)
                 
                 print(f"clip_loss:{clip_loss.item()} pg_loss:{pg_loss}")

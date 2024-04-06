@@ -700,7 +700,7 @@ class PPO:
                 #optimizer.zero_grad()
                 a_optim.zero_grad()
                 c_optim.zero_grad()
-                clip_loss.backward(retain_graph=True)
+                clip_loss.backward()
                 v_loss.backward()
                 #Update network
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):

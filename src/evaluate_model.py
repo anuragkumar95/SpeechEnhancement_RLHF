@@ -127,6 +127,8 @@ class EvalModel:
         self.args = args
 
     def evaluate(self, dataset):
+
+        mse_loss = 0
         
         with torch.no_grad():
             for i, batch in enumerate(dataset):
@@ -146,6 +148,15 @@ class EvalModel:
                     next_state = self.env.get_next_state(state=curr, 
                                                         action=action)
                     curr = next_state['noisy']
+
+                    mb_enhanced = next_state['noisy']
+                    mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+                
+                    mb_clean = clean
+                    mb_clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
+
+                    supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+                    mse_loss += supervised_loss
                 
                     for mode in self.modes:
                         save_path = f"{self.save_path}/{step}/{mode}"
@@ -213,6 +224,9 @@ class EvalModel:
                             with open(os.path.join(save_path, f"reward_{i}.pickle"), 'wb') as f:
                                 pickle.dump(rewards, f)
                             print(f"reward_{i}.pickle saved in {save_path}")
+        
+        mse_loss = mse_loss / (len(dataset) * self.args.n_steps)
+        print(f"Overall MSE:{mse_loss}")
 
     def evaluate_reward_model(self, dataset):
         save_path = f"{self.save_path}/rewards"

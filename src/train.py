@@ -44,7 +44,7 @@ parser.add_argument("--data_dir", type=str, required=True,
                     help="dir of VCTK+DEMAND dataset")
 parser.add_argument("--save_model_dir", type=str, required=True,
                     help="dir of saved model")
-parser.add_argument("--loss_weights", nargs='+', type=float, default=[0.3, 0.7, 0.01, 1],
+parser.add_argument("--loss_weights", nargs='+', type=float, default=[0.3, 0.7, 1, 0.01],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
 args = parser.parse_args()
 logging.basicConfig(level=logging.INFO)
@@ -152,7 +152,7 @@ class Trainer:
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
 
-        est_real, est_imag, kld_loss = self.model(noisy_spec)
+        est_real, est_imag = self.model(noisy_spec)
         
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
@@ -168,7 +168,6 @@ class Trainer:
         )
 
         return {
-            "kld_loss": kld_loss,
             "est_real": est_real,
             "est_imag": est_imag,
             "est_mag": est_mag,
@@ -261,17 +260,14 @@ class Trainer:
             torch.abs(generator_outputs["est_audio"] - generator_outputs["clean"])
         )
 
-        kld_loss = generator_outputs.get("kld_loss", 0)
-
         loss = (
-            args.loss_weights[0] * loss_ri
-            + args.loss_weights[1] * loss_mag
-            + args.loss_weights[2] * time_loss
-            + args.loss_weights[3] * gen_loss_GAN
-            + 0.0001 * kld_loss
+            args.loss_weights[0] * loss_ri #0.3
+            + args.loss_weights[1] * loss_mag #0.7
+            + args.loss_weights[2] * time_loss #1
+            + args.loss_weights[3] * gen_loss_GAN #0.01
         )
         
-        return loss, kld_loss
+        return loss
 
     def calculate_discriminator_loss(self, generator_outputs):
 

@@ -520,8 +520,6 @@ class PPO:
                 state['cl_audio'] = cl_aud
                 if self.init_model is not None:
                     state['exp_est_audio'] = exp_state['est_audio']
-                #if not self.rlhf:
-                #    state['clean'] = clean
 
                 #Calculate kl_penalty
                 ref_log_prob = None
@@ -576,7 +574,6 @@ class PPO:
             b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states)
-            #enhanced = states[1:, ...].reshape(-1, ch, t, f)
             states = states[:-1, ...].reshape(-1, ch, t, f)
             clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
             

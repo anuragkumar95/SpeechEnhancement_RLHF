@@ -284,7 +284,7 @@ class EvalModel:
 
             assert len(est_audio) == length, f"est:{len(est_audio)}, inp:{length}"
             saved_path = os.path.join(saved_dir_step, name)
-            print(f"Saving in {saved_path}...")
+            #print(f"Saving in {saved_path}...")
             sf.write(saved_path, est_audio, sr)
 
         

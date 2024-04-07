@@ -154,7 +154,7 @@ class EvalModel:
                 
                     mb_clean = clean
                     mb_clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
-
+                    print(f'clean:{mb_clean.shape}, enh:{mb_enhanced.shape}')
                     supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
                     mse_loss += supervised_loss
                 

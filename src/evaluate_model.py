@@ -149,7 +149,7 @@ class EvalModel:
                                                         action=action)
                     curr = next_state['noisy']
 
-                    mb_enhanced = next_state['noisy']
+                    mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
                     mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                 
                     mb_clean = clean

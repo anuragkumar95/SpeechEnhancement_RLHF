@@ -311,7 +311,7 @@ class Trainer:
         generator_outputs["one_labels"] = one_labels
         generator_outputs["clean"] = clean
 
-        loss, kld_loss = self.calculate_generator_loss(generator_outputs)
+        loss = self.calculate_generator_loss(generator_outputs)
         #print(f'Check Loss:{loss.sum()}, {torch.isnan(loss).any()}, {torch.isinf(loss).any()}')
         if torch.isnan(loss).any() or torch.isinf(loss).any():
             return None, None
@@ -337,7 +337,6 @@ class Trainer:
 
         wandb.log({
             'step_gen_loss':loss,
-            'step_gen_kld_loss': kld_loss / self.ACCUM_GRAD,
             'step_disc_loss':discrim_loss_metric,
             'step_train_pesq':original_pesq(pesq)
         })

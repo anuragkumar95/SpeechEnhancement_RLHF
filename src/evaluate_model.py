@@ -268,7 +268,7 @@ class EvalModel:
             )
             noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
             
-            est_real, est_imag, _ = self.actor(noisy_spec)
+            est_real, est_imag = self.actor(noisy_spec)
             est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
 
             est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)

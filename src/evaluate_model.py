@@ -1,4 +1,4 @@
-from model.actor import TSCNet
+from model.actor import TSCNet, TSCNetSmall
 from model.reward_model import RewardModel
 from model.critic import QNet
 #from model.cmgan import TSCNet
@@ -42,7 +42,8 @@ def args():
                         help="Output directory for results. Will create one if doesn't exist")
     parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved checkpoint to evaluate.")
-    parser.add_argument("--pre", action="store_true")
+    parser.add_argument("--pre", action="store_true", help='If loading pretrained CMGAN.')
+    parser.add_argument("--small", action="store_true", help='If loading small CMGAN')
     parser.add_argument("-rpt", "--reward_pt", type=str, required=False, default=None,
                         help="Path to saved rewardmodel checkpoint to evaluate.")
     parser.add_argument("--audio_dir", type=str, required=False, default=None,
@@ -71,10 +72,16 @@ class EvalModel:
         self.n_fft = 400
         self.hop = 100
         
-        self.actor = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1,
-                            distribution="Normal", 
-                            gpu_id=gpu_id)
+        if args.small:
+            self.actor = TSCNetSmall(num_channel=64, 
+                                    num_features=self.n_fft // 2 + 1,
+                                    distribution="Normal", 
+                                    gpu_id=gpu_id)
+        else:
+            self.actor = TSCNet(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution="Normal", 
+                                gpu_id=gpu_id)
         
         self.critic = None
         self.reward_model = None

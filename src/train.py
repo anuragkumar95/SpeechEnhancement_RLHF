@@ -44,7 +44,7 @@ parser.add_argument("--data_dir", type=str, required=True,
                     help="dir of VCTK+DEMAND dataset")
 parser.add_argument("--save_model_dir", type=str, required=True,
                     help="dir of saved model")
-parser.add_argument("--loss_weights", nargs='+', type=float, default=[0.3, 0.7, 1, 0.01],
+parser.add_argument("--loss_weights", nargs='+', type=float, default=[0.3, 0.7, 0.01, 1],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
 args = parser.parse_args()
 logging.basicConfig(level=logging.INFO)

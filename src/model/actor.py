@@ -143,7 +143,10 @@ class MaskDecoder(nn.Module):
         self.dist = distribution
 
     def sample(self, mu, logvar, x=None):
-        sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
+        if self.dist == 'Normal':
+            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
+        elif self.dist is None:
+            sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -156,19 +159,21 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
-        if self.dist is not None:
+        if self.dist == 'Normal':
             x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
             x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
             x_out = self.prelu_out(x)
-            return (x, x_out), x_logprob, x_entropy, params
             
-        else:
-            x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-            return self.prelu_out(x)
+        elif self.dist is None:
+            x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
+            x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+            x_out = self.prelu_out(x)
+            #return self.prelu_out(x)
+        return (x, x_out), x_logprob, x_entropy, params
 
 class ComplexDecoder(nn.Module):
-    def __init__(self, num_channel=64, distribution=None, gpu_id=None, K=None):
+    def __init__(self, num_channel=64, distribution=None, gpu_id=None):
         super(ComplexDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
@@ -177,18 +182,16 @@ class ComplexDecoder(nn.Module):
         if distribution=='Normal':
             self.conv_mu = nn.Conv2d(num_channel, 2, (1, 2))
             self.conv_var = nn.Conv2d(num_channel, 2, (1, 2))
-        if distribution=='Categorical':
-            if K is None:
-                raise ValueError("K cannot be None for Categorical distribution. Pass K >=1")
-            self.conv_1 = nn.Conv2d(num_channel, K, (1, 2))
-            self.conv_2 = nn.Conv2d(num_channel, K, (1, 2))
         if distribution is None:
             self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.out_dist = distribution
         self.gpu_id = gpu_id
        
     def sample(self, mu, logvar, x=None):
-        sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
+        if self.out_dist == 'Normal':
+            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
+        elif self.out_dist is None:
+            sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -205,31 +208,13 @@ class ComplexDecoder(nn.Module):
             x_mu = self.conv_mu(x)
             x_var = self.conv_var(x)
             x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
-            return x, x_logprob, x_entropy, params
-        
-        if self.out_dist == "Categorical":
-            #Limit the value of the output to be between 1, -1
-            x = F.tanh(x)
-            x_1 = self.conv_1(x).permute(0, 2, 3, 1)
-            x_2 = self.conv_2(x).permute(0, 2, 3, 1)
-
-            x_1_logits = F.sigmoid(x_1).unsqueeze(1)
-            x_2_logits = F.sigmoid(x_2).unsqueeze(1) 
-            
-            x_logits = torch.cat([x_1_logits, x_2_logits], dim=1)
-            dist = Categorical(logits=x_logits)
-            if action is None:
-                x_out = dist.sample()
-            else:
-                x_out = action
-            x_logprob = dist.log_prob(x_out)
-            x_entropy = dist.entropy()
-
-            return x_out, x_logprob, x_entropy
+            #return x, x_logprob, x_entropy, params
         
         if self.out_dist is None:
-            x = self.conv(x)
-            return x
+            x_mu = self.conv(x)
+            x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+            
+        return x, x_logprob, x_entropy, params
         
 class TSCNetSmall(nn.Module):
     def __init__(self, num_channel=64, num_features=201, distribution=None, K=None, gpu_id=None):
@@ -238,22 +223,14 @@ class TSCNetSmall(nn.Module):
 
         self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
         
-        m_dist = None
-        c_dist = None
-        if distribution is not None:
-            m_dist = "Normal"
-            c_dist = distribution
         self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, distribution=m_dist, gpu_id=gpu_id
+            num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=c_dist, gpu_id=gpu_id, K=K)
-        if c_dist == "Categorical":
-            #create categorical mask bins
-            self.categorical_comp_mask = torch.linspace(1.0, -1.0, K).to(gpu_id)
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id)
         self.dist = distribution
 
     def get_action(self, x):
-        b, ch, t, f = x.size()
+        #b, ch, t, f = x.size()
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         x_in = torch.cat([mag, x], dim=1)
@@ -261,21 +238,14 @@ class TSCNetSmall(nn.Module):
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
 
-        if self.dist=='Normal':
-            mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
-            complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
-            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
-
-        if self.dist == 'Categorical':
-            mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
-            complex_out_indices, c_logprob, c_entropy = self.complex_decoder(out_2)
-            complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
-            complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
-            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
+        #if self.dist=='Normal':
+        mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
+        complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
+        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
         
-        mask = self.mask_decoder(out_2)
-        complex_out = self.complex_decoder(out_2)
-        return (mask, complex_out), None, None
+        #mask = self.mask_decoder(out_2)
+        #complex_out = self.complex_decoder(out_2)
+        #return (mask, complex_out), None, None
     
     def get_action_prob(self, x, action=None):
         """
@@ -298,7 +268,6 @@ class TSCNetSmall(nn.Module):
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         
-        #return (m_logprob, c_logprob), (m_dist.entropy(), c_dist.entropy())
         
     def get_embedding(self, x):
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
@@ -323,20 +292,13 @@ class TSCNetSmall(nn.Module):
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
 
-        if self.dist == "Normal":
-            (_, mask), _, _, m_params = self.mask_decoder(out_2)
-            complex_out, _, _, c_params = self.complex_decoder(out_2)
+        #if self.dist == "Normal":
+        (_, mask), _, _, m_params = self.mask_decoder(out_2)
+        complex_out, _, _, c_params = self.complex_decoder(out_2)
         
-        if self.dist == "Categorical":
-            (_, mask), _, _, _ = self.mask_decoder(out_2)            
-            complex_out_indices, _, _ = self.complex_decoder(out_2)
-            
-            complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
-            complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
-        
-        if self.dist == "None":
-            mask = self.mask_decoder(out_2)
-            complex_out = self.complex_decoder(out_2)
+        #if self.dist == "None":
+        #    mask = self.mask_decoder(out_2)
+        #    complex_out = self.complex_decoder(out_2)
         
         mask = mask.permute(0, 2, 1).unsqueeze(1)
         out_mag = mask * mag
@@ -357,18 +319,11 @@ class TSCNet(nn.Module):
         self.TSCB_2 = TSCB(num_channel=num_channel, nheads=4)
         self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
         self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
-        m_dist = None
-        c_dist = None
-        if distribution is not None:
-            m_dist = "Normal"
-            c_dist = distribution
+        
         self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, distribution=m_dist, gpu_id=gpu_id
+            num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=c_dist, gpu_id=gpu_id, K=K)
-        if c_dist == "Categorical":
-            #create categorical mask bins
-            self.categorical_comp_mask = torch.linspace(1.0, -1.0, K).to(gpu_id)
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, K=K)
         self.dist = distribution
 
     def get_action(self, x):
@@ -383,21 +338,15 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        if self.dist=='Normal':
-            mask, m_logprob, m_entropy, params = self.mask_decoder(out_5)
-            complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_5)
-            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
+        #if self.dist=='Normal':
+        mask, m_logprob, m_entropy, params = self.mask_decoder(out_5)
+        complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_5)
+        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
 
-        if self.dist == 'Categorical':
-            mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
-            complex_out_indices, c_logprob, c_entropy = self.complex_decoder(out_2)
-            complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
-            complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
-            return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
         
-        mask = self.mask_decoder(out_5)
-        complex_out = self.complex_decoder(out_5)
-        return (mask, complex_out), None, None
+        #mask = self.mask_decoder(out_5)
+        #complex_out = self.complex_decoder(out_5)
+        #return (mask, complex_out), None, None
     
     def get_action_prob(self, x, action=None):
         """
@@ -417,7 +366,7 @@ class TSCNet(nn.Module):
         out_3 = self.TSCB_2(out_2)
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
-
+        
         _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0][0])
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])
 
@@ -439,7 +388,7 @@ class TSCNet(nn.Module):
         return out_5
 
     def forward(self, x):
-        b, ch, t, f = x.size() 
+        #b, ch, t, f = x.size() 
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         noisy_phase = torch.angle(
@@ -454,20 +403,13 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        if self.dist == "Normal":
-            (_, mask), _, _, m_params = self.mask_decoder(out_5)
-            complex_out, _, _, c_params = self.complex_decoder(out_5)
+        #if self.dist == "Normal":
+        (_, mask), _, _, m_params = self.mask_decoder(out_5)
+        complex_out, _, _, c_params = self.complex_decoder(out_5)
         
-        if self.dist == "Categorical":
-            (_, mask), _, _, _ = self.mask_decoder(out_2)            
-            complex_out_indices, _, _ = self.complex_decoder(out_2)
-            
-            complex_mask = self.categorical_comp_mask.repeat(b, ch, t, f, 1)
-            complex_out = torch.gather(complex_mask, -1, complex_out_indices.unsqueeze(-1)).squeeze(-1)
-        
-        if self.dist == "None":
-            mask = self.mask_decoder(out_5)
-            complex_out = self.complex_decoder(out_5)
+        #if self.dist == "None":
+        #    mask = self.mask_decoder(out_5)
+        #    complex_out = self.complex_decoder(out_5)
         
         mask = mask.permute(0, 2, 1).unsqueeze(1)
         out_mag = mask * mag

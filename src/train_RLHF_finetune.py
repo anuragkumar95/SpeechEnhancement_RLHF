@@ -127,9 +127,10 @@ class Trainer:
             cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             try:
                 self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
-            except Exception as e:
+                self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+            except KeyError as e:
                 self.actor.load_state_dict(cmgan_expert_checkpoint)
-            self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+                self.expert.load_state_dict(cmgan_expert_checkpoint)
             #Set expert to eval and freeze all layers.
             self.expert = freeze_layers(self.expert, 'all')
             #self.expert.eval()

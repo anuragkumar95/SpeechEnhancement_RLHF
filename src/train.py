@@ -1,4 +1,4 @@
-from model.actor import TSCNet
+from model.actor import TSCNet, TSCNetSmall
 from model.critic import Discriminator
 import os
 from data import dataset as dataloader
@@ -27,7 +27,8 @@ parser.add_argument("--suffix", type=str, default='', help='Experiment suffix na
 
 parser.add_argument("-pt", "--ckpt", type=str, required=False, default=None,
                         help="Path to saved cmgan checkpoint for resuming training.")
-
+parser.add_argument("--small", action='store_true', required=False, 
+                    help="set this flag to train small cmgan.")
 parser.add_argument("--mag_only", action='store_true', required=False, 
                     help="set this flag to train using magnitude only.")
 parser.add_argument("--pretrain_init", action='store_true', required=False, 
@@ -62,7 +63,7 @@ def ddp_setup(rank, world_size):
 
 
 class Trainer:
-    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, K=None, resume_pt=None):
+    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, K=None, small=False, resume_pt=None):
         
         self.n_fft = 400
         self.hop = 100
@@ -70,12 +71,18 @@ class Trainer:
         self.test_ds = test_ds
         self.ACCUM_GRAD = accum_grad
         
-        
-        self.model = TSCNet(num_channel=64, 
+        if small:
+            self.model = TSCNetSmall(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
                             distribution="Normal",
                             K=K,
                             gpu_id=gpu_id)
+        else:
+            self.model = TSCNet(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1, 
+                                distribution="Normal",
+                                K=K,
+                                gpu_id=gpu_id)
         self.batchsize = batchsize
         
         self.log_wandb = log_wandb
@@ -461,6 +468,7 @@ def main(rank: int, world_size: int, args):
                       parallel=args.parallel, 
                       gpu_id=rank,
                       K=args.K, 
+                      small=args.small,
                       accum_grad=args.accum_grad, 
                       resume_pt=args.ckpt,
                       log_wandb=args.wandb)

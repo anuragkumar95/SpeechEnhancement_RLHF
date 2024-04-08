@@ -3,7 +3,7 @@
 @author: Anurag Kumar
 """
 
-from model.actor import TSCNet
+from model.actor import TSCNet, TSCNetSmall
 from model.critic import QNet
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
@@ -54,6 +54,8 @@ def args():
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--out_dist", action='store_true',
                         help="If GAN learns a distribution.")
+    parser.add_argument("--small", action='store_true',
+                        help="Finetuning small GAN model.")
     parser.add_argument("--train_phase", action='store_true',
                         help="Phase is also finetuned using RL.")
     parser.add_argument("--suffix", type=str, required=False, default='',
@@ -101,11 +103,20 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.ACCUM_GRAD = args.accum_grad
+        dist = None
 
-        self.actor = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1,
-                            distribution="Normal", 
-                            gpu_id=gpu_id)
+        if args.out_dist:
+            dist = 'Normal'
+        if args.small:
+            self.actor = TSCNetSmall(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution=dist, 
+                                gpu_id=gpu_id)
+        else:
+            self.actor = TSCNet(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution=dist, 
+                                gpu_id=gpu_id)
         
         self.expert = None
         if args.ckpt is not None:
@@ -114,7 +125,10 @@ class Trainer:
                             distribution="Normal", 
                             gpu_id=gpu_id)
             cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
-            self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+            try:
+                self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
+            except Exception as e:
+                self.actor.load_state_dict(cmgan_expert_checkpoint)
             self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
             #Set expert to eval and freeze all layers.
             self.expert = freeze_layers(self.expert, 'all')

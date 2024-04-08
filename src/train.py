@@ -36,7 +36,7 @@ parser.add_argument("--wandb", action='store_true', required=False,
                     help="set this flag to log using wandb.")
 parser.add_argument("--log_interval", type=int, default=500)
 parser.add_argument("--accum_grad", type=int, default=4)
-parser.add_argument("--decay_epoch", type=int, default=30, help="epoch from which to start lr decay")
+parser.add_argument("--decay_epoch", type=int, default=12, help="epoch from which to start lr decay")
 parser.add_argument("--init_lr", type=float, default=5e-4, help="initial learning rate")
 parser.add_argument("--cut_len", type=int, default=16000*2, help="cut length, default is 2 seconds in denoise "
                                                                  "and dereverberation")

@@ -217,7 +217,7 @@ class ComplexDecoder(nn.Module):
         return x, x_logprob, x_entropy, params
         
 class TSCNetSmall(nn.Module):
-    def __init__(self, num_channel=64, num_features=201, distribution=None, K=None, gpu_id=None):
+    def __init__(self, num_channel=64, num_features=201, distribution=None, gpu_id=None):
         super(TSCNetSmall, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
@@ -311,7 +311,7 @@ class TSCNetSmall(nn.Module):
         
 
 class TSCNet(nn.Module):
-    def __init__(self, num_channel=64, num_features=201, distribution=None, K=None, gpu_id=None):
+    def __init__(self, num_channel=64, num_features=201, distribution=None, gpu_id=None):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
@@ -323,7 +323,7 @@ class TSCNet(nn.Module):
         self.mask_decoder = MaskDecoder(
             num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id
         )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, K=K)
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id)
         self.dist = distribution
 
     def get_action(self, x):

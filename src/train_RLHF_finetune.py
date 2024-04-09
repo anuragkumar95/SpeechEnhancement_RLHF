@@ -120,10 +120,16 @@ class Trainer:
         
         self.expert = None
         if args.ckpt is not None:
-            self.expert = TSCNet(num_channel=64, 
-                            num_features=self.n_fft // 2 + 1,
-                            distribution="Normal", 
-                            gpu_id=gpu_id)
+            if args.small:
+                self.expert = TSCNetSmall(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution=dist, 
+                                gpu_id=gpu_id)
+            else:
+                self.expert = TSCNet(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution=dist, 
+                                gpu_id=gpu_id)
             cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             try:
                 self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 

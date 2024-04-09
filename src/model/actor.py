@@ -182,7 +182,7 @@ class ComplexDecoder(nn.Module):
         if distribution=='Normal':
             self.conv_mu = nn.Conv2d(num_channel, 2, (1, 2))
             self.conv_var = nn.Conv2d(num_channel, 2, (1, 2))
-        if distribution is None:
+        else:
             self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.out_dist = distribution
         self.gpu_id = gpu_id

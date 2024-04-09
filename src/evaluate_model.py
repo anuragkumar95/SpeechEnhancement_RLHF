@@ -325,7 +325,7 @@ class EvalModel:
             for audio in tqdm(os.listdir(src_dir)):
                 noisy_path = os.path.join(src_dir, audio)
                 try:
-                    self.enhance_one_track(noisy_path, save_path, 16000 * 10)
+                    self.enhance_one_track(noisy_path, save_path, 16000 * 16)
                 except:
                     import traceback
                     print(traceback.format_exc())

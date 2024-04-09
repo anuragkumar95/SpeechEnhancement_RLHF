@@ -146,7 +146,7 @@ class MaskDecoder(nn.Module):
         if self.dist == 'Normal':
             sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
         elif self.dist is None:
-            sigma = torch.ones(mu.shape).to(self.gpu_id) 
+            sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()

@@ -2,7 +2,7 @@ import numpy as np
 from model.actor import TSCNet 
 from natsort import natsorted
 import os
-from tools.compute_metrics import compute_metrics
+from compute_metrics import compute_metrics
 from utils import *
 import torchaudio
 import soundfile as sf
@@ -68,8 +68,8 @@ def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre):
     if pre:
 	    model.load_state_dict(torch.load(model_path))
     else:
-	    model.load_state_dict(torch.load(model_path)['actor_state_dict'])
-        
+	    model.load_state_dict(torch.load(model_path)['actor_state_dict']) 
+    
     model.eval()
 
     if not os.path.exists(saved_dir):

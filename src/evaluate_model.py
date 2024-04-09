@@ -44,6 +44,7 @@ def args():
                         help="Path to saved checkpoint to evaluate.")
     parser.add_argument("--pre", action="store_true", help='If loading pretrained CMGAN.')
     parser.add_argument("--small", action="store_true", help='If loading small CMGAN')
+    parser.add_argument("--out_dist", action="store_true", help='If CMGAN predicts a dist')
     parser.add_argument("-rpt", "--reward_pt", type=str, required=False, default=None,
                         help="Path to saved rewardmodel checkpoint to evaluate.")
     parser.add_argument("--audio_dir", type=str, required=False, default=None,
@@ -71,16 +72,20 @@ class EvalModel:
         self.modes = modes
         self.n_fft = 400
         self.hop = 100
+
+        dist = None
+        if args.out_dist:
+            dist = 'Normal'
         
         if args.small:
             self.actor = TSCNetSmall(num_channel=64, 
                                     num_features=self.n_fft // 2 + 1,
-                                    distribution="Normal", 
+                                    distribution=dist, 
                                     gpu_id=gpu_id)
         else:
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1,
-                                distribution="Normal", 
+                                distribution=dist, 
                                 gpu_id=gpu_id)
         
         self.critic = None

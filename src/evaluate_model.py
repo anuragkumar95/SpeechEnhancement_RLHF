@@ -90,7 +90,10 @@ class EvalModel:
             self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
             checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
             if pre:
-                self.actor.load_state_dict(checkpoint['generator_state_dict'])
+                try:
+                    self.actor.load_state_dict(checkpoint['generator_state_dict'])
+                except KeyError as e:
+                    self.actor.load_state_dict(checkpoint)
             else:
                 self.actor.load_state_dict(checkpoint['actor_state_dict'])
                 if args.save_scores:

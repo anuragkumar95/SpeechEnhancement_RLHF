@@ -64,12 +64,12 @@ def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, sm
     if small:
         model = TSCNetSmall(num_channel=64, 
                             num_features=n_fft // 2 + 1, 
-                            dist=None,
+                            distribution=None,
                             gpu_id=0).cuda()
     else:
         model = TSCNet(num_channel=64, 
                         num_features=n_fft // 2 + 1, 
-                        dist=None,
+                        distribution=None,
                         gpu_id=0).cuda()
     
     if pre:

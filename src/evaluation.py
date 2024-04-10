@@ -59,17 +59,21 @@ def enhance_one_track(
     return est_audio, length
 
 
-def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, small):
+def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, small, dist):
     n_fft = 400
+    if not dist:
+        dist = None
+    else:
+        dist = 'Normal'
     if small:
         model = TSCNetSmall(num_channel=64, 
                             num_features=n_fft // 2 + 1, 
-                            distribution=None,
+                            distribution=dist,
                             gpu_id=0).cuda()
     else:
         model = TSCNet(num_channel=64, 
                         num_features=n_fft // 2 + 1, 
-                        distribution=None,
+                        distribution=dist,
                         gpu_id=0).cuda()
     
     if pre:
@@ -134,4 +138,4 @@ args = parser.parse_args()
 if __name__ == "__main__":
     noisy_dir = os.path.join(args.test_dir, "noisy")
     clean_dir = os.path.join(args.test_dir, "clean")
-    evaluation(args.model_path, noisy_dir, clean_dir, args.save_tracks, args.save_dir, args.pre, args.small)
+    evaluation(args.model_path, noisy_dir, clean_dir, args.save_tracks, args.save_dir, args.pre, args.small, args.out_dist)

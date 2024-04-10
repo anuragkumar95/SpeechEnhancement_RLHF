@@ -96,7 +96,7 @@ def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, sm
         noisy_path = os.path.join(noisy_dir, audio)
         clean_path = os.path.join(clean_dir, audio)
         est_audio, length = enhance_one_track(
-            model, noisy_path, saved_dir, 16000 * 16, n_fft, n_fft // 4, save_tracks
+            model, noisy_path, saved_dir, 16000 * 10, n_fft, n_fft // 4, save_tracks
         )
         clean_audio, sr = sf.read(clean_path)
         assert sr == 16000

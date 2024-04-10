@@ -1,5 +1,5 @@
 import numpy as np
-from model.actor import TSCNet 
+from model.actor import TSCNet, TSCNetSmall 
 from natsort import natsorted
 import os
 from compute_metrics import compute_metrics
@@ -59,18 +59,26 @@ def enhance_one_track(
     return est_audio, length
 
 
-def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre):
+def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, small):
     n_fft = 400
-    model = TSCNet(num_channel=64, 
-                   num_features=n_fft // 2 + 1, 
-                   dist=None,
-                   gpu_id=0).cuda()
-    if pre:
-	    model.load_state_dict(torch.load(model_path))
+    if small:
+        model = TSCNetSmall(num_channel=64, 
+                            num_features=n_fft // 2 + 1, 
+                            dist=None,
+                            gpu_id=0).cuda()
     else:
-	    model.load_state_dict(torch.load(model_path)['actor_state_dict']) 
+        model = TSCNet(num_channel=64, 
+                        num_features=n_fft // 2 + 1, 
+                        dist=None,
+                        gpu_id=0).cuda()
     
-    model.eval()
+    if pre:
+        try:
+            model.load_state_dict(torch.load(model_path)['generator_state_dict'])
+        except KeyError as e:
+            model.load_state_dict(torch.load(model_path))
+    else:
+        model.load_state_dict(torch.load(model_path)['actor_state_dict'])
 
     if not os.path.exists(saved_dir):
         os.mkdir(saved_dir)

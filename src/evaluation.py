@@ -93,19 +93,22 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
     print(f"Parsed {num} audios in {noisy_dir}...")
     metrics_total = np.zeros(6)
     for audio in tqdm(audio_list):
-        noisy_path = os.path.join(noisy_dir, audio)
-        clean_path = os.path.join(clean_dir, audio)
-        #est_audio, length = enhance_one_track(
-        #    model, noisy_path, saved_dir, 16000 * 10, n_fft, n_fft // 4, save_tracks
-        #)
-        est_audio, length = enhance_one_track(
-            model, noisy_path, saved_dir, cutlen, n_fft, n_fft // 4, save_tracks
-        )
-        clean_audio, sr = sf.read(clean_path)
-        assert sr == 16000
-        metrics = compute_metrics(clean_audio, est_audio, sr, 0)
-        metrics = np.array(metrics)
-        metrics_total += metrics
+        try:
+            noisy_path = os.path.join(noisy_dir, audio)
+            clean_path = os.path.join(clean_dir, audio)
+            #est_audio, length = enhance_one_track(
+            #    model, noisy_path, saved_dir, 16000 * 10, n_fft, n_fft // 4, save_tracks
+            #)
+            est_audio, length = enhance_one_track(
+                model, noisy_path, saved_dir, cutlen, n_fft, n_fft // 4, save_tracks
+            )
+            clean_audio, sr = sf.read(clean_path)
+            assert sr == 16000
+            metrics = compute_metrics(clean_audio, est_audio, sr, 0)
+            metrics = np.array(metrics)
+            metrics_total += metrics
+        except Exception as e:
+            continue
 
     metrics_avg = metrics_total / num
     print(

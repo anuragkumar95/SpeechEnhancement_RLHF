@@ -59,7 +59,7 @@ def enhance_one_track(
     return est_audio, length
 
 
-def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, small, dist):
+def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir, pre, small, dist):
     n_fft = 400
     if not dist:
         dist = None
@@ -95,8 +95,11 @@ def evaluation(model_path, noisy_dir, clean_dir, save_tracks, saved_dir, pre, sm
     for audio in tqdm(audio_list):
         noisy_path = os.path.join(noisy_dir, audio)
         clean_path = os.path.join(clean_dir, audio)
+        #est_audio, length = enhance_one_track(
+        #    model, noisy_path, saved_dir, 16000 * 10, n_fft, n_fft // 4, save_tracks
+        #)
         est_audio, length = enhance_one_track(
-            model, noisy_path, saved_dir, 16000 * 10, n_fft, n_fft // 4, save_tracks
+            model, noisy_path, saved_dir, cutlen, n_fft, n_fft // 4, save_tracks
         )
         clean_audio, sr = sf.read(clean_path)
         assert sr == 16000
@@ -130,6 +133,7 @@ parser.add_argument("--save_tracks", type=str, default=True, help="save predicte
 parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output nomral dist.")
 parser.add_argument("--pre", action='store_true', help="toggle to test pretrained models")
 parser.add_argument("--small", action='store_true', help="toggle to test small cmgan models")
+parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")
 parser.add_argument("--save_dir", type=str, default='./saved_tracks_best', help="where enhanced tracks to be saved")
 
 args = parser.parse_args()

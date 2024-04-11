@@ -302,7 +302,6 @@ class PPO:
         a_optim, c_optim = optimizer
         
         #Calculate target values and advantages
-        #with torch.no_grad():
         curr = noisy
         rewards = []
         r_ts = []

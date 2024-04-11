@@ -142,4 +142,4 @@ args = parser.parse_args()
 if __name__ == "__main__":
     noisy_dir = os.path.join(args.test_dir, "noisy")
     clean_dir = os.path.join(args.test_dir, "clean")
-    evaluation(args.model_path, noisy_dir, clean_dir, args.save_tracks, args.save_dir, args.pre, args.small, args.out_dist)
+    evaluation(args.model_path, noisy_dir, clean_dir, args.cutlen, args.save_tracks, args.save_dir, args.pre, args.small, args.out_dist)

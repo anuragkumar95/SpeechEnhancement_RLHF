@@ -295,7 +295,7 @@ class PPO:
     def unroll_policy(self, actor, critic):
         #Set models to eval
         actor = actor.eval()
-        actor.set_evaluation(True)
+        actor.set_evaluation(False)
         critic = critic.eval()
 
         rewards = []
@@ -440,7 +440,7 @@ class PPO:
         actor.set_evaluation(False)
         if self.warm_up > 0:
             actor = actor.train()
-            
+
         a_optim, c_optim = optimizers
         
         step_clip_loss = 0

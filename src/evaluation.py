@@ -69,12 +69,14 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
         model = TSCNetSmall(num_channel=64, 
                             num_features=n_fft // 2 + 1, 
                             distribution=dist,
-                            gpu_id=0).cuda()
+                            gpu_id=0,
+                            eval=True).cuda()
     else:
         model = TSCNet(num_channel=64, 
                         num_features=n_fft // 2 + 1, 
                         distribution=dist,
-                        gpu_id=0).cuda()
+                        gpu_id=0, 
+                        eval=True).cuda()
     
     if pre:
         try:

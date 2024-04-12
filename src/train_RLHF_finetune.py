@@ -254,6 +254,7 @@ class Trainer:
         #Run validation
         self.actor.eval()
         if self.args.method == 'PPO':
+            self.actor.eval = True
             self.critic.eval()
         pesq = 0
         v_step = 0
@@ -284,6 +285,7 @@ class Trainer:
         
         self.actor.train()
         if self.args.method == 'PPO':
+            self.actor.eval = False
             self.critic.train()
         
         return pesq

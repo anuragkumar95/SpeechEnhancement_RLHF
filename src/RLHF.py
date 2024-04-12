@@ -303,7 +303,7 @@ class PPO:
         logprobs = []
         actions = []
 
-        ep_kl_penalty = torch.tensor(0.0)
+        ep_kl_penalty = torch.tensor(0.0).to(self.gpu_id)
         
         with torch.no_grad():
             for _ in range(self.episode_len):

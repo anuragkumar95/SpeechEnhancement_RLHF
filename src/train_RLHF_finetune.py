@@ -421,8 +421,8 @@ class Trainer:
             self.save(epoch, epoch_pesq)
 
     def save(self, epoch, pesq, episode=None):
-        if step is None:
-            step = len(self.train_ds)            
+        if episode is None:
+            episode = len(self.train_ds)            
         if self.gpu_id == 0:
             checkpoint_prefix = f"{self.args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{episode}.pt"
             path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)

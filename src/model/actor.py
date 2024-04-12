@@ -335,6 +335,10 @@ class TSCNet(nn.Module):
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, eval=eval)
         self.dist = distribution
 
+    def set_evaluation(self, bool):
+        self.mask_decoder.evaluation = bool
+        self.complex_decoder.evaluation = bool
+
     def get_action(self, x):
         b, ch, t, f = x.size()
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)

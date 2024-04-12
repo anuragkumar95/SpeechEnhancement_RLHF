@@ -302,6 +302,8 @@ class PPO:
         states = []
         logprobs = []
         actions = []
+
+        ep_kl_penalty = torch.tensor(0.0)
         
         with torch.no_grad():
             for _ in range(self.episode_len):

@@ -325,6 +325,10 @@ class PPO:
                 bs, ch, t, f = clean.shape
 
                 action, log_probs, _, _ = actor.get_action(noisy)
+
+                action_prob, _ = actor.get_action_prob(noisy, action)
+
+                print(f"action: 1: {log_probs.mean(), 2:{action_prob.mean()}}")
                 
                 if self.init_model is not None:
                     init_action, _, _, _ = self.init_model.get_action(noisy)

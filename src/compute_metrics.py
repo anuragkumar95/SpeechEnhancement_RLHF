@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+from torchmetrics.functional.audio import scale_invariant_signal_distortion_ratio
 from scipy.io import wavfile
 from scipy.linalg import toeplitz, norm
 from scipy.fftpack import fft
@@ -73,8 +75,19 @@ def compute_metrics(cleanFile, enhancedFile, Fs, path):
     COVL = min(5, COVL)  # limit values to [1, 5]
 
     STOI = stoi(data1, data2, sampling_rate1)
+    SISDR = si_sdr(data1, data2)
 
-    return pesq_mos, CSIG, CBAK, COVL, segSNR, STOI
+    return pesq_mos, CSIG, CBAK, COVL, segSNR, STOI, SISDR
+
+
+def si_sdr(clean, processed_speech):
+
+    processed_speech = torch.from_numpy(processed_speech)
+    clean = torch.from_numpy(clean)
+
+    sisdr = scale_invariant_signal_distortion_ratio(processed_speech, clean)
+    sisdr = sisdr.cpu().numpy()
+    return sisdr
 
 
 def wss(clean_speech, processed_speech, sample_rate):

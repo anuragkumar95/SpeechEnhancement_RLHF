@@ -129,6 +129,8 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
         metrics_avg[4],
         "stoi: ",
         metrics_avg[5],
+        "si-sdr: ",
+        metrics_avg[6],
     )
 
 

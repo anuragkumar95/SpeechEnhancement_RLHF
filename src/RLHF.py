@@ -295,7 +295,7 @@ class PPO:
     def unroll_policy(self, actor, critic):
         #Set models to eval
         actor = actor.eval()
-        actor.set_evaluation(False)
+        actor.set_evaluation(True)
         critic = critic.eval()
 
         rewards = []
@@ -325,7 +325,7 @@ class PPO:
                 bs, ch, t, f = clean.shape
 
                 action, log_probs, _, _ = actor.get_action(noisy)
-                
+
                 if self.init_model is not None:
                     init_action, _, _, _ = self.init_model.get_action(noisy)
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)

@@ -169,6 +169,7 @@ class MaskDecoder(nn.Module):
         elif self.dist is None:
             x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+            print(f"Mask decoder eval:{self.evaluation}")
             if self.eval:
                 x_out = self.prelu_out(params[0])
             else:
@@ -217,7 +218,8 @@ class ComplexDecoder(nn.Module):
         if self.out_dist is None:
             x_mu = self.conv(x)
             x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
-            if self.eval:
+            print(f"Complex decoder eval:{self.evaluation}")
+            if self.evaluation:
                 x = params[0]
         return x, x_logprob, x_entropy, params
         

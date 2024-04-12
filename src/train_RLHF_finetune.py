@@ -398,10 +398,10 @@ class Trainer:
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
 
-                        if i+1 % run_validation_step == 0:
-                            #Run alidation after each episode
-                            pesq = self.run_validation(epoch, i)
-                            self.save(epoch, original_pesq(pesq), i+1)
+                        #if i+1 % run_validation_step == 0:
+                        #Run alidation after each episode
+                        pesq = self.run_validation(epoch, i)
+                        self.save(epoch, original_pesq(pesq), i+1)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

@@ -51,7 +51,7 @@ def enhance_one_track(
     )
     est_audio = est_audio / c
     est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
-    #assert len(est_audio) == length, f"est_audio:{len(est_audio)} ref_audio:{length}"
+    assert len(est_audio) == length, f"est_audio:{len(est_audio)} ref_audio:{length}"
     if save_tracks:
         saved_path = os.path.join(saved_dir, name)
         sf.write(saved_path, est_audio, sr)
@@ -108,6 +108,8 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
             metrics = np.array(metrics)
             metrics_total += metrics
         except Exception as e:
+            import traceback
+            
             continue
 
     metrics_avg = metrics_total / num

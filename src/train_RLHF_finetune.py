@@ -134,18 +134,15 @@ class Trainer:
             cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             try:
                 self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
-                if args.method == 'reinforce':
-                    self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
-                    #Set expert to eval and freeze all layers.
-                    self.expert = freeze_layers(self.expert, 'all')
+                self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+              
             except KeyError as e:
                 self.actor.load_state_dict(cmgan_expert_checkpoint)
-                if args.method == 'reinforce':
-                    self.expert.load_state_dict(cmgan_expert_checkpoint)
-                    #Set expert to eval and freeze all layers.
-                    self.expert = freeze_layers(self.expert, 'all')
+                self.expert.load_state_dict(cmgan_expert_checkpoint)
+           
+            #Set expert to eval and freeze all layers.
+            self.expert = freeze_layers(self.expert, 'all')
             
-            #self.expert.eval()
             del cmgan_expert_checkpoint 
             print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         
@@ -191,7 +188,9 @@ class Trainer:
         if args.method == 'PPO':
             self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
             self.critic = self.critic.to(gpu_id)
-            #params = list(self.actor.parameters()) + list(self.critic.parameters())
+
+            #Initialize critic 
+           
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
             )

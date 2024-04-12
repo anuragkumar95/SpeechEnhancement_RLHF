@@ -296,8 +296,6 @@ class PPO:
         #Set models to eval
         actor = actor.eval()
         critic = critic.eval()
-        if self.init_model is not None:
-            self.init_model = self.init_model.eval()
 
         a_optim, c_optim = optimizer
         

@@ -419,7 +419,7 @@ class PPO:
         states = policy['states']
         clean = policy['clean']
         b_target = policy['b_targets']
-        actions = policy['action']
+        actions = policy['actions']
         logprobs = policy['log_probs']
         advantages, b_advantages = policy['b_advantages']
         target_values = policy['target_values']

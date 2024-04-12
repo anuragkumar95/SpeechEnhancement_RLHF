@@ -555,8 +555,8 @@ class PPO:
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \
-               (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty, r_ts.sum(-1).mean()), \
-               advantages.sum(-1).mean()  
+               (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean()), \
+               advantages.mean()  
 
 
     def run_n_step_episode(self, batch, actor, critic, optimizer, n_epochs=3):

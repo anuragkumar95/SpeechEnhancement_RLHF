@@ -295,7 +295,7 @@ class PPO:
     def unroll_policy(self, actor, critic):
         #Set models to eval
         actor = actor.eval()
-        actor.set_evaluation(False)
+        actor.set_evaluation(True)
         critic = critic.eval()
 
         rewards = []

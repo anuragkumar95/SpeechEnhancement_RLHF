@@ -302,6 +302,7 @@ class PPO:
         states = []
         logprobs = []
         actions = []
+        cleans = []
 
         ep_kl_penalty = 0
         
@@ -361,6 +362,7 @@ class PPO:
                 
                 #Store trajectory
                 states.append(noisy)
+                cleans.append(clean)
                 rewards.append(r_t)
 
                 actions.append(action)
@@ -377,8 +379,9 @@ class PPO:
             b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states).reshape(-1, ch, t, f)
+            cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             #states = states[:-1, ...].reshape(-1, ch, t, f)
-            clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
+            #clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
             
             actions = (([a[0][0] for a in actions], 
                         [a[0][1] for a in actions]), 
@@ -393,7 +396,7 @@ class PPO:
             ep_kl_penalty = ep_kl_penalty / self.episode_len
 
         print(f"STATES        :{states.shape}")
-        print(f"CLEAN         :{clean.shape}")
+        print(f"CLEAN         :{cleans.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
         print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
@@ -402,7 +405,7 @@ class PPO:
 
         policy_out = {
             'states':states,
-            'clean':clean, 
+            'clean':cleans, 
             'b_targets':b_target,
             'actions':actions,
             'log_probs':logprobs,
@@ -481,7 +484,6 @@ class PPO:
 
                 #Normalize advantages across minibatch
                 mb_adv = b_advantages[mb_indx, ...]
-                print(f"mb_adv:{mb_adv.shape, b_advantages.shape}")
                 if self.bs > 1:
                     mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 

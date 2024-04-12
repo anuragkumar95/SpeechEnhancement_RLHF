@@ -377,7 +377,7 @@ class Trainer:
         for i in range(100):
             if self.args.method == 'PPO':
                 try:
-                    loss, batch_reward, adv = self.trainer.run_episode(self.train_ds, self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
+                    loss, batch_reward, adv = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
                         
                     if loss is not None:
                         wandb.log({

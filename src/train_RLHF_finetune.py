@@ -120,17 +120,16 @@ class Trainer:
         
         self.expert = None
         if args.ckpt is not None:
-            if args.method == 'reinforce':
-                if args.small:
-                    self.expert = TSCNetSmall(num_channel=64, 
-                                    num_features=self.n_fft // 2 + 1,
-                                    distribution=dist, 
-                                    gpu_id=gpu_id)
-                else:
-                    self.expert = TSCNet(num_channel=64, 
-                                    num_features=self.n_fft // 2 + 1,
-                                    distribution=dist, 
-                                    gpu_id=gpu_id)
+            if args.small:
+                self.expert = TSCNetSmall(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution=dist, 
+                                gpu_id=gpu_id)
+            else:
+                self.expert = TSCNet(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                distribution=dist, 
+                                gpu_id=gpu_id)
             cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             try:
                 self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
@@ -198,7 +197,8 @@ class Trainer:
                 filter(lambda layer:layer.requires_grad, self.critic.parameters()), lr=1e-05
             )
 
-            self.trainer = PPO(init_model=self.expert, 
+            self.trainer = PPO(loader=self.train_ds,
+                               init_model=self.expert, 
                                reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
                                beta=args.beta,
@@ -280,7 +280,7 @@ class Trainer:
             "episode": step, 
             "val_pesq":original_pesq(pesq),
         }) 
-        print(f"Epoch:{epoch} | Step:{step} | VAL_PESQ:{original_pesq(pesq)}")
+        print(f"Epoch:{epoch} | Episode:{step} | VAL_PESQ:{original_pesq(pesq)}")
         
         self.actor.train()
         if self.args.method == 'PPO':
@@ -288,7 +288,7 @@ class Trainer:
         
         return pesq
     
-
+    """
     def train_one_epoch(self, epoch):
 
         num_batches = len(self.train_ds)
@@ -355,6 +355,61 @@ class Trainer:
                 REWARDS.append(batch_reward[0].item())
 
         return REWARDS, original_pesq(pesq)
+    """
+
+    def train_one_epoch(self, epoch):
+
+        num_batches = len(self.train_ds)
+        
+        pesq = self.run_validation(epoch, (epoch-1) * num_batches)
+        pesq=0
+        #Run training
+        self.actor.train()
+        if self.args.method == 'PPO':
+            self.critic.train()
+        REWARDS = []
+        
+        epochs_per_episode = self.args.ep_per_episode
+        
+        run_validation_step = 1000 // (epochs_per_episode * self.args.episode_steps)
+        print(f"Run validation at every step:{run_validation_step}")
+        
+        for i in range(100):
+            if self.args.method == 'PPO':
+                try:
+                    loss, batch_reward, adv = self.trainer.run_episode(self.train_ds, self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
+                        
+                    if loss is not None:
+                        wandb.log({
+                            "episode": (i+1) + ((epoch - 1) * num_batches),
+                            "episode_avg_kl":batch_reward[2].item(),
+                            "cumulative_G_t": batch_reward[0].item(),
+                            "critic_values": batch_reward[1].item(), 
+                            "episodic_avg_r": batch_reward[3].item(),
+                            "advantages":adv,
+                            "clip_loss":loss[0],
+                            "value_loss":loss[1],
+                            "pretrain_loss":loss[4],
+                            "pg_loss":loss[3],
+                            "entropy_loss":loss[2]
+                        })
+
+                        print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
+
+                        #Run alidation after each episode
+                        pesq = self.run_validation(epoch, i)
+                        self.save(epoch, original_pesq(pesq), i+1)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    continue
+                
+            if loss is not None:
+                self.G = batch_reward[0].item() + self.G
+                REWARDS.append(batch_reward[0].item())
+
+        return REWARDS, original_pesq(pesq)
+
+
 
     def train(self):
         """
@@ -365,11 +420,11 @@ class Trainer:
             ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
             self.save(epoch, epoch_pesq)
 
-    def save(self, epoch, pesq, step=None):
+    def save(self, epoch, pesq, episode=None):
         if step is None:
             step = len(self.train_ds)            
         if self.gpu_id == 0:
-            checkpoint_prefix = f"{self.args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{step}.pt"
+            checkpoint_prefix = f"{self.args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{episode}.pt"
             path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
             if self.args.method == 'reinforce':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 

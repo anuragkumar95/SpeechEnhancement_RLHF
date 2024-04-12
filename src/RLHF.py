@@ -376,8 +376,8 @@ class PPO:
             advantages = self.get_advantages(target_values, states, critic)
             b_advantages = advantages.reshape(-1)
             
-            states = torch.stack(states)
-            states = states[:-1, ...].reshape(-1, ch, t, f)
+            states = torch.stack(states).reshape(-1, ch, t, f)
+            #states = states[:-1, ...].reshape(-1, ch, t, f)
             clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
             
             actions = (([a[0][0] for a in actions], 
@@ -421,7 +421,7 @@ class PPO:
         b_target = policy['b_targets']
         actions = policy['actions']
         logprobs = policy['log_probs']
-        advantages, b_advantages = policy['b_advantages']
+        b_advantages, advantages = policy['b_advantages']
         target_values = policy['target_values']
         ep_kl_penalty = policy['ep_kl']
         r_ts, _ = policy['r_ts']

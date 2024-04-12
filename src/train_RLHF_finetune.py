@@ -373,7 +373,7 @@ class Trainer:
         
         epochs_per_episode = self.args.ep_per_episode
         
-        run_validation_step = 1000 // (epochs_per_episode * self.args.episode_steps)
+        run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
         
         for i in range(100):
@@ -398,9 +398,10 @@ class Trainer:
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
 
-                        #Run alidation after each episode
-                        pesq = self.run_validation(epoch, i)
-                        self.save(epoch, original_pesq(pesq), i+1)
+                        if i+1 % run_validation_step == 0:
+                            #Run alidation after each episode
+                            pesq = self.run_validation(epoch, i)
+                            self.save(epoch, original_pesq(pesq), i+1)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

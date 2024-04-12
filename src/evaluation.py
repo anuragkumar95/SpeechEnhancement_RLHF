@@ -109,7 +109,7 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
             metrics_total += metrics
         except Exception as e:
             import traceback
-            
+            print(traceback.format_exc())
             continue
 
     metrics_avg = metrics_total / num

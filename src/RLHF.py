@@ -295,6 +295,7 @@ class PPO:
     def unroll_policy(self, actor, critic):
         #Set models to eval
         actor = actor.eval()
+        actor.set_evaluation(True)
         critic = critic.eval()
 
         rewards = []
@@ -434,10 +435,12 @@ class PPO:
         #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
         #acting differently in train and eval mode. PPO seems to be stable only when actor
         #is still in eval mode
+        critic = critic.train()
+        actor = actor.eval()
+        actor.set_evaluation(False)
         if self.warm_up > 0:
             actor = actor.train()
-        critic = critic.train()
-
+            
         a_optim, c_optim = optimizers
         
         step_clip_loss = 0

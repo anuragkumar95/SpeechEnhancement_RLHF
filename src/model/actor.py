@@ -141,7 +141,7 @@ class MaskDecoder(nn.Module):
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
         self.gpu_id = gpu_id
         self.dist = distribution
-        self.eval = eval
+        self.evaluation = eval
 
     def sample(self, mu, logvar, x=None):
         if self.dist == 'Normal':
@@ -189,7 +189,7 @@ class ComplexDecoder(nn.Module):
             self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.out_dist = distribution
         self.gpu_id = gpu_id
-        self.eval = eval
+        self.evaluation = eval
        
     def sample(self, mu, logvar, x=None):
         if self.out_dist == 'Normal':
@@ -233,6 +233,10 @@ class TSCNetSmall(nn.Module):
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, eval=eval)
         self.dist = distribution
+
+    def set_evaluation(self, bool):
+        self.mask_decoder.evaluation = bool
+        self.complex_decoder.evaluation = bool
 
     def get_action(self, x):
         #b, ch, t, f = x.size()

@@ -480,7 +480,8 @@ class PPO:
                 print(f"Ratio:{ratio}")
 
                 #Normalize advantages across minibatch
-                mb_adv = b_advantages[mb_indx]
+                mb_adv = b_advantages[mb_indx, ...]
+                print(f"mb_adv:{mb_adv.shape, b_advantages.shape}")
                 if self.bs > 1:
                     mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 

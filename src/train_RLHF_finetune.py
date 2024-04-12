@@ -381,7 +381,7 @@ class Trainer:
                         
                     if loss is not None:
                         wandb.log({
-                            "episode": (i+1) + ((epoch - 1) * num_batches),
+                            "episode": (i+1) + ((epoch - 1) * 100),
                             "episode_avg_kl":batch_reward[2].item(),
                             "cumulative_G_t": batch_reward[0].item(),
                             "critic_values": batch_reward[1].item(), 

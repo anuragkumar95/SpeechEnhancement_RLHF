@@ -376,7 +376,7 @@ class Trainer:
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
         
-        for i in range(100):
+        for i in range(50):
             if self.args.method == 'PPO':
                 try:
                     loss, batch_reward, adv = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)

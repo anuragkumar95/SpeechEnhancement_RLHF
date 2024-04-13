@@ -202,7 +202,7 @@ class Trainer:
                                reward_model=self.reward_model, 
                                gpu_id=gpu_id, 
                                beta=args.beta,
-                               eps=0.1,
+                               eps=0.02,
                                val_coef=1.0,
                                en_coef=0,
                                lmbda=args.lmbda, 

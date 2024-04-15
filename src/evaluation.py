@@ -142,7 +142,7 @@ parser.add_argument("--model_path", type=str, default='./best_ckpt/ckpt_80',
 parser.add_argument("--test_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
                     help="noisy tracks dir to be enhanced")
 parser.add_argument("--save_tracks", type=str, default=True, help="save predicted tracks or not")
-parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output nomral dist.")
+parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output normal dist.")
 parser.add_argument("--pre", action='store_true', help="toggle to test pretrained models")
 parser.add_argument("--small", action='store_true', help="toggle to test small cmgan models")
 parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")

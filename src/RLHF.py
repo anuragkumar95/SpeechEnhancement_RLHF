@@ -335,6 +335,7 @@ class PPO:
         
                 state = self.env.get_next_state(state=noisy, action=action)
                 state['cl_audio'] = cl_aud
+                state['clean'] = clean
                 if self.init_model is not None:
                     state['exp_est_audio'] = exp_state['est_audio']
 
@@ -357,9 +358,11 @@ class PPO:
 
                 #Store reward
                 if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), scale=self.scale_rewards)  
+                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                                                   scale=self.scale_rewards)  + \
+                          self.env.get_angle_reward(state)
                 else:
-                    r_t = self.env.get_PESQ_reward(state)
+                    r_t = self.env.get_PESQ_reward(state) + self.env.get_angle_reward(state)
                 
                 print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
                 r_ts.append(r_t)

@@ -14,6 +14,7 @@ from torch.distributions import Normal
 #import gym
 #from gym import Env, spaces
 
+PI = 3.14
 
 class SpeechEnhancementAgent:
     def __init__(self, n_fft, hop, args, reward_model=None, buffer_size=None, gpu_id=None):
@@ -136,17 +137,23 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
 
-        mse_reward=0
-        if 'clean' in next_state:
-            noisy_spec = next_state['noisy']
-            clean_spec = next_state['clean']
-            if noisy_spec.shape != clean_spec.shape:
-                clean_spec = clean_spec.permute(0, 1, 3, 2)
-            mse = (clean_spec - noisy_spec)**2
-            mse_reward = -mse.mean().detach()
-
-        return pesq_reward + mse_reward
+        return pesq_reward 
     
+    def phi(self, imag, real):
+        return torch.atan2(imag, real)
+    
+    def faw(self, t):
+        return torch.abs(t - 2*PI * torch.round(t/2*PI))
+
+    def get_angle_reward(self, state):
+        enhanced = state['noisy']
+        clean = state['clean']
+
+        p_clean = self.phi(clean[:, 0, :, :], clean[:, 1, :, :])
+        p_enhanced = self.phi(enhanced[:, 0, :, :], enhanced[:, 1, :, :])
+
+        angle_loss = self.faw(torch.abs(p_clean - p_enhanced)).mean()
+        return -angle_loss   
 
 class replay_buffer:
     def __init__(self, max_size, gpu_id=None):

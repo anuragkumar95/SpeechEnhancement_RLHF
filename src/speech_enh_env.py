@@ -91,7 +91,7 @@ class SpeechEnhancementAgent:
         next_state['est_audio'] = est_audio
 
         return next_state
-    
+    '''
     def get_RLHF_reward(self, inp, out):
         """
         ARGS:
@@ -102,8 +102,8 @@ class SpeechEnhancementAgent:
             Reward in the range (0, 1) for next state with reference to curr state.
         """
         return self.reward_model.get_reward(out) - self.reward_model.get_reward(inp) 
-    
-    def get_RLHF_reward(self, state):
+    '''
+    def get_RLHF_reward(self, state, scale=False):
         """
         ARGS:
             state : spectrogram of curr state (b * ch * t * f) 
@@ -113,15 +113,15 @@ class SpeechEnhancementAgent:
         """
         
         reward = self.reward_model.get_reward(state)
-        return reward
+        if scale:
+            reward = reward * 0.1
+        return reward 
     
     def get_PESQ_reward(self, next_state):
         """
         Calculate the reward of the current state.
         Reward is defined as the tanh of relative difference between 
         PESQ scores of the noisy and the current enhanced signal.
-
-        R(t) = tanh(z'-z), this is bounded to be in the range(-1, 1).
         """
         length = next_state["est_audio"].size(-1)
         est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())

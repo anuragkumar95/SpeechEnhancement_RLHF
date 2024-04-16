@@ -216,6 +216,7 @@ class PPO:
                  lmbda=0,  
                  discount=1.0, 
                  accum_grad=1,
+                 scale_rewards=False, 
                  warm_up_steps=1000, 
                  **params):
         
@@ -239,6 +240,7 @@ class PPO:
         self.dist = params['env_params'].get("args").out_dist
         self.train_phase = params['train_phase']
         self.t = 0
+        self.scale_reards = scale_rewards
         self.warm_up = warm_up_steps
         self.init_model = None
         if init_model is not None:
@@ -355,7 +357,7 @@ class PPO:
 
                 #Store reward
                 if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
+                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), scale=self.scale_rewards)  
                 else:
                     r_t = self.env.get_PESQ_reward(state)
                 

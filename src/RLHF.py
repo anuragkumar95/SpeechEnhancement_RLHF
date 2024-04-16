@@ -354,7 +354,11 @@ class PPO:
                     kl_penalty = None
 
                 #Store reward
-                r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
+                if self.rlhf:
+                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
+                else:
+                    r_t = self.env.get_PESQ_reward(state)
+                
                 print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
                 r_ts.append(r_t)
 

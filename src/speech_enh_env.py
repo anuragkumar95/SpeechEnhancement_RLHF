@@ -125,22 +125,16 @@ class SpeechEnhancementAgent:
         """
         length = next_state["est_audio"].size(-1)
         est_audio_list = list(next_state["est_audio"].detach().cpu().numpy())
-        #exp_est_audio_list = list(next_state["exp_est_audio"].detach().cpu().numpy())
         clean_audio_list = list(next_state["cl_audio"].cpu().numpy()[:, :length])
         
 
         z_mask, z = batch_pesq(clean_audio_list,
                             est_audio_list)
         
-        #z_mask_e, z_e = batch_pesq(clean_audio_list,
-        #                    exp_est_audio_list)
-        
         pesq_reward = (z_mask * z)
-        #exp_pesq_reward = (z_mask_e * z_e)
 
         if self.gpu_id is not None:
             pesq_reward = pesq_reward.to(self.gpu_id)
-            #exp_pesq_reward = exp_pesq_reward.to(self.gpu_id)
 
         mse_reward=0
         if 'clean' in next_state:
@@ -152,7 +146,6 @@ class SpeechEnhancementAgent:
             mse_reward = -mse.mean().detach()
 
         return pesq_reward + mse_reward
-        #return pesq_reward - exp_pesq_reward
     
 
 class replay_buffer:

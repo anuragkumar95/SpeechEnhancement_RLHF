@@ -58,6 +58,8 @@ def args():
                         help="Finetuning small GAN model.")
     parser.add_argument("--train_phase", action='store_true',
                         help="Phase is also finetuned using RL.")
+    parser.add_argument("--scale_reward", action='store_true',
+                        help="Scale rewards by a factor of 0.1.")
     parser.add_argument("--suffix", type=str, required=False, default='',
                         help="Save path suffix")
     parser.add_argument("--method", type=str, default='reinforce', required=False,
@@ -208,6 +210,7 @@ class Trainer:
                                lmbda=args.lmbda, 
                                discount=0.99,
                                warm_up_steps=0,
+                               scale_rewards=args.scale_reward,
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,

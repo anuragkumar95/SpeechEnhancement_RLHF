@@ -240,7 +240,7 @@ class PPO:
         self.dist = params['env_params'].get("args").out_dist
         self.train_phase = params['train_phase']
         self.t = 0
-        self.scale_reards = scale_rewards
+        self.scale_rewards = scale_rewards
         self.warm_up = warm_up_steps
         self.init_model = None
         if init_model is not None:

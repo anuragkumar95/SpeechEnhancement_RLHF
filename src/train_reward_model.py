@@ -156,9 +156,9 @@ class Trainer:
         batch_acc = 0
     
         for i, batch in enumerate(train_ds):   
-            pos, neg, labels, _ = batch
+            pos, neg, ref, labels, _ = batch
             batch = (pos, neg, labels)
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            batch = preprocess_batch(batch, ref=ref, gpu_id=self.gpu_id)
             try:  
                 loss, acc = self.forward_step(batch)
             except Exception as e:

@@ -28,10 +28,11 @@ class RewardModel(nn.Module):
         ref_proj = F.sigmoid(self.reward_projection(x_ref))
 
 
-        score = F.sigmoid(pos_proj - neg_proj) + F.sigmoid(pos_proj - ref_proj) + F.sigmoid(neg_proj - ref_proj)
+        score_proj = F.sigmoid(pos_proj - neg_proj) 
+        score = score_proj + F.sigmoid(pos_proj - ref_proj) + F.sigmoid(neg_proj - ref_proj)
         loss = -torch.log(score + self.eps).mean()
    
-        return loss, score, None
+        return loss, score_proj, None
     
     def get_reward(self, inp):
         """

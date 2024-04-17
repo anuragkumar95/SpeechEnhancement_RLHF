@@ -177,7 +177,7 @@ def original_pesq(pesq):
     return (pesq * 3.5) + 1
 
 
-def get_specs(clean, noisy, gpu_id, n_fft, hop):
+def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None):
     """
     Create spectrograms from input waveform.
     ARGS:
@@ -219,9 +219,23 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop):
 
     noisy_spec = power_compress(noisy_spec)#.permute(0, 1, 3, 2)
     clean_spec = power_compress(clean_spec)
+    
+    if ref is not None:
+        ref = torch.transpose(ref, 0, 1)
+        ref = torch.transpose(ref * c, 0, 1)
+
+        ref_spec = torch.stft(
+            ref,
+            n_fft,
+            hop,
+            window=win,
+            onesided=True,
+        )
+        ref_spec = power_compress(ref_spec)
+        return clean, clean_spec, noisy_spec, ref_spec
     return clean, clean_spec, noisy_spec
 
-def preprocess_batch(batch, gpu_id=None):
+def preprocess_batch(batch, ref=None, gpu_id=None):
     """
     Converts a batch of audio waveforms and returns a batch of
     spectrograms.
@@ -237,7 +251,9 @@ def preprocess_batch(batch, gpu_id=None):
         clean = clean.to(gpu_id)
         noisy = noisy.to(gpu_id)
 
-    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
+    if ref is not None:
+        clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, ref=ref)
+        return (clean, clean_spec, noisy_spec, ref_spec, labels)
     
+    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
     return (clean, clean_spec, noisy_spec, labels)
-

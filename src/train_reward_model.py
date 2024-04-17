@@ -98,7 +98,6 @@ class Trainer:
     def forward_step(self, batch):
         _, x_1, x_2, ref, labels = batch
 
-        
         if self.gpu_id is not None:
             labels = labels.to(self.gpu_id)
         
@@ -190,7 +189,7 @@ class Trainer:
                 })
                 print(f"Epoch:{epoch} | Step:{i+1} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
 
-                if val_loss < best_val_loss or best_val_acc < val_acc:
+                if val_loss < best_val_loss or best_val_acc > val_acc:
                     if val_loss < best_val_loss:
                         best_val_loss = val_loss
 

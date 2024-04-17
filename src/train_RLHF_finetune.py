@@ -232,7 +232,7 @@ class Trainer:
         spectrograms.
         """
         #print("Running validation...")
-        clean_aud, _, noisy, _ = batch
+        clean_aud, clean, noisy, _ = batch
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
@@ -248,10 +248,21 @@ class Trainer:
         #Apply action  to get the next state
         next_state = env.get_next_state(state=inp, 
                                         action=a_t)
+        
+        #Supervised loss
+        #mb_act, _, _, _ = actor.get_action(mb_states)
+        #mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
+        
+        mb_enhanced = next_state['noisy']
+        mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+        
+        mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+
+        supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
 
         pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
                                      next_state['est_audio'].detach().cpu().numpy())
-        return (pesq*pesq_mask).sum()
+        return (pesq*pesq_mask).sum(), supervised_loss
     
     def run_validation(self, epoch, step):
         #Run validation
@@ -261,6 +272,7 @@ class Trainer:
             self.critic.eval()
         pesq = 0
         v_step = 0
+        loss = 0
         with torch.no_grad():
             for i, batch in enumerate(self.test_ds):
                 
@@ -269,20 +281,23 @@ class Trainer:
                 
                 #Run validation episode
                 try:
-                    val_pesq_score = self.run_validation_step(self.trainer.env, batch)
+                    val_pesq_score, val_loss = self.run_validation_step(self.trainer.env, batch)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
 
                 pesq += val_pesq_score
+                loss += val_loss
                 v_step += 1
                 print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
         pesq = pesq / (v_step * self.args.batchsize)
+        loss = loss / v_step
 
         wandb.log({ 
             "epoch":epoch-1,
             "episode": step, 
             "val_pesq":original_pesq(pesq),
+            "val_pretrain_loss":loss
         }) 
         print(f"Epoch:{epoch} | Episode:{step} | VAL_PESQ:{original_pesq(pesq)}")
         

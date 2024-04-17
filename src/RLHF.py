@@ -370,7 +370,7 @@ class PPO:
                 angle_rewards.append(ang_reward)
 
                 if self.beta > 0:
-                    r_t = torch.max(r_t - self.beta * kl_penalty, 0)
+                    r_t = r_t - self.beta * kl_penalty
                 
                 #Store trajectory
                 states.append(noisy)

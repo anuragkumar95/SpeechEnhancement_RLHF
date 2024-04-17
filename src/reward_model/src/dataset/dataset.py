@@ -283,17 +283,22 @@ class HumanAlignedDataset(Dataset):
             lines = f.readlines()
             for line in tqdm(lines):
                 files = line.strip().split(' ')
-
+                FILES=[]
                 #Put them all in a single list
-                files = [(i, os.path.join(self.mixture_dir, file), os.path.join(self.noisy_dir, file)) for i, file in enumerate(line.split(' '))]
+                for i, file in enumerate(files):
+                    if "enh" not in file:
+                        _id_ = file.split('-')[0]
+                    else:
+                        _id_ = file[len("enh_"):]
+
+                    val = (i, os.path.join(self.mixture_dir, file), os.path.join(self.noisy_dir, _id_))
+                    FILES.append(val)
 
                 #Find all possible combination of pairs from the ranking list
                 #Since files is sorted, generated pairs will always have preferred 
                 #rank indexed 1st within the pair
-                pairs = itertools.combinations(files, 2)
-
+                pairs = itertools.combinations(FILES, 2)
                 PAIRS.extend(pairs)
-
         return PAIRS
     
     def __len__(self):

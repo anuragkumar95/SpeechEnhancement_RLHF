@@ -288,7 +288,8 @@ class HumanAlignedDataset(Dataset):
                 for i, file in enumerate(files):
                     if "enh" not in file:
                         _id_ = file.split('-')[0]
-                        _id_ = f"{_id_}.wav"
+                        if not _id_.endswith(".wav"):
+                            _id_ = f"{_id_}.wav"
                     else:
                         _id_ = file[len("enh_"):]
 

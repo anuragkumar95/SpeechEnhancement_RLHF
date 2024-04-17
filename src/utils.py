@@ -252,6 +252,7 @@ def preprocess_batch(batch, ref=None, gpu_id=None):
         noisy = noisy.to(gpu_id)
 
     if ref is not None:
+        ref = ref.to(gpu_id)
         clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, ref=ref)
         return (clean, clean_spec, noisy_spec, ref_spec, labels)
     

@@ -29,8 +29,10 @@ class RewardModel(nn.Module):
 
 
         score_proj = F.sigmoid(pos_proj - neg_proj) 
-        score = score_proj + F.sigmoid(pos_proj - ref_proj) + F.sigmoid(neg_proj - ref_proj)
-        loss = -torch.log(score + self.eps).mean()
+        score_pos = F.sigmoid(pos_proj - ref_proj)
+        score_neg = F.sigmoid(neg_proj - ref_proj)
+
+        loss = - (torch.log(score_proj + self.eps) + torch.log(score_pos + self.eps) + torch.log(score_neg + self.eps))
    
         return loss, score_proj, None
     

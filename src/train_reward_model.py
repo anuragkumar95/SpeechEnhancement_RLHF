@@ -36,6 +36,8 @@ def ARGS():
                         help="Root directory to audio mixtures.")
     parser.add_argument("-rank", "--rank_dir", type=str, required=False,
                         help="Root directory to rank files.")
+    parser.add_argument("-vr", "--vctk_root", type=str, required=False,
+                        help="Root directory to voicebank dataset.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")
     parser.add_argument("-o", "--output", type=str, required=True,
@@ -125,8 +127,8 @@ class Trainer:
             for i, batch in enumerate(test_ds):
                 
                 pos, neg, ref, labels, _ = batch
-                batch = (pos, neg, ref, labels)
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                batch = (pos, neg, labels)
+                batch = preprocess_batch(batch, ref=ref, gpu_id=self.gpu_id)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)
 
@@ -252,12 +254,14 @@ def main(args):
         trainer = Trainer(args, None)
  
     train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train'),
+                                        noisy_dir=os.path.join(args.vctk_root, 'train', 'noisy'),
                                         rank=os.path.join(args.rank_dir, 'train.ranks'),  
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test'),
-                                      rank=os.path.join(args.rank_dir, 'test.ranks'),  
-                                      cutlen=40000)
+                                       noisy_dir=os.path.join(args.vctk_root, 'test', 'noisy'),
+                                       rank=os.path.join(args.rank_dir, 'test.ranks'),  
+                                       cutlen=40000)
 
     train_dataloader = DataLoader(
         dataset=train_dataset,

@@ -312,7 +312,7 @@ class HumanAlignedDataset(Dataset):
         x_2, sr_2 = torchaudio.load(path_2)
         ref, sr_ref = torchaudio.load(ref)
 
-        assert sr_1 == sr_2
+        assert sr_1 == sr_2 == sr_ref
 
         if x_1.shape[-1] < self.cutlen: 
             pad = torch.zeros(1, self.cutlen - x_1.shape[-1])

@@ -33,7 +33,7 @@ class RewardModel(nn.Module):
    
         return loss, score, None
     
-    def get_reward(self, inp, out):
+    def get_reward(self, inp):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
@@ -42,10 +42,11 @@ class RewardModel(nn.Module):
             Reward in the range (0, 1) for next state with reference to curr state.
         """
         inp = inp.permute(0, 1, 3, 2)
-        out = out.permute(0, 1, 3, 2)
+        #out = out.permute(0, 1, 3, 2)
 
-        x = torch.cat([inp, out], dim=1)
+        #x = torch.cat([inp, out], dim=1)
        
-        proj = self.reward_projection(x)
+        proj_inp = self.reward_projection(inp)
+        #proj_out = self.reward_projection(out)
 
-        return proj
+        return proj_inp

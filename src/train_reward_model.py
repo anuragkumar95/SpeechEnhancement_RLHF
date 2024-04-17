@@ -98,13 +98,10 @@ class Trainer:
     def forward_step(self, batch):
         _, x_1, x_2, ref, labels = batch
 
-        """
+        
         if self.gpu_id is not None:
-            x_1 = x_1.to(self.gpu_id)
-            x_2 = x_2.to(self.gpu_id)
-            ref = ref.to(self.gpu_id)
             labels = labels.to(self.gpu_id)
-        """
+        
         labels = torch.argmax(labels, dim=-1)
         loss, score, probs = self.reward_model(pos=x_1, neg=x_2, ref=ref, labels=labels)
         if probs is None:

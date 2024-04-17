@@ -306,7 +306,7 @@ class PPO:
         logprobs = []
         actions = []
         cleans = []
-
+        angle_rewards = []
         ep_kl_penalty = 0
         
         with torch.no_grad():
@@ -357,15 +357,17 @@ class PPO:
                     kl_penalty = None
 
                 #Store reward
+                ang_reward = 0
                 if self.rlhf:
+                    ang_reward = self.env.get_angle_reward(state)
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=self.scale_rewards)  + \
-                          self.env.get_angle_reward(state)
+                                                   scale=self.scale_rewards) + ang_reward
                 else:
                     r_t = self.env.get_PESQ_reward(state) #+ self.env.get_angle_reward(state)
                 
-                print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
+                print(f"R:{r_t.reshape(-1)} | Angle:{ang_reward} | KL: {kl_penalty}")
                 r_ts.append(r_t)
+                angle_rewards.append(ang_reward)
 
                 if self.beta > 0:
                     r_t = torch.max(r_t - self.beta * kl_penalty, 0)
@@ -382,6 +384,7 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
+            angle_rewards = torch.stack(angle_rewards).reshape(-1)
             
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
@@ -422,7 +425,8 @@ class PPO:
             'b_advantages':(b_advantages, advantages),
             'target_values':target_values,
             'r_ts':(r_ts, rewards),
-            'ep_kl':ep_kl_penalty
+            'ep_kl':ep_kl_penalty,
+            'angle_R':angle_rewards
         }
         
         return policy_out
@@ -438,6 +442,7 @@ class PPO:
         target_values = policy['target_values']
         ep_kl_penalty = policy['ep_kl']
         r_ts, _ = policy['r_ts']
+        ang_rewards = policy['angle_R']
 
         #Start training over the unrolled batch of trajectories
         #Set models to train
@@ -567,7 +572,7 @@ class PPO:
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \
-               (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean()), \
+               (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), ang_rewards.mean()), \
                advantages.mean()  
 
 

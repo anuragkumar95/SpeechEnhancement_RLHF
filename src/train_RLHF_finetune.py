@@ -398,7 +398,8 @@ class Trainer:
                             "value_loss":loss[1],
                             "pretrain_loss":loss[4],
                             "pg_loss":loss[3],
-                            "entropy_loss":loss[2]
+                            "entropy_loss":loss[2],
+                            "angle_reward":batch_reward[4]
                         })
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")

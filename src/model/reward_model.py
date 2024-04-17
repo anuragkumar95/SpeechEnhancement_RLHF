@@ -17,20 +17,23 @@ class RewardModel(nn.Module):
         self.eps = 1e-08
    
         
-    def forward(self, pos, neg, labels):
+    def forward(self, pos, neg, ref, labels):
 
         x_pos = pos.permute(0, 1, 3, 2)
         x_neg = neg.permute(0, 1, 3, 2)
+        x_ref = ref.permute(0, 1, 3, 2)
 
         pos_proj = F.sigmoid(self.reward_projection(x_pos))
         neg_proj = F.sigmoid(self.reward_projection(x_neg))
+        ref_proj = F.sigmoid(self.reward_projection(x_ref))
 
-        score = F.sigmoid(pos_proj - neg_proj)
+
+        score = F.sigmoid(pos_proj - neg_proj) + F.sigmoid(pos_proj - ref_proj) + F.sigmoid(neg_proj - ref_proj)
         loss = -torch.log(score + self.eps).mean()
    
         return loss, score, None
     
-    def get_reward(self, inp):
+    def get_reward(self, inp, out):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
@@ -39,7 +42,10 @@ class RewardModel(nn.Module):
             Reward in the range (0, 1) for next state with reference to curr state.
         """
         inp = inp.permute(0, 1, 3, 2)
+        out = out.permute(0, 1, 3, 2)
+
+        x = torch.cat([inp, out], dim=1)
        
-        proj = self.reward_projection(inp)
+        proj = self.reward_projection(x)
 
         return proj

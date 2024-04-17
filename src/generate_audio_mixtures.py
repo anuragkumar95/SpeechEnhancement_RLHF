@@ -107,7 +107,7 @@ class MixturesDataset:
         for i in tqdm(range(n_size)):
             self.generate_k_samples(cidxs[i], n_noise_samples)
 
-"""
+
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
     for file in os.listdir(mixture_dir):
@@ -159,7 +159,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
             sorted_file_ids = [i[0] for i in ranks]
             line = " ".join(sorted_file_ids)
             f.write(f"{line}\n")
-        
+"""   
 
 if __name__ == "__main__":
 
@@ -169,8 +169,8 @@ if __name__ == "__main__":
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noise_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
-                                snr_low=-10, 
-                                snr_high=20)
+                                snr_low=0, 
+                                snr_high=45)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)
 

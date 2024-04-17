@@ -290,7 +290,8 @@ class HumanAlignedDataset(Dataset):
                         _id_ = file.split('-')[0]
                     else:
                         _id_ = file[len("enh_"):]
-                    _id_ = f"{_id_}.wav"
+                    print(file, _id_)
+                    #_id_ = f"{_id_}.wav"
                     val = (i, os.path.join(self.mixture_dir, file), os.path.join(self.noisy_dir, _id_))
                     FILES.append(val)
 

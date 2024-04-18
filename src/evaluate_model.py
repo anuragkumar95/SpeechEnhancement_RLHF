@@ -211,7 +211,7 @@ class EvalModel:
 
                             pesq = {
                                 'noisy':original_pesq(n_pesq),
-                                'enhanced':original_pesq(e_pesq),
+                                'enhanced':original_pesq(e_pesq)
                             }
 
                             with open(os.path.join(save_path, f"pesq_{i}.pickle"), 'wb') as f:

@@ -232,8 +232,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
             onesided=True,
         )
 
-        clean = clean_audio
-        clean = torch.transpose(clean, 0, 1)
+        clean = torch.transpose(clean_audio, 0, 1)
         clean = torch.transpose(clean * c, 0, 1)
     
     if ref is not None:
@@ -249,6 +248,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
         )
         ref_spec = power_compress(ref_spec)
         return clean, clean_spec, noisy_spec, ref_spec
+    
     return clean, clean_spec, noisy_spec
 
 def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False):

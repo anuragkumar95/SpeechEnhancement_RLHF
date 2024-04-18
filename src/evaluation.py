@@ -8,6 +8,7 @@ import torchaudio
 import soundfile as sf
 import argparse
 from tqdm import tqdm
+import pickle
 
 
 @torch.no_grad()
@@ -94,6 +95,7 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
     audio_list = os.listdir(noisy_dir)
     audio_list = natsorted(audio_list)
     num = len(audio_list)
+    results = {'pesq':[], 'file':[]}
     print(f"Parsed {num} audios in {noisy_dir}...")
     metrics_total = np.zeros(7)
     for audio in tqdm(audio_list):
@@ -112,6 +114,8 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
                 metrics = compute_metrics(clean_audio, est_audio, sr, 0)
                 metrics = np.array(metrics)
                 metrics_total += metrics
+                results['pesq'].append(metrics[0])
+                results['file'].append(audio)
         except Exception as e:
             import traceback
             print(traceback.format_exc())
@@ -134,6 +138,9 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
         "si-sdr: ",
         metrics_avg[6],
     )
+
+    with open(os.path.join(saved_dir, 'results.pickle'), 'wb') as f:
+        pickle.dump(results, f)
 
 
 parser = argparse.ArgumentParser()

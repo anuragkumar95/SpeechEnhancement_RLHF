@@ -222,7 +222,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
     
     if clean_istft:
         #Take istft for clean_spec to account for changes in stft to istft
-        clean_spec_uncompress = power_uncompress(clean_spec[:, 0, :, :], clean_spec[:, 1, :, :]).squeeze(1).permute(0, 2, 1, 3)
+        clean_spec_uncompress = power_uncompress(clean_spec[:, 0, :, :], clean_spec[:, 1, :, :]).squeeze(1)
         
         clean_audio = torch.istft(
             clean_spec_uncompress,

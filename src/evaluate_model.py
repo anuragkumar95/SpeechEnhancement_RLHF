@@ -65,6 +65,8 @@ def args():
                         help='Flag to save rewards from the reward model.')
     parser.add_argument("--save_audios", action='store_true',
                         help='Flag to save enhanced audios from the model.')
+    parser.add_argument("--clean_istft", action='store_true',
+                        help='Flag to calculate metrics with istft of clean specs for reference instead of clean audios directly.')
     return parser
 
 class EvalModel:
@@ -134,7 +136,7 @@ class EvalModel:
         self.ranking = ranking
         self.args = args
 
-    def evaluate(self, dataset):
+    def evaluate(self, dataset, clean_istft=False):
 
         mse_loss = 0
         
@@ -143,7 +145,7 @@ class EvalModel:
                 
                 _, noisy_aud, _ = batch
                 #Preprocess batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id, clean_istft=clean_istft)
 
                 cl_aud, clean, noisy, _ = batch
                 curr = noisy.permute(0, 1, 3, 2)
@@ -405,6 +407,6 @@ if __name__ == '__main__':
                             40000,
                             gpu = False)
 
-        eval.evaluate(test_ds)
+        eval.evaluate(test_ds, clean_istft=ARGS.clean_istft)
 
                     

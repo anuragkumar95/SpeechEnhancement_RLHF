@@ -177,7 +177,7 @@ def original_pesq(pesq):
     return (pesq * 3.5) + 1
 
 
-def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None):
+def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
     """
     Create spectrograms from input waveform.
     ARGS:
@@ -220,6 +220,20 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None):
     noisy_spec = power_compress(noisy_spec)#.permute(0, 1, 3, 2)
     clean_spec = power_compress(clean_spec)
     
+    if clean_istft:
+        #Take istft for clean_spec to account for changes in stft to istft
+        clean_spec_uncompress = power_uncompress(clean_spec[:, 0, :, :], clean_spec[:, 1, :, :]).squeeze(1).permute(0, 2, 1, 3)
+        
+        clean_audio = torch.istft(
+            clean_spec_uncompress,
+            n_fft,
+            hop,
+            window=win,
+            onesided=True,
+        )
+
+        clean = clean_audio
+    
     if ref is not None:
         ref = torch.transpose(ref, 0, 1)
         ref = torch.transpose(ref * c, 0, 1)
@@ -235,7 +249,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None):
         return clean, clean_spec, noisy_spec, ref_spec
     return clean, clean_spec, noisy_spec
 
-def preprocess_batch(batch, ref=None, gpu_id=None):
+def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False):
     """
     Converts a batch of audio waveforms and returns a batch of
     spectrograms.
@@ -253,8 +267,10 @@ def preprocess_batch(batch, ref=None, gpu_id=None):
 
     if ref is not None:
         ref = ref.to(gpu_id)
-        clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, ref=ref)
+        clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, ref=ref, clean_istft=clean_istft)
         return (clean, clean_spec, noisy_spec, ref_spec, labels)
     
-    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100)
+    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, clean_istft=clean_istft)
+    
+
     return (clean, clean_spec, noisy_spec, labels)

@@ -233,6 +233,8 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
         )
 
         clean = clean_audio
+        clean = torch.transpose(clean, 0, 1)
+        clean = torch.transpose(clean * c, 0, 1)
     
     if ref is not None:
         ref = torch.transpose(ref, 0, 1)

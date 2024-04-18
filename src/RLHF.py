@@ -361,7 +361,7 @@ class PPO:
                 if self.rlhf:
                     ang_reward = self.env.get_angle_reward(state)
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=self.scale_rewards) + ang_reward
+                                                   scale=self.scale_rewards) #+ ang_reward
                 else:
                     r_t = self.env.get_PESQ_reward(state) #+ self.env.get_angle_reward(state)
                 

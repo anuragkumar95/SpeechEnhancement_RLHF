@@ -151,6 +151,7 @@ class Trainer:
         train_acc = 0
         batch_loss = 0
         batch_acc = 0
+
     
         for i, batch in enumerate(train_ds):   
             pos, neg, ref, labels, _ = batch
@@ -189,7 +190,7 @@ class Trainer:
                 })
                 print(f"Epoch:{epoch} | Step:{i+1} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
 
-                if val_loss < best_val_loss or best_val_acc > val_acc:
+                if val_loss < best_val_loss or best_val_acc < val_acc:
                     if val_loss < best_val_loss:
                         best_val_loss = val_loss
 
@@ -230,7 +231,7 @@ class Trainer:
             })
             print(f"Epoch:{epoch} | Val_Loss: {val_loss} | Val_Acc: {val_acc}")
 
-            if val_loss < best_val_loss or best_val_acc < val_acc:
+            if (val_loss < best_val_loss) or (best_val_acc < val_acc):
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
 

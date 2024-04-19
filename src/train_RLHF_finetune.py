@@ -7,6 +7,7 @@ from model.actor import TSCNet, TSCNetSmall
 from model.critic import QNet
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
+import NISQA.nisqa.NISQA_lib as NL
 
 
 import os
@@ -223,6 +224,7 @@ class Trainer:
         self.args = args
         
         wandb.init(project=args.exp)
+
     
     def run_validation_step(self, env, batch):
         """
@@ -250,19 +252,30 @@ class Trainer:
                                         action=a_t)
         
         #Supervised loss
-        #mb_act, _, _, _ = actor.get_action(mb_states)
-        #mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
-        
-        mb_enhanced = next_state['noisy']
+        mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
         
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
         supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
 
+        #Calculate PESQ
         pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
                                      next_state['est_audio'].detach().cpu().numpy())
+        
+        """
+        #Calculate NISQA mos
+
+        ds = NL.SpeechQualityDataset(df=next_state['est_audio'], data_dir=None)
+
+        val_mos, _ = NL.predict_mos(model, 
+                                    ds = ds, 
+                                    bs=self.args.batchsize, 
+                                    dev=self.gpu_id, 
+                                    num_workers=0)
+        """
         return (pesq*pesq_mask).sum(), supervised_loss
+    
     
     def run_validation(self, epoch, step):
         #Run validation

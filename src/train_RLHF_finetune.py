@@ -454,6 +454,7 @@ class Trainer:
                         self.save(epoch, original_pesq(pesq), i+1)
                 except Exception as e:
                     print(traceback.format_exc())
+                    pesq = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
                     continue
                 
             if loss is not None:

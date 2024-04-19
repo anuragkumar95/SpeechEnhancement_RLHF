@@ -1,0 +1,3 @@
+[submodule "src/NISQA"]
+	path = src/NISQA
+	url = git@github.com:anuragkumar95/NISQA.git

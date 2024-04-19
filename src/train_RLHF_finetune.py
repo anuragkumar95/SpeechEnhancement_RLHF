@@ -228,6 +228,7 @@ class Trainer:
             
         }
         self.nisqa = nisqaModel(nisqa_args)
+        print(f"Loaded NISQA model from {nisqa_args['pretrained_model']} ...")
 
         self.gpu_id = gpu_id
         self.G = 0
@@ -275,7 +276,7 @@ class Trainer:
         
         
         #Calculate NISQA mos
-
+        """
         ds = NL.SpeechQualityDataset(df=next_state['est_audio'], data_dir=None)
 
         val_mos, _ = NL.predict_mos(self.nisqa, 
@@ -283,7 +284,8 @@ class Trainer:
                                     bs=self.args.batchsize, 
                                     dev=self.gpu_id, 
                                     num_workers=0)
-        
+        """
+        val_mos = 0
         return (pesq*pesq_mask), supervised_loss, val_mos
     
     

@@ -8,6 +8,7 @@ from model.critic import QNet
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
 import NISQA.nisqa.NISQA_lib as NL
+from NISQA.nisqa.NISQA_model import nisqaModel
 
 
 import os
@@ -218,6 +219,15 @@ class Trainer:
                                env_params={'n_fft':400,
                                             'hop':100, 
                                             'args':args})
+            
+        #Load nisqa model
+        nisqa_args = {
+            'pretrained_model':"./NISQA/weights/nisqa.tar",
+            'dev': gpu_id,
+            'bs':args.batchsize
+            
+        }
+        self.nisqa = nisqaModel(nisqa_args)
 
         self.gpu_id = gpu_id
         self.G = 0
@@ -263,17 +273,17 @@ class Trainer:
         pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
                                      next_state['est_audio'].detach().cpu().numpy())
         
-        """
+        
         #Calculate NISQA mos
 
         ds = NL.SpeechQualityDataset(df=next_state['est_audio'], data_dir=None)
 
-        val_mos, _ = NL.predict_mos(model, 
+        val_mos, _ = NL.predict_mos(self.nisqa, 
                                     ds = ds, 
                                     bs=self.args.batchsize, 
                                     dev=self.gpu_id, 
                                     num_workers=0)
-        """
+        
         return (pesq*pesq_mask).sum(), supervised_loss
     
     

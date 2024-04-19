@@ -276,7 +276,7 @@ class Trainer:
         
         
         #Calculate NISQA mos
-        """
+        
         ds = NL.SpeechQualityDataset(df=next_state['est_audio'], data_dir=None)
 
         val_mos, _ = NL.predict_mos(self.nisqa, 
@@ -284,8 +284,8 @@ class Trainer:
                                     bs=self.args.batchsize, 
                                     dev=self.gpu_id, 
                                     num_workers=0)
-        """
-        val_mos = 0
+        
+        #val_mos = 0
         return (pesq*pesq_mask), supervised_loss, val_mos
     
     

@@ -284,7 +284,7 @@ class Trainer:
                                     dev=self.gpu_id, 
                                     num_workers=0)
         
-        return (pesq*pesq_mask).sum(), supervised_loss
+        return (pesq*pesq_mask), supervised_loss, val_mos
     
     
     def run_validation(self, epoch, step):
@@ -296,6 +296,7 @@ class Trainer:
         pesq = 0
         v_step = 0
         loss = 0
+        mos = 0
         with torch.no_grad():
             for i, batch in enumerate(self.test_ds):
                 
@@ -304,17 +305,20 @@ class Trainer:
                 
                 #Run validation episode
                 try:
-                    val_pesq_score, val_loss = self.run_validation_step(self.trainer.env, batch)
+                    val_pesq_score, val_loss, val_mos = self.run_validation_step(self.trainer.env, batch)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
 
-                pesq += val_pesq_score
+                pesq += val_pesq_score.sum()
                 loss += val_loss
+                mos += val_mos.sum()
                 v_step += 1
-                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score/self.args.batchsize)}")
+                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score).mean()} | VAL_MOS: {val_mos.mean()}")
+        
         pesq = pesq / (v_step * self.args.batchsize)
         loss = loss / v_step
+        mos = mos / (v_step * self.args.batchsize)
 
         wandb.log({ 
             "epoch":epoch-1,

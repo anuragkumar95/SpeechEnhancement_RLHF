@@ -254,7 +254,8 @@ class Trainer:
         and return pesq score of the enhances batch of 
         spectrograms.
         """
-        metrics = {'pesq':[],
+        metrics = {
+            'pesq':0,
             'csig':0,
             'cbak':0,
             'covl':0,

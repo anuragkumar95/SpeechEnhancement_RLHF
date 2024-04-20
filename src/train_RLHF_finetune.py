@@ -286,7 +286,7 @@ class Trainer:
                                     dev=self.gpu_id, 
                                     num_workers=0)
         """
-        val_mos = 0
+        val_mos = torch.tensor(0.0)
         return (pesq*pesq_mask), supervised_loss, val_mos
     
     

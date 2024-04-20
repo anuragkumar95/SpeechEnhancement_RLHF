@@ -9,6 +9,7 @@ from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
 import NISQA.nisqa.NISQA_lib as NL
 from NISQA.nisqa.NISQA_model import nisqaModel
+from compute_metrics import compute_metrics
 
 
 import os
@@ -237,6 +238,14 @@ class Trainer:
         
         wandb.init(project=args.exp)
 
+    def min_max_scale(self, x):
+        """
+        x: List[Float]
+        """
+        x = np.asarray(x)
+        x = x - x.min() / (x.max() - x.min())
+        return x
+
     
     def run_validation_step(self, env, batch):
         """
@@ -245,6 +254,15 @@ class Trainer:
         and return pesq score of the enhances batch of 
         spectrograms.
         """
+        metrics = {'pesq':[],
+            'csig':0,
+            'cbak':0,
+            'covl':0,
+            'ssnr':0,
+            'stoi':0,
+            'si-sdr':0,
+            'mse':0,
+            'reward':0}
         #print("Running validation...")
         clean_aud, clean, noisy, _ = batch
         inp = noisy.permute(0, 1, 3, 2)
@@ -263,6 +281,11 @@ class Trainer:
         next_state = env.get_next_state(state=inp, 
                                         action=a_t)
         
+        #Get reward
+        r_state = self.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), 
+                                       scale=False).sum()
+        metrics['reward'] = r_state
+
         #Supervised loss
         mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
@@ -270,11 +293,24 @@ class Trainer:
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
         supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+        metrics['mse'] = supervised_loss
 
-        #Calculate PESQ
-        pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
-                                     next_state['est_audio'].detach().cpu().numpy())
+        #Calculate metrics
+        #pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
+        #                             next_state['est_audio'].detach().cpu().numpy())
         
+        for i in range(self.args.batchsize):
+            values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
+                                     next_state['est_audio'][i, ...].detach().cpu().numpy(), 
+                                     16000, 
+                                     0)
+            metrics['pesq'] += values[0]
+            metrics['csig'] += values[1]
+            metrics['cbak'] += values[2]
+            metrics['covl'] += values[3]
+            metrics['ssnr'] += values[4]
+            metrics['stoi'] += values[5]
+            metrics['si-sdr'] += values[6]
         
         #Calculate NISQA mos
         """
@@ -286,20 +322,30 @@ class Trainer:
                                     dev=self.gpu_id, 
                                     num_workers=0)
         """
-        val_mos = torch.tensor(0.0)
-        return (pesq*pesq_mask), supervised_loss, val_mos
+        return metrics
     
-    
-    def run_validation(self, epoch, step):
+
+
+    def run_validation(self, episode):
         #Run validation
         self.actor.eval()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(True)
             self.critic.eval()
         pesq = 0
-        v_step = 0
         loss = 0
-        mos = 0
+        val_metrics = {
+            'pesq':[],
+            'csig':[],
+            'cbak':[],
+            'covl':[],
+            'ssnr':[],
+            'stoi':[],
+            'si-sdr':[],
+            'reward':0,
+            'mse':0
+        }
+        num_batches = len(self.test_ds)
         with torch.no_grad():
             for i, batch in enumerate(self.test_ds):
                 
@@ -308,37 +354,53 @@ class Trainer:
                 
                 #Run validation episode
                 try:
-                    val_pesq_score, val_loss, val_mos = self.run_validation_step(self.trainer.env, batch)
+                    metrics = self.run_validation_step(self.trainer.env, batch)
+                    val_metrics['pesq'].extend(metrics['pesq'])
+                    val_metrics['csig'].extend(metrics['csig'])
+                    val_metrics['cbak'].extend(metrics['cbak'])
+                    val_metrics['covl'].extend(metrics['covl'])
+                    val_metrics['ssnr'].extend(metrics['ssnr'])
+                    val_metrics['stoi'].extend(metrics['stoi'])
+                    val_metrics['si-sdr'].extend(metrics['si-sdr'])
+                    val_metrics['mse'] += metrics['mse']
+                    val_metrics['reward'] += metrics['reward']
+
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
-
-                pesq += val_pesq_score.sum()
-                loss += val_loss
-                mos += val_mos.sum()
-                v_step += 1
-                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score).mean()} | VAL_LOSS: {val_loss.mean()}")
         
-        if v_step == 0:
-            v_step = 1
-        pesq = pesq / (v_step * self.args.batchsize)
-        loss = loss / v_step
-        mos = mos / (v_step * self.args.batchsize)
+        loss = val_metrics['mse']/num_batches
+        reward = val_metrics['reward']/(num_batches * self.args.batchsize)
 
+        pesq = self.min_max_scale(val_metrics['pesq'])
+        csig = self.min_max_scale(val_metrics['csig'])
+        cbak = self.min_max_scale(val_metrics['cbak'])
+        covl = self.min_max_scale(val_metrics['covl'])
+        ssnr = self.min_max_scale(val_metrics['ssnr'])
+        stoi = self.min_max_scale(val_metrics['stoi'])
+        si_sdr = self.min_max_scale(val_metrics['si-sdr'])
+ 
         wandb.log({ 
-            "epoch":epoch-1,
-            "episode": step, 
-            "val_pesq":original_pesq(pesq),
-            "val_pretrain_loss":loss
+            "episode": episode, 
+            "val_scaled_pesq":pesq,
+            "val_pesq":original_pesq(np.asarray(val_metrics["pesq"]).mean()),
+            "val_pretrain_loss":loss,
+            "val_csig":csig,
+            "val_cbak":cbak,
+            "val_covl":covl,
+            "val_ssnr":ssnr,
+            "val_stoi":stoi,
+            "val_si-sdr":si_sdr,
+            "val_reward":reward
         }) 
-        print(f"Epoch:{epoch} | Episode:{step} | VAL_PESQ:{original_pesq(pesq)} | VAL_LOSS:{loss}")
+        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics["pesq"]).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")
         
         self.actor.train()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(False)
             self.critic.train()
         
-        return pesq, loss
+        return loss
     
     """
     def train_one_epoch(self, epoch):
@@ -409,18 +471,14 @@ class Trainer:
         return REWARDS, original_pesq(pesq)
     """
 
-    def train_one_epoch(self, epoch):
-
-        num_batches = len(self.train_ds)
-        
-        #pesq = self.run_validation(epoch, (epoch-1) * num_batches)
-        pesq=0
+    def train_one_epoch(self, epoch):       
         #Run training
         self.actor.train()
         if self.args.method == 'PPO':
             self.critic.train()
-        REWARDS = []
-        
+
+        loss = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
+
         epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
@@ -453,21 +511,13 @@ class Trainer:
 
                         #if i+1 % run_validation_step == 0:
                         #Run alidation after each episode
-                        pesq, loss = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
+                        loss = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
                         if loss < best_val_loss:
                             best_val_loss = loss
-                            self.save(epoch, original_pesq(pesq), i+1)
+                            self.save(loss, (epoch-1)*episode_per_epoch + (i+1))
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
-                
-            if loss is not None:
-                self.G = batch_reward[0].item() + self.G
-                REWARDS.append(batch_reward[0].item())
-
-        return REWARDS, original_pesq(pesq)
-
-
 
     def train(self):
         """
@@ -475,14 +525,13 @@ class Trainer:
         """
         print("Start training...")
         for epoch in range(self.args.epochs):
-            ep_reward, epoch_pesq = self.train_one_epoch(epoch+1)
-            self.save(epoch, epoch_pesq)
+            self.train_one_epoch(epoch+1)
 
-    def save(self, epoch, pesq, episode=None):
+    def save(self, loss, episode=None):
         if episode is None:
             episode = len(self.train_ds)            
         if self.gpu_id == 0:
-            checkpoint_prefix = f"{self.args.exp}_PESQ_{pesq}_epoch_{epoch}_episode_{episode}.pt"
+            checkpoint_prefix = f"{self.args.exp}_loss_{loss}_episode_{episode}.pt"
             path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
             if self.args.method == 'reinforce':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 

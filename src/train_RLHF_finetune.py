@@ -238,14 +238,6 @@ class Trainer:
         
         wandb.init(project=args.exp)
 
-    def min_max_scale(self, x):
-        """
-        x: List[Float]
-        """
-        x = np.asarray(x)
-        x = x - x.min() / (x.max() - x.min())
-        return x
-
     
     def run_validation_step(self, env, batch):
         """
@@ -372,26 +364,18 @@ class Trainer:
         
         loss = val_metrics['mse']/num_batches
         reward = val_metrics['reward']/(num_batches * self.args.batchsize)
-
-        pesq = self.min_max_scale(val_metrics['pesq'])
-        csig = self.min_max_scale(val_metrics['csig'])
-        cbak = self.min_max_scale(val_metrics['cbak'])
-        covl = self.min_max_scale(val_metrics['covl'])
-        ssnr = self.min_max_scale(val_metrics['ssnr'])
-        stoi = self.min_max_scale(val_metrics['stoi'])
-        si_sdr = self.min_max_scale(val_metrics['si-sdr'])
  
         wandb.log({ 
             "episode": episode, 
             "val_scaled_pesq":pesq,
             "val_pesq":original_pesq(np.asarray(val_metrics["pesq"]).mean()),
             "val_pretrain_loss":loss,
-            "val_csig":csig,
-            "val_cbak":cbak,
-            "val_covl":covl,
-            "val_ssnr":ssnr,
-            "val_stoi":stoi,
-            "val_si-sdr":si_sdr,
+            "val_csig":np.asarray(val_metrics["csig"]).mean(),
+            "val_cbak":np.asarray(val_metrics["cbak"]).mean(),
+            "val_covl":np.asarray(val_metrics["covl"]).mean(),
+            "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
+            "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
+            "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
             "val_reward":reward
         }) 
         print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics["pesq"]).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")

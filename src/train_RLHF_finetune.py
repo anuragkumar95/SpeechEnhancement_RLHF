@@ -277,7 +277,7 @@ class Trainer:
         
         #Calculate NISQA mos
         
-        ds = NL.SpeechQualityDataset(df=next_state['est_audio'], data_dir=None)
+        ds = NL.SpeechQualityDataset(df=next_state['est_audio'].detach().cpu().numpy(), data_dir=None)
 
         val_mos, _ = NL.predict_mos(self.nisqa.model, 
                                     ds = ds, 

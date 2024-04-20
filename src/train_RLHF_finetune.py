@@ -220,6 +220,7 @@ class Trainer:
                                             'hop':100, 
                                             'args':args})
             
+        """
         #Load nisqa model
         nisqa_args = {
             'pretrained_model':"./NISQA/weights/nisqa.tar",
@@ -229,7 +230,7 @@ class Trainer:
         }
         self.nisqa = nisqaModel(nisqa_args)
         print(f"Loaded NISQA model from {nisqa_args['pretrained_model']} ...")
-
+        """
         self.gpu_id = gpu_id
         self.G = 0
         self.args = args

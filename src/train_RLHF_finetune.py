@@ -462,7 +462,7 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        loss = self.run_validation(epoch, 0)
+        loss = self.run_validation(0)
 
         epochs_per_episode = self.args.ep_per_episode
         
@@ -496,10 +496,10 @@ class Trainer:
 
                         #if i+1 % run_validation_step == 0:
                         #Run alidation after each episode
-                        loss = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
+                        loss = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
                         if loss < best_val_loss:
                             best_val_loss = loss
-                            self.save(loss, (epoch-1)*episode_per_epoch + (i+1))
+                            self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

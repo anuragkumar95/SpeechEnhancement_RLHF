@@ -279,7 +279,7 @@ class Trainer:
         
         ds = NL.SpeechQualityDataset(df=next_state['est_audio'], data_dir=None)
 
-        val_mos, _ = NL.predict_mos(self.nisqa, 
+        val_mos, _ = NL.predict_mos(self.nisqa.model, 
                                     ds = ds, 
                                     bs=self.args.batchsize, 
                                     dev=self.gpu_id, 

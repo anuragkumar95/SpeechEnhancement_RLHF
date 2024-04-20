@@ -275,7 +275,7 @@ class Trainer:
                                         action=a_t)
         
         #Get reward
-        r_state = self.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), 
+        r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), 
                                        scale=False).sum()
         metrics['reward'] = r_state
 

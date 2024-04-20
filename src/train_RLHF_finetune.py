@@ -378,7 +378,7 @@ class Trainer:
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
             "val_reward":reward
         }) 
-        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics["pesq"]).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")
+        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")
         
         self.actor.train()
         if self.args.method == 'PPO':

@@ -462,7 +462,7 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        loss = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
+        loss = self.run_validation(epoch, 0)
 
         epochs_per_episode = self.args.ep_per_episode
         

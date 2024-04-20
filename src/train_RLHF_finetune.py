@@ -368,8 +368,8 @@ class Trainer:
         wandb.log({ 
             "episode": episode, 
             "val_scaled_pesq":pesq,
-            "val_pesq":original_pesq(np.asarray(val_metrics["pesq"]).mean()),
             "val_pretrain_loss":loss,
+            "val_pesq":np.asarray(val_metrics["pesq"]).mean(),
             "val_csig":np.asarray(val_metrics["csig"]).mean(),
             "val_cbak":np.asarray(val_metrics["cbak"]).mean(),
             "val_covl":np.asarray(val_metrics["covl"]).mean(),

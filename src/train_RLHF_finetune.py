@@ -317,7 +317,7 @@ class Trainer:
                 loss += val_loss
                 mos += val_mos.sum()
                 v_step += 1
-                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score).mean()} | VAL_MOS: {val_mos.mean()}")
+                print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score).mean()} | VAL_LOSS: {val_loss.mean()}")
         
         if v_step == 0:
             v_step = 1
@@ -331,14 +331,14 @@ class Trainer:
             "val_pesq":original_pesq(pesq),
             "val_pretrain_loss":loss
         }) 
-        print(f"Epoch:{epoch} | Episode:{step} | VAL_PESQ:{original_pesq(pesq)}")
+        print(f"Epoch:{epoch} | Episode:{step} | VAL_PESQ:{original_pesq(pesq)} | VAL_LOSS:{loss}")
         
         self.actor.train()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(False)
             self.critic.train()
         
-        return pesq
+        return pesq, loss
     
     """
     def train_one_epoch(self, epoch):
@@ -425,7 +425,7 @@ class Trainer:
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
-        
+        best_val_loss = 99999
         episode_per_epoch = 50
 
         for i in range(episode_per_epoch):
@@ -453,8 +453,10 @@ class Trainer:
 
                         #if i+1 % run_validation_step == 0:
                         #Run alidation after each episode
-                        pesq = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
-                        self.save(epoch, original_pesq(pesq), i+1)
+                        pesq, loss = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
+                        if loss < best_val_loss:
+                            best_val_loss = loss
+                            self.save(epoch, original_pesq(pesq), i+1)
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

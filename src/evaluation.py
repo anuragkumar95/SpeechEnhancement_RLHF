@@ -95,7 +95,7 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
     audio_list = os.listdir(noisy_dir)
     audio_list = natsorted(audio_list)
     num = len(audio_list)
-    results = {'pesq':[], 'file':[]}
+    results = {'pesq':[], 'ssnr':[], 'ssi-sdr':[], 'c_sig':[], 'file':[]}
     print(f"Parsed {num} audios in {noisy_dir}...")
     metrics_total = np.zeros(7)
     for audio in tqdm(audio_list):

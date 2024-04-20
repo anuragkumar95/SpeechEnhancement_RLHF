@@ -247,13 +247,13 @@ class Trainer:
         spectrograms.
         """
         metrics = {
-            'pesq':0,
-            'csig':0,
-            'cbak':0,
-            'covl':0,
-            'ssnr':0,
-            'stoi':0,
-            'si-sdr':0,
+            'pesq':[],
+            'csig':[],
+            'cbak':[],
+            'covl':[],
+            'ssnr':[],
+            'stoi':[],
+            'si-sdr':[],
             'mse':0,
             'reward':0}
         #print("Running validation...")
@@ -297,13 +297,13 @@ class Trainer:
                                      next_state['est_audio'][i, ...].detach().cpu().numpy(), 
                                      16000, 
                                      0)
-            metrics['pesq'] += values[0]
-            metrics['csig'] += values[1]
-            metrics['cbak'] += values[2]
-            metrics['covl'] += values[3]
-            metrics['ssnr'] += values[4]
-            metrics['stoi'] += values[5]
-            metrics['si-sdr'] += values[6]
+            metrics['pesq'].append(values[0])
+            metrics['csig'].append(values[1])
+            metrics['cbak'].append(values[2])
+            metrics['covl'].append(values[3])
+            metrics['ssnr'].append(values[4])
+            metrics['stoi'].append(values[5])
+            metrics['si-sdr'].append(values[6])
         
         #Calculate NISQA mos
         """

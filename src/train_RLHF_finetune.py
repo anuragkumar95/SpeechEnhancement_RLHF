@@ -319,6 +319,8 @@ class Trainer:
                 v_step += 1
                 print(f"Epoch: {epoch} | VAL_STEP: {v_step} | VAL_PESQ: {original_pesq(val_pesq_score).mean()} | VAL_MOS: {val_mos.mean()}")
         
+        if v_step == 0:
+            v_step = 1
         pesq = pesq / (v_step * self.args.batchsize)
         loss = loss / v_step
         mos = mos / (v_step * self.args.batchsize)
@@ -455,7 +457,6 @@ class Trainer:
                         self.save(epoch, original_pesq(pesq), i+1)
                 except Exception as e:
                     print(traceback.format_exc())
-                    pesq = self.run_validation(epoch, (epoch-1)*episode_per_epoch + (i+1))
                     continue
                 
             if loss is not None:

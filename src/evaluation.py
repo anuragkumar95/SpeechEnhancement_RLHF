@@ -29,15 +29,16 @@ def enhance_one_track(
     length = noisy.size(-1)
     if length > cut_len:
         return None, None
-    frame_num = int(np.ceil(length / 100))
-    padded_len = frame_num * 100
-    padding_len = padded_len - length
-    noisy = torch.cat([noisy, noisy[:, :padding_len]], dim=-1)
-    if padded_len > cut_len:
-        batch_size = int(np.ceil(padded_len / cut_len))
-        while 100 % batch_size != 0:
-            batch_size += 1
-        noisy = torch.reshape(noisy, (batch_size, -1))
+    
+    #frame_num = int(np.ceil(length / 100))
+    #padded_len = frame_num * 100
+    #padding_len = padded_len - length
+    #noisy = torch.cat([noisy, noisy[:, :padding_len]], dim=-1)
+    #if padded_len > cut_len:
+    #    batch_size = int(np.ceil(padded_len / cut_len))
+    #    while 100 % batch_size != 0:
+    #        batch_size += 1
+    #    noisy = torch.reshape(noisy, (batch_size, -1))
 
     noisy_spec = torch.stft(
         noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True

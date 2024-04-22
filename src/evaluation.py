@@ -10,6 +10,7 @@ import argparse
 from tqdm import tqdm
 import pickle
 import traceback
+from speech_enh_env import SpeechEnhancementAgent
 
 
 @torch.no_grad()
@@ -87,6 +88,12 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
                         distribution=dist,
                         gpu_id=0, 
                         eval=True).cuda()
+        
+    env = SpeechEnhancementAgent(n_fft=n_fft,
+                                 hop=100,
+                                 gpu_id=None,
+                                 args=None,
+                                 reward_model=None)
     
     if pre:
         try:

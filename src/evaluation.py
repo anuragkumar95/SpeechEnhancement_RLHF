@@ -14,7 +14,7 @@ import traceback
 
 @torch.no_grad()
 def enhance_one_track(
-    model, audio_path, saved_dir, cut_len, n_fft=400, hop=100, save_tracks=False
+    model, env, audio_path, saved_dir, cut_len, n_fft=400, hop=100, save_tracks=False
 ):
     name = os.path.split(audio_path)[-1]
     noisy, sr = torchaudio.load(audio_path)
@@ -42,17 +42,23 @@ def enhance_one_track(
         noisy, n_fft, hop, window=torch.hamming_window(n_fft).cuda(), onesided=True
     )
     noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
-    est_real, est_imag = model(noisy_spec)
-    est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
 
-    est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
-    est_audio = torch.istft(
-        est_spec_uncompress,
-        n_fft,
-        hop,
-        window=torch.hamming_window(n_fft).cuda(),
-        onesided=True,
-    )
+    action, _, _, _ = model.get_action(noisy_spec)
+    next_state = env.get_next_state(state=noisy_spec, 
+                                    action=action)
+    #est_real, est_imag = model(noisy_spec)
+
+    #est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
+
+    #est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1)
+    #est_audio = torch.istft(
+    #    est_spec_uncompress,
+    #    n_fft,
+    #    hop,
+    #    window=torch.hamming_window(n_fft).cuda(),
+    #    onesided=True,
+    #)
+    est_audio = next_state['noisy']
     est_audio = est_audio / c
     est_audio = torch.flatten(est_audio)[:length].cpu().numpy()
     assert len(est_audio) == length, f"est_audio:{len(est_audio)} ref_audio:{length}"

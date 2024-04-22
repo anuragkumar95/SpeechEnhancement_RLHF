@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 import torch
 import torchaudio
+from torch.distributions import Normal
 import torchaudio.functional as F
 from tqdm import tqdm
 import soundfile as sf
@@ -52,17 +53,14 @@ class MixturesDataset:
         self.noise_files = os.listdir(noise_dir)
         self.save_dir = out_dir
         self.K = K
-        self.snr = torch.distributions.Uniform(snr_low, snr_high)
+        self.snr_means = [snr_low + ((snr_high - snr_low) * i/K) for i in range(K)]
 
-    def mix_audios(self, clean, noise):
+    def mix_audios(self, clean, noise, snr):
         
         if clean.shape[-1] != noise.shape[-1]:
             while noise.shape[-1] >= clean.shape[-1]:
                 noise = torch.cat([noise, noise], dim=-1)
         noise = noise[:, :clean.shape[-1]]
-
-        snr = self.snr.sample()
-        snr = float("{:.2f}".format(snr))
 
         #calculate the amount of noise to add to get a specific snr
         p_clean = (clean ** 2).mean()
@@ -72,7 +70,7 @@ class MixturesDataset:
         alpha = torch.sqrt(p_ratio * (10 ** (-snr / 20)))
         signal = clean + (alpha * noise)
         
-        return signal.reshape(-1).cpu().numpy(), snr
+        return signal.reshape(-1).cpu().numpy()
     
     def generate_k_samples(self, cidx, n_noise_samples):
     
@@ -92,9 +90,12 @@ class MixturesDataset:
                 noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
             #mix them
-            signal, snr = self.mix_audios(clean, noise)
-
+            snr_dist = Normal(self.snr_means[i], 3.0)
+            snr = snr_dist.sample()
+            signal = self.mix_audios(clean, noise, snr)
+            
             #save
+            snr = float("{:.2f}".format(snr))
             sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_{self.noise_files[idx][:-len('.wav')]}_snr_{snr}.wav"), signal, 16000)
 
     
@@ -169,8 +170,8 @@ if __name__ == "__main__":
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noise_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
-                                snr_low=0, 
-                                snr_high=45)
+                                snr_low=-10, 
+                                snr_high=40)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)
 

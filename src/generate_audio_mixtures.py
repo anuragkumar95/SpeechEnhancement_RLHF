@@ -53,13 +53,13 @@ class MixturesDataset:
         self.noise_files = os.listdir(noise_dir)
         self.save_dir = out_dir
         self.K = K
-        self.snr_means = [snr_low + ((snr_high - snr_low) * i/K) for i in range(K)]
+        self.snr_means = [-10, 0, 10, 20, 40]
 
     def mix_audios(self, clean, noise, snr):
         
-        if clean.shape[-1] != noise.shape[-1]:
-            while noise.shape[-1] >= clean.shape[-1]:
-                noise = torch.cat([noise, noise], dim=-1)
+        while noise.shape[-1] < clean.shape[-1]:
+            noise = torch.cat([noise, noise], dim=-1)
+
         noise = noise[:, :clean.shape[-1]]
 
         #calculate the amount of noise to add to get a specific snr
@@ -67,7 +67,7 @@ class MixturesDataset:
         p_noise = (noise ** 2).mean()
 
         p_ratio = p_clean / p_noise
-        alpha = torch.sqrt(p_ratio / (10 ** (snr / 20)))
+        alpha = torch.sqrt(p_ratio / (10 ** (snr / 10)))
         signal = clean + (alpha * noise)
         
         return signal.reshape(-1).cpu().numpy()

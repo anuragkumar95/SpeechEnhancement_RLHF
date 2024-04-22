@@ -67,7 +67,7 @@ class MixturesDataset:
         p_noise = (noise ** 2).mean()
 
         p_ratio = p_clean / p_noise
-        alpha = torch.sqrt(p_ratio * (10 ** (-snr / 20)))
+        alpha = torch.sqrt(p_ratio / (10 ** (snr / 20)))
         signal = clean + (alpha * noise)
         
         return signal.reshape(-1).cpu().numpy()

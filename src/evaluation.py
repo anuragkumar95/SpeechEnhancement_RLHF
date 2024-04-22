@@ -91,7 +91,7 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
         
     env = SpeechEnhancementAgent(n_fft=n_fft,
                                  hop=100,
-                                 gpu_id=None,
+                                 gpu_id=0,
                                  args=None,
                                  reward_model=None)
     

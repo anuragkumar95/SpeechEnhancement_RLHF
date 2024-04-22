@@ -123,7 +123,7 @@ def evaluation(model_path, noisy_dir, clean_dir, cutlen, save_tracks, saved_dir,
                 #    model, noisy_path, saved_dir, 16000 * 10, n_fft, n_fft // 4, save_tracks
                 #)
                 est_audio, length = enhance_one_track(
-                    model, noisy_path, saved_dir, cutlen, n_fft, n_fft // 4, save_tracks
+                    model, env, noisy_path, saved_dir, cutlen, n_fft, n_fft // 4, save_tracks
                 )
                 if est_audio is not None:
                     clean_audio, sr = sf.read(clean_path)

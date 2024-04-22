@@ -166,6 +166,8 @@ if __name__ == "__main__":
 
     ARGS = args().parse_args()
 
+    os.makedirs(ARGS.output, exist_ok=True)
+
     if ARGS.mix_aud:
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noise_dir=ARGS.noise_dir,  

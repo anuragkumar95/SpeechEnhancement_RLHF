@@ -268,12 +268,24 @@ class HumanAlignedDataset(Dataset):
     """
     def __init__(self,
                  mixture_dir,
-                 rank,  
+                 rank, 
+                 mos_file, 
                  cutlen=40000):
         self.mixture_dir = mixture_dir
         self.ranks = rank
         self.cutlen = cutlen
+        self.mos = self.map_mos(mos_file)
         self.pairs = self.map_ranks_to_pairs()
+
+    def map_mos(self, mos_file):
+        _map_ = {}
+        with open(mos_file) as f:
+            lines = f.readlines()
+            for line in lines[1:]:
+                f, m = line.split(',')[:2]
+                _map_[f] = m
+        return _map_
+
         
     def map_ranks_to_pairs(self):
         PAIRS = []
@@ -291,7 +303,7 @@ class HumanAlignedDataset(Dataset):
                     else:
                         _id_ = file[len("enh_"):]
 
-                    val = (i, os.path.join(self.mixture_dir, file))
+                    val = (file, os.path.join(self.mixture_dir, file))
                     FILES.append(val)
 
                 #Find all possible combination of pairs from the ranking list
@@ -307,8 +319,18 @@ class HumanAlignedDataset(Dataset):
     def __getitem__(self, idx):
         pair = self.pairs[idx]
 
-        _, path_1 = pair[0]
-        _, path_2 = pair[1]
+        file1, path_1 = pair[0]
+        file2, path_2 = pair[1]
+
+        mos1 = self.mos[file1]
+        mos2 = self.mos[file2]
+
+        if mos1 - mos2 < 0.2:
+            label = torch.tensor([0.0, 1.0])
+
+        else:
+            label = torch.tensor([1.0, 0.0])
+
 
         path_1 = path_1.strip()
         path_2 = path_2.strip()
@@ -332,7 +354,7 @@ class HumanAlignedDataset(Dataset):
         x_1 = x_1.reshape(-1)
         x_2 = x_2.reshape(-1)
 
-        label = torch.tensor([1.0, 0.0])
+        #label = torch.tensor([1.0, 0.0])
         return x_1, x_2, label, (path_1, path_2)
 
 

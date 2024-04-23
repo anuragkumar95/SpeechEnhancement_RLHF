@@ -17,7 +17,7 @@ class RewardModel(nn.Module):
         self.eps = 0.25
    
         
-    def forward(self, pos, neg):
+    def forward(self, pos, neg, label):
 
         x_pos = pos.permute(0, 1, 3, 2)
         x_neg = neg.permute(0, 1, 3, 2)
@@ -25,9 +25,13 @@ class RewardModel(nn.Module):
         pos_proj = self.reward_projection(x_pos)
         neg_proj = self.reward_projection(x_neg)
 
-        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
+        #loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
         score = torch.cat([pos_proj, neg_proj], dim=-1)
         probs = F.softmax(score, dim=-1)
+
+        #label is one_hot_vector
+        label = torch.argmax(label, dim=-1)
+        loss = label * (pos_proj - neg_proj) + (1 - label) * torch.max(0, self.eps - (pos_proj, neg_proj))
    
         return loss, (pos_proj, neg_proj), probs
     

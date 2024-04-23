@@ -14,7 +14,7 @@ class RewardModel(nn.Module):
     def __init__(self, in_channels=2):
         super(RewardModel, self).__init__()
         self.reward_projection = QNet(ndf=16, in_channel=in_channels, out_channel=1)
-        self.eps = 1e-08
+        self.eps = 1e-01
    
         
     def forward(self, pos, neg):
@@ -25,7 +25,7 @@ class RewardModel(nn.Module):
         pos_proj = self.reward_projection(x_pos)
         neg_proj = self.reward_projection(x_neg)
 
-        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) + self.eps).mean()
+        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
         score = torch.cat([pos_proj, neg_proj], dim=-1)
         probs = F.softmax(score, dim=-1)
    

@@ -239,7 +239,7 @@ class EvalModel:
         print(f"Overall MSE:{mse_loss}")
 
     def evaluate_reward_model(self, dataset):
-        save_path = f"{self.save_path}/rewards"
+        save_path = f"{self.save_path}/rewards_HF"
         os.makedirs(save_path, exist_ok=True)
         with torch.no_grad():
             for i, batch in enumerate(dataset):

@@ -105,7 +105,7 @@ class Trainer:
         loss, score, probs = self.reward_model(pos=x_1, neg=x_2, label=labels)
         if probs is None:
             pos_score, neg_score = score
-            dist = (pos_score - neg_score)
+            dist = torch.sqrt((pos_score - neg_score)**2)
             y_preds = (dist < 0.1).float()
             print(f"DIST:{dist.reshape(-1)}")
         else:

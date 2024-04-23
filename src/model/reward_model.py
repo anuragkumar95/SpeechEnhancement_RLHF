@@ -27,7 +27,7 @@ class RewardModel(nn.Module):
 
         #loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
 
-        dist = (pos_proj - neg_proj)
+        dist = torch.sqrt((pos_proj - neg_proj)**2)
 
         #loss = (label * (pos_proj - neg_proj)**2 + (1 - label) * (torch.clamp(self.eps - (pos_proj - neg_proj), min=0))**2 ).mean()
 

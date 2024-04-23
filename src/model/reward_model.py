@@ -33,7 +33,8 @@ class RewardModel(nn.Module):
 
         loss1 = (label) * torch.pow(dist, 2)
         loss2 = (1 - label) * torch.pow(torch.clamp(self.eps - dist, min=0.0), 2)
-        loss = (loss1 + loss2).mean() 
+        loss3 = -torch.log(F.sigmoid(pos_proj - neg_proj))
+        loss = (loss1 + loss2 + loss3).mean() 
         
         print(f"loss_1:{loss1.mean()}, loss_2:{loss2.mean()}, label:{label}")
         

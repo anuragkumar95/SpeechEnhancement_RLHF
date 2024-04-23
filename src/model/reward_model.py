@@ -25,12 +25,11 @@ class RewardModel(nn.Module):
         pos_proj = self.reward_projection(x_pos)
         neg_proj = self.reward_projection(x_neg)
 
-
-        score_proj = F.sigmoid(pos_proj - neg_proj) 
-
-        loss = -torch.log(score_proj + self.eps).mean()
+        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) + self.eps).mean()
+        score = torch.cat([pos_proj, neg_proj], dim=-1)
+        probs = F.softmax(score, dim=-1)
    
-        return loss, score_proj, None
+        return loss, (pos_proj, neg_proj), probs
     
     def get_reward(self, inp):
         """

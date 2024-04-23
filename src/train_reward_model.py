@@ -104,7 +104,8 @@ class Trainer:
         labels = torch.argmax(labels, dim=-1)
         loss, score, probs = self.reward_model(pos=x_1, neg=x_2)
         if probs is None:
-            y_preds = (score < 0.5).float()
+            pos_score, neg_score = score
+            y_preds = (pos_score > neg_score).float()
         else:
             y_preds = torch.argmax(probs, dim=-1)
         

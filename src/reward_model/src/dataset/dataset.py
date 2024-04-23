@@ -283,7 +283,7 @@ class HumanAlignedDataset(Dataset):
             lines = f.readlines()
             for line in lines[1:]:
                 f, m = line.split(',')[:2]
-                _map_[f] = m
+                _map_[f] = float(m)
         return _map_
 
         

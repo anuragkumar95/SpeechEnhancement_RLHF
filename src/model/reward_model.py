@@ -33,9 +33,12 @@ class RewardModel(nn.Module):
         label = torch.argmax(label, dim=-1)
         #loss = (label * (pos_proj - neg_proj)**2 + (1 - label) * (torch.clamp(self.eps - (pos_proj - neg_proj), min=0))**2 ).mean()
 
-        loss = (label) * torch.pow(dist, 2) + (1 - label) * torch.pow(torch.clamp(self.eps - dist, min=0.0), 2)
-        #print(f"loss_:{}")
-        loss = torch.mean(loss)
+        loss1 = (label) * torch.pow(dist, 2)
+        loss2 = (1 - label) * torch.pow(torch.clamp(self.eps - dist, min=0.0), 2)
+        loss = (loss1 + loss2).mean() 
+        
+        print(f"loss_1:{loss1.mean()}, loss_2:{loss2.mean()}")
+        
    
         return loss, (pos_proj, neg_proj), None
     

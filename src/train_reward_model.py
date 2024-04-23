@@ -106,7 +106,7 @@ class Trainer:
         if probs is None:
             pos_score, neg_score = score
             dist = (pos_score - neg_score)
-            y_preds = (dist < 0.25).float()
+            y_preds = (dist < 0.2).float()
         else:
             y_preds = torch.argmax(probs, dim=-1)
         

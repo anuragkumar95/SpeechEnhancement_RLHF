@@ -14,7 +14,7 @@ class RewardModel(nn.Module):
     def __init__(self, in_channels=2):
         super(RewardModel, self).__init__()
         self.reward_projection = QNet(ndf=16, in_channel=in_channels, out_channel=1)
-        self.eps = 1e-01
+        self.eps = 0.25
    
         
     def forward(self, pos, neg):

@@ -96,13 +96,13 @@ class Trainer:
         return score.mean()
 
     def forward_step(self, batch):
-        _, x_1, x_2, ref, labels = batch
+        _, x_1, x_2, labels = batch
 
         if self.gpu_id is not None:
             labels = labels.to(self.gpu_id)
         
         labels = torch.argmax(labels, dim=-1)
-        loss, score, probs = self.reward_model(pos=x_1, neg=x_2, ref=ref, labels=labels)
+        loss, score, probs = self.reward_model(pos=x_1, neg=x_2)
         if probs is None:
             y_preds = (score < 0.5).float()
         else:
@@ -123,9 +123,9 @@ class Trainer:
         with torch.no_grad():
             for i, batch in enumerate(test_ds):
                 
-                pos, neg, ref, labels, _ = batch
+                pos, neg, labels, _ = batch
                 batch = (pos, neg, labels)
-                batch = preprocess_batch(batch, ref=ref, gpu_id=self.gpu_id)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)
 
@@ -154,9 +154,9 @@ class Trainer:
 
     
         for i, batch in enumerate(train_ds):   
-            pos, neg, ref, labels, _ = batch
+            pos, neg, labels, _ = batch
             batch = (pos, neg, labels)
-            batch = preprocess_batch(batch, ref=ref, gpu_id=self.gpu_id)
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             try:  
                 loss, acc = self.forward_step(batch)
             except Exception as e:

@@ -317,28 +317,25 @@ class HumanAlignedDataset(Dataset):
 
         x_1, sr_1 = torchaudio.load(path_1)
         x_2, sr_2 = torchaudio.load(path_2)
-        ref, sr_ref = torchaudio.load(ref)
 
-        assert sr_1 == sr_2 == sr_ref
+        assert sr_1 == sr_2 
 
         if x_1.shape[-1] < self.cutlen: 
             pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
             x_1 = torch.cat([pad, x_1], dim=-1)
             x_2 = torch.cat([pad, x_2], dim=-1)
-            ref = torch.cat([pad, ref], dim=-1)
+        
 
         else:
             start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
             x_1 = x_1[:, start_idx: start_idx + self.cutlen]
             x_2 = x_2[:, start_idx: start_idx + self.cutlen]
-            ref = ref[:, start_idx: start_idx + self.cutlen]
-
+         
         x_1 = x_1.reshape(-1)
         x_2 = x_2.reshape(-1)
-        ref = ref.reshape(-1)
 
         label = torch.tensor([1.0, 0.0])
-        return x_1, x_2, ref, label, (path_1, path_2)
+        return x_1, x_2, label, (path_1, path_2)
 
 
 def load_data(root=None, 

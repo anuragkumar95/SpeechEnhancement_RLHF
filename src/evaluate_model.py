@@ -385,7 +385,7 @@ if __name__ == '__main__':
 
         """
     if ARGS.rankroot is not None:
-        test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures', 'test'),
+        test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures2', 'test'),
                                             rank=os.path.join(ARGS.rankroot, 'ranking', 'test.ranks'),  
                                             cutlen=40000)
 

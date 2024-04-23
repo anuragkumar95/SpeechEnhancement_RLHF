@@ -268,13 +268,11 @@ class HumanAlignedDataset(Dataset):
     """
     def __init__(self,
                  mixture_dir,
-                 rank,
-                 noisy_dir,  
+                 rank,  
                  cutlen=40000):
         self.mixture_dir = mixture_dir
         self.ranks = rank
         self.cutlen = cutlen
-        self.noisy_dir = noisy_dir
         self.pairs = self.map_ranks_to_pairs()
         
     def map_ranks_to_pairs(self):
@@ -293,7 +291,7 @@ class HumanAlignedDataset(Dataset):
                     else:
                         _id_ = file[len("enh_"):]
 
-                    val = (i, os.path.join(self.mixture_dir, file), os.path.join(self.noisy_dir, _id_))
+                    val = (i, os.path.join(self.mixture_dir, file))
                     FILES.append(val)
 
                 #Find all possible combination of pairs from the ranking list
@@ -309,8 +307,8 @@ class HumanAlignedDataset(Dataset):
     def __getitem__(self, idx):
         pair = self.pairs[idx]
 
-        _, path_1, ref = pair[0]
-        _, path_2, ref = pair[1]
+        _, path_1 = pair[0]
+        _, path_2 = pair[1]
 
         path_1 = path_1.strip()
         path_2 = path_2.strip()

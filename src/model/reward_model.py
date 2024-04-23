@@ -22,8 +22,8 @@ class RewardModel(nn.Module):
         x_pos = pos.permute(0, 1, 3, 2)
         x_neg = neg.permute(0, 1, 3, 2)
 
-        pos_proj = F.sigmoid(self.reward_projection(x_pos))
-        neg_proj = F.sigmoid(self.reward_projection(x_neg))
+        pos_proj = self.reward_projection(x_pos)
+        neg_proj = self.reward_projection(x_neg)
 
 
         score_proj = F.sigmoid(pos_proj - neg_proj) 

@@ -273,6 +273,4 @@ def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False):
         return (clean, clean_spec, noisy_spec, ref_spec, labels)
     
     clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, clean_istft=clean_istft)
-    
-
     return (clean, clean_spec, noisy_spec, labels)

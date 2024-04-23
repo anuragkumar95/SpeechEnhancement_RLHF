@@ -252,12 +252,10 @@ def main(args):
         trainer = Trainer(args, None)
  
     train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train'),
-                                        noisy_dir=os.path.join(args.vctk_root, 'train', 'noisy'),
                                         rank=os.path.join(args.rank_dir, 'train.ranks'),  
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test'),
-                                       noisy_dir=os.path.join(args.vctk_root, 'test', 'noisy'),
                                        rank=os.path.join(args.rank_dir, 'test.ranks'),  
                                        cutlen=40000)
 

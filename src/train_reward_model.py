@@ -254,11 +254,13 @@ def main(args):
         trainer = Trainer(args, None)
  
     train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train'),
-                                        rank=os.path.join(args.rank_dir, 'train.ranks'),  
+                                        rank=os.path.join(args.rank_dir, 'train.ranks'), 
+                                        mos_file=os.path.join(args.rank_dir, 'NISQA_train2.csv'),
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test'),
-                                       rank=os.path.join(args.rank_dir, 'test.ranks'),  
+                                       rank=os.path.join(args.rank_dir, 'test.ranks'),
+                                       mos_file=os.path.join(args.rank_dir, 'NISQA_test2.csv'),  
                                        cutlen=40000)
 
     train_dataloader = DataLoader(

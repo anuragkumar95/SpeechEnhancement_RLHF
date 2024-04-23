@@ -31,7 +31,7 @@ class RewardModel(nn.Module):
 
         #label is one_hot_vector
         label = torch.argmax(label, dim=-1)
-        loss = (label * (pos_proj - neg_proj)**2 + (1 - label) * torch.clamp(self.eps - (pos_proj - neg_proj), min=0)**2).mean()
+        loss = (label * (pos_proj - neg_proj)**2 + (1 - label) * (torch.clamp(self.eps - (pos_proj - neg_proj), min=0))**2 ).mean()
    
         return loss, (pos_proj, neg_proj), None
     

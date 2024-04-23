@@ -22,12 +22,12 @@ class RewardModel(nn.Module):
         x_pos = pos.permute(0, 1, 3, 2)
         x_neg = neg.permute(0, 1, 3, 2)
 
-        pos_proj = self.reward_projection(x_pos)
-        neg_proj = self.reward_projection(x_neg)
+        pos_proj = F.sigmoid(self.reward_projection(x_pos))
+        neg_proj = F.sigmoid(self.reward_projection(x_neg))
 
         #loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
 
-        dist = F.relu(pos_proj - neg_proj)
+        dist = pos_proj - neg_proj
 
         #label is one_hot_vector
         label = torch.argmax(label, dim=-1)

@@ -27,7 +27,7 @@ class RewardModel(nn.Module):
 
         #loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
 
-        dist = F.pairwise_distance(pos_proj, neg_proj)
+        dist = F.relu(pos_proj - neg_proj)
 
         #label is one_hot_vector
         label = torch.argmax(label, dim=-1)

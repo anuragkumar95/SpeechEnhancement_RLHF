@@ -102,10 +102,11 @@ class Trainer:
             labels = labels.to(self.gpu_id)
         
         labels = torch.argmax(labels, dim=-1)
-        loss, score, probs = self.reward_model(pos=x_1, neg=x_2)
+        loss, score, probs = self.reward_model(pos=x_1, neg=x_2, label=labels)
         if probs is None:
             pos_score, neg_score = score
-            y_preds = (pos_score > neg_score).float()
+            dist = (pos_score - neg_score)**2
+            y_preds = (dist < 0.25).float()
         else:
             y_preds = torch.argmax(probs, dim=-1)
         

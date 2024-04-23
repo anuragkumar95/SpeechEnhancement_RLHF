@@ -30,7 +30,7 @@ class RewardModel(nn.Module):
 
         loss = -torch.log(score_proj + self.eps).mean()
    
-        return loss, score_proj
+        return loss, score_proj, None
     
     def get_reward(self, inp):
         """

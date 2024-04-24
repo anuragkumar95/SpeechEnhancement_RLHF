@@ -25,19 +25,7 @@ class RewardModel(nn.Module):
         pos_proj = self.reward_projection(x_pos)
         neg_proj = self.reward_projection(x_neg)
 
-        #loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
-
-        dist = torch.sqrt((pos_proj - neg_proj)**2)
-
-        #loss = (label * (pos_proj - neg_proj)**2 + (1 - label) * (torch.clamp(self.eps - (pos_proj - neg_proj), min=0))**2 ).mean()
-
-        loss1 = (label) * torch.pow(dist, 2)
-        loss2 = (1 - label) * torch.pow(torch.clamp(self.eps - dist, min=0.0), 2)
-        loss3 = -torch.log(F.sigmoid(pos_proj - neg_proj))
-        loss = (loss1 + loss2 + loss3).mean() 
-        
-        print(f"loss_1:{loss1.mean()}, loss_2:{loss2.mean()}, label:{label}")
-        
+        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
    
         return loss, (pos_proj, neg_proj), None
     

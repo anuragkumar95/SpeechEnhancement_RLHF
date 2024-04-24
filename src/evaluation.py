@@ -271,5 +271,6 @@ if __name__ == "__main__":
                    cutlen=args.cutlen, 
                    noisy_dir=noisy_dir, 
                    clean_dir=clean_dir, 
-                   save_dir=args.save_dir, 
+                   save_dir=args.save_dir,
+                   pre=args.pre, 
                    gpu_id=gpu_id)

@@ -43,7 +43,7 @@ def run_enhancement_step(env,
         'mse':0,
         'reward':0}
     
-    clean_aud, clean, noisy, c = batch
+    clean_aud, clean, noisy, _, c = batch
     inp = noisy.permute(0, 1, 3, 2)
 
     #Forward pass through actor to get the action(mask)

@@ -105,16 +105,18 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
     reward_model = RewardModel(in_channels=2)
     
     #model_pt = "/users/PAS2301/kumar1109/CMGAN_RLHF/cmgan_big_ppo_ep5_steps10_beta1.1e-3_lmbda1.0_mvar0.01_cvar0.01_run6_forward2/cmgan_big_loss_0.12089217454195023_episode_75.pt"
-    if gpu_id is None:
-        gpu_id = 'cpu'
     
     #Load cmgan model weights
-    checkpoint = torch.load(model_pt, map_location=torch.device(gpu_id))
+    checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint['actor_state_dict'])
 
     #Load reward model weights
-    checkpoint = torch.load(reward_pt, map_location=torch.device(gpu_id))
+    checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
     reward_model.load_state_dict(checkpoint)
+
+    if gpu_id is not None:
+        model = model.to(gpu_id)
+        reward_model = reward_model.to(gpu_id)
 
     model.eval()
     reward_model.eval()

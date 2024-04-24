@@ -292,7 +292,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-pt", "--model_path", type=str, default='./best_ckpt/ckpt_80',
                         help="the path where the model is saved")
-    parser.add_argument("-rpt", "--reward_path", type=str, required=True,
+    parser.add_argument("-rpt", "--reward_path", type=str, required=False,
                         help="the path where the model is saved")
     parser.add_argument("--test_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
                         help="noisy tracks dir to be enhanced")

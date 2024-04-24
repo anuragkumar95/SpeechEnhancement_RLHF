@@ -389,7 +389,7 @@ class PPO:
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
-            b_advantages = advantages.reshape(-1)
+            b_advantages = torch.clamp(advantages.reshape(-1), min=-1e-20)
             
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)

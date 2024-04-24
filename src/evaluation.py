@@ -87,6 +87,8 @@ def run_enhancement_step(env,
     metrics['si-sdr'] = values[6]
 
     if save_track:
+        save_dir = os.path.join(save_dir, 'audios')
+        os.makedirs(save_dir, exist_ok=True)
         saved_path = os.path.join(save_dir, file_id)
         sf.write(saved_path, enh_audio/c, 16000)
     

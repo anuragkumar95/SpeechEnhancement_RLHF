@@ -1,5 +1,5 @@
 import numpy as np
-from model.actor import TSCNet, TSCNetSmall, MPNet
+from model.actor import TSCNet, TSCNetSmall
 from model.reward_model import RewardModel
 from natsort import natsorted
 import os

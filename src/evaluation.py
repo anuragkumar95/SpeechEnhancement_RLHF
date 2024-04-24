@@ -254,19 +254,15 @@ def compute_scores(clean_dir, enhance_dir):
     
     num_files = len(os.listdir(enhance_dir))
 
-    for file in os.listdir(enhance_dir):
+    for file in tqdm(os.listdir(enhance_dir)):
         enh_file = os.path.join(enhance_dir, file)
         clean_file = os.path.join(clean_dir, file)
 
         clean_aud, sr = torchaudio.load(clean_file)
         enh_audio, sr = torchaudio.load(enh_file) 
 
-        lens = min(enh_audio.shape[-1], clean_aud.shape[-1])
-
-        print(f"FILE:{file}, CLEAN:{clean_aud[:, :lens].shape}, ENH:{enh_audio[:, :lens].shape}")
-
-        values = compute_metrics(clean_aud[:, :lens].reshape(-1).cpu().numpy(), 
-                                 enh_audio[:, :lens].reshape(-1).cpu().numpy(), 
+        values = compute_metrics(clean_aud.reshape(-1).cpu().numpy(), 
+                                 enh_audio.reshape(-1).cpu().numpy(), 
                                  16000, 
                                  0)
     

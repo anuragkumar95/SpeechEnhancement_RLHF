@@ -43,7 +43,7 @@ def run_enhancement_step(env,
         'mse':0,
         'reward':0}
     
-    clean_aud, clean, noisy, _ = batch
+    clean_aud, clean, noisy, c = batch
     inp = noisy.permute(0, 1, 3, 2)
 
     #Forward pass through actor to get the action(mask)
@@ -70,11 +70,11 @@ def run_enhancement_step(env,
 
     clean_aud = clean_aud.reshape(-1)
     enh_audio = next_state['est_audio'].reshape(-1)
-    clean_aud = clean_aud[:lens]
-    enh_audio = enh_audio[:lens]
+    clean_aud = clean_aud[:lens].detach().cpu().numpy()
+    enh_audio = enh_audio[:lens].detach().cpu().numpy()
     
-    values = compute_metrics(clean_aud.detach().cpu().numpy(), 
-                             enh_audio.detach().cpu().numpy(), 
+    values = compute_metrics(clean_aud, 
+                             enh_audio, 
                              16000, 
                              0)
     
@@ -88,7 +88,7 @@ def run_enhancement_step(env,
 
     if save_track:
         saved_path = os.path.join(save_dir, file_id)
-        sf.write(saved_path, enh_audio, 16000)
+        sf.write(saved_path, enh_audio/c, 16000)
     
     return metrics
 
@@ -147,10 +147,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
             noisy_ds, _ = torchaudio.load(noisy_file)
             length = clean_ds.shape[-1]
             
-            if clean_ds.shape[-1] < cutlen:
-                batch = (clean_ds, noisy_ds, length)
-                batch = preprocess_batch(batch, gpu_id=None)
-            else:
+            if length > cutlen:
                 mb_size = clean_ds.shape[-1] // cutlen
                 if clean_ds.shape[-1] % cutlen > 0:
                     mb_size = mb_size + 1
@@ -171,8 +168,9 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
 
                 clean_ds = torch.stack(cleans, dim=0).squeeze(1)
                 noisy_ds = torch.stack(noises, dim=0).squeeze(1)
-                batch = (clean_ds, noisy_ds, length)
-                batch = preprocess_batch(batch, gpu_id=None)
+            
+            batch = (clean_ds, noisy_ds, length)
+            batch = preprocess_batch(batch, gpu_id=None, return_c=True)
             
             #Run validation episode
             try:

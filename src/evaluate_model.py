@@ -145,7 +145,7 @@ class EvalModel:
                 
                 _, noisy_aud, _ = batch
                 #Preprocess batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id, clean_istft=clean_istft)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id, clean_istft=clean_istft, return_c=True)
 
                 cl_aud, clean, noisy, _ = batch
                 curr = noisy.permute(0, 1, 3, 2)

@@ -174,14 +174,9 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
                 clean_ds = torch.stack(cleans, dim=0).squeeze(1)
                 noisy_ds = torch.stack(noises, dim=0).squeeze(1)
             
-            #if gpu_id is not None:
-            #    clean_ds = clean_ds.to(gpu_id)
-            #    noisy_ds = noisy_ds.to(gpu_id)
-
             batch = (clean_ds, noisy_ds, length)
             batch = preprocess_batch(batch, gpu_id=gpu_id, return_c=True)
             
-            #Run validation episode
             try:
                 metrics = run_enhancement_step(env=env, 
                                                batch=batch, 
@@ -191,13 +186,13 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
                                                save_dir=save_dir,
                                                save_track=True)
                 
-                val_metrics['pesq'].extend(metrics['pesq'])
-                val_metrics['csig'].extend(metrics['csig'])
-                val_metrics['cbak'].extend(metrics['cbak'])
-                val_metrics['covl'].extend(metrics['covl'])
-                val_metrics['ssnr'].extend(metrics['ssnr'])
-                val_metrics['stoi'].extend(metrics['stoi'])
-                val_metrics['si-sdr'].extend(metrics['si-sdr'])
+                val_metrics['pesq'].append(metrics['pesq'])
+                val_metrics['csig'].append(metrics['csig'])
+                val_metrics['cbak'].append(metrics['cbak'])
+                val_metrics['covl'].append(metrics['covl'])
+                val_metrics['ssnr'].append(metrics['ssnr'])
+                val_metrics['stoi'].append(metrics['stoi'])
+                val_metrics['si-sdr'].append(metrics['si-sdr'])
                 val_metrics['mse'] += metrics['mse']
                 val_metrics['reward'] += metrics['reward']
 

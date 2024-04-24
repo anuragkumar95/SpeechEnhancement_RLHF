@@ -236,7 +236,7 @@ class Trainer:
         self.G = 0
         self.args = args
         
-        wandb.init(project=args.exp)
+        wandb.init(project=args.exp, name=args.suffix)
 
     
     def run_validation_step(self, env, batch):

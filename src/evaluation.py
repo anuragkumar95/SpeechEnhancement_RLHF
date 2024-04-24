@@ -72,6 +72,7 @@ def run_enhancement_step(env,
     enh_audio = next_state['est_audio'].reshape(-1)
     clean_aud = clean_aud[:lens].detach().cpu().numpy()
     enh_audio = enh_audio[:lens].detach().cpu().numpy()
+    c = c.detach().cpu().numpy()
     
     values = compute_metrics(clean_aud, 
                              enh_audio, 

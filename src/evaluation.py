@@ -256,7 +256,7 @@ def compute_scores(clean_dir, enhance_dir):
 
     for file in os.listdir(enhance_dir):
         enh_file = os.path.join(enhance_dir, file)
-        clean_file = os.apth.join(clean_dir, file)
+        clean_file = os.path.join(clean_dir, file)
 
         clean_aud, sr = torchaudio.load(clean_file)
         enh_audio, sr = torchaudio.load(enh_file) 

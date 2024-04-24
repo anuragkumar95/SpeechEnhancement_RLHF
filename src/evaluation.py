@@ -212,7 +212,6 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
                 res_save_dir = os.path.join(save_dir, 'results')
                 os.makedirs(res_save_dir, exist_ok=True)
                 with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
-                    print(metrics)
                     pickle.dump(metrics, f)
 
 

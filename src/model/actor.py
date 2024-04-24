@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from torch.distributions import Normal, Categorical
 from torch.nn.utils import rnn
 
+from utils import LearnableSigmoid_2d, get_padding_2d
+
 
 class DilatedDenseNet(nn.Module):
     def __init__(self, depth=4, in_channels=64):
@@ -496,6 +498,10 @@ class LSTMActor(nn.Module):
         probs = F.Softmax(scores, dim=-1)
 
         return probs
+    
+
+
+
         
 
 

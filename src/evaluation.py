@@ -1,5 +1,5 @@
 import numpy as np
-from model.actor import TSCNet, TSCNetSmall 
+from model.actor import TSCNet, TSCNetSmall, MPNet
 from model.reward_model import RewardModel
 from natsort import natsorted
 import os
@@ -9,6 +9,7 @@ import torchaudio
 import soundfile as sf
 import argparse
 from tqdm import tqdm
+import json
 import pickle
 import traceback
 from speech_enh_env import SpeechEnhancementAgent
@@ -18,7 +19,7 @@ def run_enhancement_step(env,
                          actor,
                          lens,
                          file_id, 
-                         save_dir,
+                         save_dir, 
                          save_track=True):
     """
     Enhances one audio at a time.
@@ -70,6 +71,7 @@ def run_enhancement_step(env,
 
     clean_aud = clean_aud.reshape(-1)
     enh_audio = next_state['est_audio'].reshape(-1)
+
     clean_aud = clean_aud[:lens].detach().cpu().numpy()
     enh_audio = enh_audio[:lens].detach().cpu().numpy()
     
@@ -103,9 +105,9 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
     
     #Initiate models
     model = TSCNet(num_channel=64, 
-                   num_features=400 // 2 + 1,
-                   distribution=None, 
-                   gpu_id=gpu_id)
+                num_features=400 // 2 + 1,
+                distribution=None, 
+                gpu_id=gpu_id)
     
     reward_model = RewardModel(in_channels=2)
     
@@ -117,10 +119,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
         try:
             model.load_state_dict(checkpoint['generator_state_dict'])
         except KeyError as e:
-            if 'generator' in checkpoint.keys():
-                model.load_state_dict(checkpoint['generator'])
-            else:
-                model.load_state_dict(checkpoint)
+            model.load_state_dict(checkpoint)
     else:
         model.load_state_dict(checkpoint['actor_state_dict'])
 
@@ -239,7 +238,54 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
             else:
                 msg += f"{key.capitalize()}:{metrics[key]} | "
         print(msg)
-        
+
+def compute_scores(clean_dir, enhance_dir):
+
+    metrics = {
+        'pesq':0,
+        'csig':0,
+        'cbak':0,
+        'covl':0,
+        'ssnr':0,
+        'stoi':0,
+        'si-sdr':0,
+        'mse':0,
+        'reward':0}
+    
+    num_files = len(os.listdir(enhance_dir))
+
+    for file in os.listdir(enhance_dir):
+        enh_file = os.path.join(enhance_dir, file)
+        clean_file = os.apth.join(clean_dir, file)
+
+        clean_aud, sr = torchaudio.load(clean_file)
+        enh_audio, sr = torchaudio.load(enh_file) 
+
+        values = compute_metrics(clean_aud, 
+                                 enh_audio, 
+                                 16000, 
+                                 0)
+    
+        metrics['pesq'] += values[0]
+        metrics['csig'] += values[1]
+        metrics['cbak'] += values[2]
+        metrics['covl'] += values[3]
+        metrics['ssnr'] += values[4]
+        metrics['stoi'] += values[5]
+        metrics['si-sdr'] += values[6]
+
+    for key in metrics:
+        metrics[key] = metrics[key] /  num_files
+
+    msg = ""
+    for key in metrics:
+        if key not in ['mse', 'reward']:
+            msg += f"{key.capitalize()}:{metrics[key].mean()} | "
+        else:
+            msg += f"{key.capitalize()}:{metrics[key]} | "
+    print(msg)
+
+    
 
 if __name__ == "__main__":
 

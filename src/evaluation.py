@@ -57,7 +57,7 @@ def run_enhancement_step(env,
     
     #Get reward
     r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
-    metrics['reward'] = r_state
+    metrics['reward'] = r_state.detach().cpu().numpy()
 
     #Supervised loss
     mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
@@ -66,7 +66,7 @@ def run_enhancement_step(env,
     mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
     supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
-    metrics['mse'] = supervised_loss
+    metrics['mse'] = supervised_loss.detach().cpu().numpy()
 
     clean_aud = clean_aud.reshape(-1)
     enh_audio = next_state['est_audio'].reshape(-1)

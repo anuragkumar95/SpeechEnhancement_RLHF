@@ -149,7 +149,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
     with torch.no_grad():
         step = 0
         files = os.listdir(noisy_dir)
-        for file in files:
+        for file in tqdm(files):
             clean_file = os.path.join(clean_dir, file)
             noisy_file = os.path.join(noisy_dir, file)
             clean_ds, _ = torchaudio.load(clean_file)
@@ -200,15 +200,13 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
                 val_metrics['mse'] += metrics['mse']
                 val_metrics['reward'] += metrics['reward']
 
-                msg = f"{file}: "
-                for key in val_metrics:
-                    if key not in ['mse', 'reward']:
-                        msg += f"{key}:{val_metrics[key][-1]} | "
-                    else:
-                        msg += f"{key}:{metrics[key]} | "
-                print(msg)
-                print("="*50)
                 step += 1
+
+                res_save_dir = os.path.join(save_dir, 'results')
+
+                with open(os.path.join(res_save_dir, f'{file}_results.pickle'), 'wb') as f:
+                    pickle.dump(metrics, f)
+
 
             except Exception as e:
                 print(traceback.format_exc())

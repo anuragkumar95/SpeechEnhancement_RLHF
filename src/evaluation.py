@@ -303,6 +303,7 @@ if __name__ == "__main__":
     parser.add_argument("--small", action='store_true', help="toggle to test small cmgan models")
     parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")
     parser.add_argument("--save_dir", type=str, default='./saved_tracks_best', help="where enhanced tracks to be saved")
+    parser.add_argument("--enhance_dir", type=str, default=None, help="Path to enhanced_dir")
 
     args = parser.parse_args()
 
@@ -315,11 +316,14 @@ if __name__ == "__main__":
     else:
         gpu_id = None
 
-    enhance_audios(model_pt=args.model_path, 
-                   reward_pt=args.reward_path, 
-                   cutlen=args.cutlen, 
-                   noisy_dir=noisy_dir, 
-                   clean_dir=clean_dir, 
-                   save_dir=args.save_dir,
-                   pre=args.pre, 
-                   gpu_id=gpu_id)
+    if args.enhance_dir is not None:
+        compute_scores(clean_dir, args.enhance_dir)
+    else:
+        enhance_audios(model_pt=args.model_path, 
+                    reward_pt=args.reward_path, 
+                    cutlen=args.cutlen, 
+                    noisy_dir=noisy_dir, 
+                    clean_dir=clean_dir, 
+                    save_dir=args.save_dir,
+                    pre=args.pre, 
+                    gpu_id=gpu_id)

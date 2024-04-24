@@ -72,8 +72,6 @@ def run_enhancement_step(env,
     enh_audio = next_state['est_audio'].reshape(-1)
     clean_aud = clean_aud[:lens].detach().cpu().numpy()
     enh_audio = enh_audio[:lens].detach().cpu().numpy()
-    c = c.item()
-    print(f"c:{c}")
     
     values = compute_metrics(clean_aud, 
                              enh_audio, 
@@ -92,7 +90,12 @@ def run_enhancement_step(env,
         save_dir = os.path.join(save_dir, 'audios')
         os.makedirs(save_dir, exist_ok=True)
         saved_path = os.path.join(save_dir, file_id)
-        sf.write(saved_path, enh_audio/c, 16000)
+
+        est_audio = next_state['est_audio']/c.reshape(-1, 1)
+        est_audio = est_audio.reshape(-1)
+        est_audio = est_audio.detach().cpu().numpy()
+
+        sf.write(saved_path, est_audio, 16000)
     
     return metrics
 

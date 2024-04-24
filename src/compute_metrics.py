@@ -45,6 +45,7 @@ def compute_metrics(cleanFile, enhancedFile, Fs, path):
         data2 = data2[0:length] + np.spacing(1)
 
     # compute the WSS measure
+    print(len(data1), len(data2))
     wss_dist_vec = wss(data1, data2, sampling_rate1)
     wss_dist_vec = np.sort(wss_dist_vec)
     wss_dist = np.mean(wss_dist_vec[0 : round(np.size(wss_dist_vec) * alpha)])

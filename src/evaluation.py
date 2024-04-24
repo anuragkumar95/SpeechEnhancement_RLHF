@@ -261,6 +261,8 @@ def compute_scores(clean_dir, enhance_dir):
         clean_aud, sr = torchaudio.load(clean_file)
         enh_audio, sr = torchaudio.load(enh_file) 
 
+        print(f"FILE:{file}, CLEAN:{clean_aud.shape}, ENH:{enh_audio.shape}")
+
         values = compute_metrics(clean_aud, 
                                  enh_audio, 
                                  16000, 

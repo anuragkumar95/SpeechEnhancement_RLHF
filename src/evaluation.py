@@ -265,8 +265,8 @@ def compute_scores(clean_dir, enhance_dir):
 
         print(f"FILE:{file}, CLEAN:{clean_aud[:, :lens].shape}, ENH:{enh_audio[:, :lens].shape}")
 
-        values = compute_metrics(clean_aud[:, :lens].reshape(-1), 
-                                 enh_audio[:, :lens].reshape(-1), 
+        values = compute_metrics(clean_aud[:, :lens].reshape(-1).cpu().numpy(), 
+                                 enh_audio[:, :lens].reshape(-1).cpu().numpy(), 
                                  16000, 
                                  0)
     

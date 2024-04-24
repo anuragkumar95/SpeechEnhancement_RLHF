@@ -117,7 +117,10 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
         try:
             model.load_state_dict(checkpoint['generator_state_dict'])
         except KeyError as e:
-            model.load_state_dict(checkpoint['generator'])
+            if 'generator' in checkpoint.keys():
+                model.load_state_dict(checkpoint['generator'])
+            else:
+                model.load_state_dict(checkpoint)
     else:
         model.load_state_dict(checkpoint['actor_state_dict'])
 

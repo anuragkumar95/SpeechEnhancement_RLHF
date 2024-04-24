@@ -99,7 +99,7 @@ def run_enhancement_step(env,
     
     return metrics
 
-def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, gpu_id=None):
+def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, pre=False, gpu_id=None):
     
     #Initiate models
     model = TSCNet(num_channel=64, 
@@ -113,7 +113,13 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
     
     #Load cmgan model weights
     checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
-    model.load_state_dict(checkpoint['actor_state_dict'])
+    if pre:
+        try:
+            model.load_state_dict(checkpoint['generator_state_dict'])
+        except KeyError as e:
+            model.load_state_dict(checkpoint)
+    else:
+        model.load_state_dict(checkpoint['actor_state_dict'])
 
     #Load reward model weights
     checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))

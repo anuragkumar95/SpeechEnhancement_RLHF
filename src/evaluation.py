@@ -150,6 +150,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
         step = 0
         files = os.listdir(noisy_dir)
         for file in tqdm(files):
+            file_id = file[:-len('.wav')]
             clean_file = os.path.join(clean_dir, file)
             noisy_file = os.path.join(noisy_dir, file)
             clean_ds, _ = torchaudio.load(clean_file)
@@ -203,8 +204,8 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
                 step += 1
 
                 res_save_dir = os.path.join(save_dir, 'results')
-
-                with open(os.path.join(res_save_dir, f'{file}_results.pickle'), 'wb') as f:
+                os.makedirs(res_save_dir, exist_ok=True)
+                with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
                     pickle.dump(metrics, f)
 
 

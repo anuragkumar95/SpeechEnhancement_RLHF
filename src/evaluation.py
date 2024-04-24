@@ -279,10 +279,8 @@ def compute_scores(clean_dir, enhance_dir):
 
     msg = ""
     for key in metrics:
-        if key not in ['mse', 'reward']:
-            msg += f"{key.capitalize()}:{metrics[key].mean()} | "
-        else:
-            msg += f"{key.capitalize()}:{metrics[key]} | "
+        msg += f"{key.capitalize()}:{metrics[key]} | "
+       
     print(msg)
 
     

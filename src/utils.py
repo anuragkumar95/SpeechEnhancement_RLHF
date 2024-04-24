@@ -177,7 +177,7 @@ def original_pesq(pesq):
     return (pesq * 3.5) + 1
 
 
-def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
+def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False, return_c=False):
     """
     Create spectrograms from input waveform.
     ARGS:
@@ -248,6 +248,9 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False):
         )
         ref_spec = power_compress(ref_spec)
         return clean, clean_spec, noisy_spec, ref_spec
+    
+    if return_c:
+        return clean, clean_spec, noisy_spec, c
     
     return clean, clean_spec, noisy_spec
 

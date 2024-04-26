@@ -214,6 +214,7 @@ class Trainer:
                                discount=0.99,
                                warm_up_steps=30,
                                scale_rewards=args.scale_reward,
+                               batchsize=args.batchsize, 
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
                                accum_grad=args.accum_grad,

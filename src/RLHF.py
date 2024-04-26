@@ -369,10 +369,11 @@ class PPO:
                 r_ts.append(r_t)
                 angle_rewards.append(ang_reward)
 
-                if self.beta > 0 and self.warm_up > 0:
+                if self.beta > 0 and self.warm_up <= 0:
                     r_t = r_t - self.beta * kl_penalty
-
-                self.warm_up -= 1
+                else:
+                    self.init_model = actor
+                    self.warm_up -= 1
                 
                 #Store trajectory
                 states.append(noisy)

@@ -331,7 +331,7 @@ class PPO:
                 action, log_probs, _, _ = actor.get_action(noisy)
                 _, log_probs_1 = actor.get_action_prob(noisy, action)
 
-                print(f"log_probs:{log_probs.mean()} log_probs_1:{log_probs_1.mean()}")
+                print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()} log_probs_1:{log_probs_1[0].mean(), log_probs_1[1].mean()}")
 
                 if self.init_model is not None:
                     init_action, _, _, _ = self.init_model.get_action(noisy)

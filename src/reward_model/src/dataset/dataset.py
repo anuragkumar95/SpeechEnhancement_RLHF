@@ -311,25 +311,18 @@ class HumanAlignedDataset(Dataset):
                 #rank indexed 1st within the pair
                 pairs = itertools.combinations(FILES, 2)
                 PAIRS.extend(pairs)
+                
         return PAIRS
     
     def __len__(self):
         return len(self.pairs)
     
     def __getitem__(self, idx):
+        
         pair = self.pairs[idx]
 
         file1, path_1 = pair[0]
         file2, path_2 = pair[1]
-
-        mos1 = self.mos[file1]
-        mos2 = self.mos[file2]
-
-        if mos1 - mos2 < 0.2:
-            label = torch.tensor([0.0, 1.0])
-
-        else:
-            label = torch.tensor([1.0, 0.0])
 
 
         path_1 = path_1.strip()
@@ -345,7 +338,6 @@ class HumanAlignedDataset(Dataset):
             x_1 = torch.cat([pad, x_1], dim=-1)
             x_2 = torch.cat([pad, x_2], dim=-1)
         
-
         else:
             start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
             x_1 = x_1[:, start_idx: start_idx + self.cutlen]
@@ -354,7 +346,8 @@ class HumanAlignedDataset(Dataset):
         x_1 = x_1.reshape(-1)
         x_2 = x_2.reshape(-1)
 
-        #label = torch.tensor([1.0, 0.0])
+        label = torch.tensor([1.0, 0.0])
+ 
         return x_1, x_2, label, (path_1, path_2)
 
 

@@ -46,14 +46,15 @@ class MixturesDataset:
     """
     This class generates a dataset for reward model training.
     """
-    def __init__(self, clean_dir, noise_dir, out_dir, snr_low=-10, snr_high=10, K=5):
+    def __init__(self, clean_dir, noise_dir, out_dir, K=5, cutlen=40000):
         self.clean_dir = clean_dir
         self.noise_dir = noise_dir
         self.clean_files = os.listdir(clean_dir)
         self.noise_files = os.listdir(noise_dir)
         self.save_dir = out_dir
         self.K = K
-        self.snr_means = [-10, 0, 10, 20, 40]
+        self.snr_means = [-15, -10, 5, 0, 5, 10, 15, 20, 25, 30, 35, 40]
+        self.cutlen = cutlen
 
     def mix_audios(self, clean, noise, snr):
         
@@ -77,6 +78,9 @@ class MixturesDataset:
         clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
         clean, c_sr = torchaudio.load(clean_file)
 
+        if clean.shape[-1] > self.cutlen:
+            clean = clean[:, :self.cutlen]
+
         assert c_sr == 16000
 
         for i in range(self.K):
@@ -90,7 +94,8 @@ class MixturesDataset:
                 noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
             #mix them
-            snr_dist = Normal(self.snr_means[i], 3.0)
+            s_idx = np.random.choice(len(self.snr_means), 1)[0]
+            snr_dist = Normal(self.snr_means[s_idx], 3.0)
             snr = snr_dist.sample()
             signal = self.mix_audios(clean, noise, snr)
             
@@ -172,8 +177,7 @@ if __name__ == "__main__":
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noise_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
-                                snr_low=-10, 
-                                snr_high=40)
+                                K=20)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)
 

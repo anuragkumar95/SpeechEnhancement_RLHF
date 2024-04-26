@@ -151,6 +151,10 @@ class MaskDecoder(nn.Module):
         elif self.dist is None:
             sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
+        try:
+            print(f"X:{x.mean()}")
+        except Exception as e:
+            print(f"X:{x}")
         if x is None:
             x = N.rsample()
         print(f"M_Decoder:{x.mean()}")

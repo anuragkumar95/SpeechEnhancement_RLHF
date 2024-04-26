@@ -253,7 +253,7 @@ class Trainer:
         #Forward pass through actor to get the action(mask)
         action, log_probs, _, _ = self.actor.get_action(inp)
         if self.expert is not None:
-            ref_log_probs, _, _, _ = self.expert.get_action_prob(inp, action)
+            ref_log_probs, _ = self.expert.get_action_prob(inp, action)
             ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
         log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)

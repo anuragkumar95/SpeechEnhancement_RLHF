@@ -309,6 +309,7 @@ class PPO:
         cleans = []
         angle_rewards = []
         ep_kl_penalty = 0
+        pretrain_loss = 0
         
         with torch.no_grad():
             for _ in range(self.episode_len):
@@ -370,6 +371,8 @@ class PPO:
                 enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
                 clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
                 supervised_loss = ((clean - enhanced) ** 2).mean() + ((clean_mag - enhanced_mag)**2).mean()
+
+                pretrain_loss += supervised_loss
                 
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * supervised_loss
                 
@@ -406,6 +409,7 @@ class PPO:
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
+            pretrain_loss = pretrain_loss / self.episode_len
 
         print(f"STATES        :{states.shape}")
         print(f"CLEAN         :{cleans.shape}")
@@ -417,7 +421,7 @@ class PPO:
 
         policy_out = {
             'states':states,
-            'clean':cleans, 
+            'pretrain_loss':pretrain_loss, 
             'b_targets':b_target,
             'actions':actions,
             'log_probs':logprobs,
@@ -432,7 +436,7 @@ class PPO:
     def train_on_policy(self, policy, actor, critic, optimizers, n_epochs):
 
         states = policy['states']
-        clean = policy['clean']
+        pretrain_loss = policy['pretrain_loss']
         b_target = policy['b_targets']
         actions = policy['actions']
         logprobs = policy['log_probs']
@@ -563,7 +567,7 @@ class PPO:
         step_entropy_loss = step_entropy_loss / (n_epochs * self.episode_len)
         
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), \
+        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, pretrain_loss), \
                (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), \
                advantages.mean()  
 

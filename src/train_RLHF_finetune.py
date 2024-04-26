@@ -474,13 +474,13 @@ class Trainer:
                             "cumulative_G_t": batch_reward[0].item(),
                             "critic_values": batch_reward[1].item(), 
                             "episodic_avg_r": batch_reward[3].item(),
+                            "episodic_reward_model_score": batch_reward[4].item(),
                             "advantages":adv,
                             "clip_loss":loss[0],
                             "value_loss":loss[1],
                             "pretrain_loss":loss[4],
                             "pg_loss":loss[3],
-                            "entropy_loss":loss[2],
-                            "angle_reward":batch_reward[4]
+                            "entropy_loss":loss[2]
                         })
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")

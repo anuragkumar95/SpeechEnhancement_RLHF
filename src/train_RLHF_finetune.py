@@ -257,7 +257,6 @@ class Trainer:
             ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
         log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-        print(f"log_prob:{log_prob.shape}")
 
         if ref_log_prob is not None:
             kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
@@ -462,8 +461,9 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        loss, best_pesq = self.run_validation(0)
-
+        #loss, best_pesq = self.run_validation(0)
+        loss = 99999 
+        best_pesq = 0
         epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)

@@ -310,7 +310,7 @@ class PPO:
         angle_rewards = []
         ep_kl_penalty = 0
         pretrain_loss = 0
-        
+      
         with torch.no_grad():
             for _ in range(self.episode_len):
                 
@@ -346,7 +346,7 @@ class PPO:
                 if self.init_model is not None:
                     ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                 log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                print(f"log_prob:{log_prob.shape}")
+                print(f"log_prob:{log_prob.mean()}")
 
                 if ref_log_prob is not None:
                     kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
@@ -355,7 +355,7 @@ class PPO:
                     ep_kl_penalty += kl_penalty.mean()
                 else:
                     kl_penalty = None
-                print(f"Bla bla")
+                
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
@@ -574,7 +574,7 @@ class PPO:
                (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), \
                advantages.mean()  
 
-
+    '''
     def run_n_step_episode(self, batch, actor, critic, optimizer, n_epochs=3):
         """
         Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
@@ -818,3 +818,4 @@ class PPO:
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \
                (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty, r_ts.sum(-1).mean()), \
                advantages.sum(-1).mean()  
+    '''

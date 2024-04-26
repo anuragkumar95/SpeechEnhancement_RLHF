@@ -371,9 +371,9 @@ class PPO:
 
                 if self.beta > 0 and self.warm_up <= 0:
                     r_t = r_t - self.beta * kl_penalty
-                else:
-                    self.init_model = actor
-                    self.warm_up -= 1
+                #else:
+                #    self.init_model = actor
+                #    self.warm_up -= 1
                 
                 #Store trajectory
                 states.append(noisy)

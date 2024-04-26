@@ -360,6 +360,7 @@ class TSCNet(nn.Module):
         out_5 = self.TSCB_4(out_4)
 
         mask, m_logprob, m_entropy, params = self.mask_decoder(out_5)
+        print(f"m_logprob:{m_logprob.mean()}")
         complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_5)
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
 

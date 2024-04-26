@@ -422,6 +422,8 @@ class PPO:
         print(f"ADVANTAGES    :{b_advantages.shape}")
         print(f"POLICY RETURNS:{target_values.mean(0)}")
 
+        print(f"STATES:{states.mean()} ACTION:{actions[0][0].mean(), actions[0][1].mean(), actions[1].mean()}")
+
         policy_out = {
             'states':states,
             'pretrain_loss':pretrain_loss, 
@@ -478,6 +480,8 @@ class PPO:
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
+
+                print(f"mb_STATES:{mb_states.mean()} mb_ACTION:{mb_action[0][0].mean(), mb_action[0][1].mean(), mb_action[1].mean()}")
                 
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
         

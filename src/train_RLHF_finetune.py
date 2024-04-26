@@ -282,7 +282,9 @@ class Trainer:
         
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
-        supervised_loss = ((clean - mb_enhanced) ** 2) + ((mb_clean_mag - mb_enhanced_mag)**2)
+        mag_loss = (mb_clean_mag - mb_enhanced_mag)**2
+        ri_loss = (clean - mb_enhanced) ** 2
+        supervised_loss = 0.3 * ri_loss + 0.7 * mag_loss
 
         metrics['mse'] = supervised_loss
         metrics['reward'] = (r_state - self.beta * kl_penalty - self.args.lmbda * supervised_loss).mean()

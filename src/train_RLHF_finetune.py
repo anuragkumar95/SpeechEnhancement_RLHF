@@ -286,8 +286,10 @@ class Trainer:
         ri_loss = (clean - mb_enhanced) ** 2
         supervised_loss = 0.3 * ri_loss + 0.7 * mag_loss
 
+        reward = (r_state - self.args.beta * kl_penalty - self.args.lmbda * supervised_loss).mean()
+
         metrics['mse'] = supervised_loss
-        metrics['reward'] = (r_state - self.beta * kl_penalty - self.args.lmbda * supervised_loss).mean()
+        metrics['reward'] = reward
         metrics['kl_penalty'] = kl_penalty.mean()
         metrics['reward_model_score'] = r_state.mean()
 

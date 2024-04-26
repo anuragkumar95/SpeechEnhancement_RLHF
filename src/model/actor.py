@@ -384,6 +384,7 @@ class TSCNet(nn.Module):
         out_5 = self.TSCB_4(out_4)
         
         _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0][0])
+        print(f"m_logprob:{m_logprob.mean()}")
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)

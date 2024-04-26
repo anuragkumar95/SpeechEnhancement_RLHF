@@ -349,8 +349,6 @@ class PPO:
                 if ref_log_prob is not None:
                     kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                     ratio = torch.exp(kl_penalty)
-                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    #old_approx_kl = (-kl_penalty).mean()
                     kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
                     ep_kl_penalty += kl_penalty
                 else:
@@ -361,19 +359,21 @@ class PPO:
                 if self.rlhf:
                     ang_reward = self.env.get_angle_reward(state)
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=self.scale_rewards) #+ ang_reward
+                                                   scale=self.scale_rewards)
                 else:
-                    r_t = self.env.get_PESQ_reward(state) #+ self.env.get_angle_reward(state)
+                    r_t = self.env.get_PESQ_reward(state) 
                 
-                print(f"R:{r_t.reshape(-1)} | Angle:{ang_reward} | KL: {kl_penalty}")
+                print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
                 r_ts.append(r_t)
                 angle_rewards.append(ang_reward)
 
-                if self.beta > 0 and self.warm_up < 0:
-                    r_t = r_t - self.beta * kl_penalty
-                elif self.warm_up == 0:
-                    self.init_model = actor
-                self.warm_up -= 1
+                #Supervised loss
+                enhanced = state['noisy']
+                enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+                clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+                supervised_loss = ((clean - enhanced) ** 2).mean() + ((clean_mag - enhanced_mag)**2).mean()
+                
+                r_t = r_t - self.beta * kl_penalty - self.lmbda * supervised_loss
                 
                 #Store trajectory
                 states.append(noisy)
@@ -396,8 +396,6 @@ class PPO:
             
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
-            #states = states[:-1, ...].reshape(-1, ch, t, f)
-            #clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
             
             actions = (([a[0][0] for a in actions], 
                         [a[0][1] for a in actions]), 
@@ -464,7 +462,6 @@ class PPO:
         step_val_loss = 0
         step_entropy_loss = 0
         step_pg_loss = 0
-        step_sup_loss = 0
         VALUES = torch.zeros(target_values.shape)
 
         for _ in range(n_epochs):
@@ -521,6 +518,7 @@ class PPO:
                 #Entropy loss
                 entropy_loss = entropy.mean()
 
+                """
                 #Supervised loss
                 mb_act, _, _, _ = actor.get_action(mb_states)
                 mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
@@ -532,12 +530,9 @@ class PPO:
                 mb_clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
 
                 supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+                """
 
-                if self.warm_up > 0:
-                    pg_loss = torch.tensor(0.0).to(self.gpu_id)
-                    self.warm_up -= 1
-
-                clip_loss = pg_loss + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)
+                clip_loss = pg_loss #+ self.lmbda * supervised_loss - (self.en_coef * entropy_loss)
                 
                 print(f"clip_loss:{clip_loss.item()} pg_loss:{pg_loss}")
                 wandb.log({
@@ -560,7 +555,6 @@ class PPO:
 
                 step_clip_loss += clip_loss.item()
                 step_pg_loss += pg_loss.item()
-                step_sup_loss += supervised_loss.item()
                 step_val_loss += v_loss.item() 
                 step_entropy_loss += entropy_loss.item()      
                 self.t += 1
@@ -570,11 +564,10 @@ class PPO:
         step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
         step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
         step_val_loss = step_val_loss / (n_epochs * self.episode_len)                
-        step_sup_loss = step_sup_loss / (n_epochs * self.episode_len)
         step_entropy_loss = step_entropy_loss / (n_epochs * self.episode_len)
         
                     
-        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \
+        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), \
                (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), ang_rewards.mean()), \
                advantages.mean()  
 

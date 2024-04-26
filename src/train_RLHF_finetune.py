@@ -222,17 +222,6 @@ class Trainer:
                                             'hop':100, 
                                             'args':args})
             
-        """
-        #Load nisqa model
-        nisqa_args = {
-            'pretrained_model':"./NISQA/weights/nisqa.tar",
-            'dev': gpu_id,
-            'bs':args.batchsize
-            
-        }
-        self.nisqa = nisqaModel(nisqa_args)
-        print(f"Loaded NISQA model from {nisqa_args['pretrained_model']} ...")
-        """
         self.gpu_id = gpu_id
         self.G = 0
         self.args = args
@@ -262,15 +251,23 @@ class Trainer:
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
-        action, _, _, _ = self.actor.get_action(inp)
+        action, log_probs, _, _ = self.actor.get_action(inp)
         if self.expert is not None:
-            exp_action, _, _, _ = self.expert.get_action(inp)
+            ref_log_probs, _, _, _ = self.expert.get_action_prob(inp, action)
+            ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
-        if self.args.train_phase:
-            a_t = action
+        log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+        print(f"log_prob:{log_prob.shape}")
+
+        if ref_log_prob is not None:
+            kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+            ratio = torch.exp(kl_penalty)
+            kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
         else:
-            a_t = (action[0], exp_action[-1])
-        
+            kl_penalty = 0
+
+        a_t = action
+    
         #Apply action  to get the next state
         next_state = env.get_next_state(state=inp, 
                                         action=a_t)
@@ -278,7 +275,6 @@ class Trainer:
         #Get reward
         r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), 
                                        scale=False).sum()
-        metrics['reward'] = r_state
 
         #Supervised loss
         mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
@@ -287,12 +283,11 @@ class Trainer:
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
         supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
-        metrics['mse'] = supervised_loss
 
-        #Calculate metrics
-        #pesq, pesq_mask = batch_pesq(clean_aud.detach().cpu().numpy(), 
-        #                             next_state['est_audio'].detach().cpu().numpy())
-        
+        metrics['mse'] = supervised_loss
+        metrics['reward'] = r_state - self.beta * kl_penalty - self.args.lmbda * supervised_loss
+        metrics['kl_penalty'] = kl_penalty
+
         for i in range(self.args.batchsize):
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
                                      next_state['est_audio'][i, ...].detach().cpu().numpy(), 
@@ -306,16 +301,6 @@ class Trainer:
             metrics['stoi'].append(values[5])
             metrics['si-sdr'].append(values[6])
         
-        #Calculate NISQA mos
-        """
-        ds = NL.SpeechQualityDataset(df=next_state['est_audio'].detach().cpu().numpy(), data_dir=None)
-
-        val_mos, _ = NL.predict_mos(self.nisqa.model, 
-                                    ds = ds, 
-                                    bs=self.args.batchsize, 
-                                    dev=self.gpu_id, 
-                                    num_workers=0)
-        """
         return metrics
     
 
@@ -337,7 +322,8 @@ class Trainer:
             'stoi':[],
             'si-sdr':[],
             'reward':0,
-            'mse':0
+            'mse':0,
+            'kl_penalty':0
         }
         num_batches = len(self.test_ds)
         with torch.no_grad():
@@ -358,13 +344,16 @@ class Trainer:
                     val_metrics['si-sdr'].extend(metrics['si-sdr'])
                     val_metrics['mse'] += metrics['mse']
                     val_metrics['reward'] += metrics['reward']
+                    val_metrics['kl_penalty'] += metrics['kl_penalty']
 
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
         
         loss = val_metrics['mse']/num_batches
+        kl = val_metrics['kl_penalty']/num_batches
         reward = val_metrics['reward']/(num_batches * self.args.batchsize)
+        
  
         wandb.log({ 
             "episode": episode, 
@@ -377,7 +366,8 @@ class Trainer:
             "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
             "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
-            "val_reward":reward
+            "val_reward":reward,
+            "val_KL":kl
         }) 
         print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")
         

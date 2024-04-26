@@ -297,7 +297,8 @@ class PPO:
     def unroll_policy(self, actor, critic):
         #Set models to eval
         actor = actor.eval()
-        actor.set_evaluation(True)
+        #actor.set_evaluation(True)
+        actor.set_evaluation(False)
         critic = critic.eval()
 
         rewards = []
@@ -355,9 +356,7 @@ class PPO:
                     kl_penalty = None
 
                 #Store reward
-                ang_reward = 0
                 if self.rlhf:
-                    ang_reward = self.env.get_angle_reward(state)
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
                                                    scale=self.scale_rewards)
                 else:
@@ -365,7 +364,6 @@ class PPO:
                 
                 print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
                 r_ts.append(r_t)
-                angle_rewards.append(ang_reward)
 
                 #Supervised loss
                 enhanced = state['noisy']
@@ -426,8 +424,7 @@ class PPO:
             'b_advantages':(b_advantages, advantages),
             'target_values':target_values,
             'r_ts':(r_ts, rewards),
-            'ep_kl':ep_kl_penalty,
-            'angle_R':angle_rewards
+            'ep_kl':ep_kl_penalty
         }
         
         return policy_out
@@ -442,9 +439,8 @@ class PPO:
         b_advantages, advantages = policy['b_advantages']
         target_values = policy['target_values']
         ep_kl_penalty = policy['ep_kl']
-        r_ts, _ = policy['r_ts']
-        ang_rewards = policy['angle_R']
-
+        r_ts, reward = policy['r_ts']
+        
         #Start training over the unrolled batch of trajectories
         #Set models to train
         #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
@@ -568,7 +564,7 @@ class PPO:
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss), \
-               (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), ang_rewards.mean()), \
+               (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), \
                advantages.mean()  
 
 

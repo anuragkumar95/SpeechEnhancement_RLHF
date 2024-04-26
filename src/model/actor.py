@@ -159,7 +159,7 @@ class MaskDecoder(nn.Module):
             x = N.rsample()
         print(f"M_Decoder:{x.mean()}")
         x_logprob = N.log_prob(x)
-
+        print(f"M_logprob:{x_logprob.mean()}")
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)
 

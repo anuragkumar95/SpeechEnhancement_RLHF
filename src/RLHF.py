@@ -377,6 +377,7 @@ class PPO:
 
                 pretrain_loss += supervised_loss.mean()
                 
+                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape}")
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * supervised_loss
                 
                 #Store trajectory

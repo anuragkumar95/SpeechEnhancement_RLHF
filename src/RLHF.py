@@ -328,7 +328,7 @@ class PPO:
                 bs, ch, t, f = clean.shape
 
                 action, log_probs, _, _ = actor.get_action(noisy)
-                _, log_probs_1 = actor.get_action_prob(noisy, action)
+                log_probs_1, _ = actor.get_action_prob(noisy, action)
 
                 print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                 print(f"log_probs_1:{log_probs_1[0].mean(), log_probs_1[1].mean()}")

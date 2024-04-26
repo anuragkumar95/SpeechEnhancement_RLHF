@@ -150,6 +150,7 @@ class MaskDecoder(nn.Module):
         #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
         #elif self.dist is None:
         sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
+        print(f"M_mu:{mu.mean()}, M_sigma:{sigma.mean()}")
         N = Normal(mu, sigma)
         try:
             print(f"X:{x.mean()}")

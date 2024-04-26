@@ -177,7 +177,7 @@ class MaskDecoder(nn.Module):
         elif self.dist is None:
             x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
-            if self.eval:
+            if self.evaluation:
                 x_out = self.prelu_out(params[0])
             else:
                 x_out = self.prelu_out(x)

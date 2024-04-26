@@ -146,10 +146,10 @@ class MaskDecoder(nn.Module):
         self.evaluation = eval
 
     def sample(self, mu, logvar, x=None):
-        if self.dist == 'Normal':
-            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
-        elif self.dist is None:
-            sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
+        #if self.dist == 'Normal':
+        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
+        #elif self.dist is None:
+        sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         try:
             print(f"X:{x.mean()}")
@@ -200,10 +200,10 @@ class ComplexDecoder(nn.Module):
         self.evaluation = eval
        
     def sample(self, mu, logvar, x=None):
-        if self.out_dist == 'Normal':
-            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
-        elif self.out_dist is None:
-            sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
+        #if self.out_dist == 'Normal':
+        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
+        #elif self.out_dist is None:
+        sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()

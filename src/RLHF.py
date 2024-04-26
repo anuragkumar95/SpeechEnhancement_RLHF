@@ -391,7 +391,6 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
-            angle_rewards = torch.stack(angle_rewards).reshape(-1)
             
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)

@@ -355,7 +355,7 @@ class PPO:
                     ep_kl_penalty += kl_penalty.mean()
                 else:
                     kl_penalty = None
-
+                print(f"Bla bla")
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 

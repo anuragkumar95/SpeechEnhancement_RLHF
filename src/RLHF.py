@@ -217,7 +217,7 @@ class PPO:
                  discount=1.0, 
                  accum_grad=1,
                  scale_rewards=False, 
-                 warm_up_steps=1000, 
+                 warm_up_steps=30, 
                  **params):
         
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
@@ -369,8 +369,10 @@ class PPO:
                 r_ts.append(r_t)
                 angle_rewards.append(ang_reward)
 
-                if self.beta > 0:
+                if self.beta > 0 and self.warm_up > 0:
                     r_t = r_t - self.beta * kl_penalty
+
+                self.warm_up -= 1
                 
                 #Store trajectory
                 states.append(noisy)

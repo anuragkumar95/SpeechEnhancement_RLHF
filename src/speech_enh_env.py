@@ -116,6 +116,7 @@ class SpeechEnhancementAgent:
         reward = self.reward_model.get_reward(state)
         if scale:
             reward = reward * 0.1
+
         return reward 
     
     def get_PESQ_reward(self, next_state):

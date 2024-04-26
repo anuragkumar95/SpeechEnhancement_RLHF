@@ -262,7 +262,7 @@ class Trainer:
         if ref_log_prob is not None:
             kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
             ratio = torch.exp(kl_penalty)
-            kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
+            kl_penalty = ((ratio - 1) - kl_penalty).detach()
         else:
             kl_penalty = 0
 
@@ -274,7 +274,7 @@ class Trainer:
         
         #Get reward
         r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), 
-                                       scale=False).sum()
+                                       scale=False)
 
         #Supervised loss
         mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
@@ -282,11 +282,12 @@ class Trainer:
         
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
-        supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+        supervised_loss = ((clean - mb_enhanced) ** 2) + ((mb_clean_mag - mb_enhanced_mag)**2)
 
         metrics['mse'] = supervised_loss
-        metrics['reward'] = r_state - self.beta * kl_penalty - self.args.lmbda * supervised_loss
-        metrics['kl_penalty'] = kl_penalty
+        metrics['reward'] = (r_state - self.beta * kl_penalty - self.args.lmbda * supervised_loss).mean()
+        metrics['kl_penalty'] = kl_penalty.mean()
+        metrics['reward_model_score'] = r_state.mean()
 
         for i in range(self.args.batchsize):
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
@@ -323,7 +324,8 @@ class Trainer:
             'si-sdr':[],
             'reward':0,
             'mse':0,
-            'kl_penalty':0
+            'kl_penalty':0,
+            'reward_model_score':0
         }
         num_batches = len(self.test_ds)
         with torch.no_grad():
@@ -345,6 +347,7 @@ class Trainer:
                     val_metrics['mse'] += metrics['mse']
                     val_metrics['reward'] += metrics['reward']
                     val_metrics['kl_penalty'] += metrics['kl_penalty']
+                    val_metrics['reward_model_score'] += metrics['reward_model_score']
 
                 except Exception as e:
                     print(traceback.format_exc())
@@ -352,6 +355,7 @@ class Trainer:
         
         loss = val_metrics['mse']/num_batches
         kl = val_metrics['kl_penalty']/num_batches
+        reward_model_score = val_metrics['reward_model_score']/num_batches
         reward = val_metrics['reward']/(num_batches * self.args.batchsize)
         
  
@@ -366,8 +370,9 @@ class Trainer:
             "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
             "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
-            "val_reward":reward,
-            "val_KL":kl
+            "val_ovl_reward":reward,
+            "val_KL":kl,
+            "reward_model_score":reward_model_score
         }) 
         print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")
         

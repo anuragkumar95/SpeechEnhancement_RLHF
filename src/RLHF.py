@@ -351,8 +351,8 @@ class PPO:
                 if ref_log_prob is not None:
                     kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                     ratio = torch.exp(kl_penalty)
-                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
-                    ep_kl_penalty += kl_penalty
+                    kl_penalty = ((ratio - 1) - kl_penalty).detach()
+                    ep_kl_penalty += kl_penalty.mean()
                 else:
                     kl_penalty = None
 
@@ -370,9 +370,9 @@ class PPO:
                 enhanced = state['noisy']
                 enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
                 clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-                supervised_loss = ((clean - enhanced) ** 2).mean() + ((clean_mag - enhanced_mag)**2).mean()
+                supervised_loss = ((clean - enhanced) ** 2) + ((clean_mag - enhanced_mag)**2)
 
-                pretrain_loss += supervised_loss
+                pretrain_loss += supervised_loss.mean()
                 
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * supervised_loss
                 
@@ -393,7 +393,7 @@ class PPO:
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
-            b_advantages = torch.clamp(advantages.reshape(-1), min=-1e-20)
+            b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)

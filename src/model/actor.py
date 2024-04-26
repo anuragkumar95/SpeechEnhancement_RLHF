@@ -165,6 +165,7 @@ class MaskDecoder(nn.Module):
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
+        print(f"Mask_input:{x.mean()}")
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.conv_1(x)
@@ -177,7 +178,7 @@ class MaskDecoder(nn.Module):
             
         elif self.dist is None:
             x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-            print(f"x_mu:{x_mu.mean()}, x:{x.mean()}")
+            #print(f"x_mu:{x_mu.mean()}, x:{x.mean()}")
             x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
             print(f"eval:{self.evaluation}")
             if self.evaluation:

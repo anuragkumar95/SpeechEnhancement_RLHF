@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
     if ARGS.mix_aud:
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
-                                noise_dir=ARGS.noise_dir,  
+                                noisy_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
                                 K=20,
                                 model_pt=ARGS.model_pt,

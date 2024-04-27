@@ -23,6 +23,8 @@ import wandb
 import copy
 from torch.distributions import Normal
 
+from compute_metrics import compute_metrics
+
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
@@ -309,7 +311,7 @@ class PPO:
         cleans = []
         ep_kl_penalty = 0
         pretrain_loss = 0
-      
+        pesq = 0
         with torch.no_grad():
             for _ in range(self.episode_len):
                 
@@ -377,9 +379,15 @@ class PPO:
                 supervised_loss = torch.mean(0.3 * ri_loss + 0.7 * mag_loss, dim=[1, 2, 3])
 
                 pretrain_loss += supervised_loss.mean()
+
+                scores = compute_metrics(cl_aud.detach().cpu().numpy(), 
+                                         state['est_audio'].detach().cpu().numpy(), 
+                                         16000, 
+                                         0)
+                pesq += scores[0]
                 
                 print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape}")
-                r_t = r_t - self.beta * kl_penalty - self.lmbda * supervised_loss
+                r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + scores[0])
                 
                 #Store trajectory
                 states.append(noisy)
@@ -413,6 +421,7 @@ class PPO:
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             pretrain_loss = pretrain_loss / self.episode_len
+            pesq = pesq / self.episode_len
 
         print(f"STATES        :{states.shape}")
         print(f"CLEAN         :{cleans.shape}")
@@ -433,7 +442,8 @@ class PPO:
             'b_advantages':(b_advantages, advantages),
             'target_values':target_values,
             'r_ts':(r_ts, rewards),
-            'ep_kl':ep_kl_penalty
+            'ep_kl':ep_kl_penalty,
+            'pesq':pesq
         }
         
         return policy_out
@@ -449,6 +459,7 @@ class PPO:
         target_values = policy['target_values']
         ep_kl_penalty = policy['ep_kl']
         r_ts, reward = policy['r_ts']
+        pesq = policy['pesq']
         
         #Start training over the unrolled batch of trajectories
         #Set models to train
@@ -575,7 +586,7 @@ class PPO:
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, pretrain_loss), \
                (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), \
-               advantages.mean()  
+               advantages.mean(), pesq  
 
     '''
     def run_n_step_episode(self, batch, actor, critic, optimizer, n_epochs=3):

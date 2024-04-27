@@ -464,9 +464,9 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        #loss, best_pesq = self.run_validation(0)
-        loss = 99999 
-        best_pesq = 0
+        loss, best_pesq = self.run_validation(0)
+        #loss = 99999 
+        #best_pesq = 0
         epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
@@ -477,7 +477,7 @@ class Trainer:
         for i in range(episode_per_epoch):
             if self.args.method == 'PPO':
                 try:
-                    loss, batch_reward, adv = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
+                    loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
                         
                     if loss is not None:
                         wandb.log({
@@ -492,23 +492,24 @@ class Trainer:
                             "value_loss":loss[1],
                             "pretrain_loss":loss[4],
                             "pg_loss":loss[3],
-                            "entropy_loss":loss[2]
+                            "entropy_loss":loss[2],
+                            "train_pesq":pesq, 
                         })
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
 
-                        #if i+1 % run_validation_step == 0:
+                        if i+1 % 10 == 0:
                         #Run alidation after each episode
-                        """
-                        loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
-                        if loss < best_val_loss:
-                            best_val_loss = loss
-                            self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
+                        
+                            loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
+                            if loss < best_val_loss:
+                                best_val_loss = loss
+                                self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
 
-                        if val_pesq > best_pesq:
-                            best_pesq = val_pesq
-                            self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
-                        """
+                            if val_pesq > best_pesq:
+                                best_pesq = val_pesq
+                                self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
+                        
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

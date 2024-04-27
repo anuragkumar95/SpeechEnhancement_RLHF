@@ -379,21 +379,21 @@ class PPO:
 
                 pretrain_loss += supervised_loss.mean()
 
-                mb_pesq = 0
+                mb_pesq = []
                 for i in range(self.bs):
                     values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
                                              state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
                                              16000, 
                                              0)
 
-                    mb_pesq += values[0]
+                    mb_pesq.append(values[0])
                 
-                pesq += mb_pesq
-                mb_pesq = mb_pesq / self.bs
-
+                mb_pesq = torch.tensor(mb_pesq)
+                pesq += mb_pesq.sum()
+                
                 kl_penalty = kl_penalty.reshape(-1, 1)
                 supervised_loss = supervised_loss.reshape(-1, 1)
-                mb_pesq = torch.tensor(mb_pesq).reshape(-1, 1)
+                mb_pesq = mb_pesq.reshape(-1, 1)
 
                 print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq}")
 

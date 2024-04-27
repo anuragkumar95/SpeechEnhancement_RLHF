@@ -140,14 +140,14 @@ class MixturesDataset:
         length = clean_wav.shape[-1]
         noisy_wav = noisy_wav[:, :length]
 
-        if clean.shape[-1] > self.cutlen:
-            clean = clean_wav[:, :self.cutlen]
-            noisy = noisy_wav[:, :self.cutlen]
+        if clean_wav.shape[-1] > self.cutlen:
+            clean_wav = clean_wav[:, :self.cutlen]
+            noisy_wav = noisy_wav[:, :self.cutlen]
             length = self.cutlen
 
         assert c_sr == n_sr == 16000
 
-        batch = (clean, noisy, length)
+        batch = (clean_wav, noisy_wav, length)
         batch = preprocess_batch(batch, gpu_id=0, return_c=True)
 
         file_id = Path(noisy_file).stem

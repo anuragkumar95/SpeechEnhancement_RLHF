@@ -56,10 +56,10 @@ class MixturesDataset:
     This class generates a dataset for reward model training.
     """
     def __init__(self, clean_dir, noisy_dir, model_pt, out_dir, K=5, cutlen=40000, gpu_id=None):
-        self.clean_dir = clean_dir
-        self.noise_dir = noisy_dir
-        self.clean_files = os.listdir(clean_dir)
-        self.noise_files = os.listdir(noisy_dir)
+        #self.clean_dir = clean_dir
+        #self.noisy_dir = noisy_dir
+        self.clean_files = [os.path.join(clean_dir, file) for file in os.listdir(clean_dir)]
+        self.noisy_files = [os.path.join(noisy_dir, file) for file in os.listdir(noisy_dir)]
         self.save_dir = out_dir
         self.K = K
         #self.snr_means = [-15, -10, 5, 0, 5, 10, 15, 20, 25, 30, 35, 40]
@@ -169,12 +169,12 @@ class MixturesDataset:
     
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)
-        n_noise_examples = len(self.noise_files)
+
         #sample clean indexes
         cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
         
         for i in tqdm(cidxs):
-            self.generate_k_samples(n_clean_examples[i], n_noise_examples[i])
+            self.generate_k_samples(self.clean_files[i], self.noisy_files[i])
 
 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):

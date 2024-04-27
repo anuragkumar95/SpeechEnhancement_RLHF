@@ -159,6 +159,7 @@ class MixturesDataset:
                                            length, 
                                            f"{file_id}_{i}.wav", 
                                            self.save_dir,
+                                           save_metrics=save_metrics,
                                            save_track=True,
                                            add_noise=True)
             if save_metrics:
@@ -174,7 +175,7 @@ class MixturesDataset:
         cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
         
         for i in tqdm(cidxs):
-            self.generate_k_samples(self.clean_files[i], self.noisy_files[i])
+            self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=False)
 
 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):

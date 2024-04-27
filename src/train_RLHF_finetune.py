@@ -496,6 +496,7 @@ class Trainer:
 
                         #if i+1 % run_validation_step == 0:
                         #Run alidation after each episode
+                        """
                         loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
                         if loss < best_val_loss:
                             best_val_loss = loss
@@ -504,7 +505,7 @@ class Trainer:
                         if val_pesq > best_pesq:
                             best_pesq = val_pesq
                             self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
-
+                        """
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

@@ -237,6 +237,7 @@ class TSCNetSmall(nn.Module):
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, eval=eval)
         self.dist = distribution
+        self.gpu_id = gpu_id
 
     def set_evaluation(self, bool):
         self.mask_decoder.evaluation = bool
@@ -338,6 +339,7 @@ class TSCNet(nn.Module):
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, eval=eval)
         self.dist = distribution
+        self.gpu_id = gpu_id
 
     def set_evaluation(self, bool):
         self.mask_decoder.evaluation = bool

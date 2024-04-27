@@ -13,14 +13,16 @@ import json
 import pickle
 import traceback
 from speech_enh_env import SpeechEnhancementAgent
+from torch.distributions import Normal
 
 def run_enhancement_step(env, 
                          batch, 
                          actor,
                          lens,
                          file_id, 
-                         save_dir, 
-                         save_track=True):
+                         save_dir,
+                         save_track=True,
+                         add_noise=False):
     """
     Enhances one audio at a time.
     ARGS:
@@ -49,12 +51,24 @@ def run_enhancement_step(env,
 
     #Forward pass through actor to get the action(mask)
     action, _, _, _ = actor.get_action(inp)
-    
-    a_t = action
+
+    if add_noise:
+        #add gaussian noise to action
+        m_mu = torch.zeros(action[0][1].shape)
+        m_sigma = torch.ones(action[0][1].shape)
+        c_mu = torch.zeros(action[0][1].shape)
+        c_sigma = torch.ones(action[0][1].shape)
+        m_dist = Normal(m_mu, m_sigma)
+        c_dist = Normal(c_mu, c_sigma)
+        
+        m_noise = m_dist.sample().to(actor.gpu_id)
+        c_noise = c_dist.sample().to(actor.gpu_id)
+        action[0][1] += m_noise
+        action[1] += c_noise
     
     #Apply action  to get the next state
     next_state = env.get_next_state(state=inp, 
-                                    action=a_t)
+                                    action=action)
     
     #Get reward
     r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
@@ -74,7 +88,7 @@ def run_enhancement_step(env,
 
     clean_aud = clean_aud[:lens].detach().cpu().numpy()
     enh_audio = enh_audio[:lens].detach().cpu().numpy()
-    
+
     values = compute_metrics(clean_aud, 
                              enh_audio, 
                              16000, 

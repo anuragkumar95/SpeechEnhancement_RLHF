@@ -15,6 +15,10 @@ import torchaudio.functional as F
 from tqdm import tqdm
 import soundfile as sf
 import itertools
+from model.actor import TSCNet
+from evaluation import run_enhancement_step
+from speech_enh_env import SpeechEnhancementAgent
+from utils import preprocess_batch
 #from ray.experimental import tqdm_ray
 
 torch.manual_seed(123)
@@ -46,14 +50,24 @@ class MixturesDataset:
     """
     This class generates a dataset for reward model training.
     """
-    def __init__(self, clean_dir, noise_dir, out_dir, K=5, cutlen=40000):
+    def __init__(self, clean_dir, noisy_dir, out_dir, K=5, cutlen=40000, gpu_id=None):
         self.clean_dir = clean_dir
-        self.noise_dir = noise_dir
+        self.noise_dir = noisy_dir
         self.clean_files = os.listdir(clean_dir)
-        self.noise_files = os.listdir(noise_dir)
+        self.noise_files = os.listdir(noisy_dir)
         self.save_dir = out_dir
         self.K = K
-        self.snr_means = [-15, -10, 5, 0, 5, 10, 15, 20, 25, 30, 35, 40]
+        #self.snr_means = [-15, -10, 5, 0, 5, 10, 15, 20, 25, 30, 35, 40]
+        self.model = TSCNet(num_channel=64, 
+                            num_features=400 // 2 + 1,
+                            distribution=None, 
+                            gpu_id=gpu_id)
+        
+        self.env = SpeechEnhancementAgent(n_fft=400,
+                                          hop=100,
+                                          gpu_id=gpu_id,
+                                          args=None,
+                                          reward_model=reward_model)
         self.cutlen = cutlen
 
     def mix_audios(self, clean, noise, snr):
@@ -73,6 +87,7 @@ class MixturesDataset:
         
         return signal.reshape(-1).cpu().numpy()
     
+    """
     def generate_k_samples(self, cidx, n_noise_samples):
     
         clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
@@ -94,24 +109,53 @@ class MixturesDataset:
                 noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
 
             #mix them
-            s_idx = np.random.choice(len(self.snr_means), 1)[0]
-            snr_dist = Normal(self.snr_means[s_idx], 3.0)
-            snr = snr_dist.sample()
-            signal = self.mix_audios(clean, noise, snr)
+            #s_idx = np.random.choice(len(self.snr_means), 1)[0]
+            #snr_dist = Normal(self.snr_means[s_idx], 3.0)
+            #snr = snr_dist.sample()
+            #signal = self.mix_audios(clean, noise, snr)
             
             #save
             snr = float("{:.2f}".format(snr))
             sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_{self.noise_files[idx][:-len('.wav')]}_snr_{snr}.wav"), signal, 16000)
 
+    """
+
+    def generate_k_samples(self, clean, noisy):
+
+        clean_wav, c_sr = torchaudio.load(clean)
+        noisy_wav, n_sr = torchaudio.load(noisy)
+
+        length = clean_wav.shape[-1]
+        noisy_wav = noisy_wav[:, :length]
+
+        if clean.shape[-1] > self.cutlen:
+            clean = clean_wav[:, :self.cutlen]
+            noisy = noisy_wav[:, :self.cutlen]
+            length = self.cutlen
+
+        assert c_sr == n_sr == 16000
+
+        batch = (clean, noisy, length)
+        batch = preprocess_batch(batch, gpu_id=0, return_c=True)
+
+        for i in range(self.K):
+            metrics = run_enhancement_step(env, 
+                                           batch, 
+                                           actor, 
+                                           lens, 
+                                           file_id, 
+                                           save_dir,
+                                           save_track=True,
+                                           add_noise=False)
     
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)
-        n_noise_samples = len(self.noise_files)
+        n_noise_examples = len(self.noise_files)
         #sample clean indexes
         cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
         
-        for i in tqdm(range(n_size)):
-            self.generate_k_samples(cidxs[i], n_noise_samples)
+        for i in tqdm(cidxs):
+            self.generate_k_samples(n_clean_examples[i], n_noise_examples[i])
 
 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):

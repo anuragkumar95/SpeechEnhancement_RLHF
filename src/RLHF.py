@@ -380,15 +380,20 @@ class PPO:
 
                 pretrain_loss += supervised_loss.mean()
 
-                scores = compute_metrics(cl_aud.detach().cpu().numpy().reshape(-1), 
-                                         state['est_audio'].detach().cpu().numpy().reshape(-1), 
-                                         16000, 
-                                         0)
-                pesq += scores[0]
-                #pesq += 0
+                mb_pesq = 0
+                for i in range(self.bs):
+                    values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                             state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                             16000, 
+                                             0)
+
+                    mb_pesq += values[0]
                 
+                pesq += mb_pesq
+                mb_pesq = mb_pesq / self.bs
+
                 print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape}")
-                r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + scores[0])
+                r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
                 
                 #Store trajectory
                 states.append(noisy)
@@ -422,7 +427,7 @@ class PPO:
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             pretrain_loss = pretrain_loss / self.episode_len
-            pesq = pesq / self.episode_len
+            pesq = pesq / (self.episode_len * self.bs)
 
         print(f"STATES        :{states.shape}")
         print(f"CLEAN         :{cleans.shape}")

@@ -388,7 +388,7 @@ class PPO:
 
                     mb_pesq.append(values[0])
                 
-                mb_pesq = torch.tensor(mb_pesq)
+                mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
                 pesq += mb_pesq.sum()
                 
                 kl_penalty = kl_penalty.reshape(-1, 1)

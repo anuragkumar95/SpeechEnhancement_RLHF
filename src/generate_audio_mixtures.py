@@ -157,7 +157,7 @@ class MixturesDataset:
                                            batch, 
                                            self.model, 
                                            length, 
-                                           f"{file_id}_{i}", 
+                                           f"{file_id}_{i}.wav", 
                                            self.save_dir,
                                            save_track=True,
                                            add_noise=True)

@@ -38,6 +38,8 @@ def args():
                         help="Path to file containing mos scores.")
     parser.add_argument("-o", "--output", type=str, required=False,
                         help="Directory to save dataset")
+    parser.add_argument("-pt", "--model_pt", type=str, required=False,
+                        help="Path to the CMGAN checkpoint.")
     parser.add_argument("-n", "--n_size", type=int, required=False, default=10000, 
                         help="Number of mixtures to be produced.")
     parser.add_argument("--mix_aud", action='store_true', required=False,
@@ -53,7 +55,7 @@ class MixturesDataset:
     """
     This class generates a dataset for reward model training.
     """
-    def __init__(self, clean_dir, noisy_dir, out_dir, K=5, cutlen=40000, gpu_id=None):
+    def __init__(self, clean_dir, noisy_dir, model_pt, out_dir, K=5, cutlen=40000, gpu_id=None):
         self.clean_dir = clean_dir
         self.noise_dir = noisy_dir
         self.clean_files = os.listdir(clean_dir)
@@ -66,6 +68,13 @@ class MixturesDataset:
                             distribution=None, 
                             gpu_id=gpu_id)
         
+        checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
+        try:
+            self.model.load_state_dict(checkpoint['generator_state_dict'])
+        except KeyError as e:
+            self.model.load_state_dict(checkpoint)
+        self.model = self.model.to(gpu_id)
+       
         self.env = SpeechEnhancementAgent(n_fft=400,
                                           hop=100,
                                           gpu_id=gpu_id,
@@ -231,7 +240,9 @@ if __name__ == "__main__":
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noise_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
-                                K=20)
+                                K=20,
+                                model_pt=ARGS.model_pt,
+                                gpu_id=0)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)
 

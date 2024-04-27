@@ -309,10 +309,12 @@ class Trainer:
 
         reward = r_state - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
                   
-        metrics['mse'] = supervised_loss
+        metrics['mse'] = supervised_loss.mean()
         metrics['reward'] = reward.mean()
         metrics['kl_penalty'] = kl_penalty.mean()
         metrics['reward_model_score'] = r_state.mean()
+
+        print(f"REWARD:{metrics['reward']} | RM_Score: {metrics['reward_model_score']} | KL: {metrics['kl_penalty']} | MSE: {metrics['mse']} | PESQ: {mb_pesq.mean()}")
 
         return metrics
     
@@ -504,7 +506,7 @@ class Trainer:
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
 
-                        if i+1 % 100 == 0:
+                        if i+1 % 10 == 0:
                         #Run alidation after each episode
                         
                             loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))

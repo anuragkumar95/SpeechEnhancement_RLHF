@@ -395,11 +395,11 @@ class PPO:
                 supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
 
-                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq}")
+                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq.shape}")
 
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
 
-                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq}")
+                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq.shape}")
                 
                 
                 #Store trajectory

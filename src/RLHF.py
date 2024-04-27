@@ -396,7 +396,7 @@ class PPO:
 
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
 
-                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq.shape}")
+                print(f"R:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 
                 
                 #Store trajectory
@@ -411,12 +411,9 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
-            print(f"Reward:{r_ts}")
             target_values = self.get_expected_return(rewards)
-            print(f"Returns:{target_values}")
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
-            print(f"Advantages:{advantages}")
             b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states).reshape(-1, ch, t, f)

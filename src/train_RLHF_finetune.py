@@ -301,14 +301,19 @@ class Trainer:
             metrics['stoi'].append(values[5])
             metrics['si-sdr'].append(values[6])
 
-        reward = (r_state - self.args.beta * kl_penalty - self.args.lmbda * (supervised_loss + np.asarray(metrics['pesq']).mean())).mean()
+        mb_pesq = torch.tensor(metrics['pesq']).to(self.gpu_id)
+        
+        kl_penalty = kl_penalty.reshape(-1, 1)
+        supervised_loss = supervised_loss.reshape(-1, 1)
+        mb_pesq = mb_pesq.reshape(-1, 1)
+
+        reward = r_state - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
                   
         metrics['mse'] = supervised_loss
-        metrics['reward'] = reward
+        metrics['reward'] = reward.mean()
         metrics['kl_penalty'] = kl_penalty.mean()
         metrics['reward_model_score'] = r_state.mean()
 
-        
         return metrics
     
 
@@ -465,9 +470,9 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        #loss, best_pesq = self.run_validation(0)
-        loss = 99999 
-        best_pesq = 0
+        loss, best_pesq = self.run_validation(0)
+        #loss = 99999 
+        #best_pesq = 0
         epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)

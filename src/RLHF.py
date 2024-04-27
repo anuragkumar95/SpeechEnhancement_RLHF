@@ -380,8 +380,8 @@ class PPO:
 
                 pretrain_loss += supervised_loss.mean()
 
-                scores = compute_metrics(cl_aud.detach().cpu().numpy(), 
-                                         state['est_audio'].detach().cpu().numpy(), 
+                scores = compute_metrics(cl_aud.detach().cpu().numpy().reshape(-1), 
+                                         state['est_audio'].detach().cpu().numpy().reshape(-1), 
                                          16000, 
                                          0)
                 pesq += scores[0]

@@ -46,6 +46,19 @@ class QNet(nn.Module):
         return self.layers(x)
     
 
+class Critic(nn.Module):
+    def __init__(self, in_channels=2):
+        super(Critic, self).__init__()
+        self.reward_projection = QNet(ndf=16, in_channel=in_channels, out_channel=1)
+        self.eps = 0.1
+   
+    def forward(self, x):
+        return self.reward_projection(x)
+
+        
+
+    
+
 class Discriminator(nn.Module):
     def __init__(self, ndf, in_channel=2):
         super().__init__()

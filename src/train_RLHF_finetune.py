@@ -4,7 +4,7 @@
 """
 
 from model.actor import TSCNet, TSCNetSmall
-from model.critic import QNet
+from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
 import NISQA.nisqa.NISQA_lib as NL
@@ -190,7 +190,8 @@ class Trainer:
                                                 'args':args})
             
         if args.method == 'PPO':
-            self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
+            #self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
+            self.critic = Critic(in_channels=2)
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             self.critic.load_state_dict(reward_checkpoint)
             self.critic = self.critic.to(gpu_id)

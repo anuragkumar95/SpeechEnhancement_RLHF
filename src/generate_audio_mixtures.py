@@ -153,6 +153,10 @@ class MixturesDataset:
         file_id = Path(noisy_file).stem
 
         for i in range(self.K):
+            if i == 0:
+                add_noise = False
+            else:
+                add_noise = True
             metrics = run_enhancement_step(self.env, 
                                            batch, 
                                            self.model, 
@@ -161,7 +165,7 @@ class MixturesDataset:
                                            self.save_dir,
                                            save_metrics=save_metrics,
                                            save_track=True,
-                                           add_noise=True)
+                                           add_noise=add_noise)
             if save_metrics:
                 metrics_dir = os.path.join(self.save_dir, 'metrics')
                 os.makedirs(metrics_dir, exist_ok=True)

@@ -376,7 +376,7 @@ class PPO:
                 
                 mag_loss = (clean_mag - enhanced_mag)**2
                 ri_loss = (clean - enhanced) ** 2
-                supervised_loss = torch.mean(0.3 * ri_loss + 0.7 * mag_loss, dim=[1, 2, 3])
+                supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
                 pretrain_loss += supervised_loss.mean()
 

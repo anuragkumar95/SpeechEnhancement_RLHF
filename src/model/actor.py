@@ -378,6 +378,7 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
+        print(f"X_IN:{x.mean()}")
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         x_in = torch.cat([mag, x], dim=1)
@@ -387,7 +388,7 @@ class TSCNet(nn.Module):
         out_3 = self.TSCB_2(out_2)
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
-        
+        print(f"m_out5:{out_5.mean()}")
         _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0][0])
         print(f"m_logprob:{m_logprob.mean()}")
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])

@@ -69,6 +69,7 @@ def run_enhancement_step(env,
         comp_out += c_noise
         
         action = ((x, mask), comp_out)
+        print(f"action:{action.mean()}")
     
     #Apply action  to get the next state
     next_state = env.get_next_state(state=inp, 

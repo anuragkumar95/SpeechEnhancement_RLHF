@@ -480,7 +480,7 @@ class Trainer:
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
         best_val_loss = 99999
-        episode_per_epoch = 50
+        episode_per_epoch = 2700
 
         for i in range(episode_per_epoch):
             if self.args.method == 'PPO':

@@ -60,7 +60,7 @@ def run_enhancement_step(env,
         c_sigma = torch.ones(action[0][1].shape)
         m_dist = Normal(m_mu, m_sigma)
         c_dist = Normal(c_mu, c_sigma)
-        
+
         m_noise = m_dist.sample().to(actor.gpu_id)
         c_noise = c_dist.sample().to(actor.gpu_id)
         action[0][1] += m_noise
@@ -71,8 +71,9 @@ def run_enhancement_step(env,
                                     action=action)
     
     #Get reward
-    r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
-    metrics['reward'] = r_state.detach().cpu().numpy()
+    if env.reward_model is not None:
+        r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
+        metrics['reward'] = r_state.detach().cpu().numpy()
 
     #Supervised loss
     mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
@@ -80,7 +81,7 @@ def run_enhancement_step(env,
     
     mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
-    supervised_loss = ((clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+    supervised_loss = (0.3*(clean - mb_enhanced) ** 2).mean() + (0.7*(mb_clean_mag - mb_enhanced_mag)**2).mean()
     metrics['mse'] = supervised_loss.detach().cpu().numpy()
 
     clean_aud = clean_aud.reshape(-1)

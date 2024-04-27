@@ -6,7 +6,9 @@
 import os
 import ray
 import logging
+import pickle
 import argparse
+from pathlib import Path
 import numpy as np
 import torch
 import torchaudio
@@ -16,6 +18,7 @@ from tqdm import tqdm
 import soundfile as sf
 import itertools
 from model.actor import TSCNet
+from model.reward_model import RewardModel
 from evaluation import run_enhancement_step
 from speech_enh_env import SpeechEnhancementAgent
 from utils import preprocess_batch
@@ -67,7 +70,7 @@ class MixturesDataset:
                                           hop=100,
                                           gpu_id=gpu_id,
                                           args=None,
-                                          reward_model=reward_model)
+                                          reward_model=None)
         self.cutlen = cutlen
 
     def mix_audios(self, clean, noise, snr):
@@ -120,10 +123,10 @@ class MixturesDataset:
 
     """
 
-    def generate_k_samples(self, clean, noisy):
+    def generate_k_samples(self, clean_file, noisy_file, save_metrics=True):
 
-        clean_wav, c_sr = torchaudio.load(clean)
-        noisy_wav, n_sr = torchaudio.load(noisy)
+        clean_wav, c_sr = torchaudio.load(clean_file)
+        noisy_wav, n_sr = torchaudio.load(noisy_file)
 
         length = clean_wav.shape[-1]
         noisy_wav = noisy_wav[:, :length]
@@ -138,15 +141,22 @@ class MixturesDataset:
         batch = (clean, noisy, length)
         batch = preprocess_batch(batch, gpu_id=0, return_c=True)
 
+        file_id = Path(noisy_file).stem
+
         for i in range(self.K):
-            metrics = run_enhancement_step(env, 
+            metrics = run_enhancement_step(self.env, 
                                            batch, 
-                                           actor, 
-                                           lens, 
-                                           file_id, 
-                                           save_dir,
+                                           self.model, 
+                                           length, 
+                                           f"{file_id}_{i}", 
+                                           self.save_dir,
                                            save_track=True,
-                                           add_noise=False)
+                                           add_noise=True)
+            if save_metrics:
+                metrics_dir = os.path.join(self.save_dir, 'metrics')
+                os.makedirs(metrics_dir, exist_ok=True)
+                with open(os.path.join(metrics_dir, f"{file_id}_{i}.pickle"), 'wb') as f:
+                    pickle.dump(metrics, f)
     
     def generate_mixtures(self, n_size=5000):
         n_clean_examples = len(self.clean_files)

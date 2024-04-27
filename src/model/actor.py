@@ -146,26 +146,19 @@ class MaskDecoder(nn.Module):
         self.evaluation = eval
 
     def sample(self, mu, logvar, x=None):
-        #if self.dist == 'Normal':
-        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
-        #elif self.dist is None:
-        sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
-        print(f"M_mu:{mu.mean()}, M_sigma:{sigma.mean()}")
+        if self.dist == 'Normal':
+            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
+        elif self.dist is None:
+            sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
-        try:
-            print(f"X:{x.mean()}")
-        except Exception as e:
-            print(f"X:{x}")
         if x is None:
             x = N.rsample()
-        print(f"M_Decoder:{x.mean()}")
         x_logprob = N.log_prob(x)
-        print(f"M_logprob:{x_logprob.mean()}")
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
-        print(f"Mask_input:{x.mean()}")
+       
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.conv_1(x)
@@ -180,7 +173,6 @@ class MaskDecoder(nn.Module):
             x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
             #print(f"x_mu:{x_mu.mean()}, x:{x.mean()}")
             x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
-            print(f"eval:{self.evaluation}")
             if self.evaluation:
                 x_out = self.prelu_out(params[0])
             else:
@@ -204,10 +196,10 @@ class ComplexDecoder(nn.Module):
         self.evaluation = eval
        
     def sample(self, mu, logvar, x=None):
-        #if self.out_dist == 'Normal':
-        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
-        #elif self.out_dist is None:
-        sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
+        if self.out_dist == 'Normal':
+            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
+        elif self.out_dist is None:
+            sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -364,7 +356,6 @@ class TSCNet(nn.Module):
         out_5 = self.TSCB_4(out_4)
 
         mask, m_logprob, m_entropy, params = self.mask_decoder(out_5)
-        print(f"m_logprob:{m_logprob.mean()}")
         complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_5)
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
 
@@ -378,7 +369,6 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        print(f"X_IN:{x.mean()}")
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         x_in = torch.cat([mag, x], dim=1)
@@ -388,9 +378,8 @@ class TSCNet(nn.Module):
         out_3 = self.TSCB_2(out_2)
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
-        print(f"m_out5:{out_5.mean()}")
+      
         _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0][0])
-        print(f"m_logprob:{m_logprob.mean()}")
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)

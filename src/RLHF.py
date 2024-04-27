@@ -395,8 +395,9 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
-            
+            print(f"Rewards:{rewards}")
             target_values = self.get_expected_return(rewards)
+            print(f"Returns:{target_values}")
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
             b_advantages = advantages.reshape(-1)
@@ -509,6 +510,7 @@ class PPO:
 
                 #Normalize advantages across minibatch
                 mb_adv = b_advantages[mb_indx, ...]
+                print(f"ADV:{mb_adv.mean()}")
                 if self.bs > 1:
                     mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 

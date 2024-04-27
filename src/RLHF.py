@@ -248,7 +248,6 @@ class PPO:
         if init_model is not None:
             self.init_model = init_model.eval()
         self.prev_log_probs = None
-        #self.prev_log_probs = {'noisy':None, 'clean':None}
         self.val_coef = val_coef
         self.en_coef = en_coef
         self.episode_len = run_steps
@@ -409,9 +408,12 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
+            print(f"Reward:{r_ts}")
             target_values = self.get_expected_return(rewards)
+            print(f"Returns:{target_values}")
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
+            print(f"Advantages:{advantages}")
             b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states).reshape(-1, ch, t, f)
@@ -498,8 +500,6 @@ class PPO:
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
 
-                print(f"mb_STATES:{mb_states.mean()} mb_ACTION:{mb_action[0][0].mean(), mb_action[0][1].mean(), mb_action[1].mean()}")
-                
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
         
                 values = critic(mb_states).reshape(-1)
@@ -583,8 +583,6 @@ class PPO:
                 step_val_loss += v_loss.item() 
                 step_entropy_loss += entropy_loss.item()      
                 self.t += 1
-        
-        print(f"Values:{VALUES.mean(0)}")
 
         step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
         step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
@@ -593,7 +591,7 @@ class PPO:
         
                     
         return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, pretrain_loss), \
-               (target_values.mean(), VALUES.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), \
+               (target_values.mean(), values.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), \
                advantages.mean(), pesq  
 
     '''

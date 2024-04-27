@@ -286,14 +286,7 @@ class Trainer:
 
         mag_loss = (mb_clean_mag - mb_enhanced_mag)**2
         ri_loss = (clean - mb_enhanced) ** 2
-        supervised_loss = 0.3 * ri_loss + 0.7 * mag_loss
-
-        reward = (r_state - self.args.beta * kl_penalty - self.args.lmbda * supervised_loss).mean()
-
-        metrics['mse'] = supervised_loss
-        metrics['reward'] = reward
-        metrics['kl_penalty'] = kl_penalty.mean()
-        metrics['reward_model_score'] = r_state.mean()
+        supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
         for i in range(self.args.batchsize):
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
@@ -307,6 +300,14 @@ class Trainer:
             metrics['ssnr'].append(values[4])
             metrics['stoi'].append(values[5])
             metrics['si-sdr'].append(values[6])
+
+        reward = (r_state - self.args.beta * kl_penalty - self.args.lmbda * (supervised_loss + np.asarray(metrics['pesq']).mean())).mean()
+                  
+        metrics['mse'] = supervised_loss
+        metrics['reward'] = reward
+        metrics['kl_penalty'] = kl_penalty.mean()
+        metrics['reward_model_score'] = r_state.mean()
+
         
         return metrics
     

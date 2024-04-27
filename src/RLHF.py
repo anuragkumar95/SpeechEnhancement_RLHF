@@ -290,7 +290,6 @@ class PPO:
                 a_t = g_t - critic(states[self.episode_len - i - 1]).detach()
             else:
                 a_t = g_t - critic(states[self.episode_len - i - 1]).detach() + self.discount * critic(states[self.episode_len - i]).detach()
-            print(f"Critic:{critic(states[self.episode_len - i - 1]).detach().mean()}")
             A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
     
@@ -329,11 +328,9 @@ class PPO:
                 bs, ch, t, f = clean.shape
 
                 action, log_probs, _, _ = actor.get_action(noisy)
-                log_probs_1, _ = actor.get_action_prob(noisy, action)
 
                 print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
-                print(f"log_probs_1:{log_probs_1[0].mean(), log_probs_1[1].mean()}")
-
+                
                 if self.init_model is not None:
                     init_action, _, _, _ = self.init_model.get_action(noisy)
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
@@ -396,12 +393,9 @@ class PPO:
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
-            print(f"Rewards:{rewards}")
             target_values = self.get_expected_return(rewards)
-            print(f"Returns:{target_values}")
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
-            print(f"ADV:{advantages}")
             b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states).reshape(-1, ch, t, f)
@@ -512,7 +506,7 @@ class PPO:
 
                 #Normalize advantages across minibatch
                 mb_adv = b_advantages[mb_indx, ...]
-                print(f"ADV:{mb_adv.mean()}")
+                
                 if self.bs > 1:
                     mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 

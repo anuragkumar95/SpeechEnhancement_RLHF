@@ -461,8 +461,6 @@ class PPO:
         critic = critic.train()
         actor = actor.eval()
         actor.set_evaluation(False)
-        if self.warm_up > 0:
-            actor = actor.train()
 
         a_optim, c_optim = optimizers
         

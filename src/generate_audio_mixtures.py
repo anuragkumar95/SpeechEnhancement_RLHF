@@ -58,8 +58,8 @@ class MixturesDataset:
     def __init__(self, clean_dir, noisy_dir, model_pt, out_dir, K=5, cutlen=40000, gpu_id=None):
         #self.clean_dir = clean_dir
         #self.noisy_dir = noisy_dir
-        self.clean_files = [os.path.join(clean_dir, file) for file in os.listdir(clean_dir)]
-        self.noisy_files = [os.path.join(noisy_dir, file) for file in os.listdir(noisy_dir)]
+        self.clean_files = sorted([os.path.join(clean_dir, file) for file in os.listdir(clean_dir)])
+        self.noisy_files = sorted([os.path.join(noisy_dir, file) for file in os.listdir(clean_dir)])
         self.save_dir = out_dir
         self.K = K
         #self.snr_means = [-15, -10, 5, 0, 5, 10, 15, 20, 25, 30, 35, 40]

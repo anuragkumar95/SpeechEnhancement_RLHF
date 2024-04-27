@@ -21,6 +21,7 @@ def run_enhancement_step(env,
                          lens,
                          file_id, 
                          save_dir,
+                         save_metrics=True,
                          save_track=True,
                          add_noise=False):
     """
@@ -75,38 +76,39 @@ def run_enhancement_step(env,
     next_state = env.get_next_state(state=inp, 
                                     action=action)
     
-    #Get reward
-    if env.reward_model is not None:
-        r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
-        metrics['reward'] = r_state.detach().cpu().numpy()
+    if save_metrics:
+        #Get reward
+        if env.reward_model is not None:
+            r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
+            metrics['reward'] = r_state.detach().cpu().numpy()
 
-    #Supervised loss
-    mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
-    mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+        #Supervised loss
+        mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
+        mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+        
+        mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+
+        supervised_loss = (0.3*(clean - mb_enhanced) ** 2).mean() + (0.7*(mb_clean_mag - mb_enhanced_mag)**2).mean()
+        metrics['mse'] = supervised_loss.detach().cpu().numpy()
+
+        clean_aud = clean_aud.reshape(-1)
+        enh_audio = next_state['est_audio'].reshape(-1)
+
+        clean_aud = clean_aud[:lens].detach().cpu().numpy()
+        enh_audio = enh_audio[:lens].detach().cpu().numpy()
+
+        values = compute_metrics(clean_aud, 
+                                enh_audio, 
+                                16000, 
+                                0)
     
-    mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-
-    supervised_loss = (0.3*(clean - mb_enhanced) ** 2).mean() + (0.7*(mb_clean_mag - mb_enhanced_mag)**2).mean()
-    metrics['mse'] = supervised_loss.detach().cpu().numpy()
-
-    clean_aud = clean_aud.reshape(-1)
-    enh_audio = next_state['est_audio'].reshape(-1)
-
-    clean_aud = clean_aud[:lens].detach().cpu().numpy()
-    enh_audio = enh_audio[:lens].detach().cpu().numpy()
-
-    values = compute_metrics(clean_aud, 
-                             enh_audio, 
-                             16000, 
-                             0)
-    
-    metrics['pesq'] = values[0]
-    metrics['csig'] = values[1]
-    metrics['cbak'] = values[2]
-    metrics['covl'] = values[3]
-    metrics['ssnr'] = values[4]
-    metrics['stoi'] = values[5]
-    metrics['si-sdr'] = values[6]
+        metrics['pesq'] = values[0]
+        metrics['csig'] = values[1]
+        metrics['cbak'] = values[2]
+        metrics['covl'] = values[3]
+        metrics['ssnr'] = values[4]
+        metrics['stoi'] = values[5]
+        metrics['si-sdr'] = values[6]
 
     if save_track:
         save_dir = os.path.join(save_dir, 'audios')

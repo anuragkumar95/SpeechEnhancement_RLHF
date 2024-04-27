@@ -392,8 +392,10 @@ class PPO:
                 pesq += mb_pesq
                 mb_pesq = mb_pesq / self.bs
 
-                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape}")
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
+
+                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq}")
+                
                 
                 #Store trajectory
                 states.append(noisy)

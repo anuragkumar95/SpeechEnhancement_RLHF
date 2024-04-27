@@ -290,6 +290,7 @@ class PPO:
                 a_t = g_t - critic(states[self.episode_len - i - 1]).detach()
             else:
                 a_t = g_t - critic(states[self.episode_len - i - 1]).detach() + self.discount * critic(states[self.episode_len - i]).detach()
+            print(f"Critic:{critic(states[self.episode_len - i - 1]).detach().mean()}")
             A[:, self.episode_len - i - 1] = a_t.reshape(-1)
         return A
     
@@ -400,6 +401,7 @@ class PPO:
             print(f"Returns:{target_values}")
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)
+            print(f"ADV:{advantages}")
             b_advantages = advantages.reshape(-1)
             
             states = torch.stack(states).reshape(-1, ch, t, f)

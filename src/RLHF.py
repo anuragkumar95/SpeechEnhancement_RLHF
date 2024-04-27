@@ -391,6 +391,12 @@ class PPO:
                 pesq += mb_pesq
                 mb_pesq = mb_pesq / self.bs
 
+                kl_penalty = kl_penalty.reshape(-1, 1)
+                supervised_loss = supervised_loss.reshape(-1, 1)
+                mb_pesq = torch.tensor(mb_pesq).reshape(-1, 1)
+
+                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq}")
+
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
 
                 print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq}")

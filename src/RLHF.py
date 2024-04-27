@@ -365,7 +365,6 @@ class PPO:
                 else:
                     r_t = self.env.get_PESQ_reward(state) 
                 
-                print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
                 r_ts.append(r_t)
 
                 #Supervised loss
@@ -394,8 +393,6 @@ class PPO:
                 kl_penalty = kl_penalty.reshape(-1, 1)
                 supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
-
-                print(f"r_t:{r_t.shape} kl:{kl_penalty.shape} loss:{supervised_loss.shape} PESQ:{mb_pesq.shape}")
 
                 r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss + mb_pesq)
 
@@ -446,8 +443,6 @@ class PPO:
         print(f"LOGPROBS      :{logprobs.shape}")
         print(f"ADVANTAGES    :{b_advantages.shape}")
         print(f"POLICY RETURNS:{target_values.mean(0)}")
-
-        print(f"STATES:{states.mean()} ACTION:{actions[0][0].mean(), actions[0][1].mean(), actions[1].mean()}")
 
         policy_out = {
             'states':states,

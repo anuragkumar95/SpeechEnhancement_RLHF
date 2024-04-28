@@ -188,15 +188,17 @@ class MixturesDataset:
 def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 
     enhanced_files = os.listdir(enhance_dir)
+
+    rand_files = np.random.choice(enhanced_files, 50)
     
     file_map = {}
-    for file in enhanced_files:
+    for file in rand_files:
         file_id = "_".join(file.split('_')[:2])
         if file_id not in file_map:
             file_map[file_id] = []
         file_map[file_id].append(file)
 
-    PESQ = []
+    PESQ = {}
     for file_id in tqdm(file_map):
         clean_file = os.path.join(clean_dir, f"{file_id}.wav")
         clean_wav, _ = torchaudio.load(clean_file)
@@ -209,7 +211,7 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
                                         16000, 
                                         0)
             
-            PESQ.append(metrics[0])
+            PESQ[file_id].append(metrics[0])
     
     os.makedirs(save_dir, exist_ok=True)
     with open(os.path.join(save_dir, 'pesq.pickle'), 'wb') as f:

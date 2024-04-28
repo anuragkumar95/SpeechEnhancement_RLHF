@@ -205,7 +205,7 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
         clean_file = os.path.join(clean_dir, f"{file_id}.wav")
         clean_wav, _ = torchaudio.load(clean_file)
         for enh_file in file_map[file_id]:
-            enh_file = os.path.join(enhance_dir, enh_file)
+            enh_file = os.path.join(enhance_dir, f"{enh_file}.wav")
             enh_wav, _ = torchaudio.load(enh_file)
 
             metrics = compute_metrics(clean_wav.reshape(-1).cpu().numpy(), 

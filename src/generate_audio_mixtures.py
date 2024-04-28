@@ -245,7 +245,7 @@ if __name__ == "__main__":
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noisy_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
-                                K=100,
+                                K=20,
                                 model_pt=ARGS.model_pt,
                                 gpu_id=0)
         

@@ -170,7 +170,7 @@ class Trainer:
                 pos = pos.to(self.gpu_id)
                 neg = neg.to(self.gpu_id)
                 inp = inp.to(self.gpu_id)
-
+            print(f"POS:{pos.shape}, NEG:{neg.shape}, INP:{inp.shape}")
             pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
             neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
             inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)

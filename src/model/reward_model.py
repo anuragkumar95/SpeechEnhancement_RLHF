@@ -18,9 +18,9 @@ class RewardModel(nn.Module):
    
         
     def forward(self, x, pos, neg):
-        x = x.permute(0, 1, 3, 2)
-        x_pos = pos.permute(0, 1, 3, 2)
-        x_neg = neg.permute(0, 1, 3, 2)
+        x = x.permute(0, 3, 1, 2)
+        x_pos = pos.permute(0, 3, 1, 2)
+        x_neg = neg.permute(0, 3, 1, 2)
 
         pos_proj = self.reward_projection(torch.cat([x, x_pos], dim=1))
         neg_proj = self.reward_projection(torch.cat([x, x_neg], dim=1))

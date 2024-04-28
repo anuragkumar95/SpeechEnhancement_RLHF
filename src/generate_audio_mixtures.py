@@ -222,16 +222,18 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
                 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
+    
     for file in os.listdir(mixture_dir):
-        file_id = file[:-len(".wav")]
-        if "enh" not in file_id:
-            _id_ = file_id.split('-')[0]
-        else:
-            _id_ = file_id[len("enh_"):]
+        #file_id = file[:-len(".wav")]
+        #if "enh" not in file_id:
+        #    _id_ = file_id.split('-')[0]
+        #else:
+        #    _id_ = file_id[len("enh_"):]
+        _id_ = "_".join(file.split("_")[:2])
         if _id_ not in mixture_ids:
             mixture_ids[_id_] = []
         mixture_ids[_id_].append(file)
-
+    
     mos = {}
     with open(mos_file, 'r') as f:
         lines = f.readlines()
@@ -239,14 +241,13 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
             file_name, mos_score, _, _, _, _, _ = line.split(',')
             mos[file_name] = float(mos_score)
 
-    with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:
+    with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:    
         for _id_ in mixture_ids:
-            if len(mixture_ids[_id_]) > 1:
-                ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
-                sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
-                sorted_file_ids = [i[0] for i in sorted_ranks]
-                line = " ".join(sorted_file_ids)
-                f.write(f"{line}\n")
+            ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
+            sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
+            sorted_file_ids = [i[0] for i in sorted_ranks]
+            line = " ".join(sorted_file_ids)
+            f.write(f"{line}\n")
 """
 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):

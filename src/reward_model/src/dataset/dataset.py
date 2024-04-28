@@ -268,10 +268,12 @@ class HumanAlignedDataset(Dataset):
     """
     def __init__(self,
                  mixture_dir,
+                 noisy_dir, 
                  rank, 
                  mos_file, 
                  cutlen=40000):
         self.mixture_dir = mixture_dir
+        self.noisy_dir = noisy_dir
         self.ranks = rank
         self.cutlen = cutlen
         self.mos = self.map_mos(mos_file)

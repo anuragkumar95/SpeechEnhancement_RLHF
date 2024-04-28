@@ -15,7 +15,7 @@ import copy
 import os
 import torch.nn.functional as F
 import torch
-from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
+from utils import preprocess_batch, get_specs
 import logging
 from torchinfo import summary
 import argparse
@@ -67,7 +67,7 @@ class Trainer:
     
         self.ACCUM_GRAD = args.accum_grad
 
-        self.reward_model = RewardModel(in_channels=2)
+        self.reward_model = RewardModel(in_channels=4)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr
@@ -96,22 +96,20 @@ class Trainer:
         return score.mean()
 
     def forward_step(self, batch):
-        _, x_1, x_2, labels = batch
-
+        x_1, x_2, inp = batch
+        labels = torch.ones(x_1.shape[0]).reshape(-1)
         if self.gpu_id is not None:
             labels = labels.to(self.gpu_id)
+
+        loss, score, probs = self.reward_model(x=inp, pos=x_1, neg=x_2)
         
-        labels = torch.argmax(labels, dim=-1)
-        loss, score, probs = self.reward_model(pos=x_1, neg=x_2, label=labels)
         if probs is None:
             pos_score, neg_score = score
-            dist = torch.sqrt((pos_score - neg_score)**2)
-            y_preds = (dist < 0.1).float()
-            print(f"DIST:{dist.reshape(-1)}")
+            y_preds = (pos_score > neg_score).float().reshape(-1)
         else:
             y_preds = torch.argmax(probs, dim=-1)
         
-        print(f"PREDS:{y_preds.reshape(-1)}")
+        print(f"PREDS:{y_preds}")
         print(f"LABELS:{labels}")
         acc = self.accuracy(y_preds, labels.float())
 
@@ -125,10 +123,18 @@ class Trainer:
         val_acc = 0
         with torch.no_grad():
             for i, batch in enumerate(test_ds):
-                
-                pos, neg, labels, _ = batch
-                batch = (pos, neg, labels)
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                pos, neg, inp = batch
+                #batch = (pos, neg, labels)
+                #batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                if self.gpu_id is not None:
+                    pos = pos.to(self.gpu_id)
+                    neg = neg.to(self.gpu_id)
+                    inp = inp.to(self.gpu_id)
+
+                pos = get_specs(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                neg = get_specs(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                inp = get_specs(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                batch = (pos, neg, inp)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)
 
@@ -157,9 +163,18 @@ class Trainer:
 
     
         for i, batch in enumerate(train_ds):   
-            pos, neg, labels, _ = batch
-            batch = (pos, neg, labels)
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            pos, neg, inp= batch
+            #batch = (pos, neg, labels)
+            #batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+            if self.gpu_id is not None:
+                pos = pos.to(self.gpu_id)
+                neg = neg.to(self.gpu_id)
+                inp = inp.to(self.gpu_id)
+
+            pos = get_specs(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            neg = get_specs(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            inp = get_specs(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            batch = (pos, neg, inp)
             try:  
                 loss, acc = self.forward_step(batch)
             except Exception as e:
@@ -254,14 +269,16 @@ def main(args):
     else:
         trainer = Trainer(args, None)
  
-    train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train'),
+    train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train', 'audios'),
+                                        noisy_dir=os.path.join(args.vctk_root, 'train', 'noisy'),
                                         rank=os.path.join(args.rank_dir, 'train.ranks'), 
-                                        mos_file=os.path.join(args.rank_dir, 'NISQA_results_train2.csv'),
+                                        mos_file=os.path.join(args.rank_dir, 'NISQA_results_train.csv'),
                                         cutlen=40000)
     
-    test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test'),
+    test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test', 'audios'),
+                                       noisy_dir=os.path.join(args.vctk_root, 'test', 'noisy'),
                                        rank=os.path.join(args.rank_dir, 'test.ranks'),
-                                       mos_file=os.path.join(args.rank_dir, 'NISQA_results_test2.csv'),  
+                                       mos_file=os.path.join(args.rank_dir, 'NISQA_results_test.csv'),  
                                        cutlen=40000)
 
     train_dataloader = DataLoader(

@@ -290,29 +290,30 @@ class HumanAlignedDataset(Dataset):
 
         
     def map_ranks_to_pairs(self):
-        PAIRS = []
+        PAIRS = {}
         with open(self.ranks, 'r') as f:
             lines = f.readlines()
             for line in tqdm(lines):
                 files = line.strip().split(' ')
                 FILES=[]
                 #Put them all in a single list
-                for i, file in enumerate(files):
-                    if "enh" not in file:
-                        _id_ = file.split('-')[0]
-                        if not _id_.endswith(".wav"):
-                            _id_ = f"{_id_}.wav"
-                    else:
-                        _id_ = file[len("enh_"):]
-
-                    val = (file, os.path.join(self.mixture_dir, file))
+                for file in files:
+                    root = "_".join(file.split('_')[:2])
+                    val = (file, os.path.join(self.mixture_dir, file), os.path.join(self.noisy_dir, f"{root}.wav"))
                     FILES.append(val)
 
                 #Find all possible combination of pairs from the ranking list
                 #Since files is sorted, generated pairs will always have preferred 
                 #rank indexed 1st within the pair
                 pairs = itertools.combinations(FILES, 2)
-                PAIRS.extend(pairs)
+                for ((id1, path1, inp), (id2, path2, _)) in pairs:
+                    mos_p1 = self.mos[id1]
+                    mos_p2 = self.mos[id2]
+                    if abs(mos_p1 - mos_p2) > 0.25:
+                        _id_ = "_".join(id1.split("_")[:2])
+                        if _id_ not in PAIRS:
+                            PAIRS[_id_] = []
+                        PAIRS[_id_].append((path1, path2, inp))
                 
         return PAIRS
     
@@ -321,36 +322,46 @@ class HumanAlignedDataset(Dataset):
     
     def __getitem__(self, idx):
         
-        pair = self.pairs[idx]
+        pairs = self.pairs[idx]
 
-        file1, path_1 = pair[0]
-        file2, path_2 = pair[1]
+        X1 = []
+        X2 = []
+        INP = []
+        for (path_1, path_2, inp) in pairs:
+            path_1 = path_1.strip()
+            path_2 = path_2.strip()
+            inp = inp.strip()
 
+            x_1, sr_1 = torchaudio.load(path_1)
+            x_2, sr_2 = torchaudio.load(path_2)
+            x_in, sr_in = torchaudio.load(inp)
 
-        path_1 = path_1.strip()
-        path_2 = path_2.strip()
+            assert sr_1 == sr_2 == sr_in 
 
-        x_1, sr_1 = torchaudio.load(path_1)
-        x_2, sr_2 = torchaudio.load(path_2)
-
-        assert sr_1 == sr_2 
-
-        if x_1.shape[-1] < self.cutlen: 
-            pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
-            x_1 = torch.cat([pad, x_1], dim=-1)
-            x_2 = torch.cat([pad, x_2], dim=-1)
-        
-        else:
-            start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
-            x_1 = x_1[:, start_idx: start_idx + self.cutlen]
-            x_2 = x_2[:, start_idx: start_idx + self.cutlen]
+            if x_1.shape[-1] < self.cutlen: 
+                pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
+                x_1 = torch.cat([pad, x_1], dim=-1)
+                x_2 = torch.cat([pad, x_2], dim=-1)
+                x_in = torch.cat([pad, x_in], dim=-1)
+            
+            else:
+                start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
+                x_1 = x_1[:, start_idx: start_idx + self.cutlen]
+                x_2 = x_2[:, start_idx: start_idx + self.cutlen]
+                x_in = x_in[:, start_idx: start_idx + self.cutlen]
          
-        x_1 = x_1.reshape(-1)
-        x_2 = x_2.reshape(-1)
+            x_1 = x_1.reshape(-1)
+            x_2 = x_2.reshape(-1)
+            x_in = x_in.reshape(-1)
+            X1.append(x_1)
+            X2.append(x_2)
+            INP.append(x_in)
 
-        label = torch.tensor([1.0, 0.0])
+        X1 = torch.stack(X1)
+        X2 = torch.stack(X2)
+        INP = torch.stack(INP)
  
-        return x_1, x_2, label, (path_1, path_2)
+        return X1, X2, INP
 
 
 def load_data(root=None, 

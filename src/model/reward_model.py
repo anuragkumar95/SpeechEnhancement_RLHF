@@ -14,22 +14,22 @@ class RewardModel(nn.Module):
     def __init__(self, in_channels=2):
         super(RewardModel, self).__init__()
         self.reward_projection = QNet(ndf=16, in_channel=in_channels, out_channel=1)
-        self.eps = 0.1
+        self.eps = 1e-08
    
         
-    def forward(self, pos, neg, label):
-
+    def forward(self, x, pos, neg):
+        x = x.permute(0, 1, 3, 2)
         x_pos = pos.permute(0, 1, 3, 2)
         x_neg = neg.permute(0, 1, 3, 2)
 
-        pos_proj = self.reward_projection(x_pos)
-        neg_proj = self.reward_projection(x_neg)
+        pos_proj = self.reward_projection(torch.cat([x, x_pos], dim=1))
+        neg_proj = self.reward_projection(torch.cat([x, x_neg], dim=1))
 
-        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) - self.eps).mean()
+        loss = -torch.log(F.sigmoid(pos_proj - neg_proj) + self.eps).sum()
    
         return loss, (pos_proj, neg_proj), None
     
-    def get_reward(self, inp):
+    def get_reward(self, inp, out):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
@@ -38,11 +38,8 @@ class RewardModel(nn.Module):
             Reward in the range (0, 1) for next state with reference to curr state.
         """
         inp = inp.permute(0, 1, 3, 2)
-        #out = out.permute(0, 1, 3, 2)
+        out = out.permute(0, 1, 3, 2)
 
-        #x = torch.cat([inp, out], dim=1)
-       
-        proj_inp = self.reward_projection(inp)
-        #proj_out = self.reward_projection(out)
-
+        proj_inp = self.reward_projection(torch.cat([inp, out], dim=1))
+        
         return proj_inp

@@ -123,7 +123,25 @@ class K_way_CrossEntropy(nn.Module):
         else:
             return -log_likelihoods.sum()
 
+def get_specs(wav, n_fft, hop, gpu_id=None):
+    """
+    Create spectrograms from input waveform.
+    ARGS:
+        wav : waveform (batch * cut_len)
+    """
+    win = torch.hamming_window(n_fft)
+
+    if gpu_id is not None:
+        win = win.to(gpu_id)
     
+    spec = torch.stft(
+        wav,
+        n_fft,
+        hop,
+        window=win,
+        onesided=True,
+    )
+    return spec 
 
 def copy_weights(src_state_dict, target):
     """

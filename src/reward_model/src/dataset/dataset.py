@@ -338,8 +338,11 @@ class HumanAlignedDataset(Dataset):
         
         pairs = self.pairs[self.keys[idx]]
 
-        idx = np.random.choice(len(pairs), 16, replace=False)
-        rand_pairs = [pairs[i] for i in idx]
+        if len(pairs) > 16:
+            idx = np.random.choice(len(pairs), 16, replace=False)
+            rand_pairs = [pairs[i] for i in idx]
+        else:
+            rand_pairs = pairs
 
         X1 = []
         X2 = []

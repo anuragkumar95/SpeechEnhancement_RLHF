@@ -164,6 +164,9 @@ class Trainer:
     
         for i, batch in enumerate(train_ds):   
             pos, neg, inp= batch
+            pos = pos.squeeze(0)
+            neg = neg.squueze(0)
+            inp = inp.squeeze(0)
             #batch = (pos, neg, labels)
             #batch = preprocess_batch(batch, gpu_id=self.gpu_id)
             if self.gpu_id is not None:

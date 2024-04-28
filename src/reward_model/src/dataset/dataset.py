@@ -369,9 +369,9 @@ class HumanAlignedDataset(Dataset):
             X2.append(x_2)
             INP.append(x_in)
 
-        X1 = torch.stack(X1).squeeze(0)
-        X2 = torch.stack(X2).squeeze(0)
-        INP = torch.stack(INP).squeeze(0)
+        X1 = torch.stack(X1)
+        X2 = torch.stack(X2)
+        INP = torch.stack(INP)
  
         return X1, X2, INP
 

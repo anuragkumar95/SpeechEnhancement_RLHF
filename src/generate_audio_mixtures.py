@@ -42,6 +42,8 @@ def args():
                         help="Path to the CMGAN checkpoint.")
     parser.add_argument("-n", "--n_size", type=int, required=False, default=10000, 
                         help="Number of mixtures to be produced.")
+    parser.add_argument("-k", "--k", type=int, required=False, default=10, 
+                        help="Number of mixtures per sample to be produced.")
     parser.add_argument("--mix_aud", action='store_true', required=False,
                         help="Set this flag to mix audios")
     parser.add_argument("--generate_ranks", action='store_true', required=False,
@@ -245,7 +247,7 @@ if __name__ == "__main__":
         ranks = MixturesDataset(clean_dir=ARGS.clean_dir, 
                                 noisy_dir=ARGS.noise_dir,  
                                 out_dir=ARGS.output,
-                                K=20,
+                                K=ARGS.k,
                                 model_pt=ARGS.model_pt,
                                 gpu_id=0)
         

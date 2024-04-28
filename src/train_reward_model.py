@@ -280,6 +280,8 @@ def main(args):
                                        rank=os.path.join(args.rank_dir, 'test.ranks'),
                                        mos_file=os.path.join(args.rank_dir, 'NISQA_results_test.csv'),  
                                        cutlen=40000)
+    
+    print(f"TRAIN:{len(train_dataset)}, TEST:{len(test_dataset)}")
 
     train_dataloader = DataLoader(
         dataset=train_dataset,

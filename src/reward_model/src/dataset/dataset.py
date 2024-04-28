@@ -307,13 +307,21 @@ class HumanAlignedDataset(Dataset):
                 #Since files is sorted, generated pairs will always have preferred 
                 #rank indexed 1st within the pair
                 pairs = itertools.combinations(FILES, 2)
+                done = False
                 for ((id1, path1, inp), (id2, path2, _)) in pairs:
                     mos_p1 = self.mos[id1]
                     mos_p2 = self.mos[id2]
-                    if abs(mos_p1 - mos_p2) > 0.1:
+                    if abs(mos_p1 - mos_p2) > 0.25:
+                        done = True
                         _id_ = "_".join(id1.split("_")[:2])
                         if _id_ not in PAIRS:
                             PAIRS[_id_] = []
+                        PAIRS[_id_].append((path1, path2, inp))
+                if not done:
+                    pairs = itertools.combinations(FILES, 2)
+                    rand_pairs = np.random.choice(pairs, 3, replace=False)
+                    PAIRS[_id_] = []
+                    for ((id1, path1, inp), (id2, path2, _)) in rand_pairs:
                         PAIRS[_id_].append((path1, path2, inp))
                 
         return PAIRS

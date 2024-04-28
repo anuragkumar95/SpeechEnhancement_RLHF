@@ -189,9 +189,9 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 
     enhanced_files = os.listdir(enhance_dir)
     roots = ["_".join(file.split('_')[:2]) for file in enhanced_files]
-    roots = set(roots)
+    roots = list(set(roots))
 
-    rand_roots = np.random.choice(roots, 50)
+    rand_roots = np.random.choice(roots, 50, replace=False)
     
     file_map = {}
     for root in rand_roots:

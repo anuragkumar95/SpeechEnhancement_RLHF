@@ -56,9 +56,9 @@ def run_enhancement_step(env,
     if add_noise:
         #add gaussian noise to action
         m_mu = torch.zeros(action[0][1].shape)
-        m_sigma = torch.ones(action[0][1].shape) * 0.1
+        m_sigma = torch.ones(action[0][1].shape) * 0.01
         c_mu = torch.zeros(action[1].shape)
-        c_sigma = torch.ones(action[1].shape) * 0.1
+        c_sigma = torch.ones(action[1].shape) * 0.01
         m_dist = Normal(m_mu, m_sigma)
         c_dist = Normal(c_mu, c_sigma)
 

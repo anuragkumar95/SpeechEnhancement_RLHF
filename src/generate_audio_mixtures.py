@@ -19,7 +19,7 @@ import soundfile as sf
 import itertools
 from model.actor import TSCNet
 from model.reward_model import RewardModel
-from evaluation import run_enhancement_step
+from evaluation import run_enhancement_step, compute_metrics
 from speech_enh_env import SpeechEnhancementAgent
 from utils import preprocess_batch
 #from ray.experimental import tqdm_ray
@@ -40,12 +40,14 @@ def args():
                         help="Directory to save dataset")
     parser.add_argument("-pt", "--model_pt", type=str, required=False,
                         help="Path to the CMGAN checkpoint.")
-    parser.add_argument("-n", "--n_size", type=int, required=False, default=10000, 
+    parser.add_argument("-n", "--n_size", type=int, required=False, default=10000,
                         help="Number of mixtures to be produced.")
     parser.add_argument("-k", "--k", type=int, required=False, default=10, 
                         help="Number of mixtures per sample to be produced.")
     parser.add_argument("--mix_aud", action='store_true', required=False,
                         help="Set this flag to mix audios")
+    parser.add_argument("--calc_pesq", action='store_true', required=False,
+                        help="Set this flag to calculate pesq for generated mixtures.")
     parser.add_argument("--generate_ranks", action='store_true', required=False,
                         help="Set this flag to generate_ranks")
     parser.add_argument("--set", required=False, default='train',
@@ -183,7 +185,36 @@ class MixturesDataset:
         for i in tqdm(cidxs):
             self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=False)
 
+def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 
+    enhanced_files = os.listdir(enhance_dir)
+    
+    file_map = {}
+    for file in enhanced_files:
+        file_id = "_".join(file.split('_')[:2])
+        if file_id not in file_map:
+            file_map[file_id] = []
+        file_map[file_id].append(file)
+
+    PESQ = []
+    for file_id in file_map:
+        clean_file = os.path.join(clean_dir, f"{file_id}.wav")
+        clean_wav, _ = torchaudio.load(clean_file)
+        for enh_file in file_map[file_id]:
+            enh_file = os.path.join(enhance_dir, enh_file)
+            enh_wav, _ = torchaudio.load(enh_file)
+
+            metrics = compute_metrics(clean_wav.reshape(-1).cpu().numpy(), 
+                                        enh_wav.reshape(-1).cpu().numpy(), 
+                                        16000, 
+                                        0)
+            
+            PESQ.append(metrics[0])
+    
+    os.makedirs(save_dir, exist_ok=True)
+    with open(os.path.join(save_dir, 'pesq.pickle'), 'wb') as f:
+        pickle.dump(PESQ, f)
+                
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
     for file in os.listdir(mixture_dir):
@@ -252,6 +283,11 @@ if __name__ == "__main__":
                                 gpu_id=0)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)
+
+    if ARGS.calc_pesq:
+        calc_mixture_pesq(enhance_dir=ARGS.enhance_dir, 
+                          clean_dir=ARGS.clean_dir, 
+                          save_dir=ARGS.output)
 
     if ARGS.generate_ranks:
         generate_ranking(mos_file=ARGS.mos_file, 

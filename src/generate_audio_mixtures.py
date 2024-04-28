@@ -195,10 +195,10 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
     
     file_map = {}
     for root in rand_roots:
-        if file_id not in file_map:
+        if root not in file_map:
             file_map[root] = []
         for i in range(50):
-            file_map[file_id].append(f"{root}_{i}")
+            file_map[root].append(f"{root}_{i}")
 
     PESQ = {}
     for file_id in tqdm(file_map):

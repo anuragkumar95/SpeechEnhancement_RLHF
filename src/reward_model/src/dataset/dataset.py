@@ -278,6 +278,7 @@ class HumanAlignedDataset(Dataset):
         self.cutlen = cutlen
         self.mos = self.map_mos(mos_file)
         self.pairs = self.map_ranks_to_pairs()
+        self.keys = list(self.pairs.keys())
 
     def map_mos(self, mos_file):
         _map_ = {}
@@ -318,11 +319,11 @@ class HumanAlignedDataset(Dataset):
         return PAIRS
     
     def __len__(self):
-        return len(self.pairs)
+        return len(self.keys)
     
     def __getitem__(self, idx):
         
-        pairs = self.pairs[idx]
+        pairs = self.pairs[self.keys[idx]]
 
         X1 = []
         X2 = []

@@ -78,7 +78,7 @@ class Trainer:
 
         self.gpu_id = gpu_id
         self.args = args
-        wandb.init(project=args.exp)
+        wandb.init(project=args.exp, name=args.suffix)
 
     def save(self, path, state_dict):
         torch.save(state_dict, path)

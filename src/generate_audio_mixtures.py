@@ -285,7 +285,7 @@ if __name__ == "__main__":
         ranks.generate_mixtures(n_size=ARGS.n_size)
 
     if ARGS.calc_pesq:
-        calc_mixture_pesq(enhance_dir=ARGS.enhance_dir, 
+        calc_mixture_pesq(enhance_dir=ARGS.mixture_dir, 
                           clean_dir=ARGS.clean_dir, 
                           save_dir=ARGS.output)
 

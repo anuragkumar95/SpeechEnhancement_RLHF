@@ -188,15 +188,17 @@ class MixturesDataset:
 def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 
     enhanced_files = os.listdir(enhance_dir)
+    roots = ["_".join(file.split('_')[:2]) for file in enhanced_files]
+    roots = set(roots)
 
-    rand_files = np.random.choice(enhanced_files, 50)
+    rand_roots = np.random.choice(roots, 50)
     
     file_map = {}
-    for file in rand_files:
-        file_id = "_".join(file.split('_')[:2])
+    for root in rand_roots:
         if file_id not in file_map:
-            file_map[file_id] = []
-        file_map[file_id].append(file)
+            file_map[root] = []
+        for i in range(50):
+            file_map[file_id].append(f"{root}_{i}")
 
     PESQ = {}
     for file_id in tqdm(file_map):

@@ -310,7 +310,7 @@ class HumanAlignedDataset(Dataset):
                 for ((id1, path1, inp), (id2, path2, _)) in pairs:
                     mos_p1 = self.mos[id1]
                     mos_p2 = self.mos[id2]
-                    if abs(mos_p1 - mos_p2) > 0.25:
+                    if abs(mos_p1 - mos_p2) > 0.1:
                         _id_ = "_".join(id1.split("_")[:2])
                         if _id_ not in PAIRS:
                             PAIRS[_id_] = []

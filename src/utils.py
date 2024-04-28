@@ -123,7 +123,7 @@ class K_way_CrossEntropy(nn.Module):
         else:
             return -log_likelihoods.sum()
 
-def get_specs(wav, n_fft, hop, gpu_id=None):
+def get_specs_1(wav, n_fft, hop, gpu_id=None):
     """
     Create spectrograms from input waveform.
     ARGS:

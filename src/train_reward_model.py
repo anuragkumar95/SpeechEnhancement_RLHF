@@ -15,7 +15,7 @@ import copy
 import os
 import torch.nn.functional as F
 import torch
-from utils import preprocess_batch, get_specs
+from utils import preprocess_batch, get_specs_1
 import logging
 from torchinfo import summary
 import argparse
@@ -131,9 +131,9 @@ class Trainer:
                     neg = neg.to(self.gpu_id)
                     inp = inp.to(self.gpu_id)
 
-                pos = get_specs(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
-                neg = get_specs(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
-                inp = get_specs(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
                 batch = (pos, neg, inp)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)
@@ -171,9 +171,11 @@ class Trainer:
                 neg = neg.to(self.gpu_id)
                 inp = inp.to(self.gpu_id)
 
-            pos = get_specs(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
-            neg = get_specs(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
-            inp = get_specs(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+
+            print(f"POS:{pos.shape}, NEG:{neg.shape}, INP:{inp.shape}")
             batch = (pos, neg, inp)
             try:  
                 loss, acc = self.forward_step(batch)

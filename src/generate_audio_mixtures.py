@@ -210,7 +210,8 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
                                         enh_wav.reshape(-1).cpu().numpy(), 
                                         16000, 
                                         0)
-            
+            if file_id not in PESQ:
+                PESQ[file_id] = []
             PESQ[file_id].append(metrics[0])
     
     os.makedirs(save_dir, exist_ok=True)

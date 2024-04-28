@@ -283,7 +283,7 @@ def main(args):
 
     train_dataloader = DataLoader(
         dataset=train_dataset,
-        batch_size=args.batchsize,
+        batch_size=1,
         pin_memory=True,
         shuffle=True,
         drop_last=True,
@@ -292,7 +292,7 @@ def main(args):
 
     test_dataloader = DataLoader(
         dataset=test_dataset,
-        batch_size=args.batchsize,
+        batch_size=1,
         pin_memory=True,
         shuffle=True,
         drop_last=True,

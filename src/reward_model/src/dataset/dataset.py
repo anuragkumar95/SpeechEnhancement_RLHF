@@ -279,6 +279,8 @@ class HumanAlignedDataset(Dataset):
         self.mos = self.map_mos(mos_file)
         self.pairs = self.map_ranks_to_pairs()
         self.keys = list(self.pairs.keys())
+        max_len = max([len(self.pairs[key]) for key in self.pairs])
+        print(f"Max batchsize:{max_len}")
 
     def map_mos(self, mos_file):
         _map_ = {}

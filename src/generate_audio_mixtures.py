@@ -86,6 +86,7 @@ class MixturesDataset:
             self.reward_model = RewardModel(in_channels=2)
             checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(checkpoint)
+            self.reward_model = self.reward_model.to(gpu_id)
             self.reward_model = self.reward_model.eval()
        
         self.env = SpeechEnhancementAgent(n_fft=400,

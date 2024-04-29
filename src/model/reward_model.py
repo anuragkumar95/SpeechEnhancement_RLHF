@@ -23,8 +23,13 @@ class RewardModel(nn.Module):
         x is (b * ch * f * t)
         """
         #x = x.permute(0, 3, 1, 2)
-        x_pos = pos.permute(0, 3, 1, 2)
-        x_neg = neg.permute(0, 3, 1, 2)
+        #NOTE: Below only when input are spectograms
+        #x_pos = pos.permute(0, 3, 1, 2)
+        #x_neg = neg.permute(0, 3, 1, 2)
+
+        #NOTE: When input are time domain waveforms
+        x_pos = pos.unsqueeze(1).unsqueeze(1)
+        x_neg = neg.unsqueeze(1).unsqueeze(1)
 
         #x_encoded = self.encoder.get_embedding(x)
         #pos_encoded = self.encoder.get_embedding(x_pos)

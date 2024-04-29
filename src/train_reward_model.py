@@ -81,7 +81,7 @@ class Trainer:
         
         policy = policy.to(gpu_id)
 
-        self.reward_model = RewardModel(policy=policy, in_channels=2)
+        self.reward_model = RewardModel(policy=policy, in_channels=1)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr
@@ -148,9 +148,9 @@ class Trainer:
                     neg = neg.to(self.gpu_id)
                     inp = inp.to(self.gpu_id)
                 
-                pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
-                neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
-                inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                #pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                #neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
+                #inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
 
                 
                 batch = (pos, neg, inp)
@@ -193,9 +193,9 @@ class Trainer:
                 neg = neg.to(self.gpu_id)
                 inp = inp.to(self.gpu_id)
             
-            pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
-            neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
-            inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            #pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            #neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
+            #inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
 
             
             batch = (pos, neg, inp)

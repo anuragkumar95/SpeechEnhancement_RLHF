@@ -38,6 +38,8 @@ def ARGS():
                         help="Root directory to rank files.")
     parser.add_argument("-vr", "--vctk_root", type=str, required=False,
                         help="Root directory to voicebank dataset.")
+    parser.add_argument("-pt", "--model_pt", type=str, required=False,
+                        help="Path to SFT model checkpoint.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")
     parser.add_argument("-o", "--output", type=str, required=True,
@@ -73,7 +75,7 @@ class Trainer:
                         gpu_id=gpu_id)
         
         #Load checkpoint and freeze layers
-        sft_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+        sft_checkpoint = torch.load(args.model_pt, map_location=torch.device('cpu'))
         policy.load_state_dict(sft_checkpoint)
         policy = freeze_layers(self.policy, 'all')
         

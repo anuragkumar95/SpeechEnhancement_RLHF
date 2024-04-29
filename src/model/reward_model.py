@@ -27,14 +27,14 @@ class RewardModel(nn.Module):
         x_neg = neg.permute(0, 3, 1, 2)
 
         #x_encoded = self.encoder.get_embedding(x)
-        pos_encoded = self.encoder.get_embedding(x_pos)
-        neg_encoded = self.encoder.get_embedding(x_neg)
+        #pos_encoded = self.encoder.get_embedding(x_pos)
+        #neg_encoded = self.encoder.get_embedding(x_neg)
         
         #pos_inp = torch.cat([x_encoded, pos_encoded], dim=1)
         #neg_inp = torch.cat([x_encoded, neg_encoded], dim=1)
 
-        pos_proj = self.reward_projection(pos_encoded)
-        neg_proj = self.reward_projection(neg_encoded)
+        pos_proj = self.reward_projection(x_pos)
+        neg_proj = self.reward_projection(x_neg)
 
         loss = -torch.log(F.sigmoid(pos_proj - neg_proj) + self.eps).mean()
    

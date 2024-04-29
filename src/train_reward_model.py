@@ -81,7 +81,7 @@ class Trainer:
         
         policy = policy.to(gpu_id)
 
-        self.reward_model = RewardModel(policy=policy, in_channels=64)
+        self.reward_model = RewardModel(policy=policy, in_channels=2)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr

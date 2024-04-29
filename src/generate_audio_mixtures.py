@@ -254,12 +254,12 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     
     FILES = [(file_name, mos_score) for file_name, mos_score in mos.items()]
     FILES = sorted(FILES, key=lambda x:x[1], reverse=True)
-    PAIRS = itertools.combinations(FILES, 2)
+    PAIRS = list(itertools.combinations(FILES, 2))
     print(f"TOTAL PAIRS:{len(PAIRS)}")
 
     with open(os.path.join(save_dir, f'{set}.pairs'), 'w') as f:  
         written = 0 
-        for (p1, m1), (p2, m2) in tqdm(zip(PAIRS)):
+        for (p1, m1), (p2, m2) in tqdm(PAIRS):
             if m1 - m2 > 0.25:
                 f.write(f"{p1} {p2}\n")
                 written += 1

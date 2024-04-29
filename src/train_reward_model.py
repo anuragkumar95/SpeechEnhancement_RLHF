@@ -300,14 +300,14 @@ def main(args):
  
     train_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'train', 'audios'),
                                         noisy_dir=os.path.join(args.vctk_root, 'train', 'noisy'),
-                                        rank=os.path.join(args.rank_dir, 'train.ranks'), 
+                                        rank=os.path.join(args.rank_dir, 'train.pairs'), 
                                         mos_file=os.path.join(args.rank_dir, 'NISQA_results_train.csv'),
                                         batchsize=args.batchsize,
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test', 'audios'),
                                        noisy_dir=os.path.join(args.vctk_root, 'test', 'noisy'),
-                                       rank=os.path.join(args.rank_dir, 'test.ranks'),
+                                       rank=os.path.join(args.rank_dir, 'test.pairs'),
                                        mos_file=os.path.join(args.rank_dir, 'NISQA_results_test.csv'),  
                                        cutlen=40000)
     
@@ -315,7 +315,7 @@ def main(args):
 
     train_dataloader = DataLoader(
         dataset=train_dataset,
-        batch_size=1,
+        batch_size=args.batchsize,
         pin_memory=True,
         shuffle=True,
         drop_last=True,
@@ -324,7 +324,7 @@ def main(args):
 
     test_dataloader = DataLoader(
         dataset=test_dataset,
-        batch_size=1,
+        batch_size=args.batchsize,
         pin_memory=True,
         shuffle=True,
         drop_last=True,

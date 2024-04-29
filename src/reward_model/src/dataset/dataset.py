@@ -279,7 +279,10 @@ class HumanAlignedDataset(Dataset):
         self.cutlen = cutlen
         self.bs = batchsize
         self.mos = self.map_mos(mos_file)
-        self.pairs = self.map_ranks_to_pairs()
+        if self.ranks.endswith('.ranks'):
+            self.pairs = self.map_ranks_to_pairs()
+        else:
+            self.pairs = self.get_pairs()
         self.keys = list(self.pairs.keys())
         max_len = max([len(self.pairs[key]) for key in self.pairs])
         print(f"Max batchsize:{max_len}")
@@ -292,6 +295,17 @@ class HumanAlignedDataset(Dataset):
                 f, m = line.split(',')[:2]
                 _map_[f] = float(m)
         return _map_
+    
+    def get_pairs(self):
+        PAIRS = []
+        with open(self.ranks) as f:
+            lines = f.readlines()
+            for line in lines:
+                p1, p2 = line.split()[:2]
+                path1 = os.path.join(self.mixture_dir, p1)
+                path2 = os.path.join(self.mixture_dir, p2)
+                PAIRS.append((path1, path2))
+        return PAIRS
 
         
     def map_ranks_to_pairs(self):
@@ -334,56 +348,89 @@ class HumanAlignedDataset(Dataset):
         return PAIRS
     
     def __len__(self):
-        return len(self.keys)
+        if self.ranks.endswith('.ranks'):
+            return len(self.keys)
+        if self.ranks.endswith('.pairs'):
+            return len(self.pairs)
     
     def __getitem__(self, idx):
         
-        pairs = self.pairs[self.keys[idx]]
+        if self.ranks.endswith('.ranks'):
+            pairs = self.pairs[self.keys[idx]]
 
-        if len(pairs) > self.bs:
-            idx = np.random.choice(len(pairs), self.bs, replace=False)
-            rand_pairs = [pairs[i] for i in idx]
-        else:
-            rand_pairs = pairs
+            if len(pairs) > self.bs:
+                idx = np.random.choice(len(pairs), self.bs, replace=False)
+                rand_pairs = [pairs[i] for i in idx]
+            else:
+                rand_pairs = pairs
 
-        X1 = []
-        X2 = []
-        INP = []
-        for (path_1, path_2, inp) in rand_pairs:
+            X1 = []
+            X2 = []
+            INP = []
+            for (path_1, path_2, inp) in rand_pairs:
+                path_1 = path_1.strip()
+                path_2 = path_2.strip()
+                inp = inp.strip()
+
+                x_1, sr_1 = torchaudio.load(path_1)
+                x_2, sr_2 = torchaudio.load(path_2)
+                x_in, sr_in = torchaudio.load(inp)
+
+                assert sr_1 == sr_2 == sr_in 
+
+                if x_1.shape[-1] < self.cutlen: 
+                    pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
+                    x_1 = torch.cat([pad, x_1], dim=-1)
+                    x_2 = torch.cat([pad, x_2], dim=-1)
+                    x_in = torch.cat([pad, x_in], dim=-1)
+                
+                else:
+                    start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
+                    x_1 = x_1[:, start_idx: start_idx + self.cutlen]
+                    x_2 = x_2[:, start_idx: start_idx + self.cutlen]
+                    x_in = x_in[:, start_idx: start_idx + self.cutlen]
+            
+                x_1 = x_1.reshape(-1)
+                x_2 = x_2.reshape(-1)
+                x_in = x_in.reshape(-1)
+                X1.append(x_1)
+                X2.append(x_2)
+                INP.append(x_in)
+
+            X1 = torch.stack(X1)
+            X2 = torch.stack(X2)
+            INP = torch.stack(INP)
+    
+            return X1, X2, INP
+        
+        if self.ranks.endswith('.pairs'):
+            pair = self.pairs[idx]
+            
+            path_1, path_2 = pair
             path_1 = path_1.strip()
             path_2 = path_2.strip()
-            inp = inp.strip()
 
             x_1, sr_1 = torchaudio.load(path_1)
             x_2, sr_2 = torchaudio.load(path_2)
-            x_in, sr_in = torchaudio.load(inp)
-
-            assert sr_1 == sr_2 == sr_in 
+            
+            assert sr_1 == sr_2 
 
             if x_1.shape[-1] < self.cutlen: 
                 pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
                 x_1 = torch.cat([pad, x_1], dim=-1)
                 x_2 = torch.cat([pad, x_2], dim=-1)
-                x_in = torch.cat([pad, x_in], dim=-1)
             
             else:
                 start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
                 x_1 = x_1[:, start_idx: start_idx + self.cutlen]
                 x_2 = x_2[:, start_idx: start_idx + self.cutlen]
-                x_in = x_in[:, start_idx: start_idx + self.cutlen]
-         
+        
             x_1 = x_1.reshape(-1)
             x_2 = x_2.reshape(-1)
-            x_in = x_in.reshape(-1)
-            X1.append(x_1)
-            X2.append(x_2)
-            INP.append(x_in)
 
-        X1 = torch.stack(X1)
-        X2 = torch.stack(X2)
-        INP = torch.stack(INP)
- 
-        return X1, X2, INP
+            return x_1, x_2, x_2
+
+
 
 
 def load_data(root=None, 

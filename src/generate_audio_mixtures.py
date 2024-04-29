@@ -230,7 +230,7 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
     with open(os.path.join(save_dir, 'pesq.pickle'), 'wb') as f:
         pickle.dump(PESQ, f)
                 
-def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
+def generate_ranking(mos_file, n_size, save_dir, set='train'):
     mixture_ids = {}
     
     '''
@@ -257,7 +257,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     num_files = len(FILES)
     print(f"TOTAL FILES:{len(FILES)}")
     written = 0 
-    n_size = 100000
+    #n_size = 100000
     with open(os.path.join(save_dir, f'{set}.pairs'), 'w') as f:  
         #for (p1, m1) in tqdm(FILES):
         for _  in tqdm(range(n_size)):
@@ -333,6 +333,7 @@ if __name__ == "__main__":
     if ARGS.generate_ranks:
         generate_ranking(mos_file=ARGS.mos_file, 
                          mixture_dir=ARGS.mixture_dir, 
+                         n_size=ARGS.n_size,
                          save_dir=ARGS.output,
                          set=ARGS.set)
 

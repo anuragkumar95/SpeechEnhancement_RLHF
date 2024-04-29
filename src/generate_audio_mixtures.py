@@ -233,6 +233,7 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     mixture_ids = {}
     
+    '''
     for file in os.listdir(mixture_dir):
         #file_id = file[:-len(".wav")]
         #if "enh" not in file_id:
@@ -243,7 +244,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
         if _id_ not in mixture_ids:
             mixture_ids[_id_] = []
         mixture_ids[_id_].append(file)
-    
+    '''
     mos = {}
     with open(mos_file, 'r') as f:
         lines = f.readlines()

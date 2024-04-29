@@ -222,7 +222,7 @@ class Trainer:
                 train_acc += batch_acc
                 print(f"Epoch:{epoch} | Step:{i+1} | Loss: {batch_loss} | Acc: {batch_acc}")
 
-            if (i+1) % 300  == 0:
+            if (i+1) % 1000  == 0:
                 #Run validation every 1000 steps
                 val_loss, val_acc = self.run_validation(test_ds)
                 wandb.log({

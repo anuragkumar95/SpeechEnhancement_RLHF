@@ -111,7 +111,7 @@ class Trainer:
 
     def forward_step(self, batch):
         #x_1, x_2, inp = batch
-        _, x_1, x_2, inp = batch
+        _, x_1, x_2, inp, _ = batch
         labels = torch.ones(x_1.shape[0]).reshape(-1)
         if self.gpu_id is not None:
             labels = labels.to(self.gpu_id)

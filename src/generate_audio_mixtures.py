@@ -253,7 +253,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
             mos[file_name] = float(mos_score)
     
     FILES = [(file_name, mos_score) for file_name, mos_score in mos.items()]
-    FILES = sorted(FILES, key=lambda x:x[1], revers=True)
+    FILES = sorted(FILES, key=lambda x:x[1], reverse=True)
     PAIRS = itertools.combinations(FILES, 2)
     print(f"TOTAL PAIRS:{len(PAIRS)}")
 

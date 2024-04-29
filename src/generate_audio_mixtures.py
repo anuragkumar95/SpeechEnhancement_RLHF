@@ -261,7 +261,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     with open(os.path.join(save_dir, f'{set}.pairs'), 'w') as f:  
         #for (p1, m1) in tqdm(FILES):
         for _  in tqdm(range(n_size)):
-            diff = 9999
+            diff = -9999
             p1, p2 = None, None
             m1, m2 = None, None
             while(diff < 0.25):

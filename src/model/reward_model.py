@@ -30,7 +30,7 @@ class RewardModel(nn.Module):
         #NOTE: When input are time domain waveforms
         x_pos = pos.unsqueeze(1).unsqueeze(1)
         x_neg = neg.unsqueeze(1).unsqueeze(1)
-
+        print(f"x_pos:{x_pos.shape} x_neg:{x_neg.shape}")
         #x_encoded = self.encoder.get_embedding(x)
         #pos_encoded = self.encoder.get_embedding(x_pos)
         #neg_encoded = self.encoder.get_embedding(x_neg)

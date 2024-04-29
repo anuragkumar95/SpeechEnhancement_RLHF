@@ -15,7 +15,7 @@ import copy
 import os
 import torch.nn.functional as F
 import torch
-from utils import preprocess_batch, get_specs_1
+from utils import preprocess_batch, get_specs_1, freeze_layers
 import logging
 from torchinfo import summary
 import argparse
@@ -67,7 +67,19 @@ class Trainer:
     
         self.ACCUM_GRAD = args.accum_grad
 
-        self.reward_model = RewardModel(in_channels=4)
+        policy = TSCNet(num_channel=64, 
+                        num_features=201,
+                        distribution=None, 
+                        gpu_id=gpu_id)
+        
+        #Load checkpoint and freeze layers
+        sft_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+        policy.load_state_dict(sft_checkpoint)
+        policy = freeze_layers(self.policy, 'all')
+        
+        policy = policy.to(gpu_id)
+
+        self.reward_model = RewardModel(policy=policy, in_channels=128)
 
         self.a_optimizer = torch.optim.AdamW(
             filter(lambda layer:layer.requires_grad,self.reward_model.parameters()), lr=args.init_lr

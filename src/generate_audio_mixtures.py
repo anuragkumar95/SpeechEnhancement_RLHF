@@ -332,7 +332,6 @@ if __name__ == "__main__":
 
     if ARGS.generate_ranks:
         generate_ranking(mos_file=ARGS.mos_file, 
-                         mixture_dir=ARGS.mixture_dir, 
                          n_size=ARGS.n_size,
                          save_dir=ARGS.output,
                          set=ARGS.set)

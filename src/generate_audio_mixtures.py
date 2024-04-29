@@ -263,12 +263,13 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
         for _  in tqdm(range(n_size)):
             diff = 9999
             p1, p2 = None, None
+            m1, m2 = None, None
             while(diff < 0.25):
                 k = np.random.choice(num_files, 2, replace=False)
                 (p1, m1), (p2, m2) = FILES[k[0]], FILES[k[1]]
                 diff = m1 - m2
                 
-            f.write(f"{p1} {p2}\n")
+            f.write(f"{p1} {p2} {m1} {m2} {diff}\n")
         print(f"SAVED PAIRS:{n_size}")
             
             

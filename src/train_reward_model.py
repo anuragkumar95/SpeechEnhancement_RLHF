@@ -297,6 +297,7 @@ def main(args):
                                         noisy_dir=os.path.join(args.vctk_root, 'train', 'noisy'),
                                         rank=os.path.join(args.rank_dir, 'train.ranks'), 
                                         mos_file=os.path.join(args.rank_dir, 'NISQA_results_train.csv'),
+                                        batchsize=args.batchsize,
                                         cutlen=40000)
     
     test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(args.mix_dir, 'test', 'audios'),

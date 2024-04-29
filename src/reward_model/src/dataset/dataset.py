@@ -271,11 +271,13 @@ class HumanAlignedDataset(Dataset):
                  noisy_dir, 
                  rank, 
                  mos_file, 
+                 batchsize=4,
                  cutlen=40000):
         self.mixture_dir = mixture_dir
         self.noisy_dir = noisy_dir
         self.ranks = rank
         self.cutlen = cutlen
+        self.bs = batchsize
         self.mos = self.map_mos(mos_file)
         self.pairs = self.map_ranks_to_pairs()
         self.keys = list(self.pairs.keys())
@@ -321,7 +323,7 @@ class HumanAlignedDataset(Dataset):
                         PAIRS[_id_].append((path1, path2, inp))
                 if not done:
                     pairs = list(itertools.combinations(FILES, 2))
-                    idx = np.random.choice(len(pairs), 10, replace=False)
+                    idx = np.random.choice(len(pairs), self.bs, replace=False)
                     rand_pairs = [pairs[i] for i in idx]
                     for ((id1, path1, inp), (id2, path2, _)) in rand_pairs:
                         _id_ = "_".join(id1.split("_")[:2])
@@ -338,8 +340,8 @@ class HumanAlignedDataset(Dataset):
         
         pairs = self.pairs[self.keys[idx]]
 
-        if len(pairs) > 10:
-            idx = np.random.choice(len(pairs), 10, replace=False)
+        if len(pairs) > self.bs:
+            idx = np.random.choice(len(pairs), self.bs, replace=False)
             rand_pairs = [pairs[i] for i in idx]
         else:
             rand_pairs = pairs

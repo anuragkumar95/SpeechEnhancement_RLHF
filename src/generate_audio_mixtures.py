@@ -257,13 +257,18 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
     print(f"TOTAL FILES:{len(FILES)}")
     written = 0 
     with open(os.path.join(save_dir, f'{set}.pairs'), 'w') as f:  
-        for (p1, m1) in FILES:
-            for (p2, m2) in tqdm(FILES):
+        for (p1, m1) in tqdm(FILES):
+            per_file = 0
+            for (p2, m2) in FILES:
                 if m1 - m2 > 0.25:
                     f.write(f"{p1} {p2}\n")
-                    written += 1
-            print(f"SAVED PAIRS:{written}")
-    
+                    per_file += 1
+                    if per_file > 100:
+                        break
+            written += per_file
+        print(f"SAVED PAIRS:{written}")
+            
+            
     '''
     with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:    
         for _id_ in mixture_ids:

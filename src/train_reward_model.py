@@ -38,7 +38,7 @@ def ARGS():
                         help="Root directory to rank files.")
     parser.add_argument("-vr", "--vctk_root", type=str, required=False,
                         help="Root directory to voicebank dataset.")
-    parser.add_argument("-pt", "--model_pt", type=str, required=False,
+    parser.add_argument("-pt", "--reward_pt", type=str, required=False,
                         help="Path to SFT model checkpoint.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("--suffix", type=str, required=False, default='', help="Experiment suffix name.")

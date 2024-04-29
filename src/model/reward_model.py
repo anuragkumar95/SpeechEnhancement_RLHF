@@ -26,17 +26,12 @@ class RewardModel(nn.Module):
         x_pos = pos.permute(0, 3, 1, 2)
         x_neg = neg.permute(0, 3, 1, 2)
 
-
         x_encoded = self.encoder.get_embedding(x)
         pos_encoded = self.encoder.get_embedding(x_pos)
         neg_encoded = self.encoder.get_embedding(x_neg)
-
-        print(f"x:{x_encoded.shape}, pos:{pos_encoded.shape}, neg:{neg_encoded.shape}")
         
         pos_inp = torch.cat([x_encoded, pos_encoded], dim=1)
         neg_inp = torch.cat([x_encoded, neg_encoded], dim=1)
-
-        print(f"pos_inp:{pos_inp.shape}, neg_inp:{neg_inp.shape}")
 
         pos_proj = self.reward_projection(pos_inp)
         neg_proj = self.reward_projection(neg_inp)
@@ -56,6 +51,11 @@ class RewardModel(nn.Module):
         inp = inp.permute(0, 1, 3, 2)
         out = out.permute(0, 1, 3, 2)
 
-        proj_inp = self.reward_projection(torch.cat([inp, out], dim=1))
+        inp_encoded = self.encoder.get_embedding(inp)
+        out_encoded = self.encoder.get_embedding(out)
+
+        x_inp = torch.cat([inp_encoded, out_encoded], dim=1)
+
+        proj_inp = self.reward_projection(x_inp)
         
         return proj_inp

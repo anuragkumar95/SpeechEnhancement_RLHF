@@ -123,17 +123,22 @@ class Trainer:
         val_acc = 0
         with torch.no_grad():
             for i, batch in enumerate(test_ds):
-                pos, neg, inp = batch
+                pos, neg, inp= batch
+                pos = pos.squeeze(0)
+                neg = neg.squeeze(0)
+                inp = inp.squeeze(0)
                 #batch = (pos, neg, labels)
                 #batch = preprocess_batch(batch, gpu_id=self.gpu_id)
                 if self.gpu_id is not None:
                     pos = pos.to(self.gpu_id)
                     neg = neg.to(self.gpu_id)
                     inp = inp.to(self.gpu_id)
-
+                
                 pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
                 neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
                 inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
+
+                
                 batch = (pos, neg, inp)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)

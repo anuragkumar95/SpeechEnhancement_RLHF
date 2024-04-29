@@ -419,11 +419,17 @@ class HumanAlignedDataset(Dataset):
             if x_1.shape[-1] < self.cutlen: 
                 pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
                 x_1 = torch.cat([pad, x_1], dim=-1)
-                x_2 = torch.cat([pad, x_2], dim=-1)
             
-            else:
+            if x_2.shape[-1] <= self.cutlen: 
+                pad = torch.zeros(1, self.cutlen - x_2.shape[-1])
+                x_2 = torch.cat([pad, x_2], dim=-1)
+        
+            if x_1.shape[-1] > self.cutlen:
                 start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
                 x_1 = x_1[:, start_idx: start_idx + self.cutlen]
+                
+            if x_2.shape[-1] > self.cutlen:
+                start_idx = random.randint(0, x_2.shape[-1] - self.cutlen)
                 x_2 = x_2[:, start_idx: start_idx + self.cutlen]
         
             x_1 = x_1.reshape(-1)

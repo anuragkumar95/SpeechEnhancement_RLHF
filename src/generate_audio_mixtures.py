@@ -262,7 +262,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
         #for (p1, m1) in tqdm(FILES):
         for _  in tqdm(range(n_size)):
             diff = 9999
-            p1, p1 = None, None
+            p1, p2 = None, None
             while(diff < 0.25):
                 k = np.random.choice(num_files, 2, replace=False)
                 (p1, m1), (p2, m2) = FILES[k[0]], FILES[k[1]]

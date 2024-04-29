@@ -40,6 +40,8 @@ def args():
                         help="Directory to save dataset")
     parser.add_argument("-pt", "--model_pt", type=str, required=False,
                         help="Path to the CMGAN checkpoint.")
+    parser.add_argument("-rpt", "--model_pt", type=str, required=False, default=None,
+                        help="Path to the CMGAN checkpoint.")
     parser.add_argument("-n", "--n_size", type=int, required=False, default=10000,
                         help="Number of mixtures to be produced.")
     parser.add_argument("-k", "--k", type=int, required=False, default=10, 
@@ -59,7 +61,7 @@ class MixturesDataset:
     """
     This class generates a dataset for reward model training.
     """
-    def __init__(self, clean_dir, noisy_dir, model_pt, out_dir, K=5, cutlen=40000, gpu_id=None):
+    def __init__(self, clean_dir, noisy_dir, model_pt, out_dir, reward_pt=None, K=5, cutlen=40000, gpu_id=None):
         #self.clean_dir = clean_dir
         #self.noisy_dir = noisy_dir
         self.clean_files = sorted([os.path.join(clean_dir, file) for file in os.listdir(clean_dir)])
@@ -78,12 +80,19 @@ class MixturesDataset:
         except KeyError as e:
             self.model.load_state_dict(checkpoint)
         self.model = self.model.to(gpu_id)
+
+        self.reward_model = None
+        if reward_pt is not None:
+            self.reward_model = RewardModel(in_channels=2)
+            checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
+            self.reward_model.load_state_dict(checkpoint)
+            self.reward_model = self.reward_model.eval()
        
         self.env = SpeechEnhancementAgent(n_fft=400,
                                           hop=100,
                                           gpu_id=gpu_id,
                                           args=None,
-                                          reward_model=None)
+                                          reward_model=self.reward_model)
         self.cutlen = cutlen
 
     def mix_audios(self, clean, noise, snr):
@@ -286,6 +295,7 @@ if __name__ == "__main__":
                                 out_dir=ARGS.output,
                                 K=ARGS.k,
                                 model_pt=ARGS.model_pt,
+                                reward_pt=ARGS.reward_pt,
                                 gpu_id=0)
         
         ranks.generate_mixtures(n_size=ARGS.n_size)

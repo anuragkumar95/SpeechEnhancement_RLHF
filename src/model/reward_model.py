@@ -11,9 +11,8 @@ import torch.nn.functional as F
 
 
 class RewardModel(nn.Module):
-    def __init__(self, policy, in_channels=2):
+    def __init__(self, in_channels=2):
         super(RewardModel, self).__init__()
-        self.encoder = policy 
         self.reward_projection = QNet(ndf=16, in_channel=in_channels, out_channel=1)
         self.eps = 1e-08
    
@@ -30,13 +29,6 @@ class RewardModel(nn.Module):
         #NOTE: When input are time domain waveforms
         x_pos = pos.unsqueeze(1).unsqueeze(1)
         x_neg = neg.unsqueeze(1).unsqueeze(1)
-        print(f"x_pos:{x_pos.shape} x_neg:{x_neg.shape}")
-        #x_encoded = self.encoder.get_embedding(x)
-        #pos_encoded = self.encoder.get_embedding(x_pos)
-        #neg_encoded = self.encoder.get_embedding(x_neg)
-        
-        #pos_inp = torch.cat([x_encoded, pos_encoded], dim=1)
-        #neg_inp = torch.cat([x_encoded, neg_encoded], dim=1)
 
         pos_proj = self.reward_projection(x_pos)
         neg_proj = self.reward_projection(x_neg)
@@ -45,7 +37,7 @@ class RewardModel(nn.Module):
    
         return loss, (pos_proj, neg_proj), None
     
-    def get_reward(self, inp, out):
+    def get_reward(self, inp, out=None):
         """
         ARGS:
             inp : spectrogram of curr state (b * ch * t * f) 
@@ -54,12 +46,11 @@ class RewardModel(nn.Module):
             Reward in the range (0, 1) for next state with reference to curr state.
         """
         inp = inp.permute(0, 1, 3, 2)
-        out = out.permute(0, 1, 3, 2)
-
-        inp_encoded = self.encoder.get_embedding(inp)
-        out_encoded = self.encoder.get_embedding(out)
-
-        x_inp = torch.cat([inp_encoded, out_encoded], dim=1)
+        if out is not None:
+            out = out.permute(0, 1, 3, 2)
+            x_inp = torch.cat([inp, out], dim=1)
+        else:
+            x_inp = inp
 
         proj_inp = self.reward_projection(x_inp)
         

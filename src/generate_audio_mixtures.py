@@ -40,7 +40,7 @@ def args():
                         help="Directory to save dataset")
     parser.add_argument("-pt", "--model_pt", type=str, required=False,
                         help="Path to the CMGAN checkpoint.")
-    parser.add_argument("-rpt", "--model_pt", type=str, required=False, default=None,
+    parser.add_argument("-rpt", "--reward_pt", type=str, required=False, default=None,
                         help="Path to the CMGAN checkpoint.")
     parser.add_argument("-n", "--n_size", type=int, required=False, default=10000,
                         help="Number of mixtures to be produced.")

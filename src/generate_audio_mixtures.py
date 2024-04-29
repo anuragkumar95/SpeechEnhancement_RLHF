@@ -250,7 +250,17 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
         for line in lines[1:]:
             file_name, mos_score, _, _, _, _, _ = line.split(',')
             mos[file_name] = float(mos_score)
+    
+    FILES = [(file_name, mos_score) for file_name, mos_score in mos.iteritems()]
+    FILES = sorted(FILES, key=lambda x:x[1], revers=True)
+    PAIRS = itertools.combinations(FILES, 2)
 
+    with open(os.path.join(save_dir, f'{set}.pairs'), 'w') as f:   
+        for (p1, m1), (p2, m2) in zip(PAIRS):
+            if m1 - m2 > 0.25:
+                f.write(f"{p1} {p2}\n")
+    
+    '''
     with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:    
         for _id_ in mixture_ids:
             ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
@@ -258,6 +268,7 @@ def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
             sorted_file_ids = [i[0] for i in sorted_ranks]
             line = " ".join(sorted_file_ids)
             f.write(f"{line}\n")
+    '''
 """
 
 def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):

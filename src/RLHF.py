@@ -394,7 +394,8 @@ class PPO:
                 supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
 
-                r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
+                #r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
+                r_t = mb_pesq - self.beta * kl_penalty - self.lmbda * supervised_loss
 
                 print(f"R:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 

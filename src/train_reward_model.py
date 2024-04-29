@@ -77,7 +77,7 @@ class Trainer:
         #Load checkpoint and freeze layers
         sft_checkpoint = torch.load(args.model_pt, map_location=torch.device('cpu'))
         policy.load_state_dict(sft_checkpoint)
-        #policy = freeze_layers(policy, 'all')
+        policy = freeze_layers(policy, 'all')
         
         policy = policy.to(gpu_id)
 

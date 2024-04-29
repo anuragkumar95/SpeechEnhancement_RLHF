@@ -110,7 +110,8 @@ class Trainer:
         return score.mean()
 
     def forward_step(self, batch):
-        x_1, x_2, inp = batch
+        #x_1, x_2, inp = batch
+        _, x_1, x_2, inp = batch
         labels = torch.ones(x_1.shape[0]).reshape(-1)
         if self.gpu_id is not None:
             labels = labels.to(self.gpu_id)
@@ -141,19 +142,19 @@ class Trainer:
                 pos = pos.squeeze(0)
                 neg = neg.squeeze(0)
                 inp = inp.squeeze(0)
-                #batch = (pos, neg, labels)
-                #batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-                if self.gpu_id is not None:
-                    pos = pos.to(self.gpu_id)
-                    neg = neg.to(self.gpu_id)
-                    inp = inp.to(self.gpu_id)
+                batch = (pos, neg, inp)
+                batch = preprocess_batch(batch, ref=inp, gpu_id=self.gpu_id)
+                #if self.gpu_id is not None:
+                #    pos = pos.to(self.gpu_id)
+                #    neg = neg.to(self.gpu_id)
+                #    inp = inp.to(self.gpu_id)
                 
                 #pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
                 #neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
                 #inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
 
                 
-                batch = (pos, neg, inp)
+                #batch = (pos, neg, inp)
                 try:  
                     batch_loss, batch_acc = self.forward_step(batch)
 
@@ -186,19 +187,19 @@ class Trainer:
             pos = pos.squeeze(0)
             neg = neg.squeeze(0)
             inp = inp.squeeze(0)
-            #batch = (pos, neg, labels)
-            #batch = preprocess_batch(batch, gpu_id=self.gpu_id)
-            if self.gpu_id is not None:
-                pos = pos.to(self.gpu_id)
-                neg = neg.to(self.gpu_id)
-                inp = inp.to(self.gpu_id)
+            batch = (pos, neg, inp)
+            batch = preprocess_batch(batch, ref=inp, gpu_id=self.gpu_id)
+            #if self.gpu_id is not None:
+            #    pos = pos.to(self.gpu_id)
+            #    neg = neg.to(self.gpu_id)
+            #    inp = inp.to(self.gpu_id)
             
             #pos = get_specs_1(wav=pos, n_fft=400, hop=100, gpu_id=self.gpu_id)
             #neg = get_specs_1(wav=neg, n_fft=400, hop=100, gpu_id=self.gpu_id)
             #inp = get_specs_1(wav=inp, n_fft=400, hop=100, gpu_id=self.gpu_id)
 
             
-            batch = (pos, neg, inp)
+            #batch = (pos, neg, inp)
             try:  
                 loss, acc = self.forward_step(batch)
             except Exception as e:

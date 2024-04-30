@@ -33,10 +33,13 @@ torch.manual_seed(123)
 
 class REINFORCE:
     def __init__(self, 
-                 init_model, 
-                 reward_model, 
+                 init_model,
+                 loader,
+                 batchsize=4, 
+                 reward_model=None, 
                  gpu_id=None, 
                  beta=0.01, 
+                 lmbda=0.1,
                  discount=1.0, 
                  episode_len=1,
                  **params):
@@ -46,7 +49,11 @@ class REINFORCE:
                                           gpu_id=gpu_id,
                                           args=params['env_params'].get("args"),
                                           reward_model=reward_model)
+        self.dataloader = loader
+        self._iter_ = iter(loader)
+        self.bs = batchsize
         self.discount = discount
+        self.lmbda = lmbda
         self.gpu_id = gpu_id
         self.rlhf = True
         self.reward_model = reward_model
@@ -54,9 +61,10 @@ class REINFORCE:
         if self.reward_model is None:
             self.rlhf = False
         self.beta = beta
-        self.gaussian_noise = GaussianStrategy(gpu_id=gpu_id)
         self.t = 0
-        self.dist = params['env_params'].get("args").out_dist
+        self.init_model = None
+        if init_model is not None:
+            self.init_model = init_model.eval()
         self.train_phase = params['train_phase']
         self.episode_len = episode_len
         self._r_mavg = 0
@@ -76,130 +84,194 @@ class REINFORCE:
             else:
                 G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
         return G_t
+    
+    def unroll_policy(self, actor):
+        #Set models to eval
+        actor = actor.eval()
+        #actor.set_evaluation(True)
+        actor.set_evaluation(False)
 
-    def run_one_step_episode(self, batch, model, optimizer):
-        """
-        Runs an epoch using REINFORCE.
-        """
-        #Preprocessed batch
-        cl_aud, clean, noisy, _ = batch
-
-        #Forward pass through model to get the action(mask)
-        noisy = noisy.permute(0, 1, 3, 2)
-        action, log_probs, _, params = model.get_action(noisy)
-        (p_mu, p_var), (pc_mu, pc_var) = params
-
-        #Forward pass through expert model
-        exp_action, _, _, ref_params = self.expert.get_action(noisy)
-        exp_log_probs, _ = self.expert.get_action_prob(noisy, action)
-        (r_mu, r_var), (rc_mu, rc_var) = ref_params
-
-        print(f"NEW_PARAMS: MU: {p_mu.min(), p_mu.max(), p_mu.mean()} | VAR: {p_var.min(), p_var.max(), p_var.mean()}")
-        print(f"NEW_PARAMS: C_MU: {pc_mu.min(), pc_mu.max(), pc_mu.mean()} | C_VAR: {pc_var.min(), pc_var.max(), pc_var.mean()}")
-        print(f"REF_PARAMS: MU: {r_mu.min(), r_mu.max(), r_mu.mean()} | VAR: {r_var.min(), r_var.min().max(), r_var.min().mean()}")
-        print(f"REF_PARAMS: C_MU: {rc_mu.min(), rc_mu.max(), rc_mu.mean()} | C_VAR: {rc_var.min(), rc_var.min().max(), rc_var.min().mean()}")
-                       
-
-        kl_penalty = 0
-        
-        if self.dist == False:
-            #Add gaussian noise
-            m_action, log_prob = self.gaussian_noise.get_action_from_raw_action(action[0], t=self.t)
-            action = (m_action, action[-1])
-
-        else:
-            if self.train_phase:
-                #finetune both mag and phase
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                exp_log_prob = exp_log_probs[0] + exp_log_probs[1][:, 0, :, :].permute(0, 2, 1) + exp_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                a_t = action
+        rewards = []
+        r_ts = []
+        states = []
+        logprobs = []
+        ep_kl_penalty = 0
+        pretrain_loss = 0
+        pesq = 0
+        with torch.no_grad():
+            for _ in range(self.episode_len):
                 
-                #kl divergence term
-                #kl_penalty = self.beta * torch.mean((log_prob - exp_log_prob), dim=[1, 2]).reshape(-1, 1)
-                print(f"new_logprob:{log_prob.mean()}")
-                print(f"ref_logprob:{exp_log_prob.mean()}")
-                kl_penalty = torch.mean(log_prob - exp_log_prob, dim=[1, 2]).detach()
-                #ratio = torch.exp(kl_penalty)
-               
-                #with torch.no_grad():
-                    #kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
-                print(f"KL:{kl_penalty}, {kl_penalty.shape}")
+                try:
+                    batch = next(self._iter_)
+                except StopIteration as e:
+                    self._iter_ = iter(self.dataloader)
+                    batch = next(self._iter_)
 
-            else:  
-                #ignore complex mask, just tune mag mask 
-                log_prob = log_probs[0]
-                a_t = (action[0], exp_action[-1])
+                #Preprocessed batch
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
+                
+                cl_aud, clean, noisy, _ = batch
+                noisy = noisy.permute(0, 1, 3, 2)
+                clean = clean.permute(0, 1, 3, 2)
+                bs, ch, t, f = clean.shape
+
+                action, log_probs, _, _ = actor.get_action(noisy)
+
+                print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
+                
+                if self.init_model is not None:
+                    init_action, _, _, _ = self.init_model.get_action(noisy)
+                    ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
+                    exp_state = self.env.get_next_state(state=noisy, action=init_action)
+        
+                state = self.env.get_next_state(state=noisy, action=action)
+                state['cl_audio'] = cl_aud
+                state['clean'] = clean
+                if self.init_model is not None:
+                    state['exp_est_audio'] = exp_state['est_audio']
+
+                #Calculate kl_penalty
+                ref_log_prob = None
+                if self.init_model is not None:
+                    ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                print(f"log_prob:{log_prob.mean()}")
+
+                if ref_log_prob is not None:
+                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                    ratio = torch.exp(kl_penalty)
+                    kl_penalty = ((ratio - 1) - kl_penalty).detach()
+                    ep_kl_penalty += kl_penalty.mean()
+                else:
+                    kl_penalty = None
+                
+                #Store reward
+                if self.rlhf:
+                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                                                   scale=self.scale_rewards)
+                else:
+                    r_t = self.env.get_PESQ_reward(state) 
+                
+                r_ts.append(r_t)
+
+                #Supervised loss
+                enhanced = state['noisy']
+                enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+                clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+                
+                mag_loss = (clean_mag - enhanced_mag)**2
+                ri_loss = (clean - enhanced) ** 2
+                supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+
+                pretrain_loss += supervised_loss.mean()
+
+                mb_pesq = []
+                for i in range(self.bs):
+                    values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                             state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                             16000, 
+                                             0)
+
+                    mb_pesq.append(values[0])
+                
+                mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
+                pesq += mb_pesq.sum()
+                
+                kl_penalty = kl_penalty.reshape(-1, 1)
+                supervised_loss = supervised_loss.reshape(-1, 1)
+                mb_pesq = mb_pesq.reshape(-1, 1)
+
+                #r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
+                r_t = mb_pesq - self.beta * kl_penalty - self.lmbda * supervised_loss
+
+                print(f"R:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
+                
+                
+                #Store trajectory
+                states.append(noisy)
+                rewards.append(r_t)
+                logprobs.append(log_prob)
+                
+
+            #Convert collected rewards to target_values and advantages
+            rewards = torch.stack(rewards).reshape(bs, -1)
+            r_ts = torch.stack(r_ts).reshape(-1)
+            states = torch.stack(states).reshape(-1, ch, t, f)
+            returns = self.get_expected_return(rewards)
+            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
             
-        #Apply mask to get the next state
-        next_state = self.env.get_next_state(state=noisy, action=a_t)
-        next_state['cl_audio'] = cl_aud
+            ep_kl_penalty = ep_kl_penalty / self.episode_len
+            pretrain_loss = pretrain_loss / self.episode_len
+            pesq = pesq / (self.episode_len * self.bs)
 
-        #Get enhanced output
-        enhanced = torch.cat([next_state['est_real'], next_state['est_imag']], dim=1).detach()
-        self.t += 1
+        print(f"STATES   :{states.shape}")
+        print(f"RETURNS  :{returns.shape}")
+        print(f"LOGPROBS :{logprobs.shape}")
+
+        trajectory = {
+            'pretrain_loss':pretrain_loss, 
+            'log_probs':logprobs,
+            'r_ts':(r_ts, rewards),
+            'ep_kl':ep_kl_penalty,
+            'pesq':pesq
+        }
         
-        #Get the reward
-        if not self.rlhf:
-            #Apply exp_mask to get next state
-            exp_next_state = self.env.get_next_state(state=noisy, action=exp_action)
-            next_state['exp_est_audio'] = exp_next_state['est_audio']
-            next_state['clean'] = clean
-            r_t = self.env.get_PESQ_reward(next_state)
-        else:
-            r_t = self.env.get_RLHF_reward(inp=noisy, out=enhanced)
+        return trajectory
 
-        #Baseline is moving average of rewards seen so far
-        self._r_mavg = (self._r_mavg * (self.t - 1) + r_t.mean() ) / self.t
-        G = r_t - self._r_mavg - self.beta * kl_penalty
+    def train_on_policy(self, trajectory, actor, a_optim):
+
+        pretrain_loss = trajectory['pretrain_loss']
+        logprobs = trajectory['log_probs']
+        ep_kl_penalty = trajectory['ep_kl']
+        r_ts, reward = trajectory['r_ts']
+        pesq = trajectory['pesq']
         
-        G = G.reshape(-1, 1)
-        print(f"G:{G.mean().item()}, {G.shape}")
+        #Start training over the unrolled batch of trajectories
+        #Set models to train
+        #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
+        #acting differently in train and eval mode. PPO seems to be stable only when actor
+        #is still in eval mode
+        actor = actor.eval()
+        actor.set_evaluation(False)
 
-        loss = []
-        alpha = 1
-        for i in range(G.shape[0]):
-            loss.append(alpha * -G[i, ...] * log_prob[i, ...] )
-        loss = torch.stack(loss).mean()
+        step_pg_loss = 0
 
-        print(f"M_LPROB:{log_prob.mean()}")
-        print(f"LOSS:{loss.item()}")
+        indices = [t for t in range(reward.shape[0])]
+        np.random.shuffle(indices)
+        for t in range(0, len(indices), self.bs):
+        
+            #Get mini batch indices
+            mb_indx = indices[t:t + self.bs]
 
+            if self.train_phase:
+                log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
+            else:
+                raise NotImplementedError
+
+            #Policy gradient loss
+            mb_reward = reward[mb_indx, ...]
+            mb_reward = mb_reward.reshape(-1)
+            pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob).mean() 
+            
+            print(f"pg_loss:{pg_loss.item()}")
+            pg_loss.backward()
+            step_pg_loss += pg_loss.item()  
+        
         #Update network
-        if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
-            optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)                                                                                
-            optimizer.step()
+        if not (torch.isnan(pg_loss).any()) and (self.t % self.accum_grad == 0):
+            torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
+            a_optim.step()
+            a_optim.zero_grad()
+  
+        step_pg_loss = step_pg_loss / self.episode_len
 
-        return loss, (G.mean(), r_t.mean(), kl_penalty), enhanced
+        return (step_pg_loss, pretrain_loss), ep_kl_penalty, (r_ts.mean(), reward.mean()), pesq  
     
-    def run_n_step_episode(self, batch, model, optimizer):
-        curr = None
-        episode_loss = 0
-        episode_return = 0
-        for step in range(self.episode_len):
-            if step > 0:
-                assert curr != None, "Curr is None, check your current update."
-                cl_aud, clean, _, labels = batch
-                batch = (cl_aud, clean, curr, labels)
+    def run_episode(self, actor, optimizer):
+        trajectory = self.unroll_policy(actor)
+        return self.train_on_policy(trajectory, actor, optimizer)
 
-            step_loss, step_return, enhanced = self.run_one_step_episode(batch, model, optimizer)
-            curr = enhanced
-            episode_loss += step_loss.item()
-            episode_return += step_return.item() 
-
-        episode_loss = episode_loss / self.episode_len
-        episode_return = episode_return / self.episode_len
-        return episode_loss, episode_return
     
-    def run_episode(self, batch, model, optimizer):
-        if self.episode_len == 1:
-            loss, reward, _ = self.run_one_step_episode(batch, model, optimizer)
-            return loss, reward
-        else:
-            return self.run_n_step_episode(batch, model, optimizer)
-
-
 class PPO:
     """
     Base class for PPO policy gradient method.

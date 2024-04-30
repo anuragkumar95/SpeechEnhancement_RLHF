@@ -177,17 +177,20 @@ class Trainer:
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr
             )
-
-            self.trainer = REINFORCE(gpu_id=gpu_id, 
-                                    beta = 0.001, 
-                                    init_model=self.expert,
-                                    discount=1.0,
-                                    episode_len=args.episode_steps,
-                                    train_phase=args.train_phase,
-                                    reward_model=self.reward_model,
-                                    env_params={'n_fft':400,
-                                                'hop':100, 
-                                                'args':args})
+            
+            self.trainer = REINFORCE(loader=self.train_ds,  
+                                     init_model=self.expert,
+                                     discount=1.0,
+                                     episode_len=args.episode_steps,
+                                     train_phase=args.train_phase,
+                                     reward_model=self.reward_model,
+                                     gpu_id=gpu_id,
+                                     beta=args.beta,
+                                     lmbda=args.lmbda,
+                                     batchsize=args.batchsize,
+                                     env_params={'n_fft':400,
+                                                 'hop':100, 
+                                                 'args':args})
             
         if args.method == 'PPO':
             #self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
@@ -483,6 +486,20 @@ class Trainer:
         episode_per_epoch = 50
 
         for i in range(episode_per_epoch):
+            if self.args.method == 'reinforce': 
+                loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer)
+
+                wandb.log({
+                    "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
+                    "Return":reward[1].item(),
+                    "RM_Score":reward[0].item(),
+                    "pg_loss":loss[0],
+                    "pretrain_loss":loss[1],
+                    "train_PESQ":pesq,
+                    "Episode_KL":kl,
+                })
+                print(f"Epoch:{epoch} | Episode:{i+1} | Return: {reward[1]} | RM_Score: {reward[0]} | KL: {kl} | PESQ: {pesq}")
+
             if self.args.method == 'PPO':
                 try:
                     loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)

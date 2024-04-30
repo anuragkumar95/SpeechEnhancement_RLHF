@@ -366,8 +366,8 @@ class REINFORCE:
     
     def run_episode(self, actor, optimizer, mse_steps=30, valid_func=None):
         #Finetune to SFT model
-        if self.t == 0:
-            self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
+        #if self.t == 0:
+        #    self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
     
         #Start Reinforce
         trajectory = self.unroll_policy(actor)
@@ -433,8 +433,8 @@ class PPO:
 
     def run_episode(self, actor, critic, optimizer, mse_steps=30, valid_func=None, n_epochs=3):
         #Finetune to SFT model
-        if self.t == 0:
-            self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
+        #if self.t == 0:
+        #    self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
 
         #Start PPO
         policy = self.unroll_policy(actor, critic)

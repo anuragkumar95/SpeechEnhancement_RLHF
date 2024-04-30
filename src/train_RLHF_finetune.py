@@ -291,7 +291,7 @@ class Trainer:
         ri_loss = (clean - mb_enhanced) ** 2
         supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
-        for i in range(self.args.batchsize):
+        for i in range(64):
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
                                      next_state['est_audio'][i, ...].detach().cpu().numpy(), 
                                      16000, 
@@ -310,7 +310,6 @@ class Trainer:
         supervised_loss = supervised_loss.reshape(-1, 1)
         mb_pesq = mb_pesq.reshape(-1, 1)
 
-        print(r_state.shape, kl_penalty.shape, supervised_loss.shape, mb_pesq.shape)
         reward = r_state - self.args.beta * kl_penalty - self.args.lmbda * (supervised_loss - mb_pesq)
                   
         metrics['mse'] = supervised_loss.mean()

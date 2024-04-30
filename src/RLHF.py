@@ -275,7 +275,7 @@ class REINFORCE:
             step_pg_loss += pg_loss.item()  
         
         #Update network
-        if not (torch.isnan(pg_loss).any()) and (self.t % self.accum_grad == 0):
+        if not torch.isnan(pg_loss).any():
             torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
             a_optim.step()
             a_optim.zero_grad()

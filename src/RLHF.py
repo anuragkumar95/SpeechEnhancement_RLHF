@@ -69,21 +69,20 @@ class REINFORCE:
         self.episode_len = episode_len
         self._r_mavg = 0
 
-    def get_expected_reward(self, rewards):
+    def get_expected_return(self, rewards):
         """
-        Expects rewards to be a numpy array.
+        Expects rewards to be a torch tensor.
         """
-        G_t = torch.zeros(rewards.shape).to(self.gpu_id)
-        episode_len = rewards.shape[1]
-        for i in range(episode_len):
+        G = torch.zeros(rewards.shape).to(self.gpu_id)
+        for i in range(self.episode_len):
             #Base case: G(T) = r(T)
             #Recursive: G(t) = r(t) + G(t+1)*DISCOUNT
-            r_t = rewards[:, episode_len - i - 1]
+            r_t = rewards[:, self.episode_len - i - 1].detach()
             if i == 0:
-                G_t[:, episode_len - i - 1] = r_t
+                G[:, self.episode_len - i - 1] = r_t
             else:
-                G_t[:, episode_len - i - 1] = r_t + G_t[:, episode_len - i] * self.discount
-        return G_t
+                G[:, self.episode_len - i - 1] = r_t + G[:, self.episode_len - i] * self.discount
+        return G
     
     def unroll_policy(self, actor):
         #Set models to eval

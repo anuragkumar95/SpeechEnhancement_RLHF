@@ -31,6 +31,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 torch.manual_seed(123)
 
+
 class REINFORCE:
     def __init__(self, 
                  init_model,
@@ -83,6 +84,73 @@ class REINFORCE:
             else:
                 G[:, self.episode_len - i - 1] = r_t + G[:, self.episode_len - i] * self.discount
         return G
+    
+    def train_MSE(self, actor, a_optim, train_mse_steps=30):
+        actor = actor.train()
+        actor.set_evaluation(True)
+    
+        for i in range(train_mse_steps):
+                
+            try:
+                batch = next(self._iter_)
+            except StopIteration as e:
+                self._iter_ = iter(self.dataloader)
+                batch = next(self._iter_)
+
+            #Preprocessed batch
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
+            
+            cl_aud, clean, noisy, _ = batch
+            noisy = noisy.permute(0, 1, 3, 2)
+            clean = clean.permute(0, 1, 3, 2)
+            #bs, ch, t, f = clean.shape
+
+            action, _, _, _ = actor.get_action(noisy)
+
+            state = self.env.get_next_state(state=noisy, action=action)
+            state['cl_audio'] = cl_aud
+            state['clean'] = clean
+
+            #Supervised loss
+            enhanced = state['noisy']
+            enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+            clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+            
+            mag_loss = (clean_mag - enhanced_mag) ** 2
+            ri_loss = (clean - enhanced) ** 2
+            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            
+            a_optim.zero_grad()
+            supervised_loss.backward()
+            torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+            a_optim.step()
+
+            mb_pesq = []
+            for i in range(self.bs):
+                values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                         state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                         16000, 
+                                         0)
+
+                mb_pesq.append(values[0])
+            
+            mb_pesq = torch.tensor(mb_pesq).mean()
+            print(f"SFT TRAINING STEP:{i} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
+
+            wandb.log({
+                "pretrain_loss": supervised_loss.item(),
+                "train_PESQ": mb_pesq, 
+            })
+
+        #Set this model as init model
+        #This becomes our SFT model
+        self.init_model = copy.deepcopy(actor)
+        self.init_model.eval()
+        self.init_model.set_evaluation(False)
+
+        #Reset Dataloader
+        self._iter_ = iter(self.dataloader)
+          
     
     def unroll_policy(self, actor):
         #Set models to eval
@@ -284,7 +352,9 @@ class REINFORCE:
 
         return (step_pg_loss, pretrain_loss), ep_kl_penalty, (r_ts.mean(), reward.mean()), pesq  
     
-    def run_episode(self, actor, optimizer):
+    def run_episode(self, actor, optimizer, mse_steps=30):
+        #Finetune to SFT model
+        self.train_MSE(actor, optimizer, train_mse_steps=mse_steps)
         trajectory = self.unroll_policy(actor)
         return self.train_on_policy(trajectory, actor, optimizer)
 

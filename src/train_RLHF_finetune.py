@@ -419,7 +419,7 @@ class Trainer:
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer)
+                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer, i)
 
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
@@ -454,7 +454,6 @@ class Trainer:
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
                 
-                print(i)
                 if (i+1) % 50 == 0:
                 #Run validation after each episode
                 
@@ -470,6 +469,9 @@ class Trainer:
             except Exception as e:
                 print(traceback.format_exc())
                 continue
+
+    def train_MSE(self, steps):
+        
 
     def train(self):
         """

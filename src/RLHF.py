@@ -148,7 +148,7 @@ class REINFORCE:
                 #Store reward
                 if self.rlhf:
                     r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=self.scale_rewards)
+                                                   scale=False)
                 else:
                     r_t = self.env.get_PESQ_reward(state) 
                 

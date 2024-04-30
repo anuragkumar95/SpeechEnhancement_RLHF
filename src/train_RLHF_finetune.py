@@ -399,75 +399,6 @@ class Trainer:
             self.critic.train()
         
         return loss, np.asarray(val_metrics["pesq"]).mean()
-    
-    """
-    def train_one_epoch(self, epoch):
-
-        num_batches = len(self.train_ds)
-        
-        #pesq = self.run_validation(epoch, (epoch-1) * num_batches)
-        pesq=0
-        #Run training
-        self.actor.train()
-        if self.args.method == 'PPO':
-            self.critic.train()
-        REWARDS = []
-        
-        epochs_per_episode = self.args.ep_per_episode
-        
-        run_validation_step = 1000 // (epochs_per_episode * self.args.episode_steps)
-        print(f"Run validation at every step:{run_validation_step}")
-        
-        for i, batch in enumerate(self.train_ds):   
-           
-            #Each minibatch is an episode
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-            try: 
-                if self.args.method == 'reinforce': 
-                    loss, batch_reward = self.trainer.run_episode(batch, self.actor, self.optimizer)
-
-                    wandb.log({
-                        "episode": (i+1) + ((epoch - 1) * num_batches),
-                        "cumulative_G_t":batch_reward[0].item(),
-                        "r_t":batch_reward[1].item(),
-                        "loss":loss,
-                    })
-                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0]} | Reward: {batch_reward[1]} | KL: {batch_reward[2]}")
-
-                if self.args.method == 'PPO':
-                    loss, batch_reward, adv = self.trainer.run_episode(batch, self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
-                    
-                    if loss is not None:
-                        wandb.log({
-                            "episode": (i+1) + ((epoch - 1) * num_batches),
-                            #"episode_avg_kl":batch_reward[2].item(),
-                            "cumulative_G_t": batch_reward[0].item(),
-                            "critic_values": batch_reward[1].item(), 
-                            "episodic_avg_r": batch_reward[3].item(),
-                            "advantages":adv,
-                            "clip_loss":loss[0],
-                            "value_loss":loss[1],
-                            "pretrain_loss":loss[4],
-                            "pg_loss":loss[3],
-                            "entropy_loss":loss[2]
-                        })
-
-                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")# | KL: {batch_reward[2].item()}")
-
-                    if (i+1) % run_validation_step == 0:
-                        step_pesq = self.run_validation(epoch, i+1)
-                        self.save(epoch, original_pesq(step_pesq), i+1)
-
-            except Exception as e:
-                print(traceback.format_exc())
-                continue
-            
-            if loss is not None:
-                self.G = batch_reward[0].item() + self.G
-                REWARDS.append(batch_reward[0].item())
-
-        return REWARDS, original_pesq(pesq)
-    """
 
     def train_one_epoch(self, epoch):       
         #Run training
@@ -475,7 +406,7 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        #loss, best_pesq = self.run_validation(0)
+        loss, best_pesq = self.run_validation(0)
         loss = 99999 
         best_pesq = 0
         epochs_per_episode = self.args.ep_per_episode

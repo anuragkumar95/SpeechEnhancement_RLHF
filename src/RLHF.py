@@ -147,6 +147,12 @@ class REINFORCE:
                     self.init_model = copy.deepcopy(actor)
                     self.init_model.eval()
                     self.init_model.set_evaluation(False)
+                    state_dict = {
+                        'actor':self.init_model.state_dict(),
+                        'optim':a_optim.state_dict()
+                    }
+                    save_path = "~/CMGAN/src/best_ckpt/best_sft.ckpt"
+                    torch.save(state_dict, save_path)
                 
                 wandb.log({
                 "pretrain_loss": supervised_loss.item(),

@@ -478,6 +478,7 @@ class Trainer:
         print("Start training...")
         for epoch in range(self.args.epochs):
             self.train_one_epoch(epoch+1)
+            
 
     def save(self, loss, episode=None):
         if episode is None:

@@ -137,7 +137,7 @@ class REINFORCE:
             mb_pesq = torch.tensor(mb_pesq).mean()
             print(f"SFT TRAINING STEP:{step} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
 
-            if valid_func is not None and (step+1) % 10 == 0:
+            if valid_func is not None and (step+1) % 100 == 0:
                 _, pesq = valid_func(episode=step)
 
                 if pesq > best_val_pesq:

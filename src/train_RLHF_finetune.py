@@ -417,7 +417,7 @@ class Trainer:
         print(f"Run validation at every step:{run_validation_step}")
         best_val_loss = 99999
         episode_per_epoch = 100
-        mse_steps=35
+        mse_steps=600
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 

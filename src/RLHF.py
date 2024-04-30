@@ -317,7 +317,7 @@ class REINFORCE:
     def train_on_policy(self, trajectory, actor, a_optim):
         
         states = trajectory['states']
-        cleans = trajectory['cleans']
+        cleans = trajectory['clean']
         pretrain_loss = trajectory['pretrain_loss']
         actions = trajectory['actions']
         ep_kl_penalty = trajectory['ep_kl']

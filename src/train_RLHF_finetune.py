@@ -292,6 +292,8 @@ class Trainer:
         supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
         for i in range(64):
+            if i >= clean_aud.shape[0]:
+                break
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
                                      next_state['est_audio'][i, ...].detach().cpu().numpy(), 
                                      16000, 

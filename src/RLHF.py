@@ -89,7 +89,7 @@ class REINFORCE:
         actor = actor.train()
         actor.set_evaluation(True)
     
-        for i in range(train_mse_steps):
+        for step in range(train_mse_steps):
                 
             try:
                 batch = next(self._iter_)
@@ -135,7 +135,7 @@ class REINFORCE:
                 mb_pesq.append(values[0])
             
             mb_pesq = torch.tensor(mb_pesq).mean()
-            print(f"SFT TRAINING STEP:{i} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
+            print(f"SFT TRAINING STEP:{step} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
 
             wandb.log({
                 "pretrain_loss": supervised_loss.item(),

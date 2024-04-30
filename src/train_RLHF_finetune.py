@@ -310,6 +310,7 @@ class Trainer:
         supervised_loss = supervised_loss.reshape(-1, 1)
         mb_pesq = mb_pesq.reshape(-1, 1)
 
+        print(r_state.shape, kl_penalty.shape, supervised_loss.shape, mb_pesq.shape)
         reward = r_state - self.args.beta * kl_penalty - self.args.lmbda * (supervised_loss - mb_pesq)
                   
         metrics['mse'] = supervised_loss.mean()

@@ -433,7 +433,7 @@ class Trainer:
                     print(f"Epoch:{epoch} | Episode:{i+1} | Return: {reward[1]} | RM_Score: {reward[0]} | KL: {kl} | PESQ: {pesq}")
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
+                    loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), mse_steps=35, n_epochs=epochs_per_episode)
                         
                     if loss is not None:
                         wandb.log({

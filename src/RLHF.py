@@ -68,7 +68,7 @@ class REINFORCE:
             self.init_model = init_model.eval()
         self.train_phase = params['train_phase']
         self.episode_len = episode_len
-        self._r_mavg = 0
+
 
     def get_expected_return(self, rewards):
         """
@@ -354,9 +354,15 @@ class REINFORCE:
     
     def run_episode(self, actor, optimizer, mse_steps=30):
         #Finetune to SFT model
-        self.train_MSE(actor, optimizer, train_mse_steps=mse_steps)
+        if self.t == 0:
+            self.train_MSE(actor, optimizer, train_mse_steps=mse_steps)
+    
+        #Start Reinforce
         trajectory = self.unroll_policy(actor)
+        self.t += 1
         return self.train_on_policy(trajectory, actor, optimizer)
+    
+
 
     
 class PPO:
@@ -410,21 +416,86 @@ class PPO:
         self.val_coef = val_coef
         self.en_coef = en_coef
         self.episode_len = run_steps
-        self._r_mean = 0
-        self._r2_mean = 0
         print(f"RLHF:{self.rlhf}")
 
 
-    def run_episode(self, actor, critic, optimizer, n_epochs=3):
+    def run_episode(self, actor, critic, optimizer, mse_steps=30, n_epochs=3):
+        #Finetune to SFT model
+        if self.t == 0:
+            self.train_MSE(actor, optimizer, train_mse_steps=mse_steps)
+
+        #Start PPO
         policy = self.unroll_policy(actor, critic)
-        return self.train_on_policy(policy, 
-                                    actor, 
-                                    critic, 
-                                    optimizer,
-                                    n_epochs)
+        self.t += 1
+        return self.train_on_policy(policy, actor, critic, optimizer, n_epochs)
         #return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
 
+    def train_MSE(self, actor, a_optim, train_mse_steps=30):
+        actor = actor.train()
+        actor.set_evaluation(True)
     
+        for i in range(train_mse_steps):
+                
+            try:
+                batch = next(self._iter_)
+            except StopIteration as e:
+                self._iter_ = iter(self.dataloader)
+                batch = next(self._iter_)
+
+            #Preprocessed batch
+            batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
+            
+            cl_aud, clean, noisy, _ = batch
+            noisy = noisy.permute(0, 1, 3, 2)
+            clean = clean.permute(0, 1, 3, 2)
+            #bs, ch, t, f = clean.shape
+
+            action, _, _, _ = actor.get_action(noisy)
+
+            state = self.env.get_next_state(state=noisy, action=action)
+            state['cl_audio'] = cl_aud
+            state['clean'] = clean
+
+            #Supervised loss
+            enhanced = state['noisy']
+            enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+            clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+            
+            mag_loss = (clean_mag - enhanced_mag) ** 2
+            ri_loss = (clean - enhanced) ** 2
+            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            
+            a_optim.zero_grad()
+            supervised_loss.backward()
+            torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+            a_optim.step()
+
+            mb_pesq = []
+            for i in range(self.bs):
+                values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                         state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                         16000, 
+                                         0)
+
+                mb_pesq.append(values[0])
+            
+            mb_pesq = torch.tensor(mb_pesq).mean()
+            print(f"SFT TRAINING STEP:{i} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
+
+            wandb.log({
+                "pretrain_loss": supervised_loss.item(),
+                "train_PESQ": mb_pesq, 
+            })
+
+        #Set this model as init model
+        #This becomes our SFT model
+        self.init_model = copy.deepcopy(actor)
+        self.init_model.eval()
+        self.init_model.set_evaluation(False)
+
+        #Reset Dataloader
+        self._iter_ = iter(self.dataloader)
+          
     def get_expected_return(self, rewards):
         """
         Expects rewards to be a torch tensor.

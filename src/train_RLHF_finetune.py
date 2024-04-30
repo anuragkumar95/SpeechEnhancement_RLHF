@@ -407,8 +407,8 @@ class Trainer:
             self.critic.train()
 
         loss, best_pesq = self.run_validation(0)
-        loss = 99999 
-        best_pesq = 0
+        #loss = 99999 
+        #best_pesq = 0
         epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)

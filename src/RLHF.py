@@ -369,9 +369,9 @@ class REINFORCE:
             ri_loss = (mb_clean - enhanced) ** 2
             supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
-            ovl_loss = pg_loss + self.lmbda * (supervised_loss)
+            ovl_loss = (pg_loss + self.lmbda * (supervised_loss)).mean()
             
-            print(f"pg_loss:{pg_loss.item()} | MSE :{supervised_loss}")
+            print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()}")
             ovl_loss.backward()
             step_pg_loss += ovl_loss.item()  
         

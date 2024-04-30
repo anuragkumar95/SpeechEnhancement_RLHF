@@ -137,11 +137,6 @@ class REINFORCE:
             mb_pesq = torch.tensor(mb_pesq).mean()
             print(f"SFT TRAINING STEP:{step} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
 
-            wandb.log({
-                "pretrain_loss": supervised_loss.item(),
-                "train_PESQ": mb_pesq, 
-            })
-
             if valid_func is not None and (step+1) % 10 == 0:
                 _, pesq = valid_func(episode=step)
 
@@ -152,6 +147,12 @@ class REINFORCE:
                     self.init_model = copy.deepcopy(actor)
                     self.init_model.eval()
                     self.init_model.set_evaluation(False)
+                
+                wandb.log({
+                "pretrain_loss": supervised_loss.item(),
+                "train_PESQ": mb_pesq, 
+                "valid_PESQ": best_val_pesq, 
+                })
 
         #Reset Dataloader
         self._iter_ = iter(self.dataloader)
@@ -424,10 +425,10 @@ class PPO:
         print(f"RLHF:{self.rlhf}")
 
 
-    def run_episode(self, actor, critic, optimizer, mse_steps=30, n_epochs=3):
+    def run_episode(self, actor, critic, optimizer, mse_steps=30, valid_func=None, n_epochs=3):
         #Finetune to SFT model
         if self.t == 0:
-            self.train_MSE(actor, optimizer, train_mse_steps=mse_steps)
+            self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
 
         #Start PPO
         policy = self.unroll_policy(actor, critic)
@@ -435,11 +436,13 @@ class PPO:
         return self.train_on_policy(policy, actor, critic, optimizer, n_epochs)
         #return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
 
-    def train_MSE(self, actor, a_optim, train_mse_steps=30):
+    def train_MSE(self, actor, a_optim, train_mse_steps=30, valid_func=None):
         actor = actor.train()
         actor.set_evaluation(True)
+
+        best_val_pesq = 0
     
-        for i in range(train_mse_steps):
+        for step in range(train_mse_steps):
                 
             try:
                 batch = next(self._iter_)
@@ -485,18 +488,23 @@ class PPO:
                 mb_pesq.append(values[0])
             
             mb_pesq = torch.tensor(mb_pesq).mean()
-            print(f"SFT TRAINING STEP:{i} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
+            print(f"SFT TRAINING STEP:{step} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
 
             wandb.log({
                 "pretrain_loss": supervised_loss.item(),
                 "train_PESQ": mb_pesq, 
             })
 
-        #Set this model as init model
-        #This becomes our SFT model
-        self.init_model = copy.deepcopy(actor)
-        self.init_model.eval()
-        self.init_model.set_evaluation(False)
+            if valid_func is not None and (step+1) % 10 == 0:
+                _, pesq = valid_func(episode=step)
+
+                if pesq > best_val_pesq:
+                    pesq = best_val_pesq
+                    #Set this model as init model
+                    #This becomes our SFT model
+                    self.init_model = copy.deepcopy(actor)
+                    self.init_model.eval()
+                    self.init_model.set_evaluation(False)
 
         #Reset Dataloader
         self._iter_ = iter(self.dataloader)

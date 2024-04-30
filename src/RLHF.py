@@ -173,6 +173,7 @@ class REINFORCE:
         rewards = []
         r_ts = []
         states = []
+        cleans = []
         #logprobs = []
         actions = []
         ep_kl_penalty = 0
@@ -262,13 +263,14 @@ class REINFORCE:
                 mb_pesq = mb_pesq.reshape(-1, 1)
 
                 #r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
-                r_t = mb_pesq - self.beta * kl_penalty - self.lmbda * supervised_loss
+                r_t = mb_pesq - self.beta * kl_penalty #- self.lmbda * supervised_loss
 
                 print(f"R:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 
                 
                 #Store trajectory
                 states.append(noisy)
+                cleans.append(clean)
                 rewards.append(r_t)
                 actions.append(action)
                 #logprobs.append(log_prob)
@@ -278,6 +280,7 @@ class REINFORCE:
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
             states = torch.stack(states).reshape(-1, ch, t, f)
+            cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             returns = self.get_expected_return(rewards)
             #logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
 
@@ -295,11 +298,13 @@ class REINFORCE:
             pesq = pesq / (self.episode_len * self.bs)
 
         print(f"STATES  :{states.shape}")
+        print(f"CLEANS  :{cleans.shape}")
         print(f"RETURNS :{returns.shape}")
         print(f"ACTIONS :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
 
         trajectory = {
             'states':states,
+            'clean':cleans,
             'pretrain_loss':pretrain_loss, 
             'actions':actions,
             'r_ts':(r_ts, rewards),
@@ -312,6 +317,7 @@ class REINFORCE:
     def train_on_policy(self, trajectory, actor, a_optim):
         
         states = trajectory['states']
+        cleans = trajectory['cleans']
         pretrain_loss = trajectory['pretrain_loss']
         actions = trajectory['actions']
         ep_kl_penalty = trajectory['ep_kl']
@@ -344,15 +350,30 @@ class REINFORCE:
                 log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
             else:
                 raise NotImplementedError
+            
+            state = self.env.get_next_state(state=mb_states, action=mb_action)
+            mb_clean = cleans[mb_indx, ...]
 
             #Policy gradient loss
             mb_reward = reward[mb_indx, ...]
             mb_reward = mb_reward.reshape(-1)
-            pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob).mean() 
+            pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob)
+            pg_loss = torch.mean(pg_loss, dim=[1, 2]) 
+
+            #Supervised loss
+            enhanced = state['noisy']
+            enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+            clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
             
-            print(f"pg_loss:{pg_loss.item()}")
-            pg_loss.backward()
-            step_pg_loss += pg_loss.item()  
+            mag_loss = (clean_mag - enhanced_mag)**2
+            ri_loss = (mb_clean - enhanced) ** 2
+            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+
+            ovl_loss = pg_loss + self.lmbda * (supervised_loss)
+            
+            print(f"pg_loss:{pg_loss.item()} | MSE :{supervised_loss}")
+            ovl_loss.backward()
+            step_pg_loss += ovl_loss.item()  
         
         #Update network
         if not torch.isnan(pg_loss).any():

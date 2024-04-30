@@ -118,7 +118,7 @@ class REINFORCE:
             
             mag_loss = (clean_mag - enhanced_mag) ** 2
             ri_loss = (clean - enhanced) ** 2
-            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            supervised_loss = (0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])).mean()
             
             a_optim.zero_grad()
             supervised_loss.backward()
@@ -463,7 +463,7 @@ class PPO:
             
             mag_loss = (clean_mag - enhanced_mag) ** 2
             ri_loss = (clean - enhanced) ** 2
-            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            supervised_loss = (0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])).mean()
             
             a_optim.zero_grad()
             supervised_loss.backward()

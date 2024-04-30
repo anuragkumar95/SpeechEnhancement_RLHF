@@ -214,9 +214,9 @@ class REINFORCE:
             pretrain_loss = pretrain_loss / self.episode_len
             pesq = pesq / (self.episode_len * self.bs)
 
-        print(f"STATES   :{states.shape}")
-        print(f"RETURNS  :{returns.shape}")
-        print(f"ACTIONS :{actions.shape}")
+        print(f"STATES  :{states.shape}")
+        print(f"RETURNS :{returns.shape}")
+        print(f"ACTIONS :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
 
         trajectory = {
             'states':states,
@@ -255,7 +255,8 @@ class REINFORCE:
             #Get mini batch indices
             mb_indx = indices[t:t + self.bs]
             mb_states = states[mb_indx, ...]
-            #Get new logprobs and values for the sampled (state, action) pair
+
+            #Get logprobs and values for the sampled (state, action) pair
             mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
             log_probs, _ = actor.get_action_prob(mb_states, mb_action)
         

@@ -151,7 +151,7 @@ class REINFORCE:
                         'actor':self.init_model.state_dict(),
                         'optim':a_optim.state_dict()
                     }
-                    save_path = "~/CMGAN/src/best_ckpt/best_sft.ckpt"
+                    save_path = "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/best_sft.ckpt"
                     torch.save(state_dict, save_path)
                 
                 wandb.log({

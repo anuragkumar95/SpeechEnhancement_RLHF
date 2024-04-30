@@ -93,7 +93,8 @@ class REINFORCE:
         rewards = []
         r_ts = []
         states = []
-        logprobs = []
+        #logprobs = []
+        actions = []
         ep_kl_penalty = 0
         pretrain_loss = 0
         pesq = 0
@@ -189,7 +190,8 @@ class REINFORCE:
                 #Store trajectory
                 states.append(noisy)
                 rewards.append(r_t)
-                logprobs.append(log_prob)
+                actions.append(action)
+                #logprobs.append(log_prob)
                 
 
             #Convert collected rewards to target_values and advantages
@@ -197,7 +199,16 @@ class REINFORCE:
             r_ts = torch.stack(r_ts).reshape(-1)
             states = torch.stack(states).reshape(-1, ch, t, f)
             returns = self.get_expected_return(rewards)
-            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
+            #logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
+
+            actions = (([a[0][0] for a in actions], 
+                        [a[0][1] for a in actions]), 
+                        [a[1] for a in actions])
+            
+            actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
+                        torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                        torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
+            
             
             ep_kl_penalty = ep_kl_penalty / self.episode_len
             pretrain_loss = pretrain_loss / self.episode_len
@@ -205,11 +216,12 @@ class REINFORCE:
 
         print(f"STATES   :{states.shape}")
         print(f"RETURNS  :{returns.shape}")
-        print(f"LOGPROBS :{logprobs.shape}")
+        print(f"ACTIONS :{actions.shape}")
 
         trajectory = {
+            'states':states,
             'pretrain_loss':pretrain_loss, 
-            'log_probs':logprobs,
+            'actions':actions,
             'r_ts':(r_ts, rewards),
             'ep_kl':ep_kl_penalty,
             'pesq':pesq
@@ -218,9 +230,10 @@ class REINFORCE:
         return trajectory
 
     def train_on_policy(self, trajectory, actor, a_optim):
-
+        
+        states = trajectory['states']
         pretrain_loss = trajectory['pretrain_loss']
-        logprobs = trajectory['log_probs']
+        actions = trajectory['actions']
         ep_kl_penalty = trajectory['ep_kl']
         r_ts, reward = trajectory['r_ts']
         pesq = trajectory['pesq']
@@ -241,9 +254,13 @@ class REINFORCE:
         
             #Get mini batch indices
             mb_indx = indices[t:t + self.bs]
-
+            mb_states = states[mb_indx, ...]
+            #Get new logprobs and values for the sampled (state, action) pair
+            mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
+            log_probs, _ = actor.get_action_prob(mb_states, mb_action)
+        
             if self.train_phase:
-                log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
+                log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
             else:
                 raise NotImplementedError
 

@@ -352,10 +352,12 @@ class REINFORCE:
 
         return (step_pg_loss, pretrain_loss), ep_kl_penalty, (r_ts.mean(), reward.mean()), pesq  
     
-    def run_episode(self, actor, optimizer, mse_steps=30):
+    def run_episode(self, actor, optimizer, mse_steps=30, valid_func=None):
         #Finetune to SFT model
         if self.t == 0:
             self.train_MSE(actor, optimizer, train_mse_steps=mse_steps)
+            if valid_func is not None:
+                valid_func(episode=mse_steps)
     
         #Start Reinforce
         trajectory = self.unroll_policy(actor)

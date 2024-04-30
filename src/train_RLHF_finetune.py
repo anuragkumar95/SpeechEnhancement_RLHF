@@ -419,7 +419,7 @@ class Trainer:
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer, mse_steps=35)
+                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer, mse_steps=35, valid_func=self.run_validation)
 
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch),

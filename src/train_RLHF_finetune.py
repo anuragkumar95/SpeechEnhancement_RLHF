@@ -419,7 +419,7 @@ class Trainer:
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer, i)
+                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer, mse_steps=35)
 
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
@@ -469,9 +469,6 @@ class Trainer:
             except Exception as e:
                 print(traceback.format_exc())
                 continue
-
-    def train_MSE(self, steps):
-        
 
     def train(self):
         """

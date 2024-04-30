@@ -454,7 +454,7 @@ class Trainer:
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
 
-                if i+1 % 1 == 0:
+                if i+1 % 100 == 0:
                 #Run validation after each episode
                 
                     loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))

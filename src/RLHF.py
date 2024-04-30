@@ -142,7 +142,7 @@ class REINFORCE:
                 "train_PESQ": mb_pesq, 
             })
 
-            if valid_func is not None:
+            if valid_func is not None and (step+1) % 10 == 0:
                 _, pesq = valid_func(episode=step)
 
                 if pesq > best_val_pesq:

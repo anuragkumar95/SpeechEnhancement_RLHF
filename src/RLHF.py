@@ -176,20 +176,24 @@ class REINFORCE:
 
                 #Initialize current step reward
                 r_t = 0
-
+                verify_r = ''
                 if 'rm' in self.reward_type:
-                    r_t = r_t + rm_score 
+                    r_t = r_t + rm_score
+                    verify_r += 'rm+' 
 
                 if 'mse' in self.reward_type:
                     r_t = r_t - self.lmbda * supervised_loss
+                    verify_r += 'mse+'
 
                 if 'pesq' in self.reward_type:
                     r_t = r_t + mb_pesq
+                    verify_r += 'pesq+'
                 
                 if 'kl' in self.reward_type:
                     r_t = r_t - self.beta * kl_penalty
+                    verify_r += 'kl+'
 
-
+                print(f"Reward:{verify_r}")
                 print(f"R:{r_t.mean()} | PESQ: {mb_pesq.mean()} | kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 
                 #Store trajectory

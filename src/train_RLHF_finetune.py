@@ -412,8 +412,8 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        #best_val_loss, best_pesq = self.run_validation(0)
-        best_val_loss, best_pesq = 9999, 0
+        best_val_loss, best_pesq = self.run_validation(0)
+        #best_val_loss, best_pesq = 9999, 0
         epochs_per_episode = self.args.ep_per_episode
         
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)

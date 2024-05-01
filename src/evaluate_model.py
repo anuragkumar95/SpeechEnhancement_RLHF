@@ -385,11 +385,11 @@ if __name__ == '__main__':
 
         """
     if ARGS.rankroot is not None:
-        test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures2', 'test'),
-                                            rank=os.path.join(ARGS.rankroot, 'ranking', 'test.ranks'),  
+        test_dataset = HumanAlignedDataset(mixture_dir=os.path.join(ARGS.rankroot, 'mixtures', 'test'),
+                                            rank=os.path.join(ARGS.rankroot, 'ranking', 'test1.ranks'),  
                                             noisy_dir="/users/PAS2301/kumar1109/speech-datasets/VoiceBank/test/noisy",
-                                            mos_file=os.path.join(ARGS.rankroot, 'ranking', 'NISQA_results_test2.csv'),
-                                            batchsize=30,
+                                            mos_file=os.path.join(ARGS.rankroot, 'ranking', 'NISQA_results_test1.csv'),
+                                            batchsize=16,
                                             cutlen=40000)
 
         test_ds = DataLoader(

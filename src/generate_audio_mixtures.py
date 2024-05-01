@@ -56,6 +56,7 @@ def args():
                         help="Set this flag to generate_ranks for train set")
     return parser
     
+torch.manual_seed(123)
 
 class MixturesDataset:
     """
@@ -190,7 +191,8 @@ class MixturesDataset:
         n_clean_examples = len(self.clean_files)
 
         #sample clean indexes
-        cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
+        np.random.seed(123)
+        cidxs = np.random.choice(n_clean_examples, n_size, replace=True)
         
         for i in tqdm(cidxs):
             self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=False)

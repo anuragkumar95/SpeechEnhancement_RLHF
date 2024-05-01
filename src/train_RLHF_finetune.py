@@ -77,8 +77,10 @@ def args():
                         help="Supervised pretrainig loss weight for PPO.")
     parser.add_argument("--episode_steps", type=int, default=1, required=False,
                         help="No. of steps in episode to run for PPO")
-    
-    parser.add_argument("--reward", type=int, help="Type of reward")
+    parser.add_argument("--loss", type=str, default='pg', 
+                        help="Terms to be included in loss. Should be a comma separated string, eg 'pg, mse' ")
+    parser.add_argument("--reward", type=str, default='pesq', 
+                        help="Terms to be included in loss. Should be a comma separated string, eg 'pesq, kl, mse' ")
     parser.add_argument("--loss_weights", type=list, default=[0.1, 0.9, 0.2, 0.05],
                     help="weights of RI components, magnitude, time loss, and Metric Disc")
     

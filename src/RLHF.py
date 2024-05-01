@@ -44,6 +44,8 @@ class REINFORCE:
                  lmbda=0.1,
                  discount=1.0, 
                  episode_len=1,
+                 loss_type=None,
+                 reward_type=None, 
                  **params):
         
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
@@ -66,6 +68,8 @@ class REINFORCE:
         self.beta = beta
         self.t = 0
         self.init_model = None
+        self.loss_type=None
+        self.reward_type=None
     
         if init_model is not None:
             self.init_model = init_model.eval()
@@ -87,84 +91,6 @@ class REINFORCE:
             else:
                 G[:, self.episode_len - i - 1] = r_t + G[:, self.episode_len - i] * self.discount
         return G
-    
-    def train_MSE(self, actor, a_optim, train_mse_steps=30, valid_func=None):
-        actor = actor.train()
-        actor.set_evaluation(True)
-        best_val_pesq = 0
-        for step in range(train_mse_steps):
-                
-            try:
-                batch = next(self._iter_)
-            except StopIteration as e:
-                self._iter_ = iter(self.dataloader)
-                batch = next(self._iter_)
-
-            #Preprocessed batch
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-            
-            cl_aud, clean, noisy, _ = batch
-            noisy = noisy.permute(0, 1, 3, 2)
-            clean = clean.permute(0, 1, 3, 2)
-            #bs, ch, t, f = clean.shape
-
-            action, _, _, _ = actor.get_action(noisy)
-
-            state = self.env.get_next_state(state=noisy, action=action)
-            state['cl_audio'] = cl_aud
-            state['clean'] = clean
-
-            #Supervised loss
-            enhanced = state['noisy']
-            enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-            clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-            
-            mag_loss = (clean_mag - enhanced_mag) ** 2
-            ri_loss = (clean - enhanced) ** 2
-            supervised_loss = (0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])).mean()
-            
-            a_optim.zero_grad()
-            supervised_loss.backward()
-            torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-            a_optim.step()
-
-            mb_pesq = []
-            for i in range(self.bs):
-                values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                         state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                         16000, 
-                                         0)
-
-                mb_pesq.append(values[0])
-            
-            mb_pesq = torch.tensor(mb_pesq).mean()
-            print(f"SFT TRAINING STEP:{step} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
-
-            if valid_func is not None and (step+1) % 100 == 0:
-                _, pesq = valid_func(episode=step)
-
-                if pesq > best_val_pesq:
-                    pesq = best_val_pesq
-                    #Set this model as init model
-                    #This becomes our SFT model
-                    self.init_model = copy.deepcopy(actor)
-                    self.init_model.eval()
-                    self.init_model.set_evaluation(False)
-                    state_dict = {
-                        'actor':self.init_model.state_dict(),
-                        'optim':a_optim.state_dict()
-                    }
-                    save_path = "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/best_sft.ckpt"
-                    torch.save(state_dict, save_path)
-                
-                wandb.log({
-                "pretrain_loss": supervised_loss.item(),
-                "train_PESQ": mb_pesq, 
-                "valid_PESQ": best_val_pesq, 
-                })
-
-        #Reset Dataloader
-        self._iter_ = iter(self.dataloader)
           
     
     def unroll_policy(self, actor):
@@ -207,46 +133,64 @@ class REINFORCE:
                 state['cl_audio'] = cl_aud
                 state['clean'] = clean
                 
-                #Store reward
-                if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                #Reward model
+                rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
                                                    scale=False)
-                else:
-                    r_t = self.env.get_PESQ_reward(state) 
-                
-                r_ts.append(r_t)
+                r_ts.append(rm_score)
 
                 #Supervised loss
-                #enhanced = state['noisy']
-                #enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-                #clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+                enhanced = state['noisy']
+                enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+                clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
                 
-                #mag_loss = (clean_mag - enhanced_mag)**2
-                #ri_loss = (clean - enhanced) ** 2
-                #supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+                mag_loss = (clean_mag - enhanced_mag)**2
+                ri_loss = (clean - enhanced) ** 2
+                supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+                supervised_loss = supervised_loss.reshape(-1, 1)
+                pretrain_loss += supervised_loss.mean()
 
-                #pretrain_loss += supervised_loss.mean()
-
+                #PESQ
                 mb_pesq = []
                 for i in range(self.bs):
                     values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                             state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                             16000, 
-                                             0)
+                                            state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                            16000, 
+                                            0)
 
                     mb_pesq.append(values[0])
                 
                 mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
-                pesq += mb_pesq.sum()
-                
-                #kl_penalty = kl_penalty.reshape(-1, 1)
-                #supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
+                pesq += mb_pesq.sum()
 
-                #r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
-                r_t = mb_pesq #- self.beta * kl_penalty #- self.lmbda * supervised_loss
+                #KL 
+                ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
+                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
-                print(f"R:{r_t.mean()} | PESQ: {mb_pesq.mean()}")# kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
+                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                ratio = torch.exp(kl_penalty)
+                kl_penalty = ((ratio - 1) - kl_penalty).detach()
+                kl_penalty = kl_penalty.reshape(-1, 1)
+                ep_kl_penalty += kl_penalty.mean()
+
+                #Initialize current step reward
+                r_t = 0
+
+                if 'rm' in self.reward_type:
+                    r_t = r_t + rm_score 
+
+                if 'mse' in self.reward_type:
+                    r_t = r_t - self.lmbda * supervised_loss
+
+                if 'pesq' in self.reward_type:
+                    r_t = r_t + mb_pesq
+                
+                if 'kl' in self.reward_type:
+                    r_t = r_t - self.beta * kl_penalty
+
+
+                print(f"R:{r_t.mean()} | PESQ: {mb_pesq.mean()} | kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 
                 #Store trajectory
                 states.append(noisy)
@@ -255,13 +199,11 @@ class REINFORCE:
                 actions.append(action)
                 
 
-            #Convert collected rewards to target_values and advantages
-            rewards = torch.stack(rewards).reshape(bs, -1)
-            r_ts = torch.stack(r_ts).reshape(-1)
+            rewards = torch.stack(rewards).reshape(bs, -1).mean()
+            r_ts = torch.stack(r_ts).reshape(-1).mean()
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             returns = self.get_expected_return(rewards)
-            #logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
 
             actions = (([a[0][0] for a in actions], 
                         [a[0][1] for a in actions]), 
@@ -271,7 +213,8 @@ class REINFORCE:
                         torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                         torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
             
-            #pretrain_loss = pretrain_loss / self.episode_len
+            pretrain_loss = pretrain_loss / self.episode_len
+            ep_kl_penalty = ep_kl_penalty / self.episode_len
             pesq = pesq / (self.episode_len * self.bs)
 
         print(f"STATES  :{states.shape}")
@@ -358,15 +301,25 @@ class REINFORCE:
             supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
             step_pretrain += supervised_loss.mean()
 
-            ovl_loss = (self.alpha * pg_loss + self.lmbda * supervised_loss + self.beta * kl_penalty).mean()
+            ovl_loss = 0
+            if 'pg' in self.loss_type:
+                ovl_loss = ovl_loss + self.alpha * pg_loss
+
+            if 'mse' in self.loss_type:
+                ovl_loss = ovl_loss + self.lmbda * supervised_loss
+
+            if 'kl' in self.loss_type:
+                ovl_loss = ovl_loss + self.beta * kl_penalty
+
+            ovl_loss = ovl_loss.mean()
             
-            print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()}")
+            print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()} | KL :{kl_penalty.mean()}")
             ovl_loss.backward()
-            step_pg_loss += ovl_loss.item()  
+            step_pg_loss += pg_loss.item()  
         
         #Update network
-        if not torch.isnan(pg_loss).any():
-            torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
+        if not torch.isnan(ovl_loss).any():
+            torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
             a_optim.step()
             a_optim.zero_grad()
   
@@ -374,7 +327,7 @@ class REINFORCE:
         step_kl = step_kl / self.episode_len
         step_pretrain = step_pretrain / self.episode_len
 
-        return (step_pg_loss, step_pretrain), step_kl, (r_ts.mean(), reward.mean()), pesq  
+        return (step_pg_loss, step_pretrain), step_kl, (r_ts, reward), pesq  
     
     def run_episode(self, actor, actor_sft, optimizer):
         #Start Reinforce

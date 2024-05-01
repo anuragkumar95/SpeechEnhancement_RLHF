@@ -338,7 +338,7 @@ class HumanAlignedDataset(Dataset):
                         PAIRS[_id_].append((path1, path2, inp))
                 if not done:
                     pairs = list(itertools.combinations(FILES, 2))
-                    idx = np.random.choice(len(pairs), self.bs, replace=False)
+                    idx = np.random.choice(len(pairs), min(self.bs, len(pairs)), replace=False)
                     rand_pairs = [pairs[i] for i in idx]
                     for ((id1, path1, inp), (id2, path2, _)) in rand_pairs:
                         _id_ = "_".join(id1.split("_")[:2])

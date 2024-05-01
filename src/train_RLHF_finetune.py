@@ -191,6 +191,8 @@ class Trainer:
                                      gpu_id=gpu_id,
                                      beta=args.beta,
                                      lmbda=args.lmbda,
+                                     loss_type=args.loss,
+                                     reward_type=args.reward,
                                      batchsize=args.batchsize,
                                      env_params={'n_fft':400,
                                                  'hop':100, 

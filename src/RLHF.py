@@ -39,7 +39,6 @@ class REINFORCE:
                  batchsize=4, 
                  reward_model=None, 
                  gpu_id=None,
-                 alpha=1,  
                  beta=0.01, 
                  lmbda=0.1,
                  discount=1.0, 
@@ -58,7 +57,6 @@ class REINFORCE:
         self.bs = batchsize
         self.discount = discount
         self.lmbda = lmbda
-        self.alpha = alpha
         self.gpu_id = gpu_id
         self.rlhf = True
         self.reward_model = reward_model
@@ -68,8 +66,8 @@ class REINFORCE:
         self.beta = beta
         self.t = 0
         self.init_model = None
-        self.loss_type=None
-        self.reward_type=None
+        self.loss_type = loss_type
+        self.reward_type = reward_type
     
         if init_model is not None:
             self.init_model = init_model.eval()

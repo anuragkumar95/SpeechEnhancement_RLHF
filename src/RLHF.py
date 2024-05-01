@@ -304,7 +304,7 @@ class REINFORCE:
         #acting differently in train and eval mode. PPO seems to be stable only when actor
         #is still in eval mode
         actor = actor.eval()
-        actor.set_evaluation(False)
+        actor.set_evaluation(True)
 
         step_pg_loss = 0
 

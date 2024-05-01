@@ -311,6 +311,7 @@ class HumanAlignedDataset(Dataset):
         
     def map_ranks_to_pairs(self):
         PAIRS = {}
+    
         with open(self.ranks, 'r') as f:
             lines = f.readlines()
             for line in tqdm(lines):
@@ -318,7 +319,12 @@ class HumanAlignedDataset(Dataset):
                 FILES=[]
                 #Put them all in a single list
                 for file in files:
-                    root = "_".join(file.split('_')[:2])
+                    root = file[:-len(".wav")]
+                    if "enh" not in root:
+                        _id_ = root.split('-')[0]
+                    else:
+                        _id_ = root[len("enh_"):]
+                    #root = "_".join(file.split('_')[:2])
                     val = (file, os.path.join(self.mixture_dir, file), os.path.join(self.noisy_dir, f"{root}.wav"))
                     FILES.append(val)
 

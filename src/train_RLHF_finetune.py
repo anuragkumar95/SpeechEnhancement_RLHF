@@ -69,6 +69,8 @@ def args():
                         help="RL Algo to run. Choose between (reinforce/PPO)")
     parser.add_argument("--beta", type=float, default=0.0, required=False,
                         help="KL weight")
+    parser.add_argument("--alpha", type=float, default=1.0, required=False,
+                        help="Policy gradient weight")
     parser.add_argument("--ep_per_episode", type=int, default=1, required=False,
                         help="No of epochs per episode.")
     parser.add_argument("--lmbda", type=float, default=0.0, required=False,

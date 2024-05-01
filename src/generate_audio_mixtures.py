@@ -192,10 +192,10 @@ class MixturesDataset:
 
         #sample clean indexes
         np.random.seed(123)
-        cidxs = np.random.choice(n_clean_examples, n_size, replace=True)
+        cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
         
         for i in tqdm(cidxs):
-            self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=False)
+            self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=True)
 
 def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 

@@ -201,11 +201,12 @@ class REINFORCE:
                 actions.append(action)
                 
 
-            rewards = torch.stack(rewards).reshape(bs, -1).mean()
+            rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1).mean()
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             returns = self.get_expected_return(rewards)
+            rewards = rewards.mean()
 
             actions = (([a[0][0] for a in actions], 
                         [a[0][1] for a in actions]), 

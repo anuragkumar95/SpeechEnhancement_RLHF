@@ -377,36 +377,36 @@ class HumanAlignedDataset(Dataset):
             for (path_1, path_2, inp) in rand_pairs:
                 path_1 = path_1.strip()
                 path_2 = path_2.strip()
-                inp = inp.strip()
+                #inp = inp.strip()
 
                 x_1, sr_1 = torchaudio.load(path_1)
                 x_2, sr_2 = torchaudio.load(path_2)
-                x_in, sr_in = torchaudio.load(inp)
+                #x_in, sr_in = torchaudio.load(inp)
 
-                assert sr_1 == sr_2 == sr_in 
+                assert sr_1 == sr_2 #== sr_in 
 
                 if x_1.shape[-1] < self.cutlen: 
                     pad = torch.zeros(1, self.cutlen - x_1.shape[-1])
                     x_1 = torch.cat([pad, x_1], dim=-1)
                     x_2 = torch.cat([pad, x_2], dim=-1)
-                    x_in = torch.cat([pad, x_in], dim=-1)
+                    #x_in = torch.cat([pad, x_in], dim=-1)
                 
                 else:
                     start_idx = random.randint(0, x_1.shape[-1] - self.cutlen)
                     x_1 = x_1[:, start_idx: start_idx + self.cutlen]
                     x_2 = x_2[:, start_idx: start_idx + self.cutlen]
-                    x_in = x_in[:, start_idx: start_idx + self.cutlen]
+                    #x_in = x_in[:, start_idx: start_idx + self.cutlen]
             
                 x_1 = x_1.reshape(-1)
                 x_2 = x_2.reshape(-1)
-                x_in = x_in.reshape(-1)
+                #x_in = x_in.reshape(-1)
                 X1.append(x_1)
                 X2.append(x_2)
-                INP.append(x_in)
+                #INP.append(x_in)
 
             X1 = torch.stack(X1)
             X2 = torch.stack(X2)
-            INP = torch.stack(INP)
+            #INP = torch.stack(INP)
     
             return X1, X2, INP
         

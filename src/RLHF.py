@@ -319,7 +319,6 @@ class REINFORCE:
             #Get logprobs and values for the sampled (state, action) pair
             mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
             log_probs, _ = actor.get_action_prob(mb_states, mb_action)
-            sft_log_probs, _ = actor_sft.get_action_prob(mb_states, mb_action)
         
             if self.train_phase:
                 log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
@@ -336,11 +335,14 @@ class REINFORCE:
             pg_loss = torch.mean(pg_loss, dim=[1, 2])
 
             #Calculate kl_penalty
-            sft_log_prob = sft_log_probs[0] + sft_log_probs[1][:, 0, :, :].permute(0, 2, 1) + sft_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            with torch.no_grad():
+                sft_log_probs, _ = actor_sft.get_action_prob(mb_states, mb_action)
+                sft_log_prob = sft_log_probs[0] + sft_log_probs[1][:, 0, :, :].permute(0, 2, 1) + sft_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+
             log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-            kl_penalty = torch.mean(log_prob - sft_log_prob, dim=[1, 2]).detach()
+            kl_penalty = torch.mean(log_prob - sft_log_prob, dim=[1, 2])
             ratio = torch.exp(kl_penalty)
-            kl_penalty = ((ratio - 1) - kl_penalty).detach()
+            kl_penalty = ((ratio - 1) - kl_penalty)
 
             #Supervised loss
             enhanced = state['noisy']
@@ -351,7 +353,7 @@ class REINFORCE:
             ri_loss = (mb_clean - enhanced) ** 2
             supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
-            ovl_loss = (pg_loss + self.lmbda * (supervised_loss) + self.beta * kl_penalty).mean()
+            ovl_loss = (pg_loss + self.lmbda * supervised_loss + self.beta * kl_penalty).mean()
             
             print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()}")
             ovl_loss.backward()
@@ -367,11 +369,7 @@ class REINFORCE:
 
         return (step_pg_loss, pretrain_loss), ep_kl_penalty, (r_ts.mean(), reward.mean()), pesq  
     
-    def run_episode(self, actor, actor_sft, optimizer, mse_steps=30, valid_func=None):
-        #Finetune to SFT model
-        #if self.t == 0:
-        #    self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
-    
+    def run_episode(self, actor, actor_sft, optimizer):
         #Start Reinforce
         trajectory = self.unroll_policy(actor)
         self.t += 1

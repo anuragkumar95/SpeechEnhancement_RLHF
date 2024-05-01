@@ -415,14 +415,14 @@ class Trainer:
         print(f"Run validation at every step:{run_validation_step}")
         best_val_loss = 99999
         episode_per_epoch = 100
-        mse_steps=600
+
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.expert, self.optimizer, mse_steps=mse_steps, valid_func=self.run_validation)
+                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.expert, self.optimizer)
 
                     wandb.log({
-                        "episode": (i+1) + ((epoch - 1) * episode_per_epoch) + mse_steps,
+                        "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
                         "Return":reward[1].item(),
                         "RM_Score":reward[0].item(),
                         "pg_loss":loss[0],
@@ -433,11 +433,11 @@ class Trainer:
                     print(f"Epoch:{epoch} | Episode:{i+1} | Return: {reward[1]} | RM_Score: {reward[0]} | KL: {kl} | PESQ: {pesq}")
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), mse_steps=mse_steps, valid_func=self.run_validation, n_epochs=epochs_per_episode)
+                    loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
                         
                     if loss is not None:
                         wandb.log({
-                            "episode": (i+1) + ((epoch - 1) * episode_per_epoch) + mse_steps,
+                            "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
                             "episode_avg_kl":batch_reward[2].item(),
                             "cumulative_G_t": batch_reward[0].item(),
                             "critic_values": batch_reward[1].item(), 

@@ -257,7 +257,7 @@ class REINFORCE:
         step_kl = 0
         step_pretrain = 0
 
-        indices = [t for t in range(reward.shape[0])]
+        indices = [t for t in range(states.shape[0])]
         np.random.shuffle(indices)
         for t in range(0, len(indices), self.bs):
         

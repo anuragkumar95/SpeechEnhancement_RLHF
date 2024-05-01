@@ -38,7 +38,8 @@ class REINFORCE:
                  loader,
                  batchsize=4, 
                  reward_model=None, 
-                 gpu_id=None, 
+                 gpu_id=None,
+                 alpha=1,  
                  beta=0.01, 
                  lmbda=0.1,
                  discount=1.0, 
@@ -55,6 +56,7 @@ class REINFORCE:
         self.bs = batchsize
         self.discount = discount
         self.lmbda = lmbda
+        self.alpha = alpha
         self.gpu_id = gpu_id
         self.rlhf = True
         self.reward_model = reward_model
@@ -64,6 +66,7 @@ class REINFORCE:
         self.beta = beta
         self.t = 0
         self.init_model = None
+    
         if init_model is not None:
             self.init_model = init_model.eval()
         self.train_phase = params['train_phase']
@@ -292,9 +295,7 @@ class REINFORCE:
         
         states = trajectory['states']
         cleans = trajectory['clean']
-        pretrain_loss = trajectory['pretrain_loss']
         actions = trajectory['actions']
-        ep_kl_penalty = trajectory['ep_kl']
         r_ts, reward = trajectory['r_ts']
         pesq = trajectory['pesq']
         
@@ -307,6 +308,8 @@ class REINFORCE:
         actor.set_evaluation(True)
 
         step_pg_loss = 0
+        step_kl = 0
+        step_pretrain = 0
 
         indices = [t for t in range(reward.shape[0])]
         np.random.shuffle(indices)
@@ -343,6 +346,7 @@ class REINFORCE:
             kl_penalty = torch.mean(log_prob - sft_log_prob, dim=[1, 2])
             ratio = torch.exp(kl_penalty)
             kl_penalty = ((ratio - 1) - kl_penalty)
+            step_kl += kl_penalty.mean()
 
             #Supervised loss
             enhanced = state['noisy']
@@ -352,8 +356,9 @@ class REINFORCE:
             mag_loss = (clean_mag - enhanced_mag)**2
             ri_loss = (mb_clean - enhanced) ** 2
             supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            step_pretrain += supervised_loss.mean()
 
-            ovl_loss = (pg_loss + self.lmbda * supervised_loss + self.beta * kl_penalty).mean()
+            ovl_loss = (self.alpha * pg_loss + self.lmbda * supervised_loss + self.beta * kl_penalty).mean()
             
             print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()}")
             ovl_loss.backward()
@@ -366,8 +371,10 @@ class REINFORCE:
             a_optim.zero_grad()
   
         step_pg_loss = step_pg_loss / self.episode_len
+        step_kl = step_kl / self.episode_len
+        step_pretrain = step_pretrain / self.episode_len
 
-        return (step_pg_loss, pretrain_loss), ep_kl_penalty, (r_ts.mean(), reward.mean()), pesq  
+        return (step_pg_loss, step_pretrain), step_kl, (r_ts.mean(), reward.mean()), pesq  
     
     def run_episode(self, actor, actor_sft, optimizer):
         #Start Reinforce

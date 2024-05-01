@@ -374,6 +374,7 @@ class HumanAlignedDataset(Dataset):
             X1 = []
             X2 = []
             INP = []
+            PATHS = []
             for (path_1, path_2, inp) in rand_pairs:
                 path_1 = path_1.strip()
                 path_2 = path_2.strip()
@@ -402,13 +403,14 @@ class HumanAlignedDataset(Dataset):
                 #x_in = x_in.reshape(-1)
                 X1.append(x_1)
                 X2.append(x_2)
+                PATHS.append((path_1, path_2))
                 #INP.append(x_in)
 
             X1 = torch.stack(X1)
             X2 = torch.stack(X2)
             #INP = torch.stack(INP)
     
-            return X1, X2, INP
+            return X1, X2, INP, PATHS
         
         if self.ranks.endswith('.pairs'):
             pair = self.pairs[idx]

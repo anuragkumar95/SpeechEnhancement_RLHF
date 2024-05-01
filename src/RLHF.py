@@ -170,8 +170,8 @@ class REINFORCE:
     def unroll_policy(self, actor):
         #Set models to eval
         actor = actor.eval()
-        #actor.set_evaluation(True)
-        actor.set_evaluation(False)
+        actor.set_evaluation(True)
+        #actor.set_evaluation(False)
 
         rewards = []
         r_ts = []
@@ -305,7 +305,7 @@ class REINFORCE:
         #acting differently in train and eval mode. PPO seems to be stable only when actor
         #is still in eval mode
         actor = actor.eval()
-        actor.set_evaluation(True)
+        actor.set_evaluation(False)
 
         step_pg_loss = 0
         step_kl = 0

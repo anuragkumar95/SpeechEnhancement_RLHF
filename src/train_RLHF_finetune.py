@@ -419,7 +419,7 @@ class Trainer:
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer, mse_steps=mse_steps, valid_func=self.run_validation)
+                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.expert, self.optimizer, mse_steps=mse_steps, valid_func=self.run_validation)
 
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch) + mse_steps,
@@ -456,7 +456,6 @@ class Trainer:
                 
                 if (i+1) % 50 == 0:
                 #Run validation after each episode
-                
                     loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
                     if loss < best_val_loss:
                         best_val_loss = loss
@@ -464,6 +463,9 @@ class Trainer:
 
                     if val_pesq > best_pesq:
                         best_pesq = val_pesq
+                        self.expert = copy.deepcopy(self.actor)
+                        self.expert = self.expert.eval()
+                        self.expert.set_evaluation(False)
                         self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
                         
             except Exception as e:

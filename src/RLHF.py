@@ -199,32 +199,10 @@ class REINFORCE:
                 action, log_probs, _, _ = actor.get_action(noisy)
 
                 print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
-                
-                if self.init_model is not None:
-                    init_action, _, _, _ = self.init_model.get_action(noisy)
-                    ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
-                    exp_state = self.env.get_next_state(state=noisy, action=init_action)
         
                 state = self.env.get_next_state(state=noisy, action=action)
                 state['cl_audio'] = cl_aud
                 state['clean'] = clean
-                if self.init_model is not None:
-                    state['exp_est_audio'] = exp_state['est_audio']
-
-                #Calculate kl_penalty
-                ref_log_prob = None
-                if self.init_model is not None:
-                    ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                print(f"log_prob:{log_prob.mean()}")
-
-                if ref_log_prob is not None:
-                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                    ratio = torch.exp(kl_penalty)
-                    kl_penalty = ((ratio - 1) - kl_penalty).detach()
-                    ep_kl_penalty += kl_penalty.mean()
-                else:
-                    kl_penalty = None
                 
                 #Store reward
                 if self.rlhf:
@@ -236,15 +214,15 @@ class REINFORCE:
                 r_ts.append(r_t)
 
                 #Supervised loss
-                enhanced = state['noisy']
-                enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-                clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+                #enhanced = state['noisy']
+                #enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+                #clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
                 
-                mag_loss = (clean_mag - enhanced_mag)**2
-                ri_loss = (clean - enhanced) ** 2
-                supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+                #mag_loss = (clean_mag - enhanced_mag)**2
+                #ri_loss = (clean - enhanced) ** 2
+                #supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
-                pretrain_loss += supervised_loss.mean()
+                #pretrain_loss += supervised_loss.mean()
 
                 mb_pesq = []
                 for i in range(self.bs):
@@ -258,22 +236,20 @@ class REINFORCE:
                 mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
                 pesq += mb_pesq.sum()
                 
-                kl_penalty = kl_penalty.reshape(-1, 1)
-                supervised_loss = supervised_loss.reshape(-1, 1)
+                #kl_penalty = kl_penalty.reshape(-1, 1)
+                #supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
 
                 #r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
-                r_t = mb_pesq - self.beta * kl_penalty #- self.lmbda * supervised_loss
+                r_t = mb_pesq #- self.beta * kl_penalty #- self.lmbda * supervised_loss
 
-                print(f"R:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
-                
+                print(f"R:{r_t.mean()} | PESQ: {mb_pesq.mean()}")# kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 
                 #Store trajectory
                 states.append(noisy)
                 cleans.append(clean)
                 rewards.append(r_t)
                 actions.append(action)
-                #logprobs.append(log_prob)
                 
 
             #Convert collected rewards to target_values and advantages
@@ -292,9 +268,7 @@ class REINFORCE:
                         torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                         torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
             
-            
-            ep_kl_penalty = ep_kl_penalty / self.episode_len
-            pretrain_loss = pretrain_loss / self.episode_len
+            #pretrain_loss = pretrain_loss / self.episode_len
             pesq = pesq / (self.episode_len * self.bs)
 
         print(f"STATES  :{states.shape}")
@@ -314,7 +288,7 @@ class REINFORCE:
         
         return trajectory
 
-    def train_on_policy(self, trajectory, actor, a_optim):
+    def train_on_policy(self, trajectory, actor, actor_sft, a_optim):
         
         states = trajectory['states']
         cleans = trajectory['clean']
@@ -345,6 +319,7 @@ class REINFORCE:
             #Get logprobs and values for the sampled (state, action) pair
             mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
             log_probs, _ = actor.get_action_prob(mb_states, mb_action)
+            sft_log_probs, _ = actor_sft.get_action_prob(mb_states, mb_action)
         
             if self.train_phase:
                 log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
@@ -358,7 +333,14 @@ class REINFORCE:
             mb_reward = reward[mb_indx, ...]
             mb_reward = mb_reward.reshape(-1)
             pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob)
-            pg_loss = torch.mean(pg_loss, dim=[1, 2]) 
+            pg_loss = torch.mean(pg_loss, dim=[1, 2])
+
+            #Calculate kl_penalty
+            sft_log_prob = sft_log_probs[0] + sft_log_probs[1][:, 0, :, :].permute(0, 2, 1) + sft_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            kl_penalty = torch.mean(log_prob - sft_log_prob, dim=[1, 2]).detach()
+            ratio = torch.exp(kl_penalty)
+            kl_penalty = ((ratio - 1) - kl_penalty).detach()
 
             #Supervised loss
             enhanced = state['noisy']
@@ -369,7 +351,7 @@ class REINFORCE:
             ri_loss = (mb_clean - enhanced) ** 2
             supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
-            ovl_loss = (pg_loss + self.lmbda * (supervised_loss)).mean()
+            ovl_loss = (pg_loss + self.lmbda * (supervised_loss) + self.beta * kl_penalty).mean()
             
             print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()}")
             ovl_loss.backward()
@@ -385,7 +367,7 @@ class REINFORCE:
 
         return (step_pg_loss, pretrain_loss), ep_kl_penalty, (r_ts.mean(), reward.mean()), pesq  
     
-    def run_episode(self, actor, optimizer, mse_steps=30, valid_func=None):
+    def run_episode(self, actor, actor_sft, optimizer, mse_steps=30, valid_func=None):
         #Finetune to SFT model
         #if self.t == 0:
         #    self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
@@ -393,7 +375,7 @@ class REINFORCE:
         #Start Reinforce
         trajectory = self.unroll_policy(actor)
         self.t += 1
-        return self.train_on_policy(trajectory, actor, optimizer)
+        return self.train_on_policy(trajectory, actor, actor_sft, optimizer)
     
 
 

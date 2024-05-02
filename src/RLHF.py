@@ -161,8 +161,8 @@ class REINFORCE:
 
         #Policy gradient loss
         mb_reward = r_t.detach().reshape(-1)
-        #pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob)
-        pg_loss = mb_reward.mean() * log_prob.mean()
+        pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob)
+        #pg_loss = mb_reward.mean() * log_prob.mean()
         pg_loss = torch.mean(pg_loss, dim=[1, 2])
 
         #Current step loss

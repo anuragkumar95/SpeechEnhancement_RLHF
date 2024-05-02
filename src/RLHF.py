@@ -74,264 +74,119 @@ class REINFORCE:
         self.train_phase = params['train_phase']
         self.episode_len = episode_len
 
+    def run_episode(self, actor, actor_sft, a_optim):
 
-    def get_expected_return(self, rewards):
-        """
-        Expects rewards to be a torch tensor.
-        """
-        G = torch.zeros(rewards.shape).to(self.gpu_id)
-        for i in range(self.episode_len):
-            #Base case: G(T) = r(T)
-            #Recursive: G(t) = r(t) + G(t+1)*DISCOUNT
-            r_t = rewards[:, self.episode_len - i - 1].detach()
-            if i == 0:
-                G[:, self.episode_len - i - 1] = r_t
-            else:
-                G[:, self.episode_len - i - 1] = r_t + G[:, self.episode_len - i] * self.discount
-        return G
-          
-    
-    def unroll_policy(self, actor):
-        #Set models to eval
-        actor = actor.eval()
-        actor.set_evaluation(True)
-        #actor.set_evaluation(False)
-
-        rewards = []
-        r_ts = []
-        states = []
-        cleans = []
-        #logprobs = []
-        actions = []
-        ep_kl_penalty = 0
-        pretrain_loss = 0
-        pesq = 0
-        with torch.no_grad():
-            for _ in range(self.episode_len):
-                
-                try:
-                    batch = next(self._iter_)
-                except StopIteration as e:
-                    self._iter_ = iter(self.dataloader)
-                    batch = next(self._iter_)
-
-                #Preprocessed batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-                
-                cl_aud, clean, noisy, _ = batch
-                noisy = noisy.permute(0, 1, 3, 2)
-                clean = clean.permute(0, 1, 3, 2)
-                bs, ch, t, f = clean.shape
-
-                action, log_probs, _, _ = actor.get_action(noisy)
-
-                print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
-        
-                state = self.env.get_next_state(state=noisy, action=action)
-                state['cl_audio'] = cl_aud
-                state['clean'] = clean
-                
-                #Reward model
-                rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=False)
-                r_ts.append(rm_score)
-
-                #Supervised loss
-                enhanced = state['noisy']
-                enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-                clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-                
-                mag_loss = (clean_mag - enhanced_mag)**2
-                ri_loss = (clean - enhanced) ** 2
-                supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
-                supervised_loss = supervised_loss.reshape(-1, 1)
-                pretrain_loss += supervised_loss.mean()
-
-                #PESQ
-                mb_pesq = []
-                for i in range(self.bs):
-                    values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                            state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                            16000, 
-                                            0)
-
-                    mb_pesq.append(values[0])
-                
-                mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
-                mb_pesq = mb_pesq.reshape(-1, 1)
-                pesq += mb_pesq.sum()
-
-                #KL 
-                ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
-                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-
-                kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                ratio = torch.exp(kl_penalty)
-                kl_penalty = ((ratio - 1) - kl_penalty).detach()
-                kl_penalty = kl_penalty.reshape(-1, 1)
-                ep_kl_penalty += kl_penalty.mean()
-
-                #Initialize current step reward
-                r_t = 0
-                if 'rm' in self.reward_type:
-                    r_t = r_t + rm_score
-          
-                if 'mse' in self.reward_type:
-                    r_t = r_t - self.lmbda * supervised_loss
-                
-                if 'pesq' in self.reward_type:
-                    r_t = r_t + mb_pesq
-                    
-                if 'kl' in self.reward_type:
-                    r_t = r_t - self.beta * kl_penalty
-                   
-                print(f"R:{r_t.mean()} | PESQ: {mb_pesq.mean()} | kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
-                
-                #Store trajectory
-                states.append(noisy)
-                cleans.append(clean)
-                rewards.append(r_t)
-                actions.append(action)
-                
-
-            rewards = torch.stack(rewards).reshape(bs, -1)
-            r_ts = torch.stack(r_ts).reshape(-1).mean()
-            states = torch.stack(states).reshape(-1, ch, t, f)
-            cleans = torch.stack(cleans).reshape(-1, ch, t, f)
-            returns = self.get_expected_return(rewards)
-
-            actions = (([a[0][0] for a in actions], 
-                        [a[0][1] for a in actions]), 
-                        [a[1] for a in actions])
-            
-            actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
-                        torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
-                        torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
-            
-            pretrain_loss = pretrain_loss / self.episode_len
-            ep_kl_penalty = ep_kl_penalty / self.episode_len
-            pesq = pesq / (self.episode_len * self.bs)
-
-        print(f"STATES  :{states.shape}")
-        print(f"CLEANS  :{cleans.shape}")
-        print(f"RETURNS :{returns.shape}")
-        print(f"ACTIONS :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
-
-        trajectory = {
-            'states':states,
-            'clean':cleans,
-            'pretrain_loss':pretrain_loss, 
-            'actions':actions,
-            'r_ts':(r_ts, rewards),
-            'ep_kl':ep_kl_penalty,
-            'pesq':pesq
-        }
-        
-        return trajectory
-
-    def train_on_policy(self, trajectory, actor, actor_sft, a_optim):
-        
-        states = trajectory['states']
-        cleans = trajectory['clean']
-        actions = trajectory['actions']
-        r_ts, reward = trajectory['r_ts']
-        pesq = trajectory['pesq']
-        
-        #Start training over the unrolled batch of trajectories
-        #Set models to train
         #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
-        #acting differently in train and eval mode. PPO seems to be stable only when actor
+        #acting differently in train and eval mode. RL seems to be stable only when actor
         #is still in eval mode
         actor = actor.eval()
-        actor.set_evaluation(False)
+        actor.set_evaluation(True)
 
-        step_pg_loss = 0
-        step_kl = 0
-        step_pretrain = 0
+        try:
+            batch = next(self._iter_)
+        except StopIteration as e:
+            self._iter_ = iter(self.dataloader)
+            batch = next(self._iter_)
 
-        indices = [t for t in range(states.shape[0])]
-        np.random.shuffle(indices)
-        for t in range(0, len(indices), self.bs):
+        #Preprocessed batch
+        batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
         
-            #Get mini batch indices
-            mb_indx = indices[t:t + self.bs]
-            mb_states = states[mb_indx, ...]
+        cl_aud, clean, noisy, _ = batch
+        noisy = noisy.permute(0, 1, 3, 2)
+        clean = clean.permute(0, 1, 3, 2)
+       
+        #Get logprobs and values for the sampled state
+        action, log_probs, _, _ = actor.get_action(noisy)
 
-            #Get logprobs and values for the sampled (state, action) pair
-            mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
-            log_probs, _ = actor.get_action_prob(mb_states, mb_action)
+        state = self.env.get_next_state(state=noisy, action=action)
+        state['cl_audio'] = cl_aud
+        state['clean'] = clean
         
-            if self.train_phase:
-                log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
-            else:
-                raise NotImplementedError
+        if self.train_phase:
+            log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
+        else:
+            raise NotImplementedError
+        
+        with torch.no_grad():
+            #Reward model
+            rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                                                scale=False)
             
-            state = self.env.get_next_state(state=mb_states, action=mb_action)
-            mb_clean = cleans[mb_indx, ...]
+            #PESQ
+            mb_pesq = []
+            for i in range(self.bs):
+                values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                        state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                        16000, 
+                                        0)
 
-            #Policy gradient loss
-            mb_reward = reward[mb_indx, ...]
-            mb_reward = mb_reward.reshape(-1)
-            pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob)
-            pg_loss = torch.mean(pg_loss, dim=[1, 2])
-
-            #Calculate kl_penalty
-            with torch.no_grad():
-                sft_log_probs, _ = actor_sft.get_action_prob(mb_states, mb_action)
-                sft_log_prob = sft_log_probs[0] + sft_log_probs[1][:, 0, :, :].permute(0, 2, 1) + sft_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-
-            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-            kl_penalty = torch.mean(log_prob - sft_log_prob, dim=[1, 2])
-            ratio = torch.exp(kl_penalty)
-            kl_penalty = ((ratio - 1) - kl_penalty)
-            step_kl += kl_penalty.mean()
-
-            #Supervised loss
-            enhanced = state['noisy']
-            enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-            clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
+                mb_pesq.append(values[0])
             
-            mag_loss = (clean_mag - enhanced_mag)**2
-            ri_loss = (mb_clean - enhanced) ** 2
-            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
-            step_pretrain += supervised_loss.mean()
+            mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
+            mb_pesq = mb_pesq.reshape(-1, 1)
+            
+            #SFT logprobs
+            ref_log_probs, _ = actor_sft.get_action_prob(noisy, action)
+            ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
-            ovl_loss = 0
-            if 'pg' in self.loss_type:
-                ovl_loss = ovl_loss + pg_loss
-
-            if 'mse' in self.loss_type:
-                ovl_loss = ovl_loss + self.lmbda * supervised_loss
-
-            if 'kl' in self.loss_type:
-                ovl_loss = ovl_loss + self.beta * kl_penalty
-
-            ovl_loss = ovl_loss.mean()
-            ovl_loss.backward()
-            step_pg_loss += pg_loss.mean()  
-
-            print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()} | KL :{kl_penalty.mean()}")
+        #Supervised loss
+        enhanced = state['noisy']
+        enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+        clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
         
+        mag_loss = (clean_mag - enhanced_mag)**2
+        ri_loss = (clean - enhanced) ** 2
+        supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+        supervised_loss = supervised_loss.reshape(-1, 1)
+
+        #KL    
+        kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+        ratio = torch.exp(kl_penalty)
+        kl_penalty = ((ratio - 1) - kl_penalty).detach()
+        kl_penalty = kl_penalty.reshape(-1, 1)
+
+        #Current step reward
+        r_t = 0
+        if 'rm' in self.reward_type:
+            r_t = r_t + rm_score
+    
+        if 'mse' in self.reward_type:
+            r_t = r_t - self.lmbda * supervised_loss
+        
+        if 'pesq' in self.reward_type:
+            r_t = r_t + mb_pesq
+            
+        if 'kl' in self.reward_type:
+            r_t = r_t - self.beta * kl_penalty
+
+        #Policy gradient loss
+        mb_reward = r_t.detach().reshape(-1)
+        pg_loss = -torch.einsum("b, bij->bij",mb_reward, log_prob)
+        pg_loss = torch.mean(pg_loss, dim=[1, 2])
+
+        #Current step loss
+        ovl_loss = 0
+        if 'pg' in self.loss_type:
+            ovl_loss = ovl_loss + pg_loss
+
+        if 'mse' in self.loss_type:
+            ovl_loss = ovl_loss + self.lmbda * supervised_loss
+
+        if 'kl' in self.loss_type:
+            ovl_loss = ovl_loss + self.beta * kl_penalty
+
+        ovl_loss = ovl_loss.mean()
+        ovl_loss.backward() 
+
+        print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()} | KL :{kl_penalty.mean()}")
+    
         #Update network
         if not torch.isnan(ovl_loss).any():
             torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
             a_optim.step()
             a_optim.zero_grad()
-  
-        step_pg_loss = step_pg_loss / self.episode_len
-        step_kl = step_kl / self.episode_len
-        step_pretrain = step_pretrain / self.episode_len
 
-        return (step_pg_loss, step_pretrain), step_kl, (r_ts, reward.mean()), pesq  
-    
-    def run_episode(self, actor, actor_sft, optimizer):
-        #Start Reinforce
-        trajectory = self.unroll_policy(actor)
-        self.t += 1
-        return self.train_on_policy(trajectory, actor, actor_sft, optimizer)
-    
-
+        return (pg_loss.mean(), supervised_loss.mean()), kl_penalty.mean(), (rm_score.mean(), mb_reward.mean()), mb_pesq.mean()  
 
     
 class PPO:

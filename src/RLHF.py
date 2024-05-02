@@ -299,7 +299,7 @@ class REINFORCE:
 
             ovl_loss = 0
             if 'pg' in self.loss_type:
-                ovl_loss = ovl_loss + self.alpha * pg_loss
+                ovl_loss = ovl_loss + pg_loss
 
             if 'mse' in self.loss_type:
                 ovl_loss = ovl_loss + self.lmbda * supervised_loss

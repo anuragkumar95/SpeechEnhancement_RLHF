@@ -200,7 +200,6 @@ class REINFORCE:
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             returns = self.get_expected_return(rewards)
-            rewards = rewards.mean()
 
             actions = (([a[0][0] for a in actions], 
                         [a[0][1] for a in actions]), 
@@ -324,7 +323,7 @@ class REINFORCE:
         step_kl = step_kl / self.episode_len
         step_pretrain = step_pretrain / self.episode_len
 
-        return (step_pg_loss, step_pretrain), step_kl, (r_ts, reward), pesq  
+        return (step_pg_loss, step_pretrain), step_kl, (r_ts, reward.mean()), pesq  
     
     def run_episode(self, actor, actor_sft, optimizer):
         #Start Reinforce

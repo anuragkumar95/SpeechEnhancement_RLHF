@@ -309,7 +309,7 @@ class REINFORCE:
 
             ovl_loss = ovl_loss.mean()
             ovl_loss.backward()
-            step_pg_loss += pg_loss.item()  
+            step_pg_loss += pg_loss.mean()  
 
             print(f"pg_loss:{pg_loss.mean()} | MSE :{supervised_loss.mean()} | KL :{kl_penalty.mean()}")
         

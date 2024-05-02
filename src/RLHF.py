@@ -127,7 +127,7 @@ class REINFORCE:
             
             #SFT logprobs
             ref_log_probs, _ = actor_sft.get_action_prob(noisy, action)
-            ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
 
         #Supervised loss
         enhanced = state['noisy']

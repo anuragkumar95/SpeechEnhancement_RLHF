@@ -134,6 +134,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
     reward_model = RewardModel(in_channels=2)
     
     #model_pt = "/users/PAS2301/kumar1109/CMGAN_RLHF/cmgan_big_ppo_ep5_steps10_beta1.1e-3_lmbda1.0_mvar0.01_cvar0.01_run6_forward2/cmgan_big_loss_0.12089217454195023_episode_75.pt"
+    #model_pt = "~/CMGAN_RLHF/cmgan_big_ppo_ep5_steps5_lmbda1.0_mvar0.01_cvar0.01/cmgan_big_PESQ_3.4969236850738525_epoch_1_episode_440.pt"
     
     #Load cmgan model weights
     checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))

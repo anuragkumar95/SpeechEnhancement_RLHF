@@ -89,7 +89,10 @@ def run_enhancement_step(env,
 
         supervised_loss = (0.3*(clean - mb_enhanced) ** 2) + (0.7*(mb_clean_mag - mb_enhanced_mag)**2)
         metrics['mse'] = supervised_loss.mean().detach().cpu().numpy()
-        print(f"LOSS:{supervised_loss.shape}")
+        metrics['mse_1'] = supervised_loss[:, :, :50, :].mean().detach().cpu().numpy()
+        metrics['mse_2'] = supervised_loss[:, :, 51:100, :].mean().detach().cpu().numpy()
+        metrics['mse_3'] = supervised_loss[:, :, 101:150, :].mean().detach().cpu().numpy()
+        metrics['mse_4'] = supervised_loss[:, :, 151:, :].mean().detach().cpu().numpy()
 
         clean_aud = clean_aud.reshape(-1)
         enh_audio = next_state['est_audio'].reshape(-1)

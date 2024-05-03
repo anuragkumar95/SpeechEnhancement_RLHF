@@ -352,7 +352,7 @@ class PPO:
                     rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
                                                    scale=self.scale_rewards)
                 
-                r_ts.append(r_t)
+                    r_ts.append(rm_score)
 
                 #Supervised loss
                 enhanced = state['noisy']

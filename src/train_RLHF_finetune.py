@@ -227,6 +227,8 @@ class Trainer:
                                batchsize=args.batchsize, 
                                run_steps=args.episode_steps,
                                train_phase=args.train_phase,
+                               loss_type=args.loss,
+                               reward_type=args.reward,
                                accum_grad=args.accum_grad,
                                env_params={'n_fft':400,
                                             'hop':100, 

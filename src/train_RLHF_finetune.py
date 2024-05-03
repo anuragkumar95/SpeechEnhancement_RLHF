@@ -426,7 +426,7 @@ class Trainer:
         for i in range(episode_per_epoch):
             try:
                 if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.expert, self.optimizer)
+                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer)
 
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
@@ -472,7 +472,6 @@ class Trainer:
                         best_pesq = val_pesq
                         self.trainer.init_model = copy.deepcopy(self.actor)
                         self.trainer.init_model = self.trainer.init_model.eval()
-                        self.trainer.init_model.set_evaluation(True)
                         self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
                         
             except Exception as e:

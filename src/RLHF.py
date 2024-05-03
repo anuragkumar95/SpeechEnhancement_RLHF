@@ -34,9 +34,9 @@ torch.manual_seed(123)
 
 class REINFORCE:
     def __init__(self, 
-                 init_model,
                  loader,
                  batchsize=4, 
+                 init_model=None,
                  reward_model=None, 
                  gpu_id=None,
                  beta=0.01, 
@@ -60,12 +60,11 @@ class REINFORCE:
         self.gpu_id = gpu_id
         self.rlhf = True
         self.reward_model = reward_model
-        self.expert = init_model
         if self.reward_model is None:
             self.rlhf = False
         self.beta = beta
         self.t = 0
-        self.init_model = None
+        self.init_model = init_model
         self.loss_type = loss_type
         self.reward_type = reward_type
     
@@ -74,13 +73,16 @@ class REINFORCE:
         self.train_phase = params['train_phase']
         self.episode_len = episode_len
 
-    def run_episode(self, actor, actor_sft, a_optim):
+    def run_episode(self, actor, a_optim):
 
         #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
         #acting differently in train and eval mode. RL seems to be stable only when actor
         #is still in eval mode
         actor = actor.eval()
         actor.set_evaluation(False)
+        actor_sft = self.init_model
+        actor_sft = actor_sft.eval()
+        actor_sft.set_evaluation(False)
 
         try:
             batch = next(self._iter_)

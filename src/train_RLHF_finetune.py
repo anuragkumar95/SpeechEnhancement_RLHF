@@ -468,9 +468,9 @@ class Trainer:
 
                     if val_pesq > best_pesq:
                         best_pesq = val_pesq
-                        self.expert = copy.deepcopy(self.actor)
-                        self.expert = self.expert.eval()
-                        self.expert.set_evaluation(False)
+                        self.trainer.init_model = copy.deepcopy(self.actor)
+                        self.trainer.init_model = self.trainer.init_model.eval()
+                        self.trainer.init_model.set_evaluation(True)
                         self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
                         
             except Exception as e:

@@ -207,6 +207,8 @@ class PPO:
                  lmbda=0,  
                  discount=1.0, 
                  accum_grad=1,
+                 loss_type=None,
+                 reward_type=None,
                  scale_rewards=False, 
                  warm_up_steps=30, 
                  **params):
@@ -232,6 +234,8 @@ class PPO:
         self.train_phase = params['train_phase']
         self.t = 0
         self.scale_rewards = scale_rewards
+        self.reward_type = reward_type
+        self.loss_type = loss_type
         self.warm_up = warm_up_steps
         self.init_model = None
         if init_model is not None:
@@ -243,89 +247,13 @@ class PPO:
         print(f"RLHF:{self.rlhf}")
 
 
-    def run_episode(self, actor, critic, optimizer, mse_steps=30, valid_func=None, n_epochs=3):
-        #Finetune to SFT model
-        #if self.t == 0:
-        #    self.train_MSE(actor, optimizer, train_mse_steps=mse_steps, valid_func=valid_func)
-
+    def run_episode(self, actor, critic, optimizer, n_epochs=3):
         #Start PPO
         policy = self.unroll_policy(actor, critic)
         self.t += 1
         return self.train_on_policy(policy, actor, critic, optimizer, n_epochs)
-        #return self.run_n_step_episode(batch, actor, critic, optimizer, n_epochs)
+       
 
-    def train_MSE(self, actor, a_optim, train_mse_steps=30, valid_func=None):
-        actor = actor.train()
-        actor.set_evaluation(True)
-
-        best_val_pesq = 0
-    
-        for step in range(train_mse_steps):
-                
-            try:
-                batch = next(self._iter_)
-            except StopIteration as e:
-                self._iter_ = iter(self.dataloader)
-                batch = next(self._iter_)
-
-            #Preprocessed batch
-            batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
-            
-            cl_aud, clean, noisy, _ = batch
-            noisy = noisy.permute(0, 1, 3, 2)
-            clean = clean.permute(0, 1, 3, 2)
-            #bs, ch, t, f = clean.shape
-
-            action, _, _, _ = actor.get_action(noisy)
-
-            state = self.env.get_next_state(state=noisy, action=action)
-            state['cl_audio'] = cl_aud
-            state['clean'] = clean
-
-            #Supervised loss
-            enhanced = state['noisy']
-            enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-            clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-            
-            mag_loss = (clean_mag - enhanced_mag) ** 2
-            ri_loss = (clean - enhanced) ** 2
-            supervised_loss = (0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])).mean()
-            
-            a_optim.zero_grad()
-            supervised_loss.backward()
-            torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-            a_optim.step()
-
-            mb_pesq = []
-            for i in range(self.bs):
-                values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                         state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                         16000, 
-                                         0)
-
-                mb_pesq.append(values[0])
-            
-            mb_pesq = torch.tensor(mb_pesq).mean()
-            print(f"SFT TRAINING STEP:{step} | MSE: {supervised_loss.item()} | PESQ : {mb_pesq.item()}")
-
-            wandb.log({
-                "pretrain_loss": supervised_loss.item(),
-                "train_PESQ": mb_pesq, 
-            })
-
-            if valid_func is not None and (step+1) % 10 == 0:
-                _, pesq = valid_func(episode=step)
-
-                if pesq > best_val_pesq:
-                    pesq = best_val_pesq
-                    #Set this model as init model
-                    #This becomes our SFT model
-                    self.init_model = copy.deepcopy(actor)
-                    self.init_model.eval()
-                    self.init_model.set_evaluation(False)
-
-        #Reset Dataloader
-        self._iter_ = iter(self.dataloader)
           
     def get_expected_return(self, rewards):
         """
@@ -421,10 +349,8 @@ class PPO:
                 
                 #Store reward
                 if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                    rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
                                                    scale=self.scale_rewards)
-                else:
-                    r_t = self.env.get_PESQ_reward(state) 
                 
                 r_ts.append(r_t)
 
@@ -455,10 +381,21 @@ class PPO:
                 supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
 
-                #r_t = r_t - self.beta * kl_penalty - self.lmbda * (supervised_loss - mb_pesq)
-                r_t = mb_pesq - self.beta * kl_penalty - self.lmbda * supervised_loss
+                #Current step reward
+                r_t = 0
+                if 'rm' in self.reward_type:
+                    r_t = r_t + rm_score
+            
+                if 'mse' in self.reward_type:
+                    r_t = r_t - self.lmbda * supervised_loss
+                
+                if 'pesq' in self.reward_type:
+                    r_t = r_t + mb_pesq
+                    
+                if 'kl' in self.reward_type:
+                    r_t = r_t - self.beta * kl_penalty
 
-                print(f"R:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
+                print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                 
                 
                 #Store trajectory
@@ -505,6 +442,7 @@ class PPO:
 
         policy_out = {
             'states':states,
+            'cleans':cleans,
             'pretrain_loss':pretrain_loss, 
             'b_targets':b_target,
             'actions':actions,
@@ -521,6 +459,7 @@ class PPO:
     def train_on_policy(self, policy, actor, critic, optimizers, n_epochs):
 
         states = policy['states']
+        cleans = policy['cleans']
         pretrain_loss = policy['pretrain_loss']
         b_target = policy['b_targets']
         actions = policy['actions']
@@ -538,7 +477,7 @@ class PPO:
         #is still in eval mode
         critic = critic.train()
         actor = actor.eval()
-        actor.set_evaluation(False)
+        actor.set_evaluation(True)
 
         a_optim, c_optim = optimizers
         
@@ -556,11 +495,13 @@ class PPO:
                 #Get mini batch indices
                 mb_indx = indices[t:t + self.bs]
                 mb_states = states[mb_indx, ...]
+                mb_clean = cleans[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
 
                 log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
+                ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
         
                 values = critic(mb_states).reshape(-1)
                 for i, val in enumerate(values):
@@ -571,6 +512,8 @@ class PPO:
                 if self.train_phase:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
+                    ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
+                    ref_log_prob = ref_log_prob.detach()
                     old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
                 else:
                     #ignore complex mask, just tune mag mask 
@@ -579,23 +522,23 @@ class PPO:
                 print(f"log_prob:{log_prob.mean(), log_prob.shape}")
                 print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 
-                logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
-                ratio = torch.exp(logratio)
-                print(f"Ratio:{ratio}")
+                #KL Penalty
+                kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                kl_ratio = torch.exp(kl_penalty)
+                kl_penalty = ((kl_ratio - 1) - kl_logratio)
 
                 #Normalize advantages across minibatch
                 mb_adv = b_advantages[mb_indx, ...]
-                
-                if self.bs > 1:
-                    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
+                #if self.bs > 1:
+                #    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 
                 #Policy gradient loss
+                logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
+                ratio = torch.exp(logratio)
+                print(f"Ratio:{ratio}")
                 pg_loss1 = -mb_adv * ratio
                 pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
-                if pg_loss1.mean() == pg_loss2.mean():
-                    pg_loss = pg_loss1.mean()
-                else:
-                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+                pg_loss = torch.max(pg_loss1, pg_loss2)
 
                 #value_loss
                 v_loss = 0.5 * ((b_target[mb_indx] - values) ** 2).mean()
@@ -603,7 +546,7 @@ class PPO:
                 #Entropy loss
                 entropy_loss = entropy.mean()
 
-                """
+                
                 #Supervised loss
                 mb_act, _, _, _ = actor.get_action(mb_states)
                 mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
@@ -611,15 +554,23 @@ class PPO:
                 mb_enhanced = mb_next_state['noisy']
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                
-                mb_clean = clean[mb_indx, ...] 
                 mb_clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
-
                 supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
-                """
-
-                clip_loss = pg_loss #+ self.lmbda * supervised_loss - (self.en_coef * entropy_loss)
                 
-                print(f"clip_loss:{clip_loss.item()} pg_loss:{pg_loss}")
+
+                clip_loss = 0
+                if 'pg' in self.loss_type:
+                    clip_loss = clip_loss + pg_loss.reshape(-1, 1)
+
+                if 'mse' in self.loss_type:
+                    clip_loss = clip_loss + self.lmbda * supervised_loss.reshape(-1, 1)
+
+                if 'kl' in self.loss_type:
+                    clip_loss = clip_loss + self.beta * kl_penalty.reshape(-1, 1)
+                
+                clip_loss = clip_loss.mean()
+
+                print(f"clip_loss:{clip_loss.item()} | pg_loss:{pg_loss.mean()} | mse: {supervised_loss.mena()} | kl: {kl_penalty.mean()}")
                 wandb.log({
                     'ratio':ratio.mean(),
                     'pg_loss1':pg_loss1.mean(),
@@ -631,6 +582,7 @@ class PPO:
                 c_optim.zero_grad()
                 clip_loss.backward()
                 v_loss.backward()
+                
                 #Update network
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)

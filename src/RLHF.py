@@ -528,13 +528,13 @@ class PPO:
                 kl_penalty = ((kl_ratio - 1) - kl_logratio)
 
                 #Normalize advantages across minibatch
-                mb_adv = b_advantages[mb_indx, ...]
+                mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)
                 #if self.bs > 1:
                 #    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 
                 #Policy gradient loss
                 logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
-                ratio = torch.exp(logratio)
+                ratio = torch.exp(logratio).reshape(-1, 1)
                 print(f"Ratio:{ratio}")
                 pg_loss1 = -mb_adv * ratio
                 pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
@@ -582,7 +582,7 @@ class PPO:
                 c_optim.zero_grad()
                 clip_loss.backward()
                 v_loss.backward()
-                
+
                 #Update network
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)

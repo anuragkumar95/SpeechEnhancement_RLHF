@@ -87,8 +87,9 @@ def run_enhancement_step(env,
         
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
-        supervised_loss = (0.3*(clean - mb_enhanced) ** 2).mean() + (0.7*(mb_clean_mag - mb_enhanced_mag)**2).mean()
-        metrics['mse'] = supervised_loss.detach().cpu().numpy()
+        supervised_loss = (0.3*(clean - mb_enhanced) ** 2) + (0.7*(mb_clean_mag - mb_enhanced_mag)**2)
+        metrics['mse'] = supervised_loss.mean().detach().cpu().numpy()
+        print(f"LOSS:{supervised_loss.shape}")
 
         clean_aud = clean_aud.reshape(-1)
         enh_audio = next_state['est_audio'].reshape(-1)

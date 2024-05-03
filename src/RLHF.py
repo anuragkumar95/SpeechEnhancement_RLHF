@@ -80,7 +80,7 @@ class REINFORCE:
         #acting differently in train and eval mode. RL seems to be stable only when actor
         #is still in eval mode
         actor = actor.eval()
-        actor.set_evaluation(True)
+        actor.set_evaluation(False)
 
         try:
             batch = next(self._iter_)

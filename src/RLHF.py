@@ -546,7 +546,6 @@ class PPO:
                 #Entropy loss
                 entropy_loss = entropy.mean()
 
-                
                 #Supervised loss
                 mb_act, _, _, _ = actor.get_action(mb_states)
                 mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)

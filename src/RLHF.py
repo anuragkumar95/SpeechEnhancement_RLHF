@@ -572,7 +572,7 @@ class PPO:
                 
                 clip_loss = clip_loss.mean()
 
-                print(f"clip_loss:{clip_loss.item()} | pg_loss:{pg_loss.mean()} | mse: {supervised_loss.mena()} | kl: {kl_penalty.mean()}")
+                print(f"clip_loss:{clip_loss.item()} | pg_loss:{pg_loss.mean()} | mse: {supervised_loss.mean()} | kl: {kl_penalty.mean()}")
                 wandb.log({
                     'ratio':ratio.mean(),
                     'pg_loss1':pg_loss1.mean(),

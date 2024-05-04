@@ -144,7 +144,8 @@ class REINFORCE:
         #KL    
         kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
         ratio = torch.exp(kl_penalty)
-        kl_penalty = ((ratio - 1) - kl_penalty).detach()
+        print(f"KL_ration:{ratio.mean()}")
+        kl_penalty = ((ratio - 1) - kl_penalty)
         kl_penalty = kl_penalty.reshape(-1, 1)
 
         #Current step reward
@@ -159,7 +160,7 @@ class REINFORCE:
             r_t = r_t + mb_pesq
             
         if 'kl' in self.reward_type:
-            r_t = r_t - self.beta * kl_penalty
+            r_t = r_t - self.beta * kl_penalty.detach()
 
         #Policy gradient loss
         mb_reward = r_t.detach().reshape(-1)
@@ -526,7 +527,7 @@ class PPO:
 
                 #KL Penalty
                 kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
-                kl_ratio = torch.exp(kl_penalty)
+                kl_ratio = torch.exp(kl_logratio)
                 kl_penalty = ((kl_ratio - 1) - kl_logratio)
 
                 #Normalize advantages across minibatch

@@ -241,7 +241,7 @@ class Trainer:
         wandb.init(project=args.exp, name=args.suffix)
 
     
-    def run_validation_step(self, env, batch):
+    def run_validation_step(self, batch):
         """
         Runs a vlidation loop for a batch.
         Predict mask for each frame one at a time 
@@ -265,7 +265,7 @@ class Trainer:
         #Forward pass through actor to get the action(mask)
         action, log_probs, _, _ = self.actor.get_action(inp)
         if self.expert is not None:
-            ref_log_probs, _ = self.expert.get_action_prob(inp, action)
+            ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, action)
             ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
         log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
@@ -280,7 +280,7 @@ class Trainer:
         a_t = action
     
         #Apply action  to get the next state
-        next_state = env.get_next_state(state=inp, 
+        next_state = self.trainer.env.get_next_state(state=inp, 
                                         action=a_t)
         
         #Get reward
@@ -361,7 +361,7 @@ class Trainer:
                 
                 #Run validation episode
                 try:
-                    metrics = self.run_validation_step(self.trainer.env, batch)
+                    metrics = self.run_validation_step(batch)
                     val_metrics['pesq'].extend(metrics['pesq'])
                     val_metrics['csig'].extend(metrics['csig'])
                     val_metrics['cbak'].extend(metrics['cbak'])

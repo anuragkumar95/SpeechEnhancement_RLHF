@@ -345,7 +345,8 @@ class PPO:
                 if ref_log_prob is not None:
                     kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                     ratio = torch.exp(kl_penalty)
-                    kl_penalty = ((ratio - 1) - kl_penalty).detach()
+                    #kl_penalty = ((ratio - 1) - kl_penalty).detach()
+                    kl_penalty = ratio
                     ep_kl_penalty += kl_penalty.mean()
                 else:
                     kl_penalty = None
@@ -528,7 +529,8 @@ class PPO:
                 #KL Penalty
                 kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
                 kl_ratio = torch.exp(kl_logratio)
-                kl_penalty = ((kl_ratio - 1) - kl_logratio)
+                #kl_penalty = ((kl_ratio - 1) - kl_logratio)
+                ep_kl_penalty = kl_ratio
 
                 #Normalize advantages across minibatch
                 mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)

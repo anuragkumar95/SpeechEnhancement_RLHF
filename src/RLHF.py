@@ -592,8 +592,8 @@ class PPO:
                     a_optim.step()
                     c_optim.step()
 
-                step_clip_loss += clip_loss.item()
-                step_pg_loss += pg_loss.item()
+                step_clip_loss += clip_loss.mean()
+                step_pg_loss += pg_loss.mean()
                 step_val_loss += v_loss.item() 
                 step_entropy_loss += entropy_loss.item()      
                 self.t += 1

@@ -83,7 +83,7 @@ def run_enhancement_step(env,
 
         #Supervised loss
         mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
-        mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+        
         
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
@@ -344,10 +344,10 @@ if __name__ == "__main__":
         compute_scores(clean_dir, args.enhance_dir)
     else:
         enhance_audios(model_pt=args.model_path, 
-                    reward_pt=args.reward_path, 
-                    cutlen=args.cutlen, 
-                    noisy_dir=noisy_dir, 
-                    clean_dir=clean_dir, 
-                    save_dir=args.save_dir,
-                    pre=args.pre, 
-                    gpu_id=gpu_id)
+                       reward_pt=args.reward_path, 
+                       cutlen=args.cutlen, 
+                       noisy_dir=noisy_dir, 
+                       clean_dir=clean_dir, 
+                       save_dir=args.save_dir,
+                       pre=args.pre, 
+                       gpu_id=gpu_id)

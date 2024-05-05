@@ -9,6 +9,7 @@ import torchaudio.functional as F
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 from torch.utils.data.distributed import DistributedSampler
+random.seed(123)
 
 
 class DemandDataset(torch.utils.data.Dataset):

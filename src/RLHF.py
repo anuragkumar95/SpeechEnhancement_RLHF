@@ -99,10 +99,15 @@ class REINFORCE:
        
         #Get logprobs and values for the sampled state
         action, log_probs, _, _ = actor.get_action(noisy)
+        sft_action, sft_log_probs, _, _ = self.init_model.get_action(noisy)
 
         state = self.env.get_next_state(state=noisy, action=action)
         state['cl_audio'] = cl_aud
         state['clean'] = clean
+
+        sft_state = self.env.get_next_state(state=noisy, action=sft_action)
+        sft_state['cl_audio'] = cl_aud
+        sft_state['clean'] = clean
         
         if self.train_phase:
             log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
@@ -123,12 +128,23 @@ class REINFORCE:
                                         0)
 
                 mb_pesq.append(values[0])
+
+            mb_pesq_sft = []
+            for i in range(self.bs):
+                values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                        sft_state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                        16000, 
+                                        0)
+
+                mb_pesq_sft.append(values[0])
             
             mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
             mb_pesq = mb_pesq.reshape(-1, 1)
+            mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
+            mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
             
             #SFT logprobs
-            ref_log_probs, _ = actor_sft.get_action_prob(noisy, action)
+            ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
             ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
 
         #Supervised loss
@@ -157,7 +173,7 @@ class REINFORCE:
             r_t = r_t - self.lmbda * supervised_loss
         
         if 'pesq' in self.reward_type:
-            r_t = r_t + mb_pesq
+            r_t = r_t + (mb_pesq - mb_pesq_sft)
             
         if 'kl' in self.reward_type:
             r_t = r_t - self.beta * kl_penalty.detach()

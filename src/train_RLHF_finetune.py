@@ -335,6 +335,8 @@ class Trainer:
         self.actor.eval()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(True)
+            self.init_model = self.init_model.eval()
+            self.init_model.set_evaluation(True)
             self.critic.eval()
         pesq = 0
         loss = 0

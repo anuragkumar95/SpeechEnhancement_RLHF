@@ -258,7 +258,7 @@ class Trainer:
             'mse':0,
             'reward':0}
         #print("Running validation...")
-        clean_aud, clean, noisy, _ = batch
+        clean_aud, clean, noisy, _, c = batch
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
@@ -283,8 +283,8 @@ class Trainer:
                                         action=a_t)
         
         #Get reward
-        r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), 
-                                       scale=False)
+        #r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False)
+        r_state = self.trainer.env.get_NISQA_MOS_reward(audio=next_state['est_audio'], c=c)
 
         #Supervised loss
         mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
@@ -356,7 +356,7 @@ class Trainer:
             for i, batch in enumerate(self.test_ds):
                 
                 #Preprocess batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True)
                 
                 #Run validation episode
                 try:

@@ -168,7 +168,8 @@ class SpeechEnhancementAgent:
             est_audio = audio/c
             est_audio = est_audio.reshape(-1)
             est_audio = est_audio.detach().cpu().numpy()
-            _dir_ = os.makedirs(os.path.join(tmpdirname, 'audios'), exist_ok=True)
+            _dir_ = os.path.join(tmpdirname, 'audios')
+            os.makedirs(_dir_, exist_ok=True)
             for i in range(bs):
                 save_path = os.path.join(_dir_, f'batch_{i}.wav')
                 sf.write(save_path, est_audio[i], 16000)

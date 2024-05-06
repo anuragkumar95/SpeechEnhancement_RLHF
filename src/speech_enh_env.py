@@ -191,7 +191,8 @@ class SpeechEnhancementAgent:
                     f, m = line.split(',')[:2]
                     mos.append(float(m))
         
-        mos = torch.tensor(mos).reshape(-1, 1)
+        mos = torch.tensor(mos).to(self.gpu_id)
+        mos = mos.reshape(-1, 1)
         return mos
 
 class replay_buffer:

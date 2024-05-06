@@ -576,7 +576,7 @@ class PPO:
 
                 #Normalize advantages across minibatch
                 #mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)
-                mb_adv = reward[mb_indx, ...].reshape(1, 1)
+                mb_adv = reward[mb_indx, ...].reshape(-1, 1)
                 #if self.bs > 1:
                 #    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 

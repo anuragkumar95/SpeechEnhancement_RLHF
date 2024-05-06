@@ -99,12 +99,12 @@ class REINFORCE:
        
         #Get logprobs and values for the sampled state
         action, log_probs, _, _ = actor.get_action(noisy)
-        sft_action, sft_log_probs, _, _ = self.init_model.get_action(noisy)
-
+    
         state = self.env.get_next_state(state=noisy, action=action)
         state['cl_audio'] = cl_aud
         state['clean'] = clean
 
+        sft_action, _, _, _ = self.init_model.get_action(noisy)
         sft_state = self.env.get_next_state(state=noisy, action=sft_action)
         sft_state['cl_audio'] = cl_aud
         sft_state['clean'] = clean
@@ -160,7 +160,7 @@ class REINFORCE:
         #KL    
         kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
         ratio = torch.exp(kl_penalty)
-        print(f"KL_ration:{ratio.mean()}")
+        print(f"KL_ratio:{ratio.mean()}")
         kl_penalty = ((ratio - 1) - kl_penalty)
         kl_penalty = kl_penalty.reshape(-1, 1)
 
@@ -351,6 +351,12 @@ class PPO:
                 if self.init_model is not None:
                     state['exp_est_audio'] = exp_state['est_audio']
 
+                #Calculate sft output
+                sft_action, _, _, _ = self.init_model.get_action(noisy)
+                sft_state = self.env.get_next_state(state=noisy, action=sft_action)
+                sft_state['cl_audio'] = cl_aud
+                sft_state['clean'] = clean
+
                 #Calculate kl_penalty
                 ref_log_prob = None
                 if self.init_model is not None:
@@ -370,6 +376,9 @@ class PPO:
                 #Store reward
                 if self.rlhf:
                     rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                                                   scale=self.scale_rewards)
+                    
+                    sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
                                                    scale=self.scale_rewards)
                 
                     r_ts.append(rm_score)
@@ -393,9 +402,20 @@ class PPO:
                                              0)
 
                     mb_pesq.append(values[0])
+
+                mb_pesq_sft = []
+                for i in range(self.bs):
+                    values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                             sft_state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                             16000, 
+                                             0)
+
+                    mb_pesq_sft.append(values[0])
                 
                 mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
                 pesq += mb_pesq.sum()
+                mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
+                #pesq += mb_pesq.sum() - mb_pesq_sft.sum()
                 
                 kl_penalty = kl_penalty.reshape(-1, 1)
                 supervised_loss = supervised_loss.reshape(-1, 1)
@@ -404,13 +424,13 @@ class PPO:
                 #Current step reward
                 r_t = 0
                 if 'rm' in self.reward_type:
-                    r_t = r_t + rm_score
+                    r_t = r_t + (rm_score - sft_rm_score)
             
                 if 'mse' in self.reward_type:
                     r_t = r_t - self.lmbda * supervised_loss
                 
                 if 'pesq' in self.reward_type:
-                    r_t = r_t + mb_pesq
+                    r_t = r_t + (mb_pesq - mb_pesq_sft)
                     
                 if 'kl' in self.reward_type:
                     r_t = r_t - self.beta * kl_penalty
@@ -549,7 +569,8 @@ class PPO:
                 kl_penalty = kl_ratio
 
                 #Normalize advantages across minibatch
-                mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)
+                #mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)
+                mb_adv = reward[mb_indx, ...].reshape(1, 1)
                 #if self.bs > 1:
                 #    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
 

@@ -424,19 +424,18 @@ class PPO:
                 kl_penalty = kl_penalty.reshape(-1, 1)
                 supervised_loss = supervised_loss.reshape(-1, 1)
                 mb_pesq = mb_pesq.reshape(-1, 1)
+                mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
 
                 #Current step reward
                 r_t = 0
                 if 'rm' in self.reward_type:
                     r_t = r_t + (rm_score - sft_rm_score)
-                    print(f"r_t(rm):{r_t.shape}")
             
                 if 'mse' in self.reward_type:
                     r_t = r_t - self.lmbda * supervised_loss
                 
                 if 'pesq' in self.reward_type:
                     r_t = r_t + (mb_pesq - mb_pesq_sft)
-                    print(f"r_t(pesq):{r_t.shape}")
                     
                 if 'kl' in self.reward_type:
                     r_t = r_t - self.beta * kl_penalty

@@ -452,6 +452,7 @@ class PPO:
                 #logprobs.append(ref_log_prob)
 
             #Convert collected rewards to target_values and advantages
+            print(rewards, bs)
             rewards = torch.stack(rewards).reshape(bs, -1)
             r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)

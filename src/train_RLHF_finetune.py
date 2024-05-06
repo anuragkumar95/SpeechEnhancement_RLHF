@@ -299,6 +299,7 @@ class Trainer:
                                      next_state['est_audio'][i, ...].detach().cpu().numpy(), 
                                      16000, 
                                      0)
+            print(values)
             metrics['pesq'].append(values[0])
             metrics['csig'].append(values[1])
             metrics['cbak'].append(values[2])

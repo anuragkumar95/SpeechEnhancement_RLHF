@@ -384,7 +384,6 @@ class PPO:
                     #                               scale=self.scale_rewards)
                     sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
 
-                    print(f"RM:{rm_score.shape, sft_rm_score.shape}")
                     r_ts.append(rm_score)
 
                 #Supervised loss

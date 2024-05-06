@@ -90,6 +90,9 @@ class MixturesDataset:
         
 
         self.model = self.model.to(gpu_id)
+        self.model = self.model.eval()
+        if not pre:
+            self.model.set_evaluation(True)
 
         self.reward_model = None
         if reward_pt is not None:

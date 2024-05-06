@@ -566,7 +566,7 @@ class PPO:
                 kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
                 kl_ratio = torch.exp(kl_logratio)
                 #kl_penalty = ((kl_ratio - 1) - kl_logratio)
-                kl_penalty = kl_ratio
+                kl_penalty = torch.nan_to_num(kl_ratio)
 
                 #Normalize advantages across minibatch
                 #mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)

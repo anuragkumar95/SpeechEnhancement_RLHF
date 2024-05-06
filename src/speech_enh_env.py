@@ -166,7 +166,7 @@ class SpeechEnhancementAgent:
             c = c.reshape(-1, 1)
             bs = c.shape[0]
             est_audio = audio/c
-            est_audio = est_audio.reshape(-1)
+            est_audio = est_audio
             est_audio = est_audio.detach().cpu().numpy()
             _dir_ = os.path.join(tmpdirname, 'audios')
             os.makedirs(_dir_, exist_ok=True)

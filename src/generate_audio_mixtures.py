@@ -44,7 +44,7 @@ def args():
                         help="Path to the CMGAN checkpoint.")
     parser.add_argument("-n", "--n_size", type=int, required=False, default=10000,
                         help="Number of mixtures to be produced.")
-    parser.add_argument("-std", "--noise_std", type=int, required=False, default=0.01,
+    parser.add_argument("-std", "--noise_std", type=float, required=False, default=0.01,
                         help="Variance of noise to be added.")
     parser.add_argument("-k", "--k", type=int, required=False, default=10, 
                         help="Number of mixtures per sample to be produced.")

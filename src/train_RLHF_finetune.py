@@ -204,7 +204,6 @@ class Trainer:
             self.critic = self.critic.to(gpu_id)
 
             #Initialize critic 
-           
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
             )

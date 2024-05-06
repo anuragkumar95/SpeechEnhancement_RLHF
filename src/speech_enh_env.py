@@ -2,12 +2,15 @@
 """
 @author: Anurag Kumar
 """
-
+import os
 import torch
 import numpy as np
 from utils import batch_pesq, power_uncompress
 from collections import deque
+import subprocess
+import tempfile
 
+import soundfile as sf
 import torch.nn.functional as F
 from torch.distributions import Normal
 
@@ -154,7 +157,41 @@ class SpeechEnhancementAgent:
         p_enhanced = self.phi(enhanced[:, 0, :, :], enhanced[:, 1, :, :])
 
         angle_loss = self.faw(torch.abs(p_clean - p_enhanced)).mean()
-        return -angle_loss   
+        return -angle_loss 
+
+
+    def get_NISQA_MOS_reward(self, audio, c):
+        mos = []
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            c = c.reshape(-1, 1)
+            bs = c.shape[0]
+            est_audio = audio/c
+            est_audio = est_audio.reshape(-1)
+            est_audio = est_audio.detach().cpu().numpy()
+            _dir_ = os.makedirs(os.path.join(tmpdirname, 'audios'), exist_ok=True)
+            for i in range(bs):
+                save_path = os.path.join(_dir_, f'batch_{i}.wav')
+                sf.write(save_path, est_audio[i], 16000)
+            
+            cmd = f"python ~/NISQA/run_predict.py \
+                   --mode predict_dir \
+                   --pretrained_model ~/NISQA/weights/nisqa.tar \
+                   --data_dir {_dir_} \
+                   --num_workers 0 \
+                   --bs {bs} \
+                   --output_dir {tmpdirname}"
+
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+            out, err = p.communicate() 
+            
+            with open(os.path.join(tmpdirname, 'NISQA_results.csv'), 'r') as f:
+                lines = f.readlines()
+                for line in lines[1:]:
+                    f, m = line.split(',')[:2]
+                    mos.append(float(m))
+        
+        mos = torch.stack(mos).reshape(-1, 1)
+        return mos
 
 class replay_buffer:
     def __init__(self, max_size, gpu_id=None):

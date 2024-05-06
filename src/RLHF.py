@@ -319,6 +319,7 @@ class PPO:
         ep_kl_penalty = 0
         pretrain_loss = 0
         pesq = 0
+        C = []
         with torch.no_grad():
             for _ in range(self.episode_len):
                 
@@ -329,13 +330,12 @@ class PPO:
                     batch = next(self._iter_)
 
                 #Preprocessed batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id) 
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
                 
-                cl_aud, clean, noisy, _ = batch
+                cl_aud, clean, noisy, _, c = batch
                 noisy = noisy.permute(0, 1, 3, 2)
                 clean = clean.permute(0, 1, 3, 2)
                 bs, ch, t, f = clean.shape
-
                 action, log_probs, _, _ = actor.get_action(noisy)
 
                 print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
@@ -375,12 +375,15 @@ class PPO:
                 
                 #Store reward
                 if self.rlhf:
-                    rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=self.scale_rewards)
+                    #rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                    #                               scale=self.scale_rewards)
                     
-                    sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
-                                                   scale=self.scale_rewards)
-                
+                    rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c)
+                    
+                    #sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
+                    #                               scale=self.scale_rewards)
+                    sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
+
                     r_ts.append(rm_score)
 
                 #Supervised loss
@@ -491,7 +494,8 @@ class PPO:
             'target_values':target_values,
             'r_ts':(r_ts, rewards),
             'ep_kl':ep_kl_penalty,
-            'pesq':pesq
+            'pesq':pesq,
+            'C':C,
         }
         
         return policy_out

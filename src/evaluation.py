@@ -86,6 +86,7 @@ def run_enhancement_step(env,
         
         
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+        mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
 
         supervised_loss = (0.3*(clean - mb_enhanced) ** 2) + (0.7*(mb_clean_mag - mb_enhanced_mag)**2)
         metrics['mse'] = supervised_loss.mean().detach().cpu().numpy()
@@ -328,6 +329,7 @@ if __name__ == "__main__":
     parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")
     parser.add_argument("--save_dir", type=str, default='./saved_tracks_best', help="where enhanced tracks to be saved")
     parser.add_argument("--enhance_dir", type=str, default=None, help="Path to enhanced_dir")
+  
 
     args = parser.parse_args()
 

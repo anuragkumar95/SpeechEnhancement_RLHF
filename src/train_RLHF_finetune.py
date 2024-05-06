@@ -263,6 +263,7 @@ class Trainer:
 
         #Forward pass through actor to get the action(mask)
         action, log_probs, _, _ = self.actor.get_action(inp)
+        sft_action, _, _ = self.trainer.init_model.get_action(inp)
         if self.expert is not None:
             ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, action)
             ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
@@ -272,15 +273,10 @@ class Trainer:
         if ref_log_prob is not None:
             kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
             ratio = torch.exp(kl_penalty)
-            kl_penalty = ((ratio - 1) - kl_penalty).detach()
-        else:
-            kl_penalty = 0
-
-        a_t = action
+            kl_penalty = ratio.detach()
     
         #Apply action  to get the next state
-        next_state = self.trainer.env.get_next_state(state=inp, 
-                                        action=a_t)
+        next_state = self.trainer.env.get_next_state(state=inp, action=action)
         
         #Get reward
         #r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False)
@@ -335,8 +331,8 @@ class Trainer:
         self.actor.eval()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(True)
-            self.init_model = self.init_model.eval()
-            self.init_model.set_evaluation(True)
+            self.trainer.init_model = self.trainer.init_model.eval()
+            self.trainer.init_model.set_evaluation(True)
             self.critic.eval()
         pesq = 0
         loss = 0

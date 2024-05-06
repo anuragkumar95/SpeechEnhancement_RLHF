@@ -44,6 +44,8 @@ def args():
                         help="Path to the CMGAN checkpoint.")
     parser.add_argument("-n", "--n_size", type=int, required=False, default=10000,
                         help="Number of mixtures to be produced.")
+    parser.add_argument("-std", "--noise_std", type=int, required=False, default=0.01,
+                        help="Variance of noise to be added.")
     parser.add_argument("-k", "--k", type=int, required=False, default=10, 
                         help="Number of mixtures per sample to be produced.")
     parser.add_argument("--mix_aud", action='store_true', required=False,
@@ -154,7 +156,7 @@ class MixturesDataset:
 
     """
 
-    def generate_k_samples(self, clean_file, noisy_file, save_metrics=True):
+    def generate_k_samples(self, clean_file, noisy_file, save_metrics=True, noise_std=0.01):
 
         clean_wav, c_sr = torchaudio.load(clean_file)
         noisy_wav, n_sr = torchaudio.load(noisy_file)
@@ -187,14 +189,15 @@ class MixturesDataset:
                                            self.save_dir,
                                            save_metrics=save_metrics,
                                            save_track=True,
-                                           add_noise=add_noise)
+                                           add_noise=add_noise,
+                                           noise_std=noise_std)
             if save_metrics:
                 metrics_dir = os.path.join(self.save_dir, 'metrics')
                 os.makedirs(metrics_dir, exist_ok=True)
                 with open(os.path.join(metrics_dir, f"{file_id}_{i}.pickle"), 'wb') as f:
                     pickle.dump(metrics, f)
     
-    def generate_mixtures(self, n_size=5000):
+    def generate_mixtures(self, n_size=5000, std=0.01):
         n_clean_examples = len(self.clean_files)
 
         #sample clean indexes
@@ -202,7 +205,7 @@ class MixturesDataset:
         cidxs = np.random.choice(n_clean_examples, n_size, replace=False)
         
         for i in tqdm(cidxs):
-            self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=True)
+            self.generate_k_samples(self.clean_files[i], self.noisy_files[i], save_metrics=True, noise_std=std)
 
 def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 
@@ -333,7 +336,7 @@ if __name__ == "__main__":
                                 gpu_id=0,
                                 pre=ARGS.pre)
         
-        ranks.generate_mixtures(n_size=ARGS.n_size)
+        ranks.generate_mixtures(n_size=ARGS.n_size, std=ARGS.noise_std)
 
     if ARGS.calc_pesq:
         calc_mixture_pesq(enhance_dir=ARGS.mixture_dir, 

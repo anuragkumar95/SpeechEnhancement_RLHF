@@ -478,6 +478,7 @@ class PPO:
 
         print(f"STATES        :{states.shape}")
         print(f"CLEAN         :{cleans.shape}")
+        print(f"REWARDS:      :{rewards.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
         print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")

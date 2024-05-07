@@ -454,7 +454,7 @@ class PPO:
 
             #Convert collected rewards to target_values and advantages
             print(rewards, bs)
-            rewards = torch.stack(rewards).reshape(bs, -1)
+            rewards = torch.stack(rewards).reshape(-1)
             r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
@@ -552,10 +552,6 @@ class PPO:
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
         
                 values = critic(mb_states).reshape(-1)
-                for i, val in enumerate(values):
-                    b = mb_indx[i] // self.episode_len
-                    ts = mb_indx[i] % self.episode_len
-                    VALUES[b, ts] = val
 
                 if self.train_phase:
                     entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]

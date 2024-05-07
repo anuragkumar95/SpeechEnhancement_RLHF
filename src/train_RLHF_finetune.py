@@ -404,7 +404,7 @@ class Trainer:
             self.actor.set_evaluation(False)
             self.critic.train()
         
-        return reward_model_score, np.asarray(val_metrics["pesq"]).mean()
+        return loss, reward_model_score, np.asarray(val_metrics["pesq"]).mean()
 
     def train_one_epoch(self, epoch):       
         #Run training
@@ -412,7 +412,7 @@ class Trainer:
         if self.args.method == 'PPO':
             self.critic.train()
 
-        best_val_loss, best_pesq = self.run_validation(0)
+        loss, best_rm_score, best_pesq = self.run_validation(0)
         #best_val_loss, best_pesq = 9999, 0
         epochs_per_episode = self.args.ep_per_episode
         
@@ -461,16 +461,17 @@ class Trainer:
                 
                 if (i+1) % 10 == 0:
                 #Run validation after each episode
-                    loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
-                    if val_pesq > best_pesq:
-                        best_pesq = val_pesq
+                    loss, rm_score, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
+                    if val_pesq >= best_pesq or rm_score >= best_rm_score:
+                        best_pesq = max(best_pesq, val_pesq)
+                        best_rm_score = max(best_rm_score, rm_score)
                         self.trainer.init_model = copy.deepcopy(self.actor)
                         self.trainer.init_model = self.trainer.init_model.eval()
-                        self.save(loss, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
+                        self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
                     
-                    elif loss < best_val_loss:
-                        best_val_loss = loss
-                        self.save(loss, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
+                    #elif rm_score > best_rm_score:
+                    #    best_rm_score = rm_score
+                    #    self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
 
                     
                         
@@ -487,11 +488,11 @@ class Trainer:
             self.train_one_epoch(epoch+1)
             
 
-    def save(self, loss, pesq, episode=None):
+    def save(self, loss, mos, pesq, episode=None):
         if episode is None:
             episode = len(self.train_ds)            
         if self.gpu_id == 0:
-            checkpoint_prefix = f"{self.args.exp}_pesq_{pesq}_loss_{loss}_episode_{episode}.pt"
+            checkpoint_prefix = f"{self.args.exp}_pesq_{pesq}_nmos_{mos}_loss_{loss}_episode_{episode}.pt"
             path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
             if self.args.method == 'reinforce':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 

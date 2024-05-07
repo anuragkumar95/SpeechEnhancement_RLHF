@@ -335,7 +335,7 @@ class PPO:
                 noisy = noisy.permute(0, 1, 3, 2)
                 clean = clean.permute(0, 1, 3, 2)
                 bs, ch, t, f = clean.shape
-                
+
                 for _ in range(self.accum_grad):
                     
                     action, log_probs, _, _ = actor.get_action(noisy)
@@ -376,7 +376,7 @@ class PPO:
                         kl_penalty = None
                     
                     #Store reward
-                    if self.rlhf:
+                    if self.rlhf and 'rm' in self.reward_type:
                         #rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
                         #                               scale=self.scale_rewards)
                         

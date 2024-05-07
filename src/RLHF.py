@@ -454,7 +454,6 @@ class PPO:
                     #logprobs.append(ref_log_prob)
 
             #Convert collected rewards to target_values and advantages
-            print(rewards, bs)
             rewards = torch.stack(rewards).reshape(bs, -1)
             if len(r_ts) > 0:
                 r_ts = torch.stack(r_ts).reshape(-1)
@@ -463,6 +462,7 @@ class PPO:
             advantages = self.get_advantages(target_values, states, critic)
             b_advantages = advantages.reshape(-1)
             rewards = rewards.reshape(-1)
+            print(f"REWARDS:{rewards}")
             
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)

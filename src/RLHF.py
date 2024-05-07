@@ -307,7 +307,8 @@ class PPO:
         #Set models to eval
         actor = actor.eval()
         actor.set_evaluation(False)
-        self.init_model.set_evaluation(False)
+        self.init_model = self.init_model.eval()
+        self.init_model.set_evaluation(True)
         critic = critic.eval()
 
         rewards = []

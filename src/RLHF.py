@@ -322,21 +322,22 @@ class PPO:
         C = []
         with torch.no_grad():
             for _ in range(self.episode_len):
+                try:
+                    batch = next(self._iter_)
+                except StopIteration as e:
+                    self._iter_ = iter(self.dataloader)
+                    batch = next(self._iter_)
+
+                #Preprocessed batch
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
+                
+                cl_aud, clean, noisy, _, c = batch
+                noisy = noisy.permute(0, 1, 3, 2)
+                clean = clean.permute(0, 1, 3, 2)
+                bs, ch, t, f = clean.shape
+                
                 for _ in range(self.accum_grad):
                     
-                    try:
-                        batch = next(self._iter_)
-                    except StopIteration as e:
-                        self._iter_ = iter(self.dataloader)
-                        batch = next(self._iter_)
-
-                    #Preprocessed batch
-                    batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
-                    
-                    cl_aud, clean, noisy, _, c = batch
-                    noisy = noisy.permute(0, 1, 3, 2)
-                    clean = clean.permute(0, 1, 3, 2)
-                    bs, ch, t, f = clean.shape
                     action, log_probs, _, _ = actor.get_action(noisy)
 
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
@@ -475,9 +476,9 @@ class PPO:
             
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
             
-            ep_kl_penalty = ep_kl_penalty / self.episode_len
-            pretrain_loss = pretrain_loss / self.episode_len
-            pesq = pesq / (self.episode_len * self.bs)
+            ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
+            pretrain_loss = pretrain_loss / (self.episode_len * self.accum_grad)
+            pesq = pesq / (self.episode_len * self.accum_grad * self.bs)
 
         print(f"STATES        :{states.shape}")
         print(f"CLEAN         :{cleans.shape}")

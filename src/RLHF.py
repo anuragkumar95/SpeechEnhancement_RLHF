@@ -311,7 +311,7 @@ class PPO:
         critic = critic.eval()
 
         rewards = []
-        r_ts = []
+        r_ts = [0]
         states = []
         logprobs = []
         actions = []

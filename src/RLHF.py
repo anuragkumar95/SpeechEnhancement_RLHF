@@ -322,134 +322,135 @@ class PPO:
         C = []
         with torch.no_grad():
             for _ in range(self.episode_len):
-                
-                try:
-                    batch = next(self._iter_)
-                except StopIteration as e:
-                    self._iter_ = iter(self.dataloader)
-                    batch = next(self._iter_)
-
-                #Preprocessed batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
-                
-                cl_aud, clean, noisy, _, c = batch
-                noisy = noisy.permute(0, 1, 3, 2)
-                clean = clean.permute(0, 1, 3, 2)
-                bs, ch, t, f = clean.shape
-                action, log_probs, _, _ = actor.get_action(noisy)
-
-                print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
-                
-                if self.init_model is not None:
-                    init_action, _, _, _ = self.init_model.get_action(noisy)
-                    ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
-                    exp_state = self.env.get_next_state(state=noisy, action=init_action)
-        
-                state = self.env.get_next_state(state=noisy, action=action)
-                state['cl_audio'] = cl_aud
-                state['clean'] = clean
-                if self.init_model is not None:
-                    state['exp_est_audio'] = exp_state['est_audio']
-
-                #Calculate sft output
-                sft_action, _, _, _ = self.init_model.get_action(noisy)
-                sft_state = self.env.get_next_state(state=noisy, action=sft_action)
-                sft_state['cl_audio'] = cl_aud
-                sft_state['clean'] = clean
-
-                #Calculate kl_penalty
-                ref_log_prob = None
-                if self.init_model is not None:
-                    ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                print(f"log_prob:{log_prob.mean()}")
-
-                if ref_log_prob is not None:
-                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                    ratio = torch.exp(kl_penalty)
-                    #kl_penalty = ((ratio - 1) - kl_penalty).detach()
-                    kl_penalty = ratio.detach()
-                    ep_kl_penalty += kl_penalty.mean()
-                else:
-                    kl_penalty = None
-                
-                #Store reward
-                if self.rlhf:
-                    #rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                    #                               scale=self.scale_rewards)
+                for _ in range(self.accum_grad):
                     
-                    rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c)
+                    try:
+                        batch = next(self._iter_)
+                    except StopIteration as e:
+                        self._iter_ = iter(self.dataloader)
+                        batch = next(self._iter_)
+
+                    #Preprocessed batch
+                    batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
                     
-                    #sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
-                    #                               scale=self.scale_rewards)
-                    sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
+                    cl_aud, clean, noisy, _, c = batch
+                    noisy = noisy.permute(0, 1, 3, 2)
+                    clean = clean.permute(0, 1, 3, 2)
+                    bs, ch, t, f = clean.shape
+                    action, log_probs, _, _ = actor.get_action(noisy)
 
-                    r_ts.append(rm_score)
-
-                #Supervised loss
-                enhanced = state['noisy']
-                enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-                clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-                
-                mag_loss = (clean_mag - enhanced_mag)**2
-                ri_loss = (clean - enhanced) ** 2
-                supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
-
-                pretrain_loss += supervised_loss.mean()
-
-                mb_pesq = []
-                for i in range(self.bs):
-                    values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                             state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                             16000, 
-                                             0)
-
-                    mb_pesq.append(values[0])
-
-                mb_pesq_sft = []
-                for i in range(self.bs):
-                    values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                             sft_state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                             16000, 
-                                             0)
-
-                    mb_pesq_sft.append(values[0])
-                
-                mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
-                pesq += mb_pesq.sum()
-                mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
-                #pesq += mb_pesq.sum() - mb_pesq_sft.sum()
-                
-                kl_penalty = kl_penalty.reshape(-1, 1)
-                supervised_loss = supervised_loss.reshape(-1, 1)
-                mb_pesq = mb_pesq.reshape(-1, 1)
-                mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
-
-                #Current step reward
-                r_t = 0
-                if 'rm' in self.reward_type:
-                    r_t = r_t + (rm_score - sft_rm_score)
+                    print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
+                    
+                    if self.init_model is not None:
+                        init_action, _, _, _ = self.init_model.get_action(noisy)
+                        ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
+                        exp_state = self.env.get_next_state(state=noisy, action=init_action)
             
-                if 'mse' in self.reward_type:
-                    r_t = r_t - self.lmbda * supervised_loss
-                
-                if 'pesq' in self.reward_type:
-                    r_t = r_t + (mb_pesq - mb_pesq_sft)
+                    state = self.env.get_next_state(state=noisy, action=action)
+                    state['cl_audio'] = cl_aud
+                    state['clean'] = clean
+                    if self.init_model is not None:
+                        state['exp_est_audio'] = exp_state['est_audio']
+
+                    #Calculate sft output
+                    sft_action, _, _, _ = self.init_model.get_action(noisy)
+                    sft_state = self.env.get_next_state(state=noisy, action=sft_action)
+                    sft_state['cl_audio'] = cl_aud
+                    sft_state['clean'] = clean
+
+                    #Calculate kl_penalty
+                    ref_log_prob = None
+                    if self.init_model is not None:
+                        ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                    log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                    print(f"log_prob:{log_prob.mean()}")
+
+                    if ref_log_prob is not None:
+                        kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                        ratio = torch.exp(kl_penalty)
+                        #kl_penalty = ((ratio - 1) - kl_penalty).detach()
+                        kl_penalty = ratio.detach()
+                        ep_kl_penalty += kl_penalty.mean()
+                    else:
+                        kl_penalty = None
                     
-                if 'kl' in self.reward_type:
-                    r_t = r_t - self.beta * kl_penalty
+                    #Store reward
+                    if self.rlhf:
+                        #rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                        #                               scale=self.scale_rewards)
+                        
+                        rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c)
+                        
+                        #sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
+                        #                               scale=self.scale_rewards)
+                        sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
 
-                print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
-                
-                
-                #Store trajectory
-                states.append(noisy)
-                cleans.append(clean)
-                rewards.append(r_t)
+                        r_ts.append(rm_score)
 
-                actions.append(action)
-                logprobs.append(log_prob)
-                #logprobs.append(ref_log_prob)
+                    #Supervised loss
+                    enhanced = state['noisy']
+                    enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
+                    clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+                    
+                    mag_loss = (clean_mag - enhanced_mag)**2
+                    ri_loss = (clean - enhanced) ** 2
+                    supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+
+                    pretrain_loss += supervised_loss.mean()
+
+                    mb_pesq = []
+                    for i in range(self.bs):
+                        values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                                state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                                16000, 
+                                                0)
+
+                        mb_pesq.append(values[0])
+
+                    mb_pesq_sft = []
+                    for i in range(self.bs):
+                        values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                                sft_state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
+                                                16000, 
+                                                0)
+
+                        mb_pesq_sft.append(values[0])
+                    
+                    mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
+                    pesq += mb_pesq.sum()
+                    mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
+                    #pesq += mb_pesq.sum() - mb_pesq_sft.sum()
+                    
+                    kl_penalty = kl_penalty.reshape(-1, 1)
+                    supervised_loss = supervised_loss.reshape(-1, 1)
+                    mb_pesq = mb_pesq.reshape(-1, 1)
+                    mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
+
+                    #Current step reward
+                    r_t = 0
+                    if 'rm' in self.reward_type:
+                        r_t = r_t + (rm_score - sft_rm_score)
+                
+                    if 'mse' in self.reward_type:
+                        r_t = r_t - self.lmbda * supervised_loss
+                    
+                    if 'pesq' in self.reward_type:
+                        r_t = r_t + (mb_pesq - mb_pesq_sft)
+                        
+                    if 'kl' in self.reward_type:
+                        r_t = r_t - self.beta * kl_penalty
+
+                    print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
+                    
+                    
+                    #Store trajectory
+                    states.append(noisy)
+                    cleans.append(clean)
+                    rewards.append(r_t)
+
+                    actions.append(action)
+                    logprobs.append(log_prob)
+                    #logprobs.append(ref_log_prob)
 
             #Convert collected rewards to target_values and advantages
             print(rewards, bs)

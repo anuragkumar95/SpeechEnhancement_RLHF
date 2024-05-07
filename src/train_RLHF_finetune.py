@@ -462,15 +462,17 @@ class Trainer:
                 if (i+1) % 10 == 0:
                 #Run validation after each episode
                     loss, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
-                    if loss < best_val_loss:
-                        best_val_loss = loss
-                        self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
-
                     if val_pesq > best_pesq:
                         best_pesq = val_pesq
                         self.trainer.init_model = copy.deepcopy(self.actor)
                         self.trainer.init_model = self.trainer.init_model.eval()
-                        self.save(loss, (epoch-1) * episode_per_epoch + (i+1))
+                        self.save(loss, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
+                    
+                    elif loss < best_val_loss:
+                        best_val_loss = loss
+                        self.save(loss, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
+
+                    
                         
             except Exception as e:
                 print(traceback.format_exc())
@@ -485,11 +487,11 @@ class Trainer:
             self.train_one_epoch(epoch+1)
             
 
-    def save(self, loss, episode=None):
+    def save(self, loss, pesq, episode=None):
         if episode is None:
             episode = len(self.train_ds)            
         if self.gpu_id == 0:
-            checkpoint_prefix = f"{self.args.exp}_loss_{loss}_episode_{episode}.pt"
+            checkpoint_prefix = f"{self.args.exp}_pesq_{pesq}_loss_{loss}_episode_{episode}.pt"
             path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
             if self.args.method == 'reinforce':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 
@@ -564,3 +566,8 @@ if __name__ == "__main__":
             main(0, world_size, ARGS)
         else:
             main(None, world_size, ARGS)
+
+
+
+
+

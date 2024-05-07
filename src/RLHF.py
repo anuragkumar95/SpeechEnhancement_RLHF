@@ -312,7 +312,10 @@ class PPO:
         critic = critic.eval()
 
         rewards = []
-        r_ts = [torch.tensor(0.0)]
+        if 'rm' not in self.reward_type:
+            r_ts = [torch.tensor(0.0)]
+        else:
+            r_ts = []
         states = []
         logprobs = []
         actions = []

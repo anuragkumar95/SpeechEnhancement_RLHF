@@ -626,8 +626,6 @@ class PPO:
                 })
 
                 #optimizer.zero_grad()
-                a_optim.zero_grad()
-                c_optim.zero_grad()
                 clip_loss.backward()
                 v_loss.backward()
 
@@ -637,6 +635,8 @@ class PPO:
                     torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                     a_optim.step()
                     c_optim.step()
+                    a_optim.zero_grad()
+                    c_optim.zero_grad()
 
                 step_clip_loss += clip_loss.mean()
                 step_pg_loss += pg_loss.mean()

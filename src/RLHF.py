@@ -311,7 +311,7 @@ class PPO:
         critic = critic.eval()
 
         rewards = []
-        r_ts = [0]
+        r_ts = [torch.tensor(0.0)]
         states = []
         logprobs = []
         actions = []

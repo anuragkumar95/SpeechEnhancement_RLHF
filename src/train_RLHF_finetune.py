@@ -397,14 +397,14 @@ class Trainer:
             "val_KL":kl,
             "reward_model_score":reward_model_score
         }) 
-        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | REWARD: {reward}")
+        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {reward_model_score}")
         
         self.actor.train()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(False)
             self.critic.train()
         
-        return loss, np.asarray(val_metrics["pesq"]).mean()
+        return reward_model_score, np.asarray(val_metrics["pesq"]).mean()
 
     def train_one_epoch(self, epoch):       
         #Run training

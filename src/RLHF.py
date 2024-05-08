@@ -377,6 +377,7 @@ class PPO:
                         kl_penalty = None
                     
                     rm_score = torch.tensor(0.0)
+                    sft_rm_score = torch.tensor(0.0)
                     #Store reward
                     if 'rm' in self.loss_type:
                         rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 

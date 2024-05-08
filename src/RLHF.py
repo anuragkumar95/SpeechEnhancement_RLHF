@@ -379,18 +379,19 @@ class PPO:
                     else:
                         kl_penalty = None
                     
+                    rm_score = torch.tensor(0.0)
                     #Store reward
-                    if self.rlhf and 'rm' in self.reward_type:
-                        #rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                        #                               scale=self.scale_rewards)
+                    if 'rm' in self.loss_type:
+                        rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                                                       scale=self.scale_rewards)
+                        sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
+                                                       scale=self.scale_rewards)
                         
+                    if 'rm_nisqa' in self.loss_type:
                         rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c)
-                        
-                        #sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
-                        #                               scale=self.scale_rewards)
                         sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
 
-                        r_ts.append(rm_score)
+                    r_ts.append(rm_score)
 
                     #Supervised loss
                     enhanced = state['noisy']
@@ -532,7 +533,6 @@ class PPO:
         #is still in eval mode
         critic = critic.train()
         actor = actor.eval()
-        actor.set_evaluation(True)
 
         a_optim, c_optim = optimizers
         
@@ -575,9 +575,7 @@ class PPO:
 
                 #KL Penalty
                 kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
-                kl_ratio = torch.exp(kl_logratio)
-                #kl_penalty = ((kl_ratio - 1) - kl_logratio)
-                kl_penalty = torch.nan_to_num(kl_ratio)
+                kl_penalty = kl_logratio
 
                 #Normalize advantages across minibatch
                 #mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)
@@ -588,6 +586,7 @@ class PPO:
                 #Policy gradient loss
                 logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
                 ratio = torch.exp(logratio).reshape(-1, 1)
+                
                 print(f"Ratio:{ratio}")
                 pg_loss1 = -mb_adv * ratio
                 pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
@@ -629,8 +628,8 @@ class PPO:
                     'pg_loss2':pg_loss2.mean(),
                 })
 
-                #optimizer.zero_grad()
                 clip_loss = clip_loss / self.accum_grad
+                v_loss = v_loss / self.accum_grad
                 clip_loss.backward()
                 v_loss.backward()
 

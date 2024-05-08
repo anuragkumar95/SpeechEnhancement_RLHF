@@ -372,9 +372,6 @@ class PPO:
 
                     if ref_log_prob is not None:
                         kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                        ratio = torch.exp(kl_penalty)
-                        #kl_penalty = ((ratio - 1) - kl_penalty).detach()
-                        kl_penalty = ratio.detach()
                         ep_kl_penalty += kl_penalty.mean()
                     else:
                         kl_penalty = None

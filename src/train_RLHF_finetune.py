@@ -7,8 +7,8 @@ from model.actor import TSCNet, TSCNetSmall
 from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
-import NISQA.nisqa.NISQA_lib as NL
-from NISQA.nisqa.NISQA_model import nisqaModel
+#import NISQA.nisqa.NISQA_lib as NL
+#from NISQA.nisqa.NISQA_model import nisqaModel
 from compute_metrics import compute_metrics
 
 

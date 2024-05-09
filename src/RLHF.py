@@ -377,10 +377,13 @@ class PPO:
                     rm_score = torch.tensor(0.0)
                     sft_rm_score = torch.tensor(0.0)
                     #Store reward
+                    print(f"LOSS:{self.loss_type}")
                     if 'rm_nisqa' in self.loss_type:
+                        print(f"A")
                         rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c)
                         sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
                     elif 'rm' in self.loss_type:
+                        print(f"B")
                         rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
                                                        scale=self.scale_rewards)
                         sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 

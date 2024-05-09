@@ -326,21 +326,22 @@ class PPO:
         C = []
         with torch.no_grad():
             for _ in range(self.episode_len):
-                try:
-                    batch = next(self._iter_)
-                except StopIteration as e:
-                    self._iter_ = iter(self.dataloader)
-                    batch = next(self._iter_)
-
-                #Preprocessed batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
-                
-                cl_aud, clean, noisy, _, c = batch
-                noisy = noisy.permute(0, 1, 3, 2)
-                clean = clean.permute(0, 1, 3, 2)
-                bs, ch, t, f = clean.shape
 
                 for _ in range(self.accum_grad):
+
+                    try:
+                        batch = next(self._iter_)
+                    except StopIteration as e:
+                        self._iter_ = iter(self.dataloader)
+                        batch = next(self._iter_)
+
+                    #Preprocessed batch
+                    batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
+                    
+                    cl_aud, clean, noisy, _, c = batch
+                    noisy = noisy.permute(0, 1, 3, 2)
+                    clean = clean.permute(0, 1, 3, 2)
+                    bs, ch, t, f = clean.shape
                     
                     action, log_probs, _, _ = actor.get_action(noisy)
 
@@ -458,8 +459,8 @@ class PPO:
 
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
-            if len(r_ts) > 0:
-                r_ts = torch.stack(r_ts).reshape(-1)
+            if len(r_ts) > 1:
+                r_ts = torch.stack(r_ts[1:,...]).reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
             advantages = self.get_advantages(target_values, states, critic)

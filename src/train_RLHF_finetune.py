@@ -463,8 +463,8 @@ class Trainer:
                     if val_pesq >= best_pesq or rm_score >= best_rm_score:
                         best_pesq = val_pesq
                         best_rm_score = max(best_rm_score, rm_score)
-                        self.trainer.init_model = copy.deepcopy(self.actor)
-                        self.trainer.init_model = self.trainer.init_model.eval()
+                        #self.trainer.init_model = copy.deepcopy(self.actor)
+                        #self.trainer.init_model = self.trainer.init_model.eval()
                         self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
                     
                     #elif rm_score > best_rm_score:

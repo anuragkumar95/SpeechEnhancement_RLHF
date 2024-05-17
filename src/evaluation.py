@@ -320,8 +320,10 @@ if __name__ == "__main__":
                         help="the path where the model is saved")
     parser.add_argument("-rpt", "--reward_path", type=str, required=False,
                         help="the path where the model is saved")
-    parser.add_argument("--test_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
+    parser.add_argument("--noisy_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
                         help="noisy tracks dir to be enhanced")
+    parser.add_argument("--clean_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
+                        help="clean tracks dir for metrics")
     parser.add_argument("--save_tracks", type=str, default=True, help="save predicted tracks or not")
     parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output normal dist.")
     parser.add_argument("--gpu", action='store_true', help="toggle to run models on gpu.")
@@ -335,8 +337,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    noisy_dir = os.path.join(args.test_dir, "noisy")
-    clean_dir = os.path.join(args.test_dir, "clean")
+    #noisy_dir = os.path.join(args.test_dir, "noisy")
+    #clean_dir = os.path.join(args.test_dir, "clean")
+    noisy_dir = args.noisy_dir
+    clean_dir = args.clean_dir
     
     if args.gpu:
         gpu_id = 0

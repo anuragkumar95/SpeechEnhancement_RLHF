@@ -191,10 +191,11 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
             noisy_ds, _ = torchaudio.load(noisy_file)
             if noisy_ds.shape[0] > 1:
                 noisy_ds = noisy_ds[0, :]
-            print("wav:",noisy_ds.shape)
             if clean_dir is not None:
                 clean_file = os.path.join(clean_dir, file)
                 clean_ds, _ = torchaudio.load(clean_file)
+                if clean_ds.shape[0] > 1:
+                    clean_ds = clean_ds[0, :]
                 length = clean_ds.shape[-1]
             else:
                 clean_ds = None

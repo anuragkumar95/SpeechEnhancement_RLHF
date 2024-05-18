@@ -128,7 +128,7 @@ def run_enhancement_step(env,
     
     return metrics
 
-def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, pre=False, gpu_id=None):
+def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=None, pre=False, gpu_id=None):
     
     #Initiate models
     model = TSCNet(num_channel=64, 
@@ -187,16 +187,25 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
         files = os.listdir(noisy_dir)
         for file in tqdm(files):
             file_id = file[:-len('.wav')]
-            clean_file = os.path.join(clean_dir, file)
             noisy_file = os.path.join(noisy_dir, file)
-            clean_ds, _ = torchaudio.load(clean_file)
             noisy_ds, _ = torchaudio.load(noisy_file)
-            length = clean_ds.shape[-1]
+            if clean_dir is not None:
+                clean_file = os.path.join(clean_dir, file)
+                clean_ds, _ = torchaudio.load(clean_file)
+                length = clean_ds.shape[-1]
+            else:
+                clean_ds = None
+                length = noisy_ds.shape[-1]
             
             if length > cutlen:
-                mb_size = clean_ds.shape[-1] // cutlen
-                if clean_ds.shape[-1] % cutlen > 0:
-                    mb_size = mb_size + 1
+                if clean_ds is not None:
+                    mb_size = clean_ds.shape[-1] // cutlen
+                    if clean_ds.shape[-1] % cutlen > 0:
+                        mb_size = mb_size + 1
+                else:
+                    mb_size = noisy_ds.shape[-1] // cutlen
+                    if noisy_ds.shape[-1] % cutlen > 0:
+                        mb_size = mb_size + 1
                 end_idx = mb_size * cutlen
           
                 cleans = []
@@ -206,66 +215,74 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, clean_dir, save_dir, 
                 for i in range(mb_size-1):
                     st = i*cutlen
                     end = st + cutlen
-                    cleans.append(clean_ds[:, st:end])
+                    if clean_ds is not None:
+                        cleans.append(clean_ds[:, st:end])
                     noises.append(noisy_ds[:, st:end])
+                
+                if clean_ds is not None:
+                    cleans.append(torch.cat([clean_ds[:, end:], clean_ds[:, :end_idx - clean_ds.shape[-1]]], dim=-1))
+                    clean_ds = torch.stack(cleans, dim=0).squeeze(1)
 
-                cleans.append(torch.cat([clean_ds[:, end:], clean_ds[:, :end_idx - clean_ds.shape[-1]]], dim=-1))
                 noises.append(torch.cat([noisy_ds[:, end:], noisy_ds[:, :end_idx - noisy_ds.shape[-1]]], dim=-1))
-
-                clean_ds = torch.stack(cleans, dim=0).squeeze(1)
                 noisy_ds = torch.stack(noises, dim=0).squeeze(1)
             
             batch = (clean_ds, noisy_ds, length)
             batch = preprocess_batch(batch, gpu_id=gpu_id, return_c=True)
-            
+            if clean_ds is None:
+                save_metrics=False
+            else:
+                save_metrics=True
             try:
                 metrics = run_enhancement_step(env=env, 
                                                batch=batch, 
                                                actor=model, 
                                                lens=length,
                                                file_id=file,
+                                               save_metrics=save_metrics,
                                                save_dir=save_dir,
                                                save_track=True)
                 
-                val_metrics['pesq'].append(metrics['pesq'])
-                val_metrics['csig'].append(metrics['csig'])
-                val_metrics['cbak'].append(metrics['cbak'])
-                val_metrics['covl'].append(metrics['covl'])
-                val_metrics['ssnr'].append(metrics['ssnr'])
-                val_metrics['stoi'].append(metrics['stoi'])
-                val_metrics['si-sdr'].append(metrics['si-sdr'])
-                val_metrics['mse'] += metrics['mse']
-                val_metrics['reward'] += metrics['reward']
+                if save_metrics:
+                    val_metrics['pesq'].append(metrics['pesq'])
+                    val_metrics['csig'].append(metrics['csig'])
+                    val_metrics['cbak'].append(metrics['cbak'])
+                    val_metrics['covl'].append(metrics['covl'])
+                    val_metrics['ssnr'].append(metrics['ssnr'])
+                    val_metrics['stoi'].append(metrics['stoi'])
+                    val_metrics['si-sdr'].append(metrics['si-sdr'])
+                    val_metrics['mse'] += metrics['mse']
+                    val_metrics['reward'] += metrics['reward']
 
-                step += 1
+                    step += 1
 
-                res_save_dir = os.path.join(save_dir, 'results')
-                os.makedirs(res_save_dir, exist_ok=True)
-                with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
-                    pickle.dump(metrics, f)
+                    res_save_dir = os.path.join(save_dir, 'results')
+                    os.makedirs(res_save_dir, exist_ok=True)
+                    with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
+                        pickle.dump(metrics, f)
 
 
             except Exception as e:
                 print(traceback.format_exc())
                 continue
-
-        val_metrics['mse'] = val_metrics['mse']/step
-        val_metrics['reward'] = val_metrics['reward']/step
-        val_metrics['pesq'] = np.asarray(val_metrics['pesq'])
-        val_metrics['csig'] = np.asarray(val_metrics['csig'])
-        val_metrics['cbak'] = np.asarray(val_metrics['cbak'])
-        val_metrics['covl'] = np.asarray(val_metrics['covl'])
-        val_metrics['ssnr'] = np.asarray(val_metrics['ssnr'])
-        val_metrics['stoi'] = np.asarray(val_metrics['stoi'])
-        val_metrics['si-sdr'] = np.asarray(val_metrics['si-sdr'])
         
-        msg = ""
-        for key in val_metrics:
-            if key not in ['mse', 'reward']:
-                msg += f"{key.capitalize()}:{val_metrics[key].mean()} | "
-            else:
-                msg += f"{key.capitalize()}:{metrics[key]} | "
-        print(msg)
+        if save_metrics:
+            val_metrics['mse'] = val_metrics['mse']/step
+            val_metrics['reward'] = val_metrics['reward']/step
+            val_metrics['pesq'] = np.asarray(val_metrics['pesq'])
+            val_metrics['csig'] = np.asarray(val_metrics['csig'])
+            val_metrics['cbak'] = np.asarray(val_metrics['cbak'])
+            val_metrics['covl'] = np.asarray(val_metrics['covl'])
+            val_metrics['ssnr'] = np.asarray(val_metrics['ssnr'])
+            val_metrics['stoi'] = np.asarray(val_metrics['stoi'])
+            val_metrics['si-sdr'] = np.asarray(val_metrics['si-sdr'])
+            
+            msg = ""
+            for key in val_metrics:
+                if key not in ['mse', 'reward']:
+                    msg += f"{key.capitalize()}:{val_metrics[key].mean()} | "
+                else:
+                    msg += f"{key.capitalize()}:{metrics[key]} | "
+            print(msg)
 
 def compute_scores(clean_dir, enhance_dir):
 

@@ -228,16 +228,21 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False, ret
         window=win,
         onesided=True,
     )
-    clean_spec = torch.stft(
-        clean,
-        n_fft,
-        hop,
-        window=win,
-        onesided=True,
-    )
+    if clean is not None:
+        clean_spec = torch.stft(
+            clean,
+            n_fft,
+            hop,
+            window=win,
+            onesided=True,
+        )
+    else:
+        clean_spec = None
 
     noisy_spec = power_compress(noisy_spec)#.permute(0, 1, 3, 2)
-    clean_spec = power_compress(clean_spec)
+
+    if clean_spec is not None:
+        clean_spec = power_compress(clean_spec)
     
     if clean_istft:
         #Take istft for clean_spec to account for changes in stft to istft
@@ -286,7 +291,8 @@ def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False, return_c=F
     clean, noisy, labels = batch
 
     if gpu_id is not None:
-        clean = clean.to(gpu_id)
+        if clean is not None:
+            clean = clean.to(gpu_id)
         noisy = noisy.to(gpu_id)
 
     if ref is not None:

@@ -189,6 +189,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
             file_id = file[:-len('.wav')]
             noisy_file = os.path.join(noisy_dir, file)
             noisy_ds, _ = torchaudio.load(noisy_file)
+            print("wav:",noisy_ds.shape)
             if clean_dir is not None:
                 clean_file = os.path.join(clean_dir, file)
                 clean_ds, _ = torchaudio.load(clean_file)

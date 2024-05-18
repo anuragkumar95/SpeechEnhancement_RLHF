@@ -212,6 +212,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False, ret
     """
     # Normalization
     c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
+    print(noisy.shape)
     noisy = torch.transpose(noisy, 0, 1)
     noisy = torch.transpose(noisy * c, 0, 1)
 

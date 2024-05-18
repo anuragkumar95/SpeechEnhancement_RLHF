@@ -226,9 +226,11 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
                 if clean_ds is not None:
                     cleans.append(torch.cat([clean_ds[:, end:], clean_ds[:, :end_idx - clean_ds.shape[-1]]], dim=-1))
                     clean_ds = torch.stack(cleans, dim=0).squeeze(1)
+                    clean_ds = clean_ds[:min(clean_ds.shape[0], 4), :]
 
                 noises.append(torch.cat([noisy_ds[:, end:], noisy_ds[:, :end_idx - noisy_ds.shape[-1]]], dim=-1))
                 noisy_ds = torch.stack(noises, dim=0).squeeze(1)
+                noisy_ds = noisy_ds[:min(clean_ds.shape[0], 4), :]
             
             batch = (clean_ds, noisy_ds, length)
             batch = preprocess_batch(batch, gpu_id=gpu_id, return_c=True)

@@ -337,9 +337,9 @@ if __name__ == "__main__":
                         help="the path where the model is saved")
     parser.add_argument("-rpt", "--reward_path", type=str, required=False,
                         help="the path where the model is saved")
-    parser.add_argument("--noisy_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
+    parser.add_argument("--noisy_dir", type=str, default=None,
                         help="noisy tracks dir to be enhanced")
-    parser.add_argument("--clean_dir", type=str, default='dir to your VCTK-DEMAND test dataset',
+    parser.add_argument("--clean_dir", type=str, default=None,
                         help="clean tracks dir for metrics")
     parser.add_argument("--save_tracks", type=str, default=True, help="save predicted tracks or not")
     parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output normal dist.")

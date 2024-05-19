@@ -14,6 +14,7 @@ import pickle
 import traceback
 from speech_enh_env import SpeechEnhancementAgent
 from torch.distributions import Normal
+from pathlib import Path
 
 def run_enhancement_step(env, 
                          batch, 
@@ -290,7 +291,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
                     msg += f"{key.capitalize()}:{metrics[key]} | "
             print(msg)
 
-def compute_scores(clean_dir, enhance_dir):
+def compute_scores(clean_dir, enhance_dir, save_dir=None):
 
     metrics = {
         'pesq':0,
@@ -308,6 +309,7 @@ def compute_scores(clean_dir, enhance_dir):
     for file in tqdm(os.listdir(enhance_dir)):
         enh_file = os.path.join(enhance_dir, file)
         clean_file = os.path.join(clean_dir, file)
+        file_id = Path(file).stem
 
         clean_aud, sr = torchaudio.load(clean_file)
         enh_audio, sr = torchaudio.load(enh_file) 
@@ -324,6 +326,21 @@ def compute_scores(clean_dir, enhance_dir):
         metrics['ssnr'] += values[4]
         metrics['stoi'] += values[5]
         metrics['si-sdr'] += values[6]
+
+        results = {key:0 for key in metrics}
+        results['pesq'] = values[0]
+        results['csig'] = values[1]
+        results['cbak'] = values[2]
+        results['covl'] = values[3]
+        results['ssnr'] = values[4]
+        results['stoi'] = values[5]
+        results['si-sdr'] = values[6]
+
+        if save_dir:
+            res_save_dir = os.path.join(save_dir, 'results')
+            os.makedirs(res_save_dir, exist_ok=True)
+            with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
+                pickle.dump(results, f)
 
     for key in metrics:
         metrics[key] = metrics[key] /  num_files

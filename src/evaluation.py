@@ -125,6 +125,8 @@ def run_enhancement_step(env,
         est_audio = est_audio.reshape(-1)
         est_audio = est_audio.detach().cpu().numpy()
 
+        est_audio = est_audio[:clean_aud.shape[-1]] 
+
         sf.write(saved_path, est_audio, 16000)
     
     return metrics

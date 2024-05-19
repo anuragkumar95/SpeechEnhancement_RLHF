@@ -262,6 +262,9 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False, ret
         clean = torch.transpose(clean_audio, 0, 1)
         clean = torch.transpose(clean * c, 0, 1)
     
+    if clean is None:
+        clean = noisy
+
     if ref is not None:
         ref = torch.transpose(ref, 0, 1)
         ref = torch.transpose(ref * c, 0, 1)
@@ -274,6 +277,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False, ret
             onesided=True,
         )
         ref_spec = power_compress(ref_spec)
+        
         return clean, clean_spec, noisy_spec, ref_spec
     
     if return_c:

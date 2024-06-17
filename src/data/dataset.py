@@ -80,9 +80,11 @@ def mix_audios(clean, noise, snr):
 
 def mixture_collate_fn(batch):
 
-    clean = torch.tensor([i[0] for i in batch])
-    noise = torch.tensor([i[1] for i in batch])
-    snr = torch.tensor([i[2] for i in batch])
+    clean = torch.stack([i[0] for i in batch], dim=0)
+    noise = torch.stack([i[1] for i in batch], dim=0)
+    snr = torch.stack([i[2] for i in batch], dim=0)
+
+    print(clean.shape, noise.shape, snr.shape)
 
     mixed_signal = mix_audios(clean, noise, snr)
 

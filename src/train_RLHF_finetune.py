@@ -545,11 +545,11 @@ def main(rank: int, world_size: int, args):
                                     gpu = False)
         
 
-        train = MixturesDataset(clean_file_list=f"{args.root_dns}/clean_train.list",
-                                   noisy_file_list=f"{args.root_dns}/noise.list")
+        train = MixturesDataset(clean_file_list=os.path.join(args.root_dns,"clean_train.list"),
+                                   noise_file_list=os.path.join(args.root_dns, "noise.list"))
         
-        test = MixturesDataset(clean_file_list=f"{args.root_dns}/clean_test.list",
-                                   noisy_file_list=f"{args.root_dns}/noise.list")
+        test = MixturesDataset(clean_file_list=os.path.join(args.root_dns,"clean_dev.list"),
+                                   noise_file_list=os.path.join(args.root_dns, "noise.list"))
         
         train_rl = DataLoader(
             dataset=train,

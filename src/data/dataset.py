@@ -76,7 +76,7 @@ def mix_audios(clean, noise, snr):
     p_noise = (noise ** 2).mean().reshape(-1)
 
     p_ratio = p_clean / p_noise
-    alpha = torch.sqrt(p_ratio / (10 ** (snr / 10)))
+    alpha = torch.sqrt(p_ratio / (10 ** (snr / 10))).reshape(-1, 1)
     signal = clean + (alpha * noise)
     
     return signal

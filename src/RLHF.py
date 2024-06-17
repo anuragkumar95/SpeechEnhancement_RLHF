@@ -238,7 +238,7 @@ class PPO:
                                           args=params['env_params'].get("args"),
                                           reward_model=reward_model)
         self.dataloader = loader
-        self._iter_ = iter(loader)
+        self._iter_ = {'pre':iter(loader['pre']), 'rl':iter(loader['rl'])}
         self.bs = batchsize
         self.discount = discount
         self.beta = beta
@@ -327,39 +327,40 @@ class PPO:
                 for _ in range(self.accum_grad):
 
                     try:
-                        batch = next(self._iter_)
+                        batch_rl = next(self._iter_['rl'])
                     except StopIteration as e:
-                        self._iter_ = iter(self.dataloader)
-                        batch = next(self._iter_)
+                        self._iter_['rl'] = iter(self.dataloader['rl'])
+                        batch_rl = next(self._iter_['rl'])
+
 
                     #Preprocessed batch
-                    batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True) 
+                    batch_rl = preprocess_batch(batch_rl, gpu_id=self.gpu_id, return_c=True) 
+                
+                    cl_aud_rl, clean_rl, noisy_rl, _, c_rl = batch_rl
+                    noisy_rl = noisy_rl.permute(0, 1, 3, 2)
+                    clean_rl = clean_rl.permute(0, 1, 3, 2)
+                    bs, ch, t, f = clean_rl.shape
                     
-                    cl_aud, clean, noisy, _, c = batch
-                    noisy = noisy.permute(0, 1, 3, 2)
-                    clean = clean.permute(0, 1, 3, 2)
-                    bs, ch, t, f = clean.shape
-                    
-                    action, log_probs, _, _ = actor.get_action(noisy)
+                    action, log_probs, _, _ = actor.get_action(noisy_rl)
 
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     
                     if self.init_model is not None:
-                        init_action, _, _, _ = self.init_model.get_action(noisy)
-                        ref_log_probs, _ = self.init_model.get_action_prob(noisy, action)
-                        exp_state = self.env.get_next_state(state=noisy, action=init_action)
+                        init_action, _, _, _ = self.init_model.get_action(noisy_rl)
+                        ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
+                        exp_state = self.env.get_next_state(state=noisy_rl, action=init_action)
             
-                    state = self.env.get_next_state(state=noisy, action=action)
-                    state['cl_audio'] = cl_aud
-                    state['clean'] = clean
+                    state = self.env.get_next_state(state=noisy_rl, action=action)
+                    state['cl_audio'] = cl_aud_rl
+                    state['clean'] = clean_rl
                     if self.init_model is not None:
                         state['exp_est_audio'] = exp_state['est_audio']
 
                     #Calculate sft output
-                    sft_action, _, _, _ = self.init_model.get_action(noisy)
-                    sft_state = self.env.get_next_state(state=noisy, action=sft_action)
-                    sft_state['cl_audio'] = cl_aud
-                    sft_state['clean'] = clean
+                    sft_action, _, _, _ = self.init_model.get_action(noisy_rl)
+                    sft_state = self.env.get_next_state(state=noisy_rl, action=sft_action)
+                    sft_state['cl_audio'] = cl_aud_rl
+                    sft_state['clean'] = clean_rl
 
                     #Calculate kl_penalty
                     ref_log_prob = None
@@ -379,8 +380,8 @@ class PPO:
                     #Store reward
                     
                     if 'rm_nisqa' in self.reward_type:
-                        rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c)
-                        sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c)
+                        rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
+                        sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
                         
                     elif 'rm' in self.loss_type:
                         rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
@@ -389,7 +390,8 @@ class PPO:
                                                        scale=self.scale_rewards)
                     r_ts.append(rm_score)
 
-                    #Supervised loss
+                    """
+                    #Supervised loss on pretrain dataset
                     enhanced = state['noisy']
                     enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
                     clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
@@ -399,10 +401,10 @@ class PPO:
                     supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
                     pretrain_loss += supervised_loss.mean()
-
+                    """
                     mb_pesq = []
                     for i in range(self.bs):
-                        values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                        values = compute_metrics(cl_aud_rl[i, ...].detach().cpu().numpy().reshape(-1), 
                                                 state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
                                                 16000, 
                                                 0)
@@ -411,7 +413,7 @@ class PPO:
 
                     mb_pesq_sft = []
                     for i in range(self.bs):
-                        values = compute_metrics(cl_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                        values = compute_metrics(cl_aud_rl[i, ...].detach().cpu().numpy().reshape(-1), 
                                                 sft_state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
                                                 16000, 
                                                 0)
@@ -446,8 +448,8 @@ class PPO:
                     
                     
                     #Store trajectory
-                    states.append(noisy)
-                    cleans.append(clean)
+                    states.append(noisy_rl)
+                    cleans.append(clean_rl)
                     rewards.append(r_t)
 
                     actions.append(action)
@@ -541,6 +543,20 @@ class PPO:
             indices = [t for t in range(states.shape[0])]
             np.random.shuffle(indices)
             for t in range(0, len(indices), self.bs):
+
+                try:
+                    batch_pre = next(self._iter_['pre'])
+                except StopIteration as e:
+                    self._iter_['rl'] = iter(self.dataloader['pre'])
+                    batch_pre = next(self._iter_['pre'])
+
+                #Preprocessed batch
+                batch_pre = preprocess_batch(batch_pre, gpu_id=self.gpu_id, return_c=True) 
+            
+                cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
+                noisy_pre = noisy_pre.permute(0, 1, 3, 2)
+                clean_pre = clean_pre.permute(0, 1, 3, 2)
+                #bs, ch, t, f = clean_pre.shape
             
                 #Get mini batch indices
                 mb_indx = indices[t:t + self.bs]
@@ -572,12 +588,8 @@ class PPO:
                 kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
                 kl_penalty = kl_logratio
 
-                #Normalize advantages across minibatch
-                #mb_adv = b_advantages[mb_indx, ...].reshape(-1, 1)
                 mb_adv = reward[mb_indx, ...].reshape(-1, 1)
-                #if self.bs > 1:
-                #    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
-
+                
                 #Policy gradient loss
                 logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
                 ratio = torch.exp(logratio).reshape(-1, 1)
@@ -594,14 +606,17 @@ class PPO:
                 entropy_loss = entropy.mean()
 
                 #Supervised loss
-                mb_act, _, _, _ = actor.get_action(mb_states)
-                mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
                 
+                #mb_act, _, _, _ = actor.get_action(mb_states)
+                #mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
+                
+                mb_act, _, _, _ = actor.get_action(noisy_pre)
+                mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act)
                 mb_enhanced = mb_next_state['noisy']
+
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-               
-                mb_clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
-                supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+                mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
+                supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
                 
 
                 clip_loss = 0

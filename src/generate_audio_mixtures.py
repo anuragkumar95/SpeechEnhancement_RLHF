@@ -125,39 +125,6 @@ class MixturesDataset:
         signal = clean + (alpha * noise)
         
         return signal.reshape(-1).cpu().numpy()
-    
-    """
-    def generate_k_samples(self, cidx, n_noise_samples):
-    
-        clean_file = os.path.join(self.clean_dir, self.clean_files[cidx])
-        clean, c_sr = torchaudio.load(clean_file)
-
-        if clean.shape[-1] > self.cutlen:
-            clean = clean[:, :self.cutlen]
-
-        assert c_sr == 16000
-
-        for i in range(self.K):
-            #sample noise
-            idx = np.random.choice(n_noise_samples)
-            noise_file = self.noise_files[idx]
-            noise_file = os.path.join(self.noise_dir, self.noise_files[idx])
-            noise, n_sr = torchaudio.load(noise_file)
-
-            if n_sr != c_sr:
-                noise = F.resample(noise, orig_freq=n_sr, new_freq=c_sr)
-
-            #mix them
-            #s_idx = np.random.choice(len(self.snr_means), 1)[0]
-            #snr_dist = Normal(self.snr_means[s_idx], 3.0)
-            #snr = snr_dist.sample()
-            #signal = self.mix_audios(clean, noise, snr)
-            
-            #save
-            snr = float("{:.2f}".format(snr))
-            sf.write(os.path.join(self.save_dir, f"{self.clean_files[cidx][:-len('.wav')]}-{i}_{self.noise_files[idx][:-len('.wav')]}_snr_{snr}.wav"), signal, 16000)
-
-    """
 
     def generate_k_samples(self, clean_file, noisy_file, save_metrics=True, noise_std=0.01):
 
@@ -248,18 +215,6 @@ def calc_mixture_pesq(enhance_dir, clean_dir, save_dir):
 def generate_ranking(mos_file, n_size, save_dir, set='train'):
     mixture_ids = {}
     
-    '''
-    for file in os.listdir(mixture_dir):
-        #file_id = file[:-len(".wav")]
-        #if "enh" not in file_id:
-        #    _id_ = file_id.split('-')[0]
-        #else:
-        #    _id_ = file_id[len("enh_"):]
-        _id_ = "_".join(file.split("_")[:2])
-        if _id_ not in mixture_ids:
-            mixture_ids[_id_] = []
-        mixture_ids[_id_].append(file)
-    '''
     mos = {}
     with open(mos_file, 'r') as f:
         lines = f.readlines()
@@ -287,41 +242,7 @@ def generate_ranking(mos_file, n_size, save_dir, set='train'):
             f.write(f"{p1} {p2} {m1} {m2} {diff}\n")
         print(f"SAVED PAIRS:{n_size}")
             
-            
-    '''
-    with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:    
-        for _id_ in mixture_ids:
-            ranks = [(i, mos[i]) for i in mixture_ids[_id_]]
-            sorted_ranks = sorted(ranks, key=lambda x:x[1], reverse=True)
-            sorted_file_ids = [i[0] for i in sorted_ranks]
-            line = " ".join(sorted_file_ids)
-            f.write(f"{line}\n")
-    '''
-"""
-
-def generate_ranking(mos_file, mixture_dir, save_dir, set='train'):
-    mos = []
-    with open(mos_file, 'r') as f:
-        lines = f.readlines()
-        for line in lines[1:]:
-            file_name, mos_score, _, _, _, _, _ = line.split(',')
-            #mos[file_name] = float(mos_score)
-            mos.append((file_name, float(mos_score)))
-            
-
-    mos = sorted(mos, key=lambda x:x[1], reverse=True)
-
-    if set == 'train':
-        n = 45000
-    if set == 'test':
-        n = 1000
-    with open(os.path.join(save_dir, f'{set}.ranks'), 'w') as f:
-        for i in range(n):
-            ranks = itertools.combinations(mos, 5)
-            sorted_file_ids = [i[0] for i in ranks]
-            line = " ".join(sorted_file_ids)
-            f.write(f"{line}\n")
-"""   
+    
 
 if __name__ == "__main__":
 

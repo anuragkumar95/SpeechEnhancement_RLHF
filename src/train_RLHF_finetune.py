@@ -10,10 +10,11 @@ from RLHF import REINFORCE, PPO
 #import NISQA.nisqa.NISQA_lib as NL
 #from NISQA.nisqa.NISQA_model import nisqaModel
 from compute_metrics import compute_metrics
+from torch.utils.data import DataLoader
 
 
 import os
-from data.dataset import load_data
+from data.dataset import load_data, MixturesDataset, mixture_collate_fn
 import torch.nn.functional as F
 import torch
 from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
@@ -34,7 +35,9 @@ from speech_enh_env import SpeechEnhancementAgent
 
 def args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--root", type=str, required=True,
+    parser.add_argument("-rv", "--root_vctk", type=str, required=True,
+                        help="Root directory to Voicebank.")
+    parser.add_argument("-rd", "--root_dns", type=str, required=True,
                         help="Root directory to Voicebank.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("-o", "--output", type=str, required=True,
@@ -534,12 +537,43 @@ def main(rank: int, world_size: int, args):
             gpu = True
         else:
             gpu = False
-        train_ds, test_ds = load_data(args.root, 
+        
+        train_pre, test_pre = load_data(args.root_vctk, 
                                     args.batchsize,
                                     1, 
                                     args.cut_len,
                                     gpu = False)
-    
+        
+
+        train = MixturesDataset(clean_file_list=f"{args.root_dns}/clean_train.list",
+                                   noisy_file_list=f"{args.root_dns}/noise.list")
+        
+        test = MixturesDataset(clean_file_list=f"{args.root_dns}/clean_test.list",
+                                   noisy_file_list=f"{args.root_dns}/noise.list")
+        
+        train_rl = DataLoader(
+            dataset=train,
+            batch_size=args.batchsize,
+            pin_memory=True,
+            shuffle=True,
+            drop_last=False,
+            num_workers=1,
+            collate_fn=mixture_collate_fn
+        )
+
+        test_rl = DataLoader(
+            dataset=test,
+            batch_size=args.batchsize,
+            pin_memory=True,
+            shuffle=True,
+            drop_last=False,
+            num_workers=1,
+            collate_fn=mixture_collate_fn
+        )
+
+    train_ds = {'pre':train_pre, 'rl':train_rl}
+    test_ds = {'pre':test_pre, 'rl':test_rl}
+
     pretrain=False
     if args.ckpt is not None:
         pretrain=True

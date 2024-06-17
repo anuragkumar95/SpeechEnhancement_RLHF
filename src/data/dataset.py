@@ -18,9 +18,9 @@ class MixturesDataset(torch.utils.data.Dataset):
     This class generates a mixture dataset for SE model training.
     """
     def __init__(self, clean_file_list, noise_file_list, cutlen=32000):
-        self.clean_files = open(clean_file_list, 'r').readlines()
+        self.clean_files = [path.strip() for path in open(clean_file_list, 'r').readlines()]
         print(f"Found {len(self.clean_files)} clean file...")
-        self.noise_files = open(noise_file_list, 'r').readlines()
+        self.noise_files = [path.strip() for path in open(noise_file_list, 'r').readlines()]
         print(f"Found {len(self.noise_files)} clean file...")
         self.snr_means = [-15, -10, -5, 0, 5, 10, 15]
         self.snr_std = 3.0

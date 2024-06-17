@@ -48,7 +48,7 @@ class MixturesDataset(torch.utils.data.Dataset):
 
         if clean.shape[-1] < self.cutlen:
             print(f"A clean:{clean.shape}")
-            while(clean.shape[-1] >= self.cutlen):
+            while(clean.shape[-1] <= self.cutlen):
                 clean = torch.cat([clean, clean], dim=-1)
             print(f"Aout clean:{clean.shape}")
             clean = clean[:, :self.cutlen]

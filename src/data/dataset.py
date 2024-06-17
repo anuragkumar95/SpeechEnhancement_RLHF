@@ -31,7 +31,7 @@ class MixturesDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         clean = self.clean_files[idx]
-        noise = np.random.choice(self.noisy_files)
+        noise = np.random.choice(self.noise_files)
 
         clean, c_sr = torchaudio.load(clean)
         noise, n_sr = torchaudio.load(noise)

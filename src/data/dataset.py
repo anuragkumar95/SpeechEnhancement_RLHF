@@ -74,7 +74,6 @@ def mix_audios(clean, noise, snr):
     #calculate the amount of noise to add to get a specific snr
     p_clean = (clean ** 2).mean().reshape(-1)
     p_noise = (noise ** 2).mean().reshape(-1)
-    snr = snr.reshape(-1)
 
     p_ratio = p_clean / p_noise
     alpha = torch.sqrt(p_ratio / (10 ** (snr / 10)))

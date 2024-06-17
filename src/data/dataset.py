@@ -41,12 +41,16 @@ class MixturesDataset(torch.utils.data.Dataset):
         if n_sr != 16000:   
             noise = F.resample(noise, orig_freq=n_sr, new_freq=16000)
 
+        print(f"clean:{clean.shape}, noise:{noise.shape}")
+
         if clean.shape[-1] > self.cutlen:
             clean = clean[:, :self.cutlen]
 
         if clean.shape[-1] < self.cutlen:
+            print(f"A clean:{clean.shape}")
             while(clean.shape[-1] >= self.cutlen):
                 clean = torch.cat([clean, clean], dim=-1)
+            print(f"Aout clean:{clean.shape}")
             clean = clean[:, :self.cutlen]
 
         if noise.shape[-1] > self.cutlen:

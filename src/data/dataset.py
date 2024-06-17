@@ -87,11 +87,13 @@ def mixture_collate_fn(batch):
     noise = torch.stack([i[1] for i in batch], dim=0).squeeze(1)
     snr = torch.stack([i[2] for i in batch], dim=0).reshape(-1, 1)
 
+    lens = torch.ones(snr.shape[0], 1)*32000
+
     print(clean.shape, noise.shape, snr.shape)
 
     mixed_signal = mix_audios(clean, noise, snr)
 
-    return mixed_signal, clean
+    return mixed_signal, clean, lens
 
 
 class DemandDataset(torch.utils.data.Dataset):

@@ -86,7 +86,7 @@ def mixture_collate_fn(batch):
 
     clean = torch.stack([i[0] for i in batch], dim=0).squeeze(1)
     noise = torch.stack([i[1] for i in batch], dim=0).squeeze(1)
-    snr = torch.stack([i[2] for i in batch], dim=0)
+    snr = torch.stack([i[2] for i in batch], dim=0).reshape(-1, 1)
 
     print(clean.shape, noise.shape, snr.shape)
 

@@ -414,7 +414,7 @@ class PPO:
                     #pesq += mb_pesq.sum() - mb_pesq_sft.sum()
                     
                     kl_penalty = kl_penalty.reshape(-1, 1)
-                    supervised_loss = supervised_loss.reshape(-1, 1)
+                    #supervised_loss = supervised_loss.reshape(-1, 1)
                     mb_pesq = mb_pesq.reshape(-1, 1)
                     mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
 
@@ -423,8 +423,8 @@ class PPO:
                     if 'rm' in self.reward_type:
                         r_t = r_t + (rm_score - sft_rm_score)
                 
-                    if 'mse' in self.reward_type:
-                        r_t = r_t - self.lmbda * supervised_loss
+                    #if 'mse' in self.reward_type:
+                    #    r_t = r_t - self.lmbda * supervised_loss
                     
                     if 'pesq' in self.reward_type:
                         r_t = r_t + (mb_pesq - mb_pesq_sft)
@@ -432,8 +432,8 @@ class PPO:
                     if 'kl' in self.reward_type:
                         r_t = r_t - self.beta * kl_penalty
 
-                    print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
-                    
+                    #print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
+                    print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} PESQ:{mb_pesq.mean()}")
                     
                     #Store trajectory
                     states.append(noisy_rl)

@@ -303,13 +303,13 @@ class Trainer:
         mb_pesq = mb_pesq.reshape(-1, 1)
 
         reward = 0
-        if 'rm' in self.args.reward_type:
+        if 'rm' in self.args.reward:
             reward += r_state
 
-        if 'pesq' in self.args.reward_type:
+        if 'pesq' in self.args.reward:
             reward += self.args.lmbda * mb_pesq
 
-        if 'kl' in self.args.reward_type:
+        if 'kl' in self.args.reward:
             reward -= self.args.beta * kl_penalty
                   
         metrics['mse'] = supervised_loss.mean()
@@ -321,7 +321,6 @@ class Trainer:
 
         return metrics
     
-
 
     def run_validation(self, episode):
         #Run validation
@@ -381,7 +380,6 @@ class Trainer:
         reward_model_score = val_metrics['reward_model_score']/num_batches
         reward = val_metrics['reward']/(num_batches * self.args.batchsize)
         
- 
         wandb.log({ 
             "episode": episode, 
             "val_scaled_pesq":pesq,
@@ -465,9 +463,7 @@ class Trainer:
                     #elif rm_score > best_rm_score:
                     #    best_rm_score = rm_score
                     #    self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
-
-                    
-                        
+         
             except Exception as e:
                 print(traceback.format_exc())
                 continue

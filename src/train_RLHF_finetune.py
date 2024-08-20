@@ -197,7 +197,7 @@ class Trainer:
         if args.method == 'PPO':
             #self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
             #self.critic = Critic(in_channels=2)
-            reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
+            #reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             #self.critic.load_state_dict(reward_checkpoint)
             #self.critic = self.critic.to(gpu_id)
 

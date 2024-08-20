@@ -247,8 +247,8 @@ class PPO:
         self.gpu_id = gpu_id
         self.accum_grad = accum_grad
         self.rlhf = True
-        if reward_model is None:
-            self.rlhf = False
+        #if reward_model is None:
+        #    self.rlhf = False
         self.dist = params['env_params'].get("args").out_dist
         self.train_phase = params['train_phase']
         self.t = 0

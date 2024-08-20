@@ -296,15 +296,15 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
 def compute_scores(clean_dir, enhance_dir, save_dir=None):
 
     metrics = {
-        'pesq':0,
-        'csig':0,
-        'cbak':0,
-        'covl':0,
-        'ssnr':0,
-        'stoi':0,
-        'si-sdr':0,
-        'mse':0,
-        'reward':0}
+        'pesq':[],
+        'csig':[],
+        'cbak':[],
+        'covl':[],
+        'ssnr':[],
+        'stoi':[],
+        'si-sdr':[],
+        'mse':[],
+        'reward':[]}
     
     num_files = len(os.listdir(enhance_dir))
 
@@ -321,7 +321,7 @@ def compute_scores(clean_dir, enhance_dir, save_dir=None):
                                  16000, 
                                  0)
     
-        metrics['pesq'] += values[0]
+        metrics['pesq'].append(values[0])
         metrics['csig'] += values[1]
         metrics['cbak'] += values[2]
         metrics['covl'] += values[3]
@@ -345,7 +345,7 @@ def compute_scores(clean_dir, enhance_dir, save_dir=None):
                 pickle.dump(results, f)
 
     for key in metrics:
-        metrics[key] = metrics[key] /  num_files
+        metrics[key] = metrics[key] / num_files
 
     msg = ""
     for key in metrics:

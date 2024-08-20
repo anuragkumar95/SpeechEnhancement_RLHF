@@ -8,8 +8,6 @@ from torch.distributions import Normal, Categorical
 from torch.nn.utils import rnn
 
 
-
-
 class DilatedDenseNet(nn.Module):
     def __init__(self, depth=4, in_channels=64):
         super(DilatedDenseNet, self).__init__()
@@ -128,28 +126,28 @@ class SPConvTranspose2d(nn.Module):
 
 
 class MaskDecoder(nn.Module):
-    def __init__(self, num_features, num_channel=64, out_channel=1, distribution=None, gpu_id=None, eval=False):
+    def __init__(self, num_features, num_channel=64, out_channel=1, gpu_id=None, eval=False):
         super(MaskDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.conv_1 = nn.Conv2d(num_channel, out_channel, (1, 2))
         self.norm = nn.InstanceNorm2d(out_channel, affine=True)
         self.prelu = nn.PReLU(out_channel)
-        if distribution == "Normal":
-            self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
-            self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
-        else:
-            self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
+        #if distribution == "Normal":
+        #    self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
+        #    self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
+        #else:
+        self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
         self.gpu_id = gpu_id
-        self.dist = distribution
+        #self.dist = distribution
         self.evaluation = eval
 
     def sample(self, mu, logvar, x=None):
-        if self.dist == 'Normal':
-            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
-        elif self.dist is None:
-            sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
+        #if self.dist == 'Normal':
+        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
+        #elif self.dist is None:
+        sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -163,42 +161,42 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
-        if self.dist == 'Normal':
-            x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
-            x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-            x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
-            x_out = self.prelu_out(x)
+        #if self.dist == 'Normal':
+            #x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
+            #x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
+            #x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
+            #x_out = self.prelu_out(x)
             
-        elif self.dist is None:
-            x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-            x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
-            if self.evaluation:
-                x_out = self.prelu_out(params[0])
-            else:
-                x_out = self.prelu_out(x)
+        #elif self.dist is None:
+        x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
+        x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+        if self.evaluation:
+            x_out = self.prelu_out(params[0])
+        else:
+            x_out = self.prelu_out(x)
         return (x, x_out), x_logprob, x_entropy, params
 
 class ComplexDecoder(nn.Module):
-    def __init__(self, num_channel=64, distribution=None, gpu_id=None, eval=False):
+    def __init__(self, num_channel=64, gpu_id=None, eval=False):
         super(ComplexDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.prelu = nn.PReLU(num_channel)
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
-        if distribution=='Normal':
-            self.conv_mu = nn.Conv2d(num_channel, 2, (1, 2))
-            self.conv_var = nn.Conv2d(num_channel, 2, (1, 2))
-        else:
-            self.conv = nn.Conv2d(num_channel, 2, (1, 2))
-        self.out_dist = distribution
+        #if distribution=='Normal':
+        #    self.conv_mu = nn.Conv2d(num_channel, 2, (1, 2))
+        #    self.conv_var = nn.Conv2d(num_channel, 2, (1, 2))
+        #else:
+        self.conv = nn.Conv2d(num_channel, 2, (1, 2))
+        #self.out_dist = distribution
         self.gpu_id = gpu_id
         self.evaluation = eval
        
     def sample(self, mu, logvar, x=None):
-        if self.out_dist == 'Normal':
-            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
-        elif self.out_dist is None:
-            sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
+        #if self.out_dist == 'Normal':
+        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
+        #elif self.out_dist is None:
+        sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -211,17 +209,17 @@ class ComplexDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
 
-        if self.out_dist == "Normal":
-            x_mu = self.conv_mu(x)
-            x_var = self.conv_var(x)
-            x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
-            #return x, x_logprob, x_entropy, params
+        #if self.out_dist == "Normal":
+        #    x_mu = self.conv_mu(x)
+        #    x_var = self.conv_var(x)
+        #    x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
+        #    #return x, x_logprob, x_entropy, params
         
-        if self.out_dist is None:
-            x_mu = self.conv(x)
-            x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
-            if self.evaluation:
-                x = params[0]
+        #if self.out_dist is None:
+        x_mu = self.conv(x)
+        x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+        if self.evaluation:
+            x = params[0]
         return x, x_logprob, x_entropy, params
         
 class TSCNetSmall(nn.Module):
@@ -256,9 +254,6 @@ class TSCNetSmall(nn.Module):
         complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
         
-        #mask = self.mask_decoder(out_2)
-        #complex_out = self.complex_decoder(out_2)
-        #return (mask, complex_out), None, None
     
     def get_action_prob(self, x, action=None):
         """
@@ -306,8 +301,8 @@ class TSCNetSmall(nn.Module):
         out_2 = self.TSCB_1(out_1)
 
         #if self.dist == "Normal":
-        (_, mask), _, _, m_params = self.mask_decoder(out_2)
-        complex_out, _, _, c_params = self.complex_decoder(out_2)
+        (_, mask), _, _, _ = self.mask_decoder(out_2)
+        complex_out, _, _, _ = self.complex_decoder(out_2)
         
         #if self.dist == "None":
         #    mask = self.mask_decoder(out_2)
@@ -324,7 +319,7 @@ class TSCNetSmall(nn.Module):
         
 
 class TSCNet(nn.Module):
-    def __init__(self, num_channel=64, num_features=201, distribution=None, gpu_id=None, eval=False):
+    def __init__(self, num_channel=64, num_features=201, gpu_id=None, eval=False):
         super(TSCNet, self).__init__()
         self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
 
@@ -334,10 +329,10 @@ class TSCNet(nn.Module):
         self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
         
         self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id, eval=eval
+            num_features, num_channel=num_channel, out_channel=1, gpu_id=gpu_id, eval=eval
         )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, eval=eval)
-        self.dist = distribution
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel, gpu_id=gpu_id, eval=eval)
+        #self.dist = distribution
         self.gpu_id = gpu_id
 
     def set_evaluation(self, bool):
@@ -345,7 +340,7 @@ class TSCNet(nn.Module):
         self.complex_decoder.evaluation = bool
 
     def get_action(self, x):
-        b, ch, t, f = x.size()
+        #b, ch, t, f = x.size()
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
         x_in = torch.cat([mag, x], dim=1)
@@ -415,8 +410,8 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        (_, mask), _, _, m_params = self.mask_decoder(out_5)
-        complex_out, _, _, c_params = self.complex_decoder(out_5)
+        (_, mask), _, _, _ = self.mask_decoder(out_5)
+        complex_out, _, _, _ = self.complex_decoder(out_5)
         
         mask = mask.permute(0, 2, 1).unsqueeze(1)
         out_mag = mask * mag

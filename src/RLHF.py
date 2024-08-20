@@ -561,7 +561,7 @@ class PPO:
                 #Get mini batch indices
                 mb_indx = indices[t:t + self.bs]
                 mb_states = states[mb_indx, ...]
-                mb_clean = cleans[mb_indx, ...]
+                #mb_clean = cleans[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])

@@ -302,7 +302,15 @@ class Trainer:
         supervised_loss = supervised_loss.reshape(-1, 1)
         mb_pesq = mb_pesq.reshape(-1, 1)
 
-        reward = r_state - self.args.beta * kl_penalty - self.args.lmbda * (supervised_loss - mb_pesq)
+        reward = 0
+        if 'rm' in self.args.reward_type:
+            reward += r_state
+
+        if 'pesq' in self.args.reward_type:
+            reward += self.args.lmbda * mb_pesq
+
+        if 'kl' in self.args.reward_type:
+            reward -= self.args.beta * kl_penalty
                   
         metrics['mse'] = supervised_loss.mean()
         metrics['reward'] = reward.mean()
@@ -322,7 +330,7 @@ class Trainer:
             self.actor.set_evaluation(True)
             self.trainer.init_model = self.trainer.init_model.eval()
             self.trainer.init_model.set_evaluation(True)
-            self.critic.eval()
+            #self.critic.eval()
         pesq = 0
         loss = 0
         val_metrics = {

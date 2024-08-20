@@ -37,8 +37,8 @@ def args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-rv", "--root_vctk", type=str, required=True,
                         help="Root directory to Voicebank.")
-    parser.add_argument("-rd", "--root_dns", type=str, required=True,
-                        help="Root directory to Voicebank.")
+    parser.add_argument("-rd", "--root_dns", type=str, required=False,
+                        help="Root directory to DNS.")
     parser.add_argument("--exp", type=str, required=False, default='default', help="Experiment name.")
     parser.add_argument("-o", "--output", type=str, required=True,
                         help="Output directory for checkpoints. Will create one if doesn't exist")
@@ -348,9 +348,9 @@ class Trainer:
             'kl_penalty':0,
             'reward_model_score':0
         }
-        num_batches = len(self.test_ds)
+        num_batches = len(self.test_ds['pre'])
         with torch.no_grad():
-            for i, batch in enumerate(self.test_ds):
+            for i, batch in enumerate(self.test_ds['pre']):
                 
                 #Preprocess batch
                 batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True)
@@ -541,32 +541,34 @@ def main(rank: int, world_size: int, args):
                                     args.cut_len,
                                     gpu = False)
         
+        train_rl = train_pre
+        test_rl = test_pre
+        if args.root_dns is not None:
+            train = MixturesDataset(clean_file_list=os.path.join(args.root_dns,"clean_train.list"),
+                                    noise_file_list=os.path.join(args.root_dns, "noise.list"))
+            
+            test = MixturesDataset(clean_file_list=os.path.join(args.root_dns,"clean_dev.list"),
+                                    noise_file_list=os.path.join(args.root_dns, "noise.list"))
+            
+            train_rl = DataLoader(
+                dataset=train,
+                batch_size=args.batchsize,
+                pin_memory=True,
+                shuffle=True,
+                drop_last=False,
+                num_workers=1,
+                collate_fn=mixture_collate_fn
+            )
 
-        train = MixturesDataset(clean_file_list=os.path.join(args.root_dns,"clean_train.list"),
-                                   noise_file_list=os.path.join(args.root_dns, "noise.list"))
-        
-        test = MixturesDataset(clean_file_list=os.path.join(args.root_dns,"clean_dev.list"),
-                                   noise_file_list=os.path.join(args.root_dns, "noise.list"))
-        
-        train_rl = DataLoader(
-            dataset=train,
-            batch_size=args.batchsize,
-            pin_memory=True,
-            shuffle=True,
-            drop_last=False,
-            num_workers=1,
-            collate_fn=mixture_collate_fn
-        )
-
-        test_rl = DataLoader(
-            dataset=test,
-            batch_size=args.batchsize,
-            pin_memory=True,
-            shuffle=True,
-            drop_last=False,
-            num_workers=1,
-            collate_fn=mixture_collate_fn
-        )
+            test_rl = DataLoader(
+                dataset=test,
+                batch_size=args.batchsize,
+                pin_memory=True,
+                shuffle=True,
+                drop_last=False,
+                num_workers=1,
+                collate_fn=mixture_collate_fn
+            )
 
     train_ds = {'pre':train_pre, 'rl':train_rl}
     test_ds = {'pre':test_pre, 'rl':test_rl}

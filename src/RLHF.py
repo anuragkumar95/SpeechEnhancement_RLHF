@@ -390,18 +390,6 @@ class PPO:
                                                        scale=self.scale_rewards)
                     r_ts.append(rm_score)
 
-                    """
-                    #Supervised loss on pretrain dataset
-                    enhanced = state['noisy']
-                    enhanced_mag = torch.sqrt(enhanced[:, 0, :, :]**2 + enhanced[:, 1, :, :]**2)
-                    clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-                    
-                    mag_loss = (clean_mag - enhanced_mag)**2
-                    ri_loss = (clean - enhanced) ** 2
-                    supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
-
-                    pretrain_loss += supervised_loss.mean()
-                    """
                     mb_pesq = []
                     for i in range(self.bs):
                         values = compute_metrics(cl_aud_rl[i, ...].detach().cpu().numpy().reshape(-1), 

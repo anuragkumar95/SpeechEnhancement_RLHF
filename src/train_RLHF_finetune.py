@@ -450,9 +450,9 @@ class Trainer:
                             #"advantages":adv,
                             "clip_loss":loss[0],
                             #"value_loss":loss[1],
-                            "pretrain_loss":loss[3],
-                            "pg_loss":loss[2],
-                            "entropy_loss":loss[1],
+                            "pretrain_loss":loss[2],
+                            "pg_loss":loss[1],
+                            #"entropy_loss":loss[1],
                             "train_pesq":pesq, 
                         })
 

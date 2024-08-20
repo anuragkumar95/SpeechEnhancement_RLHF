@@ -325,6 +325,7 @@ class Trainer:
 
     def run_validation(self, episode):
         #Run validation
+
         self.actor.eval()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(True)
@@ -346,6 +347,9 @@ class Trainer:
             'kl_penalty':0,
             'reward_model_score':0
         }
+
+        print(f"Running evaluation at episode:{episode}")
+
         num_batches = len(self.test_ds['pre'])
         with torch.no_grad():
             for i, batch in enumerate(self.test_ds['pre']):
@@ -448,7 +452,7 @@ class Trainer:
 
                         print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
                 
-                if (i+1) % 10 == 0:
+                if (i+1) % 1 == 0:
                 #Run validation after each episode
                     loss, rm_score, val_pesq = self.run_validation((epoch-1) * episode_per_epoch + (i+1))
                     if val_pesq >= best_pesq or rm_score >= best_rm_score:

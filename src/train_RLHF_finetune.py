@@ -195,18 +195,19 @@ class Trainer:
             
         if args.method == 'PPO':
             #self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
-            self.critic = Critic(in_channels=2)
+            #self.critic = Critic(in_channels=2)
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
-            self.critic.load_state_dict(reward_checkpoint)
-            self.critic = self.critic.to(gpu_id)
+            #self.critic.load_state_dict(reward_checkpoint)
+            #self.critic = self.critic.to(gpu_id)
 
             #Initialize critic 
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
             )
-            self.c_optimizer = torch.optim.AdamW(
-                filter(lambda layer:layer.requires_grad, self.critic.parameters()), lr=1e-05
-            )
+            #self.c_optimizer = torch.optim.AdamW(
+            #    filter(lambda layer:layer.requires_grad, self.critic.parameters()), lr=1e-05
+            #)
+            self.c_optimizer = None
 
             self.trainer = PPO(loader=self.train_ds,
                                init_model=self.expert, 
@@ -399,15 +400,15 @@ class Trainer:
         self.actor.train()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(False)
-            self.critic.train()
+            #self.critic.train()
         
         return loss, reward_model_score, np.asarray(val_metrics["pesq"]).mean()
 
     def train_one_epoch(self, epoch):       
         #Run training
         self.actor.train()
-        if self.args.method == 'PPO':
-            self.critic.train()
+        #if self.args.method == 'PPO':
+            #self.critic.train()
 
         #loss, best_rm_score, best_pesq = self.run_validation(0)
         loss, best_rm_score, best_pesq = 9999, 0, 0
@@ -435,22 +436,22 @@ class Trainer:
                     print(f"Epoch:{epoch} | Episode:{i+1} | Return: {reward[1]} | RM_Score: {reward[0]} | KL: {kl} | PESQ: {pesq}")
 
                 if self.args.method == 'PPO':
-                    loss, batch_reward, adv, pesq = self.trainer.run_episode(self.actor, self.critic, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
+                    loss, batch_reward, pesq = self.trainer.run_episode(self.actor, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
                         
                     if loss is not None:
                         wandb.log({
                             "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
-                            "episode_avg_kl":batch_reward[2].item(),
+                            "episode_avg_kl":batch_reward[1].item(),
                             "cumulative_G_t": batch_reward[0].item(),
-                            "critic_values": batch_reward[1].item(), 
-                            "episodic_avg_r": batch_reward[4].item(),
-                            "episodic_reward_model_score": batch_reward[3].item(),
-                            "advantages":adv,
+                            #"critic_values": batch_reward[1].item(), 
+                            "episodic_avg_r": batch_reward[3].item(),
+                            "episodic_reward_model_score": batch_reward[2].item(),
+                            #"advantages":adv,
                             "clip_loss":loss[0],
-                            "value_loss":loss[1],
-                            "pretrain_loss":loss[4],
-                            "pg_loss":loss[3],
-                            "entropy_loss":loss[2],
+                            #"value_loss":loss[1],
+                            "pretrain_loss":loss[3],
+                            "pg_loss":loss[2],
+                            "entropy_loss":loss[1],
                             "train_pesq":pesq, 
                         })
 

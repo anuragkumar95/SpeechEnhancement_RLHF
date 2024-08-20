@@ -57,8 +57,8 @@ def args():
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
-    #parser.add_argument("--out_dist", action='store_true',
-    #                    help="If GAN learns a distribution.")
+    parser.add_argument("--small", action='store_true',
+                        help="Trains a smaller CMGAN model.")
     parser.add_argument("--mpnet", action='store_true',
                         help="Finetuning MP-SENET model. If not trains CMGAN by default.")
     parser.add_argument("--train_phase", action='store_true',

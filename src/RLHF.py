@@ -318,7 +318,7 @@ class PPO:
         actions = []
         cleans = []
         ep_kl_penalty = 0
-        pretrain_loss = 0
+        #pretrain_loss = 0
         pesq = 0
         C = []
         with torch.no_grad():
@@ -468,7 +468,7 @@ class PPO:
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
-            pretrain_loss = pretrain_loss / (self.episode_len * self.accum_grad)
+            #pretrain_loss = pretrain_loss / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)
 
         print(f"STATES        :{states.shape}")
@@ -501,7 +501,7 @@ class PPO:
 
         states = policy['states']
         #cleans = policy['cleans']
-        pretrain_loss = policy['pretrain_loss']
+        #pretrain_loss = policy['pretrain_loss']
         #b_target = policy['b_targets']
         actions = policy['actions']
         logprobs = policy['log_probs']
@@ -524,6 +524,7 @@ class PPO:
         step_clip_loss = 0
         #step_val_loss = 0
         #step_entropy_loss = 0
+        pretrain_loss = 0
         step_pg_loss = 0
         #VALUES = torch.zeros(target_values.shape)
 
@@ -606,6 +607,7 @@ class PPO:
                 mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
                 supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
                 
+                pretrain_loss += supervised_loss.detach()
 
                 clip_loss = 0
                 if 'pg' in self.loss_type:
@@ -648,10 +650,10 @@ class PPO:
 
         step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
         step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
+        pretrain_loss = pretrain_loss / (n_epochs * self.episode_len)
         #step_val_loss = step_val_loss / (n_epochs * self.episode_len)                
         #step_entropy_loss = step_entropy_loss / (n_epochs * self.episode_len)
         
-                    
         return (step_clip_loss, step_pg_loss, pretrain_loss), \
                (target_values.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), pesq  
 

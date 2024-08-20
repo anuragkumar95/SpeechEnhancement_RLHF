@@ -483,7 +483,7 @@ class PPO:
         policy_out = {
             'states':states,
             'cleans':cleans,
-            'pretrain_loss':pretrain_loss, 
+            #'pretrain_loss':pretrain_loss, 
             'b_targets':b_target,
             'actions':actions,
             'log_probs':logprobs,

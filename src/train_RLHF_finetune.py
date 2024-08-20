@@ -151,6 +151,7 @@ class Trainer:
         
         self.reward_model = None
         if args.reward_pt is not None:
+            print(f"Loading reward_model from {args.reward_pt}")
             self.reward_model = RewardModel(in_channels=2)
             reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
             self.reward_model.load_state_dict(reward_checkpoint)

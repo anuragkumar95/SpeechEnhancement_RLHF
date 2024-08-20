@@ -4,7 +4,7 @@
 """
 
 from model.actor import TSCNet, TSCNetSmall
-from model.mp_sennet import MPNet
+#from model.mp_sennet import MPNet
 from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
@@ -114,9 +114,10 @@ class Trainer:
         self.ACCUM_GRAD = args.accum_grad
         
         if args.mpnet:
-            self.actor = MPNet(num_channel=64, 
-                                num_features=self.n_fft // 2 + 1,
-                                gpu_id=gpu_id)
+            #self.actor = MPNet(num_channel=64, 
+            #                    num_features=self.n_fft // 2 + 1,
+            #                    gpu_id=gpu_id)
+            raise NotImplementedError
         else:
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 

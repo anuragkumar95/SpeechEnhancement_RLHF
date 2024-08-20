@@ -247,8 +247,6 @@ class PPO:
         self.gpu_id = gpu_id
         self.accum_grad = accum_grad
         self.rlhf = True
-        #if reward_model is None:
-        #    self.rlhf = False
         self.dist = params['env_params'].get("args").out_dist
         self.train_phase = params['train_phase']
         self.t = 0
@@ -309,7 +307,6 @@ class PPO:
         actor.set_evaluation(False)
         self.init_model = self.init_model.eval()
         self.init_model.set_evaluation(True)
-        #critic = critic.eval()
 
         rewards = []
         r_ts = []
@@ -318,7 +315,6 @@ class PPO:
         actions = []
         cleans = []
         ep_kl_penalty = 0
-        #pretrain_loss = 0
         pesq = 0
         C = []
         with torch.no_grad():
@@ -379,15 +375,15 @@ class PPO:
                     sft_rm_score = torch.tensor(0.0)
                     #Store reward
                     
-                    if 'rm_nisqa' in self.reward_type:
-                        rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
-                        sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
+                    #if 'rm_nisqa' in self.reward_type:
+                    rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
+                    sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
                         
-                    elif 'rm' in self.loss_type:
-                        rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                                                       scale=self.scale_rewards)
-                        sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
-                                                       scale=self.scale_rewards)
+                    #elif 'rm' in self.loss_type:
+                    #    rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
+                    #                                   scale=self.scale_rewards)
+                    #    sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
+                    #                                   scale=self.scale_rewards)
                     r_ts.append(rm_score)
 
                     mb_pesq = []
@@ -411,10 +407,8 @@ class PPO:
                     mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
                     pesq += mb_pesq.sum()
                     mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
-                    #pesq += mb_pesq.sum() - mb_pesq_sft.sum()
                     
                     kl_penalty = kl_penalty.reshape(-1, 1)
-                    #supervised_loss = supervised_loss.reshape(-1, 1)
                     mb_pesq = mb_pesq.reshape(-1, 1)
                     mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
 
@@ -449,8 +443,6 @@ class PPO:
             r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
-            #advantages = self.get_advantages(target_values, states, critic)
-            #b_advantages = advantages.reshape(-1)
             rewards = rewards.reshape(-1)
             print(f"REWARDS:{rewards}")
             
@@ -468,7 +460,6 @@ class PPO:
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
-            #pretrain_loss = pretrain_loss / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)
 
         print(f"STATES        :{states.shape}")
@@ -477,17 +468,14 @@ class PPO:
         print(f"TARGET_VALS   :{b_target.shape}")
         print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
-        #print(f"ADVANTAGES    :{b_advantages.shape}")
         print(f"POLICY RETURNS:{target_values.mean(0)}")
 
         policy_out = {
             'states':states,
             'cleans':cleans,
-            #'pretrain_loss':pretrain_loss, 
             'b_targets':b_target,
             'actions':actions,
             'log_probs':logprobs,
-            #'b_advantages':(b_advantages, advantages),
             'target_values':target_values,
             'r_ts':(r_ts, rewards),
             'ep_kl':ep_kl_penalty,
@@ -500,12 +488,8 @@ class PPO:
     def train_on_policy(self, policy, actor, optimizers, n_epochs):
 
         states = policy['states']
-        #cleans = policy['cleans']
-        #pretrain_loss = policy['pretrain_loss']
-        #b_target = policy['b_targets']
         actions = policy['actions']
         logprobs = policy['log_probs']
-        #b_advantages, advantages = policy['b_advantages']
         target_values = policy['target_values']
         ep_kl_penalty = policy['ep_kl']
         r_ts, reward = policy['r_ts']
@@ -516,7 +500,6 @@ class PPO:
         #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
         #acting differently in train and eval mode. PPO seems to be stable only when actor
         #is still in eval mode
-        #critic = critic.train()
         actor = actor.eval()
 
         a_optim, _ = optimizers
@@ -545,20 +528,16 @@ class PPO:
                 cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
                 noisy_pre = noisy_pre.permute(0, 1, 3, 2)
                 clean_pre = clean_pre.permute(0, 1, 3, 2)
-                #bs, ch, t, f = clean_pre.shape
             
                 #Get mini batch indices
                 mb_indx = indices[t:t + self.bs]
                 mb_states = states[mb_indx, ...]
-                #mb_clean = cleans[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
 
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
-        
-                #values = critic(mb_states).reshape(-1)
 
                 if self.train_phase:
                     #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
@@ -588,17 +567,6 @@ class PPO:
                 pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
                 pg_loss = torch.max(pg_loss1, pg_loss2)
 
-                #value_loss
-                #v_loss = 0.5 * ((b_target[mb_indx] - values) ** 2).mean()
-
-                #Entropy loss
-                #entropy_loss = entropy.mean()
-
-                #Supervised loss
-                
-                #mb_act, _, _, _ = actor.get_action(mb_states)
-                #mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
-                
                 mb_act, _, _, _ = actor.get_action(noisy_pre)
                 mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act)
                 mb_enhanced = mb_next_state['noisy']
@@ -629,276 +597,25 @@ class PPO:
                 })
 
                 clip_loss = clip_loss / self.accum_grad
-                #v_loss = v_loss / self.accum_grad
                 clip_loss.backward()
-                #v_loss.backward()
+            
 
                 #Update network
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-                    #torch.nn.utils.clip_grad_norm_(critic.parameters(), 1.0)
                     a_optim.step()
-                    #c_optim.step()
                     a_optim.zero_grad()
-                    #c_optim.zero_grad()
+                  
 
                 step_clip_loss += clip_loss.mean()
-                step_pg_loss += pg_loss.mean()
-                #step_val_loss += v_loss.item() 
-                #step_entropy_loss += entropy_loss.item()      
+                step_pg_loss += pg_loss.mean()     
                 self.t += 1
 
         step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
         step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
         pretrain_loss = pretrain_loss / (n_epochs * self.episode_len)
-        #step_val_loss = step_val_loss / (n_epochs * self.episode_len)                
-        #step_entropy_loss = step_entropy_loss / (n_epochs * self.episode_len)
         
         return (step_clip_loss, step_pg_loss, pretrain_loss), \
                (target_values.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), pesq  
 
-    '''
-    def run_n_step_episode(self, batch, actor, critic, optimizer, n_epochs=3):
-        """
-        Imagine the episode N --> e1 --> e2 --> ... --> en --> Terminate
-        Here the noisy signal is enhanced n times in an episode. 
-        """
-        #Preprocessed batch
-        cl_aud, clean, noisy, _ = batch
-        noisy = noisy.permute(0, 1, 3, 2)
-        clean = clean.permute(0, 1, 3, 2)
-        bs, ch, t, f = clean.shape
-        ep_kl_penalty = 0
-
-        #Set models to eval
-        actor = actor.eval()
-        critic = critic.eval()
-
-        a_optim, c_optim = optimizer
-        
-        #Calculate target values and advantages
-        curr = noisy
-        rewards = []
-        r_ts = []
-        states = []
-        logprobs = []
-        actions = []
-        
-        with torch.no_grad():
-            for _ in range(self.episode_len):
-                #Unroll policy for n steps and store rewards.
-                action, log_probs, _, _ = actor.get_action(curr)
-                
-                if self.init_model is not None:
-                    init_action, _, _, _ = self.init_model.get_action(curr)
-                    ref_log_probs, _ = self.init_model.get_action_prob(curr, action)
-                    exp_state = self.env.get_next_state(state=curr, action=init_action)
-        
-                state = self.env.get_next_state(state=curr, action=action)
-                state['cl_audio'] = cl_aud
-                if self.init_model is not None:
-                    state['exp_est_audio'] = exp_state['est_audio']
-
-                #Calculate kl_penalty
-                ref_log_prob = None
-                if self.init_model is not None:
-                    ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                print(f"log_prob:{log_prob.shape}")
-
-                if ref_log_prob is not None:
-                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                    ratio = torch.exp(kl_penalty)
-                
-                    # calculate approx_kl http://joschu.net/blog/kl-approx.html
-                    #old_approx_kl = (-kl_penalty).mean()
-                    kl_penalty = ((ratio - 1) - kl_penalty).mean().detach()
-                    ep_kl_penalty += kl_penalty
-                else:
-                    kl_penalty = None
-
-                #Store reward
-                if self.rlhf:
-                    r_t = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2))  
-                else:
-                    r_t = self.env.get_PESQ_reward(state)
-
-                print(f"R:{r_t.reshape(-1)} | KL: {kl_penalty}")
-                r_ts.append(r_t)
-
-                if self.beta > 0:
-                    r_t = torch.max(r_t - self.beta * kl_penalty, 0)
-                
-                #Store trajectory
-                states.append(curr)
-                rewards.append(r_t)
-
-                actions.append(action)
-                logprobs.append(log_prob)
-                #logprobs.append(ref_log_prob)
-                curr = state['noisy']
-
-            #Store the last enhanced state
-            print(f"curr:{curr.shape}")
-            states.append(curr)
-
-            #Convert collected rewards to target_values and advantages
-            rewards = torch.stack(rewards).reshape(bs, -1)
-            r_ts = torch.stack(r_ts).reshape(-1)
-            
-            target_values = self.get_expected_return(rewards)
-            b_target = target_values.reshape(-1)
-            advantages = self.get_advantages(target_values, states, critic)
-            b_advantages = advantages.reshape(-1)
-            
-            states = torch.stack(states)
-            states = states[:-1, ...].reshape(-1, ch, t, f)
-            clean = torch.stack([clean for _ in range(self.episode_len)]).reshape(-1, ch, t, f)
-            
-            actions = (([a[0][0] for a in actions], 
-                        [a[0][1] for a in actions]), 
-                        [a[1] for a in actions])
-            
-            actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
-                        torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
-                        torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
-            
-            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
-            
-            ep_kl_penalty = ep_kl_penalty / self.episode_len
-
-        print(f"STATES        :{states.shape}")
-        print(f"CLEAN         :{clean.shape}")
-        print(f"TARGET_VALS   :{b_target.shape}")
-        print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
-        print(f"LOGPROBS      :{logprobs.shape}")
-        print(f"ADVANTAGES    :{b_advantages.shape}")
-        print(f"POLICY RETURNS:{target_values.mean(0)}")
-
-        #Start training over the unrolled batch of trajectories
-        #Set models to train
-        #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
-        #acting differently in train and eval mode. PPO seems to be stable only when actor
-        #is still in eval mode
-        if self.warm_up > 0:
-            actor = actor.train()
-        critic = critic.train()
-        
-        step_clip_loss = 0
-        step_val_loss = 0
-        step_entropy_loss = 0
-        step_pg_loss = 0
-        step_sup_loss = 0
-        VALUES = torch.zeros(target_values.shape)
-
-        for _ in range(n_epochs):
-            indices = [t for t in range(states.shape[0])]
-            np.random.shuffle(indices)
-            for t in range(0, len(indices), bs):
-            
-                #Get mini batch indices
-                mb_indx = indices[t:t+bs]
-                mb_states = states[mb_indx, ...]
-
-                #Get new logprobs and values for the sampled (state, action) pair
-                mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
-                
-                log_probs, entropies = actor.get_action_prob(mb_states, mb_action)
-        
-                values = critic(mb_states).reshape(-1)
-                for i, val in enumerate(values):
-                    b = mb_indx[i] // self.episode_len
-                    ts = mb_indx[i] % self.episode_len
-                    VALUES[b, ts] = val
-
-                if self.train_phase:
-                    entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
-                    log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
-                    old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
-                else:
-                    #ignore complex mask, just tune mag mask 
-                    raise NotImplementedError
-                
-                print(f"log_prob:{log_prob.mean(), log_prob.shape}")
-                print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
-
-                logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
-                ratio = torch.exp(logratio)
-                print(f"Ratio:{ratio}")
-
-                #Normalize advantages across minibatch
-                mb_adv = b_advantages[mb_indx]
-                if bs > 1:
-                    mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-08)
-
-                #Policy gradient loss
-                pg_loss1 = -mb_adv * ratio
-                pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
-                if pg_loss1.mean() == pg_loss2.mean():
-                    pg_loss = pg_loss1.mean()
-                else:
-                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
-
-                #value_loss
-                v_loss = 0.5 * ((b_target[mb_indx] - values) ** 2).mean()
-
-                #Entropy loss
-                entropy_loss = entropy.mean()
-
-                #Supervised loss
-                mb_act, _, _, _ = actor.get_action(mb_states)
-                mb_next_state = self.env.get_next_state(state=mb_states, action=mb_act)
-                
-                mb_enhanced = mb_next_state['noisy']
-                mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-               
-                mb_clean = clean[mb_indx, ...] 
-                mb_clean_mag = torch.sqrt(mb_clean[:, 0, :, :]**2 + mb_clean[:, 1, :, :]**2)
-
-                supervised_loss = ((mb_clean - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
-
-                if self.warm_up > 0:
-                    pg_loss = torch.tensor(0.0).to(self.gpu_id)
-                    self.warm_up -= 1
-
-                clip_loss = pg_loss + self.lmbda * supervised_loss #- (self.en_coef * entropy_loss)
-                
-                print(f"clip_loss:{clip_loss.item()} pg_loss:{pg_loss}")
-                wandb.log({
-                    'ratio':ratio.mean(),
-                    'pg_loss1':pg_loss1.mean(),
-                    'pg_loss2':pg_loss2.mean(),
-                })
-
-                #optimizer.zero_grad()
-                a_optim.zero_grad()
-                c_optim.zero_grad()
-                clip_loss.backward()
-                v_loss.backward()
-                #Update network
-                if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                    torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
-                    torch.nn.utils.clip_grad_norm_(critic.parameters(), 0.5)
-                    a_optim.step()
-                    c_optim.step()
-
-                step_clip_loss += clip_loss.item()
-                step_pg_loss += pg_loss.item()
-                step_sup_loss += supervised_loss.item()
-                step_val_loss += v_loss.item() 
-                step_entropy_loss += entropy_loss.item()      
-                self.t += 1
-        
-        print(f"Values:{VALUES.mean(0)}")
-
-        step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
-        step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
-        step_val_loss = step_val_loss / (n_epochs * self.episode_len)                
-        step_sup_loss = step_sup_loss / (n_epochs * self.episode_len)
-        step_entropy_loss = step_entropy_loss / (n_epochs * self.episode_len)
-        
-                    
-        return (step_clip_loss, step_val_loss, step_entropy_loss, step_pg_loss, step_sup_loss), \
-               (target_values.sum(-1).mean(), VALUES.sum(-1).mean(), ep_kl_penalty, r_ts.sum(-1).mean()), \
-               advantages.sum(-1).mean()  
-    '''
+    

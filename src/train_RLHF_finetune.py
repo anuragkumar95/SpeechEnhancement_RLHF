@@ -4,6 +4,7 @@
 """
 
 from model.actor import TSCNet, TSCNetSmall
+from model.mp_sennet import MPNet
 from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
@@ -56,10 +57,10 @@ def args():
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
-    parser.add_argument("--out_dist", action='store_true',
-                        help="If GAN learns a distribution.")
-    parser.add_argument("--small", action='store_true',
-                        help="Finetuning small GAN model.")
+    #parser.add_argument("--out_dist", action='store_true',
+    #                    help="If GAN learns a distribution.")
+    parser.add_argument("--mpnet", action='store_true',
+                        help="Finetuning MP-SENET model. If not trains CMGAN by default.")
     parser.add_argument("--train_phase", action='store_true',
                         help="Phase is also finetuned using RL.")
     parser.add_argument("--scale_reward", action='store_true',
@@ -111,12 +112,9 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.ACCUM_GRAD = args.accum_grad
-        dist = None
-
-        if args.out_dist:
-            dist = 'Normal'
-        if args.small:
-            self.actor = TSCNetSmall(num_channel=64, 
+        
+        if args.mpnet:
+            self.actor = MPNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1,
                                 gpu_id=gpu_id)
         else:
@@ -195,19 +193,9 @@ class Trainer:
                                                  'args':args})
             
         if args.method == 'PPO':
-            #self.critic = QNet(ndf=16, in_channel=2, out_channel=1)
-            #self.critic = Critic(in_channels=2)
-            #reward_checkpoint = torch.load(args.reward_pt, map_location=torch.device('cpu'))
-            #self.critic.load_state_dict(reward_checkpoint)
-            #self.critic = self.critic.to(gpu_id)
-
-            #Initialize critic 
             self.optimizer = torch.optim.AdamW(
                 filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
             )
-            #self.c_optimizer = torch.optim.AdamW(
-            #    filter(lambda layer:layer.requires_grad, self.critic.parameters()), lr=1e-05
-            #)
             self.c_optimizer = None
 
             self.trainer = PPO(loader=self.train_ds,
@@ -401,15 +389,12 @@ class Trainer:
         self.actor.train()
         if self.args.method == 'PPO':
             self.actor.set_evaluation(False)
-            #self.critic.train()
         
         return loss, reward_model_score, np.asarray(val_metrics["pesq"]).mean()
 
     def train_one_epoch(self, epoch):       
         #Run training
         self.actor.train()
-        #if self.args.method == 'PPO':
-            #self.critic.train()
 
         #loss, best_rm_score, best_pesq = self.run_validation(0)
         loss, best_rm_score, best_pesq = 9999, 0, 0
@@ -444,15 +429,11 @@ class Trainer:
                             "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
                             "episode_avg_kl":batch_reward[1].item(),
                             "cumulative_G_t": batch_reward[0].item(),
-                            #"critic_values": batch_reward[1].item(), 
                             "episodic_avg_r": batch_reward[3].item(),
                             "episodic_reward_model_score": batch_reward[2].item(),
-                            #"advantages":adv,
                             "clip_loss":loss[0],
-                            #"value_loss":loss[1],
                             "pretrain_loss":loss[2],
                             "pg_loss":loss[1],
-                            #"entropy_loss":loss[1],
                             "train_pesq":pesq, 
                         })
 

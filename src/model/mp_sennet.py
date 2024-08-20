@@ -15,18 +15,18 @@ from joblib import Parallel, delayed
 #Taken from https://github.com/yxlu-0102/MP-SENet/blob/main/models/generator.py
 
 class DenseBlock(nn.Module):
-    def __init__(self, h, kernel_size=(3, 3), depth=4):
+    def __init__(self, dense_channel=64, kernel_size=(3, 3), depth=4):
         super(DenseBlock, self).__init__()
-        self.h = h
+        #self.h = h
         self.depth = depth
         self.dense_block = nn.ModuleList([])
         for i in range(depth):
             dil = 2 ** i
             dense_conv = nn.Sequential(
-                nn.Conv2d(h.dense_channel*(i+1), h.dense_channel, kernel_size, dilation=(dil, 1),
+                nn.Conv2d(dense_channel*(i+1), dense_channel, kernel_size, dilation=(dil, 1),
                           padding=get_padding_2d(kernel_size, (dil, 1))),
-                nn.InstanceNorm2d(h.dense_channel, affine=True),
-                nn.PReLU(h.dense_channel)
+                nn.InstanceNorm2d(dense_channel, affine=True),
+                nn.PReLU(dense_channel)
             )
             self.dense_block.append(dense_conv)
 
@@ -39,20 +39,20 @@ class DenseBlock(nn.Module):
 
 
 class DenseEncoder(nn.Module):
-    def __init__(self, h, in_channel):
+    def __init__(self, in_channel, dense_channel=64):
         super(DenseEncoder, self).__init__()
-        self.h = h
+        #self.h = h
         self.dense_conv_1 = nn.Sequential(
-            nn.Conv2d(in_channel, h.dense_channel, (1, 1)),
-            nn.InstanceNorm2d(h.dense_channel, affine=True),
-            nn.PReLU(h.dense_channel))
+            nn.Conv2d(in_channel, dense_channel, (1, 1)),
+            nn.InstanceNorm2d(dense_channel, affine=True),
+            nn.PReLU(dense_channel))
 
-        self.dense_block = DenseBlock(h, depth=4) # [b, h.dense_channel, ndim_time, h.n_fft//2+1]
+        self.dense_block = DenseBlock(dense_channel, depth=4) # [b, h.dense_channel, ndim_time, h.n_fft//2+1]
 
         self.dense_conv_2 = nn.Sequential(
-            nn.Conv2d(h.dense_channel, h.dense_channel, (1, 3), (1, 2)),
-            nn.InstanceNorm2d(h.dense_channel, affine=True),
-            nn.PReLU(h.dense_channel))
+            nn.Conv2d(dense_channel, dense_channel, (1, 3), (1, 2)),
+            nn.InstanceNorm2d(dense_channel, affine=True),
+            nn.PReLU(dense_channel))
 
     def forward(self, x):
         x = self.dense_conv_1(x)  # [b, 64, T, F]
@@ -62,12 +62,12 @@ class DenseEncoder(nn.Module):
 
 
 class MaskDecoder(nn.Module):
-    def __init__(self, h, out_channel=1, distribution=None, gpu_id=None, eval=False):
+    def __init__(self, n_fft, beta, dense_channel=64, out_channel=1, distribution=None, gpu_id=None, eval=False):
         super(MaskDecoder, self).__init__()
-        self.dense_block = DenseBlock(h, depth=4)
+        self.dense_block = DenseBlock(dense_channel, depth=4)
         self.mask_conv = nn.Sequential(
-            nn.ConvTranspose2d(h.dense_channel, h.dense_channel, (1, 3), (1, 2)),
-            nn.Conv2d(h.dense_channel, out_channel, (1, 1)),
+            nn.ConvTranspose2d(dense_channel, dense_channel, (1, 3), (1, 2)),
+            nn.Conv2d(dense_channel, out_channel, (1, 1)),
             nn.InstanceNorm2d(out_channel, affine=True),
             nn.PReLU(out_channel),
             #nn.Conv2d(out_channel, out_channel, (1, 1))
@@ -78,7 +78,7 @@ class MaskDecoder(nn.Module):
         #else:
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.dist = distribution
-        self.lsigmoid = LearnableSigmoid_2d(h.n_fft//2+1, beta=h.beta)
+        self.lsigmoid = LearnableSigmoid_2d(n_fft//2+1, beta=beta)
 
     def sample(self, mu, logvar, x=None):
         #if self.dist == 'Normal':
@@ -130,10 +130,10 @@ class PhaseDecoder(nn.Module):
 
 
     def sample(self, mu, logvar, x=None):
-        if self.dist == 'Normal':
-            sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
-        elif self.dist is None:
-            sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
+        #if self.dist == 'Normal':
+        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
+        #elif self.dist is None:
+        sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
@@ -195,7 +195,6 @@ class MPNet(nn.Module):
 
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
-        
 
         (_, mask), _, _, _ = self.mask_decoder(x)
         complex_out, _, _, _ = self.phase_decoder(x)

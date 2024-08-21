@@ -5,7 +5,7 @@
 
 from model.CMGAN.actor import TSCNet, TSCNetSmall
 from model.MPSENet.actor import MPNet
-from model.critic import QNet, Critic
+#from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
 #import NISQA.nisqa.NISQA_lib as NL
@@ -95,7 +95,7 @@ def args():
 
 wandb.login()
 
-torch.manual_seed(111)
+torch.manual_seed(0)
 
 class Trainer:
     """
@@ -118,7 +118,7 @@ class Trainer:
                                beta=2.0, 
                                dense_channel=64, 
                                gpu_id=gpu_id)
-            raise NotImplementedError
+            #raise NotImplementedError
         elif args.model == 'cmgan':
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 

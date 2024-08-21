@@ -149,8 +149,7 @@ class Trainer:
             self.expert = freeze_layers(self.expert, 'all')
             
             del cmgan_expert_checkpoint 
-            print(f"AAAAA")
-            print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
+            #print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         
         self.reward_model = None
         if args.reward_pt is not None:

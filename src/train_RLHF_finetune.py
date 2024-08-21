@@ -136,19 +136,22 @@ class Trainer:
                 self.expert = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1,
                                 gpu_id=gpu_id)
-            cmgan_expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+            expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+            print(f"Keys ins checkpoint....")
+            for key in expert_checkpoint.keys():
+                print(key)
             try:
-                self.actor.load_state_dict(cmgan_expert_checkpoint['generator_state_dict']) 
-                self.expert.load_state_dict(cmgan_expert_checkpoint['generator_state_dict'])
+                self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
+                self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
               
             except KeyError as e:
-                self.actor.load_state_dict(cmgan_expert_checkpoint)
-                self.expert.load_state_dict(cmgan_expert_checkpoint)
+                self.actor.load_state_dict(expert_checkpoint)
+                self.expert.load_state_dict(expert_checkpoint)
            
             #Set expert to eval and freeze all layers.
             self.expert = freeze_layers(self.expert, 'all')
             
-            del cmgan_expert_checkpoint 
+            del expert_checkpoint 
             print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         
         self.reward_model = None

@@ -138,12 +138,9 @@ class Trainer:
                                 gpu_id=gpu_id)
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             print(f"Keys in checkpoint....")
-            for key in expert_checkpoint['generator'].keys():
-                print(key)
+            for key1, key2 in zip(expert_checkpoint['generator'].keys(), self.actor.state_dict().keys()):
+                print(key1, key2)
 
-            print(f"Keys in model....")
-            for key in self.actor.state_dict().keys():
-                print(key)
             try:
                 if args.model == 'cmgan':
                     self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 

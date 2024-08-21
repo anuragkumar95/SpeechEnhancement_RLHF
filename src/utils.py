@@ -316,10 +316,14 @@ def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False, return_c=F
 
 def map_state_dict(model, checkpoint):
     new_state_dict = {}
-    for key1, key2 in zip(model.state_dict().keys(), checkpoint.keys()):
-        if key1 == key2:
-            new_state_dict[key2] = checkpoint[key2]
+
+    map_ = {"mask_decoder.final_conv.weight":"mask_decoder.mask_conv.4.weight",
+            "mask_decoder.final_conv.bias":"mask_decoder.mask_conv.4.bias"}
+
+    for key in model.state_dict().keys():
+        if key in checkpoint.keys():
+            new_state_dict[key] = checkpoint[key]
         else:
-            new_state_dict[key1] = checkpoint[key2]
+            new_state_dict[key] = checkpoint[map_[key]]
     return new_state_dict
 

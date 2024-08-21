@@ -17,7 +17,7 @@ import torchaudio.functional as F
 from tqdm import tqdm
 import soundfile as sf
 import itertools
-from model.actor import TSCNet
+from model.CMGAN.actor import TSCNet
 from model.reward_model import RewardModel
 from evaluation import run_enhancement_step, compute_metrics
 from speech_enh_env import SpeechEnhancementAgent

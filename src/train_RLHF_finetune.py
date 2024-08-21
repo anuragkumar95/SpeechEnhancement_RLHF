@@ -3,8 +3,8 @@
 @author: Anurag Kumar
 """
 
-from model.actor import TSCNet, TSCNetSmall
-#from model.mp_sennet import MPNet
+from model.CMGAN.actor import TSCNet, TSCNetSmall
+from model.MPSENet.actor import MPNet
 from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
@@ -59,8 +59,8 @@ def args():
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--small", action='store_true',
                         help="Trains a smaller CMGAN model.")
-    parser.add_argument("--mpnet", action='store_true',
-                        help="Finetuning MP-SENET model. If not trains CMGAN by default.")
+    parser.add_argument("--model", type=str, default='cmgan',
+                        help="Choose between (mpsenet/cmgan).")
     parser.add_argument("--train_phase", action='store_true',
                         help="Phase is also finetuned using RL.")
     parser.add_argument("--scale_reward", action='store_true',
@@ -113,15 +113,18 @@ class Trainer:
         self.test_ds = test_ds
         self.ACCUM_GRAD = args.accum_grad
         
-        if args.mpnet:
-            #self.actor = MPNet(num_channel=64, 
-            #                    num_features=self.n_fft // 2 + 1,
-            #                    gpu_id=gpu_id)
+        if args.model == 'mpsenet':
+            self.actor = MPNet(n_fft=self.n_fft, 
+                               beta=2.0, 
+                               dense_channel=64, 
+                               gpu_id=gpu_id)
             raise NotImplementedError
-        else:
+        elif args.model == 'cmgan':
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 
                                 gpu_id=gpu_id)
+        else:
+            raise NotImplementedError
         
         self.expert = None
         if args.ckpt is not None:
@@ -217,6 +220,7 @@ class Trainer:
                                loss_type=args.loss,
                                reward_type=args.reward,
                                accum_grad=args.accum_grad,
+                               model=args.model,
                                env_params={'n_fft':400,
                                             'hop':100, 
                                             'args':args})

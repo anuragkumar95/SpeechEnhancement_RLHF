@@ -42,7 +42,7 @@ class SpeechEnhancementAgent:
     #    #self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=self.gpu_id)
     
        
-    def get_next_state(self, state, action):
+    def get_next_state(self, state, action, model='cmgan'):
         """
         Apply mask to spectrogram and return next (enhanced) state.
         ARGS:
@@ -60,33 +60,53 @@ class SpeechEnhancementAgent:
         ).unsqueeze(1)
 
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+    
         if mag.shape != mask.shape:
             mask = mask.permute(0, 2, 1).unsqueeze(1)
-        out_mag = mask * mag
-        mag_real = out_mag * torch.cos(noisy_phase)
-        mag_imag = out_mag * torch.sin(noisy_phase)
-
-        est_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
-        est_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
         window = torch.hamming_window(self.n_fft)
-        if self.gpu_id is not None:
-            window = window.to(self.gpu_id)
 
-        est_mag = torch.sqrt(est_real**2 + est_imag**2)
-        est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
-        est_audio = torch.istft(
-            est_spec_uncompress,
-            self.n_fft,
-            self.hop,
-            window=window,
-            onesided=True,
-        )
-        
+        if model == 'cmgan':    
+            out_mag = mask * mag
+            mag_real = out_mag * torch.cos(noisy_phase)
+            mag_imag = out_mag * torch.sin(noisy_phase)
 
-        est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
+            est_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
+            est_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
+
+            
+            if self.gpu_id is not None:
+                window = window.to(self.gpu_id)
+
+            est_mag = torch.sqrt(est_real**2 + est_imag**2)
+            est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
+            est_audio = torch.istft(
+                est_spec_uncompress,
+                self.n_fft,
+                self.hop,
+                window=window,
+                onesided=True,
+            )
+            
+
+            est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
+            
+            #next_state = {k:v.detach() for k, v in state.items()}
         
-        #next_state = {k:v.detach() for k, v in state.items()}
+        if model == 'mpsenet':
+            
+            denoised_mag = (mag * mask).permute(0, 3, 2, 1).squeeze(-1)
+            denoised_pha = complex_out.permute(0, 3, 2, 1).squeeze(-1)
+            est_spec = torch.stack((denoised_mag*torch.cos(denoised_pha),
+                                        denoised_mag*torch.sin(denoised_pha)), dim=-1)
+            
+            est_real = est_spec[:, 0, :, :].unsqueeze(1)
+            est_imag = est_spec[:, 1, :, :].unsqueeze(1)
+            
+            est_mag = torch.pow(mag, (1.0/0.3))
+            com = torch.complex(mag*torch.cos(denoised_pha), mag*torch.sin(denoised_pha))
+            est_audio = torch.istft(com, self.n_fft, hop_length=self.hop, window=window, center=True)
+
         next_state = {}
         next_state['noisy'] = est_spec
         next_state['est_mag'] = est_mag.permute(0, 1, 3, 2)
@@ -95,6 +115,16 @@ class SpeechEnhancementAgent:
         next_state['est_audio'] = est_audio
 
         return next_state
+
+
+
+
+
+
+
+
+
+
     '''
     def get_RLHF_reward(self, inp, out):
         """

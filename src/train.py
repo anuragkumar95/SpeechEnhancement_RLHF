@@ -1,4 +1,4 @@
-from model.actor import TSCNet, TSCNetSmall
+from model.CMGAN.actor import TSCNet, TSCNetSmall
 from model.critic import Discriminator
 import os
 from data import dataset as dataloader

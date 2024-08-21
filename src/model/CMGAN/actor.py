@@ -1,4 +1,4 @@
-from model.conformer import ConformerBlock
+from conformer import ConformerBlock
 import torch
 import torch.nn as nn
 from model.critic import QNet

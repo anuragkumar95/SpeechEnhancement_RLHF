@@ -3,24 +3,24 @@
 @author: Anurag Kumar
 """
 
-from model.actor import TSCNet
-from model.critic import QNet
-import os
+#from model.CMGAN.actor import TSCNet
+#from model.critic import QNet
+#import os
 from data.dataset import load_data
 import torch.nn.functional as F
 import torch
 from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
-import logging
+#import logging
 from torchinfo import summary
-import argparse
+#import argparse
 import wandb
-import psutil
+#import psutil
 import numpy as np
-import traceback
+#import traceback
 from speech_enh_env import  SpeechEnhancementAgent, GaussianStrategy
 import torch
 import wandb
-import copy
+#import copy
 from torch.distributions import Normal
 
 from compute_metrics import compute_metrics
@@ -230,6 +230,7 @@ class PPO:
                  reward_type=None,
                  scale_rewards=False, 
                  warm_up_steps=30, 
+                 model='cmgan',
                  **params):
         
         self.env = SpeechEnhancementAgent(n_fft=params['env_params'].get("n_fft"),
@@ -261,6 +262,7 @@ class PPO:
         self.val_coef = val_coef
         self.en_coef = en_coef
         self.episode_len = run_steps
+        self.model = model
         print(f"RLHF:{self.rlhf}")
 
 
@@ -344,9 +346,9 @@ class PPO:
                     if self.init_model is not None:
                         init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                         ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
-                        exp_state = self.env.get_next_state(state=noisy_rl, action=init_action)
+                        exp_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
             
-                    state = self.env.get_next_state(state=noisy_rl, action=action)
+                    state = self.env.get_next_state(state=noisy_rl, action=action, model=self.model)
                     state['cl_audio'] = cl_aud_rl
                     state['clean'] = clean_rl
                     if self.init_model is not None:
@@ -354,7 +356,7 @@ class PPO:
 
                     #Calculate sft output
                     sft_action, _, _, _ = self.init_model.get_action(noisy_rl)
-                    sft_state = self.env.get_next_state(state=noisy_rl, action=sft_action)
+                    sft_state = self.env.get_next_state(state=noisy_rl, action=sft_action, model=self.model)
                     sft_state['cl_audio'] = cl_aud_rl
                     sft_state['clean'] = clean_rl
 

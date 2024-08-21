@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from models.conformer import ConformerBlock
+from conformer import ConformerBlock
 
 from torch.distributions import Normal
 
@@ -62,7 +62,7 @@ class DenseEncoder(nn.Module):
 
 
 class MaskDecoder(nn.Module):
-    def __init__(self, n_fft, beta, dense_channel=64, out_channel=1, distribution=None, gpu_id=None, eval=False):
+    def __init__(self, n_fft, beta, dense_channel=64, out_channel=1, gpu_id=None, eval=False):
         super(MaskDecoder, self).__init__()
         self.dense_block = DenseBlock(dense_channel, depth=4)
         self.mask_conv = nn.Sequential(
@@ -77,8 +77,9 @@ class MaskDecoder(nn.Module):
         #    self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
         #else:
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
-        self.dist = distribution
         self.lsigmoid = LearnableSigmoid_2d(n_fft//2+1, beta=beta)
+        self.gpu_id = gpu_id
+        self.evaluation = eval
 
     def sample(self, mu, logvar, x=None):
         #if self.dist == 'Normal':
@@ -116,18 +117,19 @@ class MaskDecoder(nn.Module):
 
 
 class PhaseDecoder(nn.Module):
-    def __init__(self, h, out_channel=1):
+    def __init__(self, dense_channel, out_channel=1, gpu_id=None, eval=False):
         super(PhaseDecoder, self).__init__()
-        self.dense_block = DenseBlock(h, depth=4)
+        self.dense_block = DenseBlock(dense_channel, depth=4)
         self.phase_conv = nn.Sequential(
-            nn.ConvTranspose2d(h.dense_channel, h.dense_channel, (1, 3), (1, 2)),
-            nn.InstanceNorm2d(h.dense_channel, affine=True),
-            nn.PReLU(h.dense_channel)
+            nn.ConvTranspose2d(dense_channel, dense_channel, (1, 3), (1, 2)),
+            nn.InstanceNorm2d(dense_channel, affine=True),
+            nn.PReLU(dense_channel)
         )
         #self.phase_conv_r = nn.Conv2d(h.dense_channel, out_channel, (1, 1))
         #self.phase_conv_i = nn.Conv2d(h.dense_channel, out_channel, (1, 1))
-        self.phase_conv = nn.Conv2d(h.dense_channel, out_channel*2, (1, 1))
-
+        self.phase_conv = nn.Conv2d(dense_channel, out_channel*2, (1, 1))
+        self.evaluation = eval
+        self.gpu_id = gpu_id
 
     def sample(self, mu, logvar, x=None):
         #if self.dist == 'Normal':
@@ -148,19 +150,19 @@ class PhaseDecoder(nn.Module):
         #x_r = self.phase_conv_r(x)
         #x_i = self.phase_conv_i(x)
         #x = torch.atan2(x_i, x_r)
-        if self.eval:
+        if self.evaluation:
             x = params[0]
         x = torch.atan(x)
         return x, x_logprob, x_entropy, params
 
 
 class TSConformerBlock(nn.Module):
-    def __init__(self, h):
+    def __init__(self, dense_channel):
         super(TSConformerBlock, self).__init__()
-        self.h = h
-        self.time_conformer = ConformerBlock(dim=h.dense_channel,  n_head=4, ccm_kernel_size=31, 
+        #self.h = h
+        self.time_conformer = ConformerBlock(dim=dense_channel,  n_head=4, ccm_kernel_size=31, 
                                              ffm_dropout=0.2, attn_dropout=0.2)
-        self.freq_conformer = ConformerBlock(dim=h.dense_channel,  n_head=4, ccm_kernel_size=31, 
+        self.freq_conformer = ConformerBlock(dim=dense_channel,  n_head=4, ccm_kernel_size=31, 
                                              ffm_dropout=0.2, attn_dropout=0.2)
 
     def forward(self, x):
@@ -174,18 +176,84 @@ class TSConformerBlock(nn.Module):
 
 
 class MPNet(nn.Module):
-    def __init__(self, h, num_tscblocks=4):
+    def __init__(self, n_fft, beta, dense_channel, num_tscblocks=4, gpu_id=None, eval=False):
         super(MPNet, self).__init__()
-        self.h = h
+        #self.h = h
         self.num_tscblocks = num_tscblocks
-        self.dense_encoder = DenseEncoder(h, in_channel=2)
+        self.dense_encoder = DenseEncoder(dense_channel, in_channel=2)
 
         self.TSConformer = nn.ModuleList([])
         for i in range(num_tscblocks):
-            self.TSConformer.append(TSConformerBlock(h))
+            self.TSConformer.append(TSConformerBlock(dense_channel))
         
-        self.mask_decoder = MaskDecoder(h, out_channel=1)
-        self.phase_decoder = PhaseDecoder(h, out_channel=1)
+        self.mask_decoder = MaskDecoder(n_fft, beta, dense_channel, out_channel=1, gpu_id=gpu_id, eval=eval)
+        self.phase_decoder = PhaseDecoder(dense_channel, out_channel=1, gpu_id=gpu_id, eval=eval)
+
+    def set_evaluation(self, bool):
+        self.mask_decoder.evaluation = bool
+        self.phase_decoder.evaluation = bool
+
+    def get_action(self, x):
+        #b, ch, t, f = x.size()
+        noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+        
+        noisy_pha = torch.angle(
+            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+        ).unsqueeze(1)
+
+        x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
+        x = self.dense_encoder(x)
+
+        for i in range(self.num_tscblocks):
+            x = self.TSConformer[i](x)
+
+        mask, m_logprob, m_entropy, params = self.mask_decoder(x)
+        complex_out, c_logprob, c_entropy, c_params = self.phase_decoder(x)
+
+        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
+
+    
+    def get_action_prob(self, x, action=None):
+        """
+        ARGS:
+            x : spectrogram
+            action : (Tuple) Tuple of mag and complex actions
+
+        Returns:
+            Tuple of mag and complex masks log probabilities.
+        """
+        noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+        
+        noisy_pha = torch.angle(
+            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+        ).unsqueeze(1)
+
+        x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
+        x = self.dense_encoder(x)
+
+        for i in range(self.num_tscblocks):
+            x = self.TSConformer[i](x)
+      
+        _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
+        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
+
+        return (m_logprob, c_logprob), (m_entropy, c_entropy)
+        
+        
+    def get_embedding(self, x):
+        noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+        
+        noisy_pha = torch.angle(
+            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+        ).unsqueeze(1)
+
+        x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
+        x = self.dense_encoder(x)
+
+        for i in range(self.num_tscblocks):
+            x = self.TSConformer[i](x)
+
+        return x
 
     def forward(self, noisy_mag, noisy_pha): # [B, F, T]
         noisy_mag = noisy_mag.unsqueeze(-1).permute(0, 3, 2, 1) # [B, 1, T, F]

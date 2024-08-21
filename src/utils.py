@@ -314,16 +314,13 @@ def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False, return_c=F
     clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, clean_istft=clean_istft)
     return (clean, clean_spec, noisy_spec, labels)
 
-def map_state_dict(model, checkpoint):
-    new_state_dict = {}
+def map_state_dict(checkpoint):
 
-    map_ = {"mask_decoder.final_conv.weight":"mask_decoder.mask_conv.4.weight",
-            "mask_decoder.final_conv.bias":"mask_decoder.mask_conv.4.bias"}
+    map_ = {"mask_decoder.mask_conv.4.weight":"mask_decoder.final_conv.weight",
+            "mask_decoder.mask_conv.4.bias":"mask_decoder.final_conv.bias"}
 
-    for key in model.state_dict().keys():
-        if key in checkpoint.keys():
-            new_state_dict[key] = checkpoint[key]
-        else:
-            new_state_dict[key] = checkpoint[map_[key]]
-    return new_state_dict
+    for key in map_:
+        checkpoint[key] = checkpoint[map_[key]]
+        checkpoint.pop(key)
+    return checkpoint
 

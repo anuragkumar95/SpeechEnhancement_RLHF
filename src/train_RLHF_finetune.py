@@ -144,9 +144,9 @@ class Trainer:
                     self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
                 if args.model == 'mpsenet':
                     checkpoint = map_state_dict(expert_checkpoint['generator'])
-                    #print(f"Keys in checkpoint....")
-                    #for key1, key2 in zip(expert_checkpoint['generator'].keys(), self.actor.state_dict().keys()):
-                    #    print(key1, "||", key2)
+                    print(f"Keys in checkpoint....")
+                    for key1, key2 in zip(expert_checkpoint['generator'].keys(), checkpoint.keys()):
+                        print(key1, "||", key2)
                     self.actor.load_state_dict(checkpoint) 
                     self.expert.load_state_dict(checkpoint)
               

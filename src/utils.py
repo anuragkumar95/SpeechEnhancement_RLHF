@@ -322,5 +322,6 @@ def map_state_dict(checkpoint):
     for key in map_:
         checkpoint[key] = checkpoint[map_[key]]
         checkpoint.pop(key)
+        
     return checkpoint
 

@@ -139,7 +139,7 @@ class Trainer:
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
             print(f"Keys in checkpoint....")
             for key1, key2 in zip(expert_checkpoint['generator'].keys(), self.actor.state_dict().keys()):
-                print(key1, key2)
+                print(key1, "||", key2)
 
             try:
                 if args.model == 'cmgan':

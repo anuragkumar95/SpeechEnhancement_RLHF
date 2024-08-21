@@ -314,3 +314,12 @@ def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False, return_c=F
     clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, clean_istft=clean_istft)
     return (clean, clean_spec, noisy_spec, labels)
 
+def map_state_dict(model, checkpoint):
+    new_state_dict = {}
+    for key1, key2 in zip(model.state_dict().keys(), checkpoint.keys()):
+        if key1 == key2:
+            new_state_dict[key2] = checkpoint[key2]
+        else:
+            new_state_dict[key1] = checkpoint[key2]
+    return new_state_dict
+

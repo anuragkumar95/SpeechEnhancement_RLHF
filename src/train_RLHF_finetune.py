@@ -18,7 +18,7 @@ import os
 from data.dataset import load_data, MixturesDataset, mixture_collate_fn
 import torch.nn.functional as F
 import torch
-from utils import preprocess_batch, power_compress, power_uncompress, batch_pesq, copy_weights, freeze_layers, original_pesq
+from utils import preprocess_batch, freeze_layers, map_state_dict
 import logging
 from torchinfo import summary
 import argparse
@@ -137,17 +137,18 @@ class Trainer:
                                 num_features=self.n_fft // 2 + 1,
                                 gpu_id=gpu_id)
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
-            print(f"Keys in checkpoint....")
-            for key1, key2 in zip(expert_checkpoint['generator'].keys(), self.actor.state_dict().keys()):
-                print(key1, "||", key2)
 
             try:
                 if args.model == 'cmgan':
                     self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
                     self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
                 if args.model == 'mpsenet':
-                    self.actor.load_state_dict(expert_checkpoint['generator']) 
-                    self.expert.load_state_dict(expert_checkpoint['generator'])
+                    checkpoint = map_state_dict(self.actor, expert_checkpoint['generator'])
+                    print(f"Keys in checkpoint....")
+                    for key1, key2 in zip(checkpoint.keys(), self.actor.state_dict().keys()):
+                        print(key1, "||", key2)
+                    self.actor.load_state_dict(checkpoint) 
+                    self.expert.load_state_dict(checkpoint)
               
             except KeyError as e:
                 self.actor.load_state_dict(expert_checkpoint)

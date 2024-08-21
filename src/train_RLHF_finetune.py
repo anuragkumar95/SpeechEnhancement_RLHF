@@ -118,7 +118,7 @@ class Trainer:
                                beta=2.0, 
                                dense_channel=64, 
                                gpu_id=gpu_id)
-            raise NotImplementedError
+          
         elif args.model == 'cmgan':
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 

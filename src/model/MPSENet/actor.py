@@ -209,14 +209,14 @@ class MPNet(nn.Module):
         super(MPNet, self).__init__()
         #self.h = h
         self.num_tscblocks = num_tscblocks
-        self.dense_encoder = DenseEncoder(dense_channel, in_channel=2)
+        self.dense_encoder = DenseEncoder(dense_channel=dense_channel, in_channel=2)
 
         self.TSConformer = nn.ModuleList([])
         for i in range(num_tscblocks):
-            self.TSConformer.append(TSConformerBlock(dense_channel))
+            self.TSConformer.append(TSConformerBlock(dense_channel=dense_channel))
         
-        self.mask_decoder = MaskDecoder(n_fft, beta, dense_channel, out_channel=1, gpu_id=gpu_id, eval=eval)
-        self.phase_decoder = PhaseDecoder(dense_channel, out_channel=1, gpu_id=gpu_id, eval=eval)
+        self.mask_decoder = MaskDecoder(n_fft=n_fft, beta=beta, dense_channel=dense_channel, out_channel=1, gpu_id=gpu_id, eval=eval)
+        self.phase_decoder = PhaseDecoder(dense_channel=dense_channel, out_channel=1, gpu_id=gpu_id, eval=eval)
 
     def set_evaluation(self, bool):
         self.mask_decoder.evaluation = bool

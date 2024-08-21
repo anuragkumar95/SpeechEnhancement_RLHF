@@ -137,12 +137,16 @@ class Trainer:
                                 num_features=self.n_fft // 2 + 1,
                                 gpu_id=gpu_id)
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
-            print(f"Keys ins checkpoint....")
+            print(f"Keys in checkpoint....")
             for key in expert_checkpoint.keys():
                 print(key)
             try:
-                self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
-                self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
+                if args.model == 'cmgan':
+                    self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
+                    self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
+                if args.model == 'mpsenet':
+                    self.actor.load_state_dict(expert_checkpoint['generator']) 
+                    self.expert.load_state_dict(expert_checkpoint['generator'])
               
             except KeyError as e:
                 self.actor.load_state_dict(expert_checkpoint)

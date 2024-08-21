@@ -145,10 +145,10 @@ class Trainer:
                 if args.model == 'mpsenet':
                     #checkpoint = map_state_dict(self.actor, expert_checkpoint['generator'])
                     print(f"Keys in checkpoint....")
-                    for key1, key2 in zip(expert_checkpoint.keys(), self.actor.state_dict().keys()):
+                    for key1, key2 in zip(expert_checkpoint['generator'].keys(), self.actor.state_dict().keys()):
                         print(key1, "||", key2)
-                    self.actor.load_state_dict(expert_checkpoint) 
-                    self.expert.load_state_dict(expert_checkpoint)
+                    self.actor.load_state_dict(expert_checkpoint['generator']) 
+                    self.expert.load_state_dict(expert_checkpoint['generator'])
               
             except KeyError as e:
                 self.actor.load_state_dict(expert_checkpoint)

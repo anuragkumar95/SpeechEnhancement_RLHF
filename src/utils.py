@@ -320,8 +320,8 @@ def map_state_dict(checkpoint):
             "mask_decoder.mask_conv.4.bias":"mask_decoder.final_conv.bias"}
 
     for key in map_:
-        checkpoint[key] = checkpoint[map_[key]]
+        checkpoint[map_[key]] = checkpoint[key]
         checkpoint.pop(key)
-        
+
     return checkpoint
 

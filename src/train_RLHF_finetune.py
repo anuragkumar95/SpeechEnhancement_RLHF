@@ -123,8 +123,8 @@ class Trainer:
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 
                                 gpu_id=gpu_id)
-        else:
-            raise NotImplementedError
+        #else:
+        #    raise NotImplementedError
         
         self.expert = None
         if args.ckpt is not None:
@@ -149,7 +149,7 @@ class Trainer:
             self.expert = freeze_layers(self.expert, 'all')
             
             del cmgan_expert_checkpoint 
-            #print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
+            print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         
         self.reward_model = None
         if args.reward_pt is not None:

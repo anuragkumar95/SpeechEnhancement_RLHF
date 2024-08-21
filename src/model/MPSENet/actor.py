@@ -154,9 +154,9 @@ class PhaseDecoder(nn.Module):
             nn.InstanceNorm2d(dense_channel, affine=True),
             nn.PReLU(dense_channel)
         )
-        #self.phase_conv_r = nn.Conv2d(h.dense_channel, out_channel, (1, 1))
-        #self.phase_conv_i = nn.Conv2d(h.dense_channel, out_channel, (1, 1))
-        self.phase_conv = nn.Conv2d(dense_channel, out_channel*2, (1, 1))
+        self.phase_conv_r = nn.Conv2d(dense_channel, out_channel, (1, 1))
+        self.phase_conv_i = nn.Conv2d(dense_channel, out_channel, (1, 1))
+     
         self.evaluation = eval
         self.gpu_id = gpu_id
 
@@ -174,14 +174,21 @@ class PhaseDecoder(nn.Module):
 
     def forward(self, x, action=None):
         x = self.dense_block(x)
-        x_mu = self.phase_conv(x)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
-        #x_r = self.phase_conv_r(x)
-        #x_i = self.phase_conv_i(x)
-        #x = torch.atan2(x_i, x_r)
+        x_r_mu = self.phase_conv_r(x)
+        x_i_mu = self.phase_conv_i(x)
+
+        x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action)
+        x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action)
+       
         if self.evaluation:
-            x = params[0]
-        x = torch.atan(x)
+            x_r = r_params[0]
+            x_i = i_params[0]
+        x = torch.atan2(x_r, x_i)
+        x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1)
+        x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1)
+
+        params = (torch.stack([r_params[0], i_params[0]], dim=1), torch.stack([r_params[1], i_params[0]], dim=1))
+
         return x, x_logprob, x_entropy, params
 
 

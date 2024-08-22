@@ -269,9 +269,13 @@ class MPNet(nn.Module):
 
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
+
+        if action is not None:
+            m_action = action[0][0].unsqueeze(1)
+            c_action = action[1]
       
-        _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
-        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
+        _, m_logprob, m_entropy, _ = self.mask_decoder(x, m_action)
+        _, c_logprob, c_entropy, _ = self.phase_decoder(x, c_action)
 
         m_logprob = m_logprob.squeeze(1)
         c_logprob = c_logprob.permute(0, 1, 3, 2)

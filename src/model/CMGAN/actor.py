@@ -280,7 +280,7 @@ class TSCNetSmall(nn.Module):
         out_2 = self.TSCB_1(out_1)
 
         if action is not None:
-            m_action = action[0][0].unsqueeze(1)
+            m_action = action[0][0]
             c_action = action[1]
 
         _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, m_action)

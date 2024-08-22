@@ -173,20 +173,23 @@ class PhaseDecoder(nn.Module):
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
+        print(f"X:{x.shape}")
         x = self.dense_block(x)
+        print(f"X1:{x.shape}")
         x_r_mu = self.phase_conv_r(x)
         x_i_mu = self.phase_conv_i(x)
-
+        print(f"X_R:{x_r_mu.shape}, X_I:{x_i_mu.shape}")
         x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action)
         x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action)
-       
+        print(f"X_R:{x_r.shape}, X_I:{x_i.shape}, X_R_Log:{x_r_logprob}, X_I_Log:{x_i_logprob}")
         if self.evaluation:
             x_r = r_params[0]
             x_i = i_params[0]
         x = torch.atan2(x_r, x_i)
+        print(f"X_out:{x.shape}")
         x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1)
         x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1)
-
+        print(f"X_Log:{x_logprob}, X_Ent:{x_entropy}")
         params = (torch.stack([r_params[0], i_params[0]], dim=1), torch.stack([r_params[1], i_params[0]], dim=1))
 
         return x, x_logprob, x_entropy, params

@@ -286,7 +286,7 @@ class MPNet(nn.Module):
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
 
-        print(f"m_log:{m_logprob.shape}")
+        #print(f"m_log:{m_logprob.shape}")
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

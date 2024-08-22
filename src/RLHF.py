@@ -593,6 +593,7 @@ class PPO:
 
                 if self.model == 'mpsenet':
                     mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
+                    mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
 
                 print(f"CLEAN:{clean_pre.shape}, ENH:{mb_enhanced.shape}, CL_MAG:{mb_clean_mag.shape}, ENH_MAG:{mb_enhanced_mag.shape}")
                 supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()

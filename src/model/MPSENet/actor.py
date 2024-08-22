@@ -271,7 +271,9 @@ class MPNet(nn.Module):
             x = self.TSConformer[i](x)
 
         if action is not None:
-            m_action = action[0][0].unsqueeze(1)
+            m_action = action[0][0]
+            if len(m_action.shape) == 3:
+                m_action = m_action.unsqueeze(1)
             c_action = action[1]
       
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, m_action)

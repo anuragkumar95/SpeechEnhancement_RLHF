@@ -457,9 +457,14 @@ class PPO:
             
             print(action[1].shape)
 
-            actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
-                        torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
-                        torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
+            if self.model == 'cmgan':
+                actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
+                            torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                            torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
+            if self.model == 'mpsenet':
+                actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
+                            torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                            torch.stack(actions[1]).reshape(-1, t, f).detach())
             
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
             

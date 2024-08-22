@@ -275,6 +275,8 @@ class MPNet(nn.Module):
             if len(m_action.shape) == 3:
                 m_action = m_action.unsqueeze(1)
             c_action = action[1]
+            if len(c_action.shape) == 3:
+                c_action = c_action.unsqueeze(1)
       
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, m_action)
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, c_action)

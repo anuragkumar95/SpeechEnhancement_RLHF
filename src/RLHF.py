@@ -555,6 +555,8 @@ class PPO:
                     ref_log_prob = ref_log_prob.detach()
                     old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
                     print(f"OLD:{old_log_prob.shape}")
+                    if self.model == 'mpsenet':
+                        old_log_prob = old_log_prob.squeeze(1)
                     old_log_prob = old_log_prob.permute(0, 2, 1)
 
                 else:

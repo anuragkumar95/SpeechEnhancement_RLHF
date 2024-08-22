@@ -553,7 +553,10 @@ class PPO:
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_prob.detach()
-                    old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
+                    old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
+                    print(f"OLD:{old_log_prob.shape}")
+                    old_log_prob = old_log_prob.permute(0, 2, 1)
+
                 else:
                     #ignore complex mask, just tune mag mask 
                     raise NotImplementedError

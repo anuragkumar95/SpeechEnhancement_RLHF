@@ -455,6 +455,8 @@ class PPO:
                         [a[0][1] for a in actions]), 
                         [a[1] for a in actions])
             
+            print(action[1].shape)
+
             actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
                         torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                         torch.stack(actions[1]).reshape(-1, ch, t, f).detach())

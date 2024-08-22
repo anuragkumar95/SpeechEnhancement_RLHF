@@ -128,14 +128,21 @@ class Trainer:
         
         self.expert = None
         if args.ckpt is not None:
-            if args.small:
-                self.expert = TSCNetSmall(num_channel=64, 
-                                num_features=self.n_fft // 2 + 1, 
-                                gpu_id=gpu_id)
-            else:
-                self.expert = TSCNet(num_channel=64, 
-                                num_features=self.n_fft // 2 + 1,
-                                gpu_id=gpu_id)
+            if args.model == 'cmgan':
+                if args.small:
+                    self.expert = TSCNetSmall(num_channel=64, 
+                                    num_features=self.n_fft // 2 + 1, 
+                                    gpu_id=gpu_id)
+                else:
+                    self.expert = TSCNet(num_channel=64, 
+                                    num_features=self.n_fft // 2 + 1,
+                                    gpu_id=gpu_id)
+            if args.model == 'mpsenet':
+                self.expert = MPNet(n_fft=self.n_fft, 
+                                    beta=2.0, 
+                                    dense_channel=64, 
+                                    gpu_id=gpu_id)
+                
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
 
             try:

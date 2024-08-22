@@ -189,7 +189,7 @@ class PhaseDecoder(nn.Module):
         print(f"X_out:{x.shape}")
         x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1)
         x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1)
-        print(f"X_Log:{x_logprob}, X_Ent:{x_entropy}")
+        print(f"X_Log:{x_logprob.shape}, X_Ent:{x_entropy.shape}")
         params = (torch.stack([r_params[0], i_params[0]], dim=1), torch.stack([r_params[1], i_params[0]], dim=1))
 
         return x, x_logprob, x_entropy, params

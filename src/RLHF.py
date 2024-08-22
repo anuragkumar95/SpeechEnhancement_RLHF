@@ -521,7 +521,7 @@ class PPO:
                 try:
                     batch_pre = next(self._iter_['pre'])
                 except StopIteration as e:
-                    self._iter_['rl'] = iter(self.dataloader['pre'])
+                    self._iter_['pre'] = iter(self.dataloader['pre'])
                     batch_pre = next(self._iter_['pre'])
 
                 #Preprocessed batch

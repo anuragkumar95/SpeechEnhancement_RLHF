@@ -65,6 +65,8 @@ class SpeechEnhancementAgent:
             mask = mask.permute(0, 2, 1).unsqueeze(1)
 
         window = torch.hamming_window(self.n_fft)
+        if self.gpu_id is not None:
+            window = window.to(self.gpu_id)
 
         if model == 'cmgan':    
             out_mag = mask * mag
@@ -113,7 +115,12 @@ class SpeechEnhancementAgent:
             print(f"MAG:{denoised_mag.shape}, PHASE:{denoised_pha.shape}, NOISY:{mag.shape}")
 
             com = torch.complex(mag*torch.cos(denoised_pha), mag*torch.sin(denoised_pha))
-            est_audio = torch.istft(com, self.n_fft, hop_length=self.hop, window=window, center=True)
+            est_audio = torch.istft(com, 
+                self.n_fft, 
+                hop_length=self.hop, 
+                window=window, 
+                center=True
+            )
 
         next_state = {}
         next_state['noisy'] = est_spec

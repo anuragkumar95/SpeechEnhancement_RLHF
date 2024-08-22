@@ -341,6 +341,9 @@ class PPO:
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
 
+                    print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1].mean()}")
+            
+
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     
                     if self.init_model is not None:
@@ -466,6 +469,7 @@ class PPO:
                             torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                             torch.stack(actions[1]).reshape(-1, t, f).detach())
             
+            
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
@@ -544,7 +548,7 @@ class PPO:
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
-
+                print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1].mean()}")        
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
@@ -554,7 +558,6 @@ class PPO:
                     ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_prob.detach()
                     old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
-                    print(f"OLD:{old_log_prob.shape}")
                     if self.model == 'mpsenet':
                         old_log_prob = old_log_prob.squeeze(1)
                     if self.model == 'cmgan':
@@ -587,7 +590,6 @@ class PPO:
                 mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act, model=self.model)
                 mb_enhanced = mb_next_state['noisy']
 
-                print(f"ENHANCED_SPEC:{mb_enhanced.shape}")
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                 mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
 
@@ -595,7 +597,6 @@ class PPO:
                     mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
                     mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
 
-                print(f"CLEAN:{clean_pre.shape}, ENH:{mb_enhanced.shape}, CL_MAG:{mb_clean_mag.shape}, ENH_MAG:{mb_enhanced_mag.shape}")
                 supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
                 
                 pretrain_loss += supervised_loss.detach()

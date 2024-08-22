@@ -557,7 +557,8 @@ class PPO:
                     print(f"OLD:{old_log_prob.shape}")
                     if self.model == 'mpsenet':
                         old_log_prob = old_log_prob.squeeze(1)
-                    old_log_prob = old_log_prob.permute(0, 2, 1)
+                    if self.model == 'cmgan':
+                        old_log_prob = old_log_prob.permute(0, 2, 1)
 
                 else:
                     #ignore complex mask, just tune mag mask 
@@ -573,6 +574,7 @@ class PPO:
                 mb_adv = reward[mb_indx, ...].reshape(-1, 1)
                 
                 #Policy gradient loss
+
                 logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
                 ratio = torch.exp(logratio).reshape(-1, 1)
                 

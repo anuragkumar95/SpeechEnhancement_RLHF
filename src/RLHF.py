@@ -589,6 +589,8 @@ class PPO:
 
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                 mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
+
+                print(f"CLEAN:{clean_pre.shape}, ENH:{mb_enhanced.shape}, CL_MAG:{mb_clean_mag.shape}, ENH_MAG:{mb_enhanced_mag.shape}")
                 supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
                 
                 pretrain_loss += supervised_loss.detach()

@@ -166,6 +166,16 @@ class PhaseDecoder(nn.Module):
         self.evaluation = eval
         self.gpu_id = gpu_id
 
+
+        self.dense_block = DenseBlock(h, depth=4)
+        self.phase_conv = nn.Sequential(
+            nn.ConvTranspose2d(h.dense_channel, h.dense_channel, (1, 3), (1, 2)),
+            nn.InstanceNorm2d(h.dense_channel, affine=True),
+            nn.PReLU(h.dense_channel)
+        )
+        self.phase_conv_r = nn.Conv2d(h.dense_channel, out_channel, (1, 1))
+        self.phase_conv_i = nn.Conv2d(h.dense_channel, out_channel, (1, 1))
+
     def sample(self, mu, logvar, x=None):
         #if self.dist == 'Normal':
         #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
@@ -183,6 +193,7 @@ class PhaseDecoder(nn.Module):
         print(f"X:{x.shape}")
         x = self.dense_block(x)
         print(f"X1:{x.shape}")
+        x = self.phase_conv(x)
         x_r_mu = self.phase_conv_r(x)
         x_i_mu = self.phase_conv_i(x)
         print(f"X_R:{x_r_mu.shape}, X_I:{x_i_mu.shape}")

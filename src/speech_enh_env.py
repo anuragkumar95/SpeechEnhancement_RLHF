@@ -112,7 +112,7 @@ class SpeechEnhancementAgent:
             #denoised_pha = denoised_pha.unsqueeze(1)
             mag = mag.permute(0, 1, 3, 2).squeeze(1)
 
-            print(f"MAG:{denoised_mag.shape}, PHASE:{denoised_pha.shape}, NOISY:{mag.shape}")
+            #print(f"MAG:{denoised_mag.shape}, PHASE:{denoised_pha.shape}, NOISY:{mag.shape}")
 
             com = torch.complex(mag*torch.cos(denoised_pha), mag*torch.sin(denoised_pha))
             est_audio = torch.istft(com, 

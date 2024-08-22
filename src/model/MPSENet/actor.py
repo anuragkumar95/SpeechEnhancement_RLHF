@@ -101,10 +101,7 @@ class MaskDecoder(nn.Module):
             nn.PReLU(out_channel),
             #nn.Conv2d(out_channel, out_channel, (1, 1))
         )
-        #if distribution == "Normal":
-        #    self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
-        #    self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
-        #else:
+      
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.lsigmoid = LearnableSigmoid_2d(n_fft//2+1, beta=beta)
         self.gpu_id = gpu_id
@@ -123,21 +120,11 @@ class MaskDecoder(nn.Module):
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
-        #print("="*100+"\nMask Decoder")
-        #print(f"X:{x.shape}")
+        
         x = self.dense_block(x)
         x = self.mask_conv(x)
-        #if self.dist is not None:
-        #    x_mu = self.final_conv_mu(x)
-        #    x_var = self.final_conv_var(x)
-        #    x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
-        #    x_out = self.lsigmoid(x.permute(0, 3, 2, 1).squeeze(-1))
-        #    x_out = x_out.permute(0, 2, 1).unsqueeze(1)
-        #    return (x, x_out), x_logprob, x_entropy, params
-        #else:
-        #print(f"X1:{x.shape}")
+        
         x_mu = self.final_conv(x)
-        #print(f"X_MU:{x_mu.shape}")
         x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
         if self.evaluation:
             x_out = self.lsigmoid(params[0].permute(0, 3, 2, 1).squeeze(-1))
@@ -147,7 +134,6 @@ class MaskDecoder(nn.Module):
             x_out = self.lsigmoid(x_out).permute(0, 2, 1).unsqueeze(1)
             #x = self.lsigmoid(x).permute(0, 2, 1).unsqueeze(1)
 
-        #print(f"X_LOG:{x_logprob.shape}, X_LOG:{x_logprob.shape}")
         return (x, x_out), x_logprob, x_entropy, params
 
 
@@ -167,9 +153,7 @@ class PhaseDecoder(nn.Module):
         self.gpu_id = gpu_id
 
     def sample(self, mu, logvar, x=None):
-        #if self.dist == 'Normal':
-        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
-        #elif self.dist is None:
+       
         sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
@@ -179,25 +163,20 @@ class PhaseDecoder(nn.Module):
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
-        #print("="*100+"\nPhase Decoder")
-        #print(f"X:{x.shape}")
+        
         x = self.dense_block(x)
-        #print(f"X1:{x.shape}")
         x = self.phase_conv(x)
         x_r_mu = self.phase_conv_r(x)
         x_i_mu = self.phase_conv_i(x)
-        #print(f"X_R:{x_r_mu.shape}, X_I:{x_i_mu.shape}")
         x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action)
         x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action)
-        #print(f"X_R:{x_r.shape}, X_I:{x_i.shape}, X_R_Log:{x_r_logprob.shape}, X_I_Log:{x_i_logprob.shape}")
         if self.evaluation:
             x_r = r_params[0]
             x_i = i_params[0]
         x = torch.atan2(x_r, x_i)
-        #print(f"X_out:{x.shape}")
+
         x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1).squeeze(2)
         x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1).squeeze(2)
-        #print(f"X_Log:{x_logprob.shape}, X_Ent:{x_entropy.shape}")
         params = (torch.stack([r_params[0], i_params[0]], dim=1), torch.stack([r_params[1], i_params[0]], dim=1))
 
         return x, x_logprob, x_entropy, params
@@ -242,22 +221,22 @@ class MPNet(nn.Module):
 
     def get_action(self, x):
         #b, ch, t, f = x.size()
-        #print(f"MPNET")
         noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        #print(f"MAG:{noisy_mag.shape}")
         noisy_pha = torch.angle(
             torch.complex(x[:, 0, :, :], x[:, 1, :, :])
         ).unsqueeze(1)
-        #print(f"PHASE:{noisy_mag.shape}")
+    
         x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
-        #print(f"INP:{x.shape}")
         x = self.dense_encoder(x)
-        #print(f"X1:{x.shape}")
+
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
-        #print(f"After Conformer:{x.shape}")
+       
         mask, m_logprob, m_entropy, params = self.mask_decoder(x)
         complex_out, c_logprob, c_entropy, c_params = self.phase_decoder(x)
+
+        m_logprob = m_logprob.squeeze(1)
+        c_logprob = c_logprob.permute(0, 1, 3, 2)
 
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
 
@@ -289,7 +268,7 @@ class MPNet(nn.Module):
         m_logprob = m_logprob.squeeze(1)
         c_logprob = c_logprob.permute(0, 1, 3, 2)
 
-        print(f"m_log:{m_logprob.shape}, c_log:{c_logprob.shape}")
+        #print(f"m_log:{m_logprob.shape}, c_log:{c_logprob.shape}")
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

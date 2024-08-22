@@ -123,8 +123,8 @@ class MaskDecoder(nn.Module):
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
-        print("="*100+"\nMask Decoder")
-        print(f"X:{x.shape}")
+        #print("="*100+"\nMask Decoder")
+        #print(f"X:{x.shape}")
         x = self.dense_block(x)
         x = self.mask_conv(x)
         #if self.dist is not None:
@@ -147,7 +147,7 @@ class MaskDecoder(nn.Module):
             x_out = self.lsigmoid(x_out).permute(0, 2, 1).unsqueeze(1)
             #x = self.lsigmoid(x).permute(0, 2, 1).unsqueeze(1)
 
-        print(f"X_LOG:{x_logprob.shape}, X_LOG:{x_logprob.shape}")
+        #print(f"X_LOG:{x_logprob.shape}, X_LOG:{x_logprob.shape}")
         return (x, x_out), x_logprob, x_entropy, params
 
 
@@ -179,8 +179,8 @@ class PhaseDecoder(nn.Module):
         return x, x_logprob, x_entropy, (mu, sigma)
 
     def forward(self, x, action=None):
-        print("="*100+"\nPhase Decoder")
-        print(f"X:{x.shape}")
+        #print("="*100+"\nPhase Decoder")
+        #print(f"X:{x.shape}")
         x = self.dense_block(x)
         #print(f"X1:{x.shape}")
         x = self.phase_conv(x)
@@ -197,7 +197,7 @@ class PhaseDecoder(nn.Module):
         #print(f"X_out:{x.shape}")
         x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1).squeeze(2)
         x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1).squeeze(2)
-        print(f"X_Log:{x_logprob.shape}, X_Ent:{x_entropy.shape}")
+        #print(f"X_Log:{x_logprob.shape}, X_Ent:{x_entropy.shape}")
         params = (torch.stack([r_params[0], i_params[0]], dim=1), torch.stack([r_params[1], i_params[0]], dim=1))
 
         return x, x_logprob, x_entropy, params
@@ -286,7 +286,8 @@ class MPNet(nn.Module):
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
 
-        #print(f"m_log:{m_logprob.shape}")
+
+        print(f"m_log:{m_logprob.shape}, c_log:{c_logprob}")
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

@@ -584,7 +584,7 @@ class PPO:
                 pg_loss = torch.max(pg_loss1, pg_loss2)
 
                 mb_act, _, _, _ = actor.get_action(noisy_pre)
-                mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act)
+                mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act, model=self.model)
                 mb_enhanced = mb_next_state['noisy']
 
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)

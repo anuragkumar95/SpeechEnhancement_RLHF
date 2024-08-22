@@ -116,7 +116,7 @@ class MaskDecoder(nn.Module):
         if x is None:
             x = N.rsample()
         if len(x.shape) != len(mu.shape):
-            raise ValueError(msg="No. of dims in action {x.shape} don't match mu {mu.shape}")
+            raise ValueError(f"No. of dims in action {x.shape} don't match mu {mu.shape}")
         if x.shape[-1] != mu.shape[-1]:
             x = x.permute(0, 1, 3, 2)
         x_logprob = N.log_prob(x)
@@ -163,7 +163,7 @@ class PhaseDecoder(nn.Module):
         if x is None:
             x = N.rsample()
         if len(x.shape) != len(mu.shape):
-            raise ValueError(msg="No. of dims in action {x.shape} don't match mu {mu.shape}")
+            raise ValueError(f"No. of dims in action {x.shape} don't match mu {mu.shape}")
         if x.shape[-1] != mu.shape[-1]:
             x = x.permute(0, 1, 3, 2)
         x_logprob = N.log_prob(x)

@@ -101,7 +101,7 @@ class SpeechEnhancementAgent:
             denoised_pha = complex_out.permute(0, 3, 2, 1).squeeze(-1)
 
             est_spec = torch.stack((denoised_mag*torch.cos(denoised_pha),
-                                        denoised_mag*torch.sin(denoised_pha)), dim=-1)
+                                        denoised_mag*torch.sin(denoised_pha)), dim=1)
             
             est_real = est_spec[:, 0, :, :].unsqueeze(1)
             est_imag = est_spec[:, 1, :, :].unsqueeze(1)

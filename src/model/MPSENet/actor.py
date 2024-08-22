@@ -288,21 +288,6 @@ class MPNet(nn.Module):
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         
-        
-    def get_embedding(self, x):
-        noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        noisy_pha = torch.angle(
-            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
-        ).unsqueeze(1)
-
-        x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
-        x = self.dense_encoder(x)
-
-        for i in range(self.num_tscblocks):
-            x = self.TSConformer[i](x)
-
-        return x
 
     def forward(self, noisy_mag, noisy_pha): # [B, F, T]
         noisy_mag = noisy_mag.unsqueeze(-1).permute(0, 3, 2, 1) # [B, 1, T, F]

@@ -146,7 +146,12 @@ class Trainer:
                     checkpoint = map_state_dict(expert_checkpoint['generator'])
                     print(f"Keys in checkpoint....")
                     for key1, key2, key3 in zip(expert_checkpoint['generator'].keys(), checkpoint.keys(), self.actor.state_dict().keys()):
-                        print(key1, "||", key2, "||", key3)
+                        if key1 != key2:
+                            print("A")
+                            print(key1, "||", key2, "||", key3)
+                        if key1 != key3:
+                            print("B")
+                            print(key1, "||", key2, "||", key3)
                     self.actor.load_state_dict(checkpoint) 
                     self.expert.load_state_dict(checkpoint)
               

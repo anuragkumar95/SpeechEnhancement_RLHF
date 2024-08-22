@@ -108,9 +108,9 @@ class SpeechEnhancementAgent:
             
             est_mag = torch.pow(mag, (1.0/0.3))
             
-            denoised_mag = denoised_mag.unsqueeze(1)
-            denoised_pha = denoised_pha.unsqueeze(1)
-            mag = mag.permute(0, 1, 3, 2)
+            #denoised_mag = denoised_mag.unsqueeze(1)
+            #denoised_pha = denoised_pha.unsqueeze(1)
+            mag = mag.permute(0, 1, 3, 2).squeeze(1)
 
             print(f"MAG:{denoised_mag.shape}, PHASE:{denoised_pha.shape}, NOISY:{mag.shape}")
 

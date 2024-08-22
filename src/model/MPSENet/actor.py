@@ -286,6 +286,8 @@ class MPNet(nn.Module):
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
 
+        m_logprob = m_logprob.squeeze(1)
+        c_logprob = c_logprob.permute(0, 1, 3, 2)
 
         print(f"m_log:{m_logprob.shape}, c_log:{c_logprob.shape}")
 

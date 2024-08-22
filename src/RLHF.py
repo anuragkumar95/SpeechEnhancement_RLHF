@@ -466,7 +466,7 @@ class PPO:
                             torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                             torch.stack(actions[1]).reshape(-1, t, f).detach())
             
-            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
+            logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)

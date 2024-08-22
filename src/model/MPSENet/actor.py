@@ -181,7 +181,7 @@ class PhaseDecoder(nn.Module):
         print(f"X_R:{x_r_mu.shape}, X_I:{x_i_mu.shape}")
         x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action)
         x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action)
-        print(f"X_R:{x_r.shape}, X_I:{x_i.shape}, X_R_Log:{x_r_logprob}, X_I_Log:{x_i_logprob}")
+        print(f"X_R:{x_r.shape}, X_I:{x_i.shape}, X_R_Log:{x_r_logprob.shape}, X_I_Log:{x_i_logprob.shape}")
         if self.evaluation:
             x_r = r_params[0]
             x_i = i_params[0]

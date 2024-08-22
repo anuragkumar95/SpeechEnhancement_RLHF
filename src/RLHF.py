@@ -587,6 +587,7 @@ class PPO:
                 mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act, model=self.model)
                 mb_enhanced = mb_next_state['noisy']
 
+                print(f"ENHANCED_SPEC:{mb_enhanced.shape}")
                 mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                 mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
 

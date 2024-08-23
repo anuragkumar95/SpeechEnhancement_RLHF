@@ -244,7 +244,7 @@ class MPNet(nn.Module):
         complex_out, c_logprob, c_entropy, c_params = self.phase_decoder(x)
 
         m_logprob = m_logprob.squeeze(1)
-        c_logprob = c_logprob.permute(0, 1, 3, 2)
+        c_logprob = c_logprob.permute(0, 1, 3, 2)   
 
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
 

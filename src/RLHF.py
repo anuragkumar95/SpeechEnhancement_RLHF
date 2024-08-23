@@ -350,6 +350,7 @@ class PPO:
                     if self.init_model is not None:
                         init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                         ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
+                        print(f"REF_LOG_PROBS:{ref_log_probs[0].mean()}, {ref_log_probs[1].mean()}")
                         exp_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
             
                     state = self.env.get_next_state(state=noisy_rl, action=action, model=self.model)
@@ -470,6 +471,7 @@ class PPO:
                             torch.stack(actions[0][1]).detach()),
                             torch.stack(actions[1]).detach())
             
+            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1].shape}")
             
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             

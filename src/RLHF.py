@@ -467,14 +467,14 @@ class PPO:
                 actions = (([a[0][0] for a in actions], 
                             [a[0][1] for a in actions]), 
                            ([a[1][0] for a in actions], 
-                            [a[1][1] for a in actions]))
+                            ([a[1][1][0] for a in actions], [a[1][1][1] for a in actions])))
                  
-                actions = ((torch.stack(actions[0][0]).detach(), 
-                            torch.stack(actions[0][1]).detach()),
+                actions = ((torch.stack(actions[0][0]).detach(), torch.stack(actions[0][1]).detach()),
                            (torch.stack(actions[1][0]).detach(),
-                            torch.stack(actions[1][1]).detach()))
+                           (torch.stack(actions[1][1][0]).detach(),torch.stack(actions[1][1][1]).detach())
+                           ))
             
-            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1].shape}")
+            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
             
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             
@@ -553,7 +553,10 @@ class PPO:
                 mb_states = states[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
-                mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
+                mb_action = ((actions[0][0][mb_indx, ...], 
+                              actions[0][1][mb_indx, ...]), 
+                             (actions[1][mb_indx, ...],
+                              )
                 print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1].mean()}") 
                 print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1].shape}") 
 

@@ -178,8 +178,10 @@ class PhaseDecoder(nn.Module):
         x = self.phase_conv(x)
         x_r_mu = self.phase_conv_r(x)
         x_i_mu = self.phase_conv_i(x)
-        x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action)
-        x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action)
+        if action is not None:
+            print(f"MASK DEC: MU={x_r_mu.shape}, ACT={action.shape}")
+        x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action[0])
+        x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action[1])
         if self.evaluation:
             x_r = r_params[0]
             x_i = i_params[0]
@@ -189,7 +191,7 @@ class PhaseDecoder(nn.Module):
         x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1).squeeze(2)
         params = (torch.stack([r_params[0], i_params[0]], dim=1), torch.stack([r_params[1], i_params[0]], dim=1))
 
-        return x, x_logprob, x_entropy, params
+        return (x, (x_r, x_i)), x_logprob, x_entropy, params
 
 
 class TSConformerBlock(nn.Module):
@@ -271,17 +273,9 @@ class MPNet(nn.Module):
 
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
-
-        #if action is not None:
-        #    m_action = action[0][0]
-        #    if len(m_action.shape) == 3:
-        #        m_action = m_action.unsqueeze(1)
-        #    c_action = action[1]
-        #    if len(c_action.shape) == 3:
-        #        c_action = c_action.unsqueeze(1)
       
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
-        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
+        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
 
         m_logprob = m_logprob.squeeze(1)
         c_logprob = c_logprob.permute(0, 1, 3, 2)

@@ -341,10 +341,9 @@ class PPO:
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
 
-                    print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1].mean()}")
-                    print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1].shape}")
+                    print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1].mean()}")
+                    print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1][0].mean()}, {action[1][1].mean()}")
             
-
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     
                     if self.init_model is not None:

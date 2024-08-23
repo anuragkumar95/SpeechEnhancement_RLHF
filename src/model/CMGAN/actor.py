@@ -217,17 +217,11 @@ class ComplexDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
 
-        #if self.out_dist == "Normal":
-        #    x_mu = self.conv_mu(x)
-        #    x_var = self.conv_var(x)
-        #    x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
-        #    #return x, x_logprob, x_entropy, params
-        
-        #if self.out_dist is None:
         x_mu = self.conv(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
         if self.evaluation:
             x = params[0]
+            
         return x, x_logprob, x_entropy, params
         
 class TSCNetSmall(nn.Module):

@@ -53,7 +53,10 @@ class SpeechEnhancementAgent:
             Next state enhanced by applying mask.
         """
         x = state
-        (_, mask), complex_out = action
+        if model == 'cmgan':
+            (_, mask), complex_out = action
+        if model == 'mpsenet':
+            (_, mask), (complex_out, _) = action
         
         noisy_phase = torch.angle(
             torch.complex(x[:, 0, :, :], x[:, 1, :, :])

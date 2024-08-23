@@ -129,6 +129,8 @@ class MaskDecoder(nn.Module):
         x = self.mask_conv(x)
         
         x_mu = self.final_conv(x)
+        if action is not None:
+            print(f"MASK DEC: MU={x_mu.shape}, ACT={action.shape}")
         x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
         if self.evaluation:
             x_out = self.lsigmoid(params[0].permute(0, 3, 2, 1).squeeze(-1))
@@ -270,16 +272,16 @@ class MPNet(nn.Module):
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
 
-        if action is not None:
-            m_action = action[0][0]
-            if len(m_action.shape) == 3:
-                m_action = m_action.unsqueeze(1)
-            c_action = action[1]
-            if len(c_action.shape) == 3:
-                c_action = c_action.unsqueeze(1)
+        #if action is not None:
+        #    m_action = action[0][0]
+        #    if len(m_action.shape) == 3:
+        #        m_action = m_action.unsqueeze(1)
+        #    c_action = action[1]
+        #    if len(c_action.shape) == 3:
+        #        c_action = c_action.unsqueeze(1)
       
-        _, m_logprob, m_entropy, _ = self.mask_decoder(x, m_action)
-        _, c_logprob, c_entropy, _ = self.phase_decoder(x, c_action)
+        _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
+        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1])
 
         m_logprob = m_logprob.squeeze(1)
         c_logprob = c_logprob.permute(0, 1, 3, 2)

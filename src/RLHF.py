@@ -466,9 +466,9 @@ class PPO:
                             torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                             torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
             if self.model == 'mpsenet':
-                actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
-                            torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
-                            torch.stack(actions[1]).reshape(-1, t, f).detach())
+                actions = ((torch.stack(actions[0][0]).detach(), 
+                            torch.stack(actions[0][1]).detach()),
+                            torch.stack(actions[1]).detach())
             
             
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
@@ -552,9 +552,9 @@ class PPO:
                 print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1].mean()}") 
                 print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1].shape}") 
 
-                if self.model == 'mpsenet':
-                    mb_action = ((actions[0][0][mb_indx, ...].unsqueeze(1), 
-                                  actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
+                #if self.model == 'mpsenet':
+                #    mb_action = ((actions[0][0][mb_indx, ...].unsqueeze(1), 
+                #                  actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
 
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)

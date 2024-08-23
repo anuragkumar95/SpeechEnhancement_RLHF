@@ -462,9 +462,9 @@ class PPO:
                 c_actions0 = []
              
                 for batch in actions:
-                    m_actions0.extend([a[0][0] for a in batch])
-                    m_actions1.extend([a[0][1] for a in batch])
-                    c_actions0.extend([a[1] for a in batch])
+                    m_actions0.extend([a for a in batch[0][0]])
+                    m_actions1.extend([a for a in batch[0][1]])
+                    c_actions0.extend([a for a in batch[1]])
                    
                 actions = ((torch.stack(m_actions0).reshape(-1, f, t).detach(), 
                             torch.stack(m_actions1).reshape(-1, f, t).detach()),
@@ -478,11 +478,11 @@ class PPO:
                 c_actions1 = []
                 c_actions2 = []
                 for batch in actions:
-                    m_actions0.extend([a[0][0] for a in batch])
-                    m_actions1.extend([a[0][1] for a in batch])
-                    c_actions0.extend([a[1][0] for a in batch])
-                    c_actions1.extend([a[1][1][0] for a in batch])
-                    c_actions2.extend([a[1][1][1] for a in batch])
+                    m_actions0.extend([a for a in batch[0][0]])
+                    m_actions1.extend([a for a in batch[0][1]])
+                    c_actions0.extend([a for a in batch[1][0]])
+                    c_actions1.extend([a for a in batch[1][1][0]])
+                    c_actions2.extend([a for a in batch[1][1][1]])
 
                 actions = ((torch.stack(m_actions0).squeeze(2).detach(), 
                             torch.stack(m_actions1).squeeze(2).detach()),

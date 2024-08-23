@@ -342,6 +342,7 @@ class PPO:
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
 
                     print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1].mean()}")
+                    print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1].shape}")
             
 
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
@@ -548,7 +549,9 @@ class PPO:
 
                 #Get new logprobs and values for the sampled (state, action) pair
                 mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
-                print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1].mean()}")        
+                print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1].mean()}") 
+                print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1].shape}") 
+
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 

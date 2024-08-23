@@ -369,9 +369,10 @@ class PPO:
                     ref_log_prob = None
                     if self.init_model is not None:
                         ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                        print(f"ref_log_prob:{ref_log_prob.mean()}")
                     log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
                     print(f"log_prob:{log_prob.mean()}")
-
+                    
                     if ref_log_prob is not None:
                         kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                         ep_kl_penalty += kl_penalty.mean()

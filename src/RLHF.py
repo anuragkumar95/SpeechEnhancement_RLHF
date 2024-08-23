@@ -477,7 +477,10 @@ class PPO:
                             torch.stack(actions[1][1][1]).squeeze(2).detach())
                            ))
             
-            logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
+            if self.model == 'cmgan':
+                logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
+            if self.model == 'mpsenet':
+                logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)

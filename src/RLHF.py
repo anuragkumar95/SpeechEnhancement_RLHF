@@ -341,16 +341,16 @@ class PPO:
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
 
-                    if self.model == 'mpsenet':
-                        print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")
-                        print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
+                    #if self.model == 'mpsenet':
+                        #print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")
+                        #print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
             
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     
                     if self.init_model is not None:
                         init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                         ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
-                        print(f"REF_LOG_PROBS:{ref_log_probs[0].mean()}, {ref_log_probs[1].mean()}")
+                        #print(f"REF_LOG_PROBS:{ref_log_probs[0].mean()}, {ref_log_probs[1].mean()}")
                         exp_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
             
                     state = self.env.get_next_state(state=noisy_rl, action=action, model=self.model)
@@ -571,17 +571,17 @@ class PPO:
                                 actions[0][1][mb_indx, ...]), 
                                 (actions[1][0][mb_indx, ...],
                                 (actions[1][1][0][mb_indx, ...], actions[1][1][1][mb_indx, ...])))
-                    print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
-                    print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
+                    #print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
+                    #print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
 
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
                 if self.train_phase:
                     #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
-                    print(f"log_probs0:{log_probs[0].shape}, {log_probs[0].mean()}")
-                    print(f"log_probs10:{log_probs[1][:, 0, :, :].shape}, {log_probs[1][:, 0, :, :].mean()}")
-                    print(f"log_probs11:{log_probs[1][:, 1, :, :].shape}, {log_probs[1][:, 1, :, :].mean()}")
+                    #print(f"log_probs0:{log_probs[0].shape}, {log_probs[0].mean()}")
+                    #print(f"log_probs10:{log_probs[1][:, 0, :, :].shape}, {log_probs[1][:, 0, :, :].mean()}")
+                    #print(f"log_probs11:{log_probs[1][:, 1, :, :].shape}, {log_probs[1][:, 1, :, :].mean()}")
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_prob.detach()

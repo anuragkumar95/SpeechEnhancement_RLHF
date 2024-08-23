@@ -338,7 +338,7 @@ class PPO:
                     bs, ch, t, f = clean_rl.shape
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
-                    print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}")
+                    print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}, {len(action[1][1])}")
 
                     #if self.model == 'mpsenet':
                         #print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")

@@ -270,7 +270,7 @@ class PPO:
         #Start PPO
         policy = self.unroll_policy(actor)
         self.t += 1
-        return self.train_on_policy(policy, actor, optimizer, n_epochs)
+        #return self.train_on_policy(policy, actor, optimizer, n_epochs)
        
     def get_expected_return(self, rewards):
         """
@@ -485,11 +485,11 @@ class PPO:
                     c_actions1.append(batch[1][1][0])
                     c_actions2.append(batch[1][1][1])
 
-                actions = ((torch.stack(m_actions0).squeeze(2).detach(), 
-                            torch.stack(m_actions1).squeeze(2).detach()),
-                           (torch.stack(c_actions0).squeeze(2).detach(),
-                           (torch.stack(c_actions1).squeeze(2).detach(),
-                            torch.stack(c_actions2).squeeze(2).detach())
+                actions = ((torch.stack(m_actions0, dim=0).squeeze(2).detach(), 
+                            torch.stack(m_actions1, dim=0).squeeze(2).detach()),
+                           (torch.stack(c_actions0, dim=0).squeeze(2).detach(),
+                           (torch.stack(c_actions1, dim=0).squeeze(2).detach(),
+                            torch.stack(c_actions2, dim=0).squeeze(2).detach())
                            ))
             
             if self.model == 'cmgan':

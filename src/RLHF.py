@@ -270,7 +270,7 @@ class PPO:
         #Start PPO
         policy = self.unroll_policy(actor)
         self.t += 1
-        #return self.train_on_policy(policy, actor, optimizer, n_epochs)
+        return self.train_on_policy(policy, actor, optimizer, n_epochs)
        
     def get_expected_return(self, rewards):
         """

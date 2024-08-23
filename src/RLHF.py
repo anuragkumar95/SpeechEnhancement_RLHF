@@ -553,16 +553,18 @@ class PPO:
                 mb_states = states[mb_indx, ...]
 
                 #Get new logprobs and values for the sampled (state, action) pair
-                mb_action = ((actions[0][0][mb_indx, ...], 
-                              actions[0][1][mb_indx, ...]), 
-                             (actions[1][mb_indx, ...],
-                              )
-                print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1].mean()}") 
-                print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1].shape}") 
+                if self.model == 'cmgan':
+                    mb_action = ((actions[0][0][mb_indx, ...],
+                                  actions[0][1][mb_indx, ...]), 
+                                  actions[1][mb_indx, ...])
 
-                #if self.model == 'mpsenet':
-                #    mb_action = ((actions[0][0][mb_indx, ...].unsqueeze(1), 
-                #                  actions[0][1][mb_indx, ...]), actions[1][mb_indx, ...])
+                if self.model == 'mpsenet':
+                    mb_action = ((actions[0][0][mb_indx, ...], 
+                                actions[0][1][mb_indx, ...]), 
+                                (actions[1][0][mb_indx, ...],
+                                (actions[1][1][0][mb_indx, ...], actions[1][1][0][mb_indx, ...])))
+                    print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
+                    print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
 
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)

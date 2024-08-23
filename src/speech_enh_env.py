@@ -93,10 +93,7 @@ class SpeechEnhancementAgent:
                 onesided=True,
             )
             
-
             est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
-            
-            #next_state = {k:v.detach() for k, v in state.items()}
         
         if model == 'mpsenet':
             
@@ -111,12 +108,7 @@ class SpeechEnhancementAgent:
             
             est_mag = torch.pow(mag, (1.0/0.3))
             
-            #denoised_mag = denoised_mag.unsqueeze(1)
-            #denoised_pha = denoised_pha.unsqueeze(1)
             mag = mag.permute(0, 1, 3, 2).squeeze(1)
-
-            #print(f"MAG:{denoised_mag.shape}, PHASE:{denoised_pha.shape}, NOISY:{mag.shape}")
-
             com = torch.complex(mag*torch.cos(denoised_pha), mag*torch.sin(denoised_pha))
             est_audio = torch.istft(com, 
                 self.n_fft, 
@@ -134,27 +126,6 @@ class SpeechEnhancementAgent:
 
         return next_state
 
-
-
-
-
-
-
-
-
-
-    '''
-    def get_RLHF_reward(self, inp, out):
-        """
-        ARGS:
-            inp : spectrogram of curr state (b * ch * t * f) 
-            out : spectrogram of next state (b * ch * t * f) 
-
-        Returns
-            Reward in the range (0, 1) for next state with reference to curr state.
-        """
-        return self.reward_model.get_reward(out) - self.reward_model.get_reward(inp) 
-    '''
     def get_RLHF_reward(self, state, scale=False):
         """
         ARGS:

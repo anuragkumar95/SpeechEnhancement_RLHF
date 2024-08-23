@@ -272,8 +272,6 @@ class PPO:
         self.t += 1
         return self.train_on_policy(policy, actor, optimizer, n_epochs)
        
-
-          
     def get_expected_return(self, rewards):
         """
         Expects rewards to be a torch tensor.
@@ -466,16 +464,24 @@ class PPO:
                             torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
                 
             if self.model == 'mpsenet':
-                actions = (([a[0][0] for a in actions], 
-                            [a[0][1] for a in actions]), 
-                           ([a[1][0] for a in actions], 
-                            ([a[1][1][0] for a in actions], [a[1][1][1] for a in actions])))
-                 
-                actions = ((torch.stack(actions[0][0]).squeeze(2).detach(), 
-                            torch.stack(actions[0][1]).squeeze(2).detach()),
-                           (torch.stack(actions[1][0]).squeeze(2).detach(),
-                           (torch.stack(actions[1][1][0]).squeeze(2).detach(),
-                            torch.stack(actions[1][1][1]).squeeze(2).detach())
+                #print(f"len actions:{}")
+                m_actions0 = []
+                m_actions1 = []
+                c_actions0 = []
+                c_actions1 = []
+                c_actions2 = []
+                for batch in actions:
+                    m_actions0.extend([a[0][0] for a in batch])
+                    m_actions1.extend([a[0][1] for a in batch])
+                    c_actions0.extend([a[1][0] for a in batch])
+                    c_actions1.extend([a[1][1][0] for a in batch])
+                    c_actions2.extend([a[1][1][1] for a in batch])
+
+                actions = ((torch.stack(m_actions0).squeeze(2).detach(), 
+                            torch.stack(m_actions1).squeeze(2).detach()),
+                           (torch.stack(c_actions0).squeeze(2).detach(),
+                           (torch.stack(c_actions1).squeeze(2).detach(),
+                            torch.stack(c_actions2).squeeze(2).detach())
                            ))
             
             if self.model == 'cmgan':
@@ -495,7 +501,7 @@ class PPO:
         if self.model == 'cmgan':
             print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
-        print(f"POLICY RETURNS:{target_values.mean(0)}")
+        #print(f"POLICY RETURNS:{target_values.mean(0)}")
 
         policy_out = {
             'states':states,
@@ -579,9 +585,6 @@ class PPO:
 
                 if self.train_phase:
                     #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
-                    #print(f"log_probs0:{log_probs[0].shape}, {log_probs[0].mean()}")
-                    #print(f"log_probs10:{log_probs[1][:, 0, :, :].shape}, {log_probs[1][:, 0, :, :].mean()}")
-                    #print(f"log_probs11:{log_probs[1][:, 1, :, :].shape}, {log_probs[1][:, 1, :, :].mean()}")
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_prob.detach()

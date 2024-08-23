@@ -462,9 +462,9 @@ class PPO:
                 c_actions0 = []
              
                 for batch in actions:
-                    m_actions0.extend([a for a in batch[0][0]])
-                    m_actions1.extend([a for a in batch[0][1]])
-                    c_actions0.extend([a for a in batch[1]])
+                    m_actions0.append(batch[0][0])
+                    m_actions1.append(batch[0][1])
+                    c_actions0.append(batch[1])
                    
                 actions = ((torch.stack(m_actions0).reshape(-1, f, t).detach(), 
                             torch.stack(m_actions1).reshape(-1, f, t).detach()),
@@ -485,11 +485,11 @@ class PPO:
                     c_actions1.append(batch[1][1][0])
                     c_actions2.append(batch[1][1][1])
 
-                actions = ((torch.stack(m_actions0, dim=0).squeeze(2).detach(), 
-                            torch.stack(m_actions1, dim=0).squeeze(2).detach()),
-                           (torch.stack(c_actions0, dim=0).squeeze(2).detach(),
-                           (torch.stack(c_actions1, dim=0).squeeze(2).detach(),
-                            torch.stack(c_actions2, dim=0).squeeze(2).detach())
+                actions = ((torch.stack(m_actions0, dim=0).reshape(-1, t, f).detach(), 
+                            torch.stack(m_actions1, dim=0).reshape(-1, t, f).detach()),
+                           (torch.stack(c_actions0, dim=0).reshape(-1, t, f).detach(),
+                           (torch.stack(c_actions1, dim=0).reshape(-1, t, f).detach(),
+                            torch.stack(c_actions2, dim=0).reshape(-1, t, f).detach())
                            ))
             
             if self.model == 'cmgan':

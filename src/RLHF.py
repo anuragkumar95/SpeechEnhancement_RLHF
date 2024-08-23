@@ -455,22 +455,26 @@ class PPO:
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             
-            actions = (([a[0][0] for a in actions], 
-                        [a[0][1] for a in actions]), 
-                        [a[1] for a in actions])
-            
-            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1].shape}")
-
             if self.model == 'cmgan':
+                actions = (([a[0][0] for a in actions], 
+                            [a[0][1] for a in actions]), 
+                            [a[1] for a in actions])
                 actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
                             torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                             torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
+                
             if self.model == 'mpsenet':
+                actions = (([a[0][0] for a in actions], 
+                            [a[0][1] for a in actions]), 
+                           ([a[1][0] for a in actions], 
+                            [a[1][1] for a in actions]))
+                 
                 actions = ((torch.stack(actions[0][0]).detach(), 
                             torch.stack(actions[0][1]).detach()),
-                            torch.stack(actions[1]).detach())
+                           (torch.stack(actions[1][0]).detach(),
+                            torch.stack(actions[1][1]).detach()))
             
-            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1].shape}")
+            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1].shape}")
             
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             

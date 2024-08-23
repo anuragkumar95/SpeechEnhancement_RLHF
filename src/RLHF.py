@@ -338,6 +338,7 @@ class PPO:
                     bs, ch, t, f = clean_rl.shape
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
+                    print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}")
 
                     #if self.model == 'mpsenet':
                         #print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")
@@ -456,12 +457,18 @@ class PPO:
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             
             if self.model == 'cmgan':
-                actions = (([a[0][0] for a in actions], 
-                            [a[0][1] for a in actions]), 
-                            [a[1] for a in actions])
-                actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
-                            torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
-                            torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
+                m_actions0 = []
+                m_actions1 = []
+                c_actions0 = []
+             
+                for batch in actions:
+                    m_actions0.extend([a[0][0] for a in batch])
+                    m_actions1.extend([a[0][1] for a in batch])
+                    c_actions0.extend([a[1] for a in batch])
+                   
+                actions = ((torch.stack(m_actions0).reshape(-1, f, t).detach(), 
+                            torch.stack(m_actions1).reshape(-1, f, t).detach()),
+                            torch.stack(c_actions0).reshape(-1, ch, t, f).detach())
                 
             if self.model == 'mpsenet':
                 #print(f"len actions:{}")

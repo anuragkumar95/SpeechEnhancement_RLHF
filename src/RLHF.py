@@ -505,7 +505,7 @@ class PPO:
         print(f"REWARDS:      :{rewards.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
         if self.model == 'mpsenet':
-            print(f"ACTIONS       :{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
+            print(f"ACTIONS       :{actions[0][0].shape}, {actions[0][1].shape}, {actions[1][0].shape}, {actions[1][1][0].shape}, {actions[1][1][1].shape}")
         if self.model == 'cmgan':
             print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")

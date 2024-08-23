@@ -469,9 +469,11 @@ class PPO:
                            ([a[1][0] for a in actions], 
                             ([a[1][1][0] for a in actions], [a[1][1][1] for a in actions])))
                  
-                actions = ((torch.stack(actions[0][0]).detach(), torch.stack(actions[0][1]).detach()),
-                           (torch.stack(actions[1][0]).detach(),
-                           (torch.stack(actions[1][1][0]).detach(),torch.stack(actions[1][1][1]).detach())
+                actions = ((torch.stack(actions[0][0]).squeeze(2).detach(), 
+                            torch.stack(actions[0][1]).squeeze(2).detach()),
+                           (torch.stack(actions[1][0]).squeeze(2).detach(),
+                           (torch.stack(actions[1][1][0]).squeeze(2).detach(),
+                            torch.stack(actions[1][1][1]).squeeze(2).detach())
                            ))
             
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()

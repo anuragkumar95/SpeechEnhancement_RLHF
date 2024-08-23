@@ -180,8 +180,11 @@ class PhaseDecoder(nn.Module):
         x_i_mu = self.phase_conv_i(x)
         if action is not None:
             print(f"MASK DEC: MU={x_r_mu.shape}, ACT={action.shape}")
-        x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, action[0])
-        x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, action[1])
+        r_action, i_action = None, None
+        if action is not None:
+            r_action, i_action = action
+        x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, r_action)
+        x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, i_action)
         if self.evaluation:
             x_r = r_params[0]
             x_i = i_params[0]
@@ -253,7 +256,7 @@ class MPNet(nn.Module):
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
 
     
-    def get_action_prob(self, x, action=None):
+    def get_action_prob(self, x, action):
         """
         ARGS:
             x : spectrogram
@@ -295,7 +298,7 @@ class MPNet(nn.Module):
             x = self.TSConformer[i](x)
 
         (_, mask), _, _, _ = self.mask_decoder(x)
-        complex_out, _, _, _ = self.phase_decoder(x)
+        (complex_out, _), _, _, _ = self.phase_decoder(x)
 
         denoised_mag = (noisy_mag * mask).permute(0, 3, 2, 1).squeeze(-1)
         denoised_pha = complex_out.permute(0, 3, 2, 1).squeeze(-1)

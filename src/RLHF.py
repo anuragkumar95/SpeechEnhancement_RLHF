@@ -478,11 +478,12 @@ class PPO:
                 c_actions1 = []
                 c_actions2 = []
                 for batch in actions:
-                    m_actions0.extend([a for a in batch[0][0]])
-                    m_actions1.extend([a for a in batch[0][1]])
-                    c_actions0.extend([a for a in batch[1][0]])
-                    c_actions1.extend([a for a in batch[1][1][0]])
-                    c_actions2.extend([a for a in batch[1][1][1]])
+                    print(batch[0][0].shape, batch[0][1].shape, batch[1][0].shape, batch[1][1][0].shape, batch[1][1][1].shape,)
+                    m_actions0.append(batch[0][0])
+                    m_actions1.append(batch[0][1])
+                    c_actions0.append(batch[1][0])
+                    c_actions1.append(batch[1][1][0])
+                    c_actions2.append(batch[1][1][1])
 
                 actions = ((torch.stack(m_actions0).squeeze(2).detach(), 
                             torch.stack(m_actions1).squeeze(2).detach()),

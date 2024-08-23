@@ -485,11 +485,11 @@ class PPO:
                     c_actions1.append(batch[1][1][0])
                     c_actions2.append(batch[1][1][1])
 
-                actions = ((torch.stack(m_actions0, dim=0).reshape(-1, t, f).detach(), 
-                            torch.stack(m_actions1, dim=0).reshape(-1, t, f).detach()),
-                           (torch.stack(c_actions0, dim=0).reshape(-1, t, f).detach(),
-                           (torch.stack(c_actions1, dim=0).reshape(-1, t, f).detach(),
-                            torch.stack(c_actions2, dim=0).reshape(-1, t, f).detach())
+                actions = ((torch.stack(m_actions0, dim=0).reshape(-1, 1, t, f).detach(), 
+                            torch.stack(m_actions1, dim=0).reshape(-1, 1, t, f).detach()),
+                           (torch.stack(c_actions0, dim=0).reshape(-1, 1, t, f).detach(),
+                           (torch.stack(c_actions1, dim=0).reshape(-1, 1, t, f).detach(),
+                            torch.stack(c_actions2, dim=0).reshape(-1, 1, t, f).detach())
                            ))
             
             if self.model == 'cmgan':

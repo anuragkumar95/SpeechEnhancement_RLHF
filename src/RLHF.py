@@ -474,8 +474,6 @@ class PPO:
                            (torch.stack(actions[1][1][0]).detach(),torch.stack(actions[1][1][1]).detach())
                            ))
             
-            print(f"ACTIONS: {action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
-            
             logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
@@ -485,7 +483,10 @@ class PPO:
         print(f"CLEAN         :{cleans.shape}")
         print(f"REWARDS:      :{rewards.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
-        print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
+        if self.model == 'mpsenet':
+            print(f"ACTIONS       :{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
+        if self.model == 'cmgan':
+            print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
         print(f"POLICY RETURNS:{target_values.mean(0)}")
 

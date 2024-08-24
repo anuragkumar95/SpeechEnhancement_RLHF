@@ -603,7 +603,7 @@ class PPO:
 
                 if self.train_phase:
                     print(f"logprobs00:{log_probs[0].mean()}, {log_probs[0].shape}")
-                    print(f"logprobs10:{log_probs[1][:, 0, :, :].mean()}, {log_probs[0][:, 0, :, :].shape}")
+                    print(f"logprobs10:{log_probs[1][:, 0, :, :].mean()}, {log_probs[1][:, 0, :, :].shape}")
                     print(f"logprobs11:{log_probs[1][:, 1, :, :].mean()}, {log_probs[1][:, 1, :, :].shape}")
                     #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]

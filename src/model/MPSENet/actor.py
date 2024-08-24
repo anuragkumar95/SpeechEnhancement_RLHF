@@ -273,6 +273,7 @@ class MPNet(nn.Module):
         ).unsqueeze(1)
 
         x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
+        print(f"inp:{torch.isnan(x.mean())}")
         x = self.dense_encoder(x)
 
         for i in range(self.num_tscblocks):

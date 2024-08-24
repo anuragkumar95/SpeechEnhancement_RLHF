@@ -278,6 +278,7 @@ class MPNet(nn.Module):
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
       
+        print(f"isnan:{torch.isnan(x)}, {torch.isnan(action[0][0])}, {torch.isnan(action[1][1])}")
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
 

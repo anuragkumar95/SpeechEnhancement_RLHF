@@ -672,6 +672,7 @@ class PPO:
                     'pg_loss2':pg_loss2.mean(),
                 })
 
+                print(f"loss:{torch.isnan(clip_loss.mean())}")
                 clip_loss = clip_loss / self.accum_grad
                 clip_loss.backward()
         

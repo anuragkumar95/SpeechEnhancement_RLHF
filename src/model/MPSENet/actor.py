@@ -271,12 +271,12 @@ class MPNet(nn.Module):
         ).unsqueeze(1)
 
         x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
-        print(f"inp:{torch.isnan(x.mean())}")
+        print(f"inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         x = self.dense_encoder(x)
-
+        print(f"dense_encoder:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         for i in range(self.num_tscblocks):
             x = self.TSConformer[i](x)
-      
+        print(f"Conformer:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         print(f"isnan:{torch.isnan(x.mean())}, {torch.isnan(action[0][0].mean())}, {torch.isnan(action[1][1][0].mean())}, {torch.isnan(action[1][1][1].mean())}")
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])

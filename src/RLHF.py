@@ -491,14 +491,14 @@ class PPO:
 
                 actions = (
                     (
-                        torch.stack(actions[0][0]).reshape(-1, 1, t, f).detach(),
-                        torch.stack(actions[0][1]).reshape(-1, 1, t, f).detach()
+                        torch.stack(actions[0][0]).view(-1, 1, t, f).detach(),
+                        torch.stack(actions[0][1]).view(-1, 1, t, f).detach()
                     ),
                     (
-                        torch.stack(actions[1][0]).reshape(-1, 1, t, f).detach(),
+                        torch.stack(actions[1][0]).view(-1, 1, t, f).detach(),
                         (
-                            torch.stack(actions[1][1][0]).reshape(-1, 1, t, f).detach(),
-                            torch.stack(actions[1][1][1]).reshape(-1, 1, t, f).detach()
+                            torch.stack(actions[1][1][0]).view(-1, 1, t, f).detach(),
+                            torch.stack(actions[1][1][1]).view(-1, 1, t, f).detach()
                         )
                     )
                 )
@@ -595,8 +595,8 @@ class PPO:
                                 actions[0][1][mb_indx, ...]), 
                                 (actions[1][0][mb_indx, ...],
                                 (actions[1][1][0][mb_indx, ...], actions[1][1][1][mb_indx, ...])))
-                    #print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
-                    #print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
+                    print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
+                    print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
 
                 log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
@@ -674,8 +674,7 @@ class PPO:
 
                 clip_loss = clip_loss / self.accum_grad
                 clip_loss.backward()
-            
-
+        
                 #Update network
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)

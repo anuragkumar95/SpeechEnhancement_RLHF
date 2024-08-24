@@ -472,25 +472,47 @@ class PPO:
                 
             if self.model == 'mpsenet':
                 #print(f"len actions:{}")
-                m_actions0 = []
-                m_actions1 = []
-                c_actions0 = []
-                c_actions1 = []
-                c_actions2 = []
-                for batch in actions:
-                    print(batch[0][0].shape, batch[0][1].shape, batch[1][0].shape, batch[1][1][0].shape, batch[1][1][1].shape,)
-                    m_actions0.append(batch[0][0])
-                    m_actions1.append(batch[0][1])
-                    c_actions0.append(batch[1][0])
-                    c_actions1.append(batch[1][1][0])
-                    c_actions2.append(batch[1][1][1])
+                #m_actions0 = []
+                #m_actions1 = []
+                #c_actions0 = []
+                #c_actions1 = []
+                #c_actions2 = []
+                #for batch in actions:
+                #    print(batch[0][0].shape, batch[0][1].shape, batch[1][0].shape, batch[1][1][0].shape, batch[1][1][1].shape,)
+                #    m_actions0.append(batch[0][0])
+                #    m_actions1.append(batch[0][1])
+                #    c_actions0.append(batch[1][0])
+                #    c_actions1.append(batch[1][1][0])
+                #    c_actions2.append(batch[1][1][1])
+                
+                actions = (
+                    (
+                        [batch[0][0] for batch in actions],
+                        [batch[0][1] for batch in actions]
+                    ),
+                    (
+                        [batch[1][0] for batch in actions],
+                        (
+                            [batch[1][1][0] for batch in actions],
+                            [batch[1][1][1] for batch in actions]
+                        )
+                    )
 
-                actions = ((torch.stack(m_actions0, dim=0).reshape(-1, 1, t, f).detach(), 
-                            torch.stack(m_actions1, dim=0).reshape(-1, 1, t, f).detach()),
-                           (torch.stack(c_actions0, dim=0).reshape(-1, 1, t, f).detach(),
-                           (torch.stack(c_actions1, dim=0).reshape(-1, 1, t, f).detach(),
-                            torch.stack(c_actions2, dim=0).reshape(-1, 1, t, f).detach())
-                           ))
+                )
+
+                actions = (
+                    (
+                        torch.stack(actions[0][0]).reshape(-1, 1, t, f).detach(),
+                        torch.stack(actions[0][1]).reshape(-1, 1, t, f).detach()
+                    ),
+                    (
+                        torch.stack(actions[1][0]).reshape(-1, 1, t, f).detach(),
+                        (
+                            torch.stack(actions[1][1][0]).reshape(-1, 1, t, f).detach(),
+                            torch.stack(actions[1][1][1]).reshape(-1, 1, t, f).detach()
+                        )
+                    )
+                )
             
             if self.model == 'cmgan':
                 logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()

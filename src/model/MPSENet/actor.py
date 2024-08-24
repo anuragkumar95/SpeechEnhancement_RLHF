@@ -181,8 +181,6 @@ class PhaseDecoder(nn.Module):
             
         r_action, i_action = None, None
         if action is not None:
-            #print(f"R DEC: MU={x_r_mu.shape}, ACT={action[0].shape}")
-            #print(f"I DEC: MU={x_i_mu.shape}, ACT={action[1].shape}")
             r_action, i_action = action
         x_r, x_r_logprob, x_r_entropy, r_params = self.sample(x_r_mu, None, r_action)
         x_i, x_i_logprob, x_i_entropy, i_params = self.sample(x_i_mu, None, i_action)

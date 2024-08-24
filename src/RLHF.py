@@ -457,33 +457,22 @@ class PPO:
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
             
             if self.model == 'cmgan':
-                m_actions0 = []
-                m_actions1 = []
-                c_actions0 = []
-             
-                for batch in actions:
-                    m_actions0.append(batch[0][0])
-                    m_actions1.append(batch[0][1])
-                    c_actions0.append(batch[1])
+                actions = (
+                    (
+                        [batch[0][0] for batch in actions],
+                        [batch[0][1] for batch in actions]
+                    ),
+                    (
+                        [batch[1][0] for batch in actions],
+                    )
+
+                )
                    
-                actions = ((torch.stack(m_actions0).reshape(-1, f, t).detach(), 
-                            torch.stack(m_actions1).reshape(-1, f, t).detach()),
-                            torch.stack(c_actions0).reshape(-1, ch, t, f).detach())
+                actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 
+                            torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                            torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
                 
             if self.model == 'mpsenet':
-                #print(f"len actions:{}")
-                #m_actions0 = []
-                #m_actions1 = []
-                #c_actions0 = []
-                #c_actions1 = []
-                #c_actions2 = []
-                #for batch in actions:
-                #    print(batch[0][0].shape, batch[0][1].shape, batch[1][0].shape, batch[1][1][0].shape, batch[1][1][1].shape,)
-                #    m_actions0.append(batch[0][0])
-                #    m_actions1.append(batch[0][1])
-                #    c_actions0.append(batch[1][0])
-                #    c_actions1.append(batch[1][1][0])
-                #    c_actions2.append(batch[1][1][1])
                 
                 actions = (
                     (
@@ -531,7 +520,6 @@ class PPO:
         if self.model == 'cmgan':
             print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
-        #print(f"POLICY RETURNS:{target_values.mean(0)}")
 
         policy_out = {
             'states':states,
@@ -614,6 +602,9 @@ class PPO:
                 ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
                 if self.train_phase:
+                    print(f"logprobs00:{log_probs[0].mean()}, {log_probs[0].shape}")
+                    print(f"logprobs10:{log_probs[1][:, 0, :, :].mean()}, {log_probs[0][:, 0, :, :].shape}")
+                    print(f"logprobs11:{log_probs[1][:, 1, :, :].mean()}, {log_probs[1][:, 1, :, :].shape}")
                     #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                     log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                     ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]

@@ -681,6 +681,8 @@ class PPO:
                     torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
                     for name, param in actor.named_parameters():
                         print(name, torch.isfinite(param.grad).all())
+                        print(name, param.grad.max(), param.grad.min())
+                        print("="*100)
                     a_optim.step()
                     a_optim.zero_grad()
                   

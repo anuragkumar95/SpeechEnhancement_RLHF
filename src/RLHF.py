@@ -678,11 +678,10 @@ class PPO:
         
                 #Update network
                 if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                    torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(actor.parameters(), 0.5)
                     a_optim.step()
                     a_optim.zero_grad()
                   
-
                 step_clip_loss += clip_loss.mean()
                 step_pg_loss += pg_loss.mean()     
                 self.t += 1

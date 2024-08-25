@@ -576,136 +576,137 @@ class PPO:
                 except StopIteration as e:
                     self._iter_['pre'] = iter(self.dataloader['pre'])
                     batch_pre = next(self._iter_['pre'])
+                
+                with torch.autograd.detect_anomaly():
+                    #Preprocessed batch
+                    batch_pre = preprocess_batch(batch_pre, gpu_id=self.gpu_id, return_c=True) 
+                
+                    cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
+                    noisy_pre = noisy_pre.permute(0, 1, 3, 2)
+                    clean_pre = clean_pre.permute(0, 1, 3, 2)
+                    if torch.isnan(noisy_pre.mean()) or torch.isnan(clean_pre.mean()):
+                        continue 
+                    if torch.isinf(noisy_pre.mean()) or torch.isinf(clean_pre.mean()):
+                        continue 
+                
+                    #Get mini batch indices
+                    mb_indx = indices[t:t + self.bs]
+                    mb_states = states[mb_indx, ...]
 
-                #Preprocessed batch
-                batch_pre = preprocess_batch(batch_pre, gpu_id=self.gpu_id, return_c=True) 
-            
-                cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
-                noisy_pre = noisy_pre.permute(0, 1, 3, 2)
-                clean_pre = clean_pre.permute(0, 1, 3, 2)
-                if torch.isnan(noisy_pre.mean()) or torch.isnan(clean_pre.mean()):
-                    continue 
-                if torch.isinf(noisy_pre.mean()) or torch.isinf(clean_pre.mean()):
-                    continue 
-            
-                #Get mini batch indices
-                mb_indx = indices[t:t + self.bs]
-                mb_states = states[mb_indx, ...]
-
-                #Get new logprobs and values for the sampled (state, action) pair
-                if self.model == 'cmgan':
-                    mb_action = ((actions[0][0][mb_indx, ...],
-                                  actions[0][1][mb_indx, ...]), 
-                                  actions[1][mb_indx, ...])
-
-                if self.model == 'mpsenet':
-                    mb_action = ((actions[0][0][mb_indx, ...], 
-                                actions[0][1][mb_indx, ...]), 
-                                (actions[1][0][mb_indx, ...],
-                                (actions[1][1][0][mb_indx, ...], actions[1][1][1][mb_indx, ...])))
-                    print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
-                    print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
-
-                log_probs, _ = actor.get_action_prob(mb_states, mb_action)
-                ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
-
-                if self.train_phase:
-                    print(f"logprobs00:{log_probs[0].mean()}, {log_probs[0].shape}")
-                    print(f"logprobs10:{log_probs[1][:, 0, :, :].mean()}, {log_probs[1][:, 0, :, :].shape}")
-                    print(f"logprobs11:{log_probs[1][:, 1, :, :].mean()}, {log_probs[1][:, 1, :, :].shape}")
-                    #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
-                    log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
-                    ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
-                    ref_log_prob = ref_log_prob.detach()
-                    old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
-                    if self.model == 'mpsenet':
-                        old_log_prob = old_log_prob.squeeze(1)
+                    #Get new logprobs and values for the sampled (state, action) pair
                     if self.model == 'cmgan':
-                        old_log_prob = old_log_prob.permute(0, 2, 1)
+                        mb_action = ((actions[0][0][mb_indx, ...],
+                                    actions[0][1][mb_indx, ...]), 
+                                    actions[1][mb_indx, ...])
 
-                else:
-                    #ignore complex mask, just tune mag mask 
-                    raise NotImplementedError
-                
-                print(f"log_prob:{log_prob.mean(), log_prob.shape}")
-                print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
+                    if self.model == 'mpsenet':
+                        mb_action = ((actions[0][0][mb_indx, ...], 
+                                    actions[0][1][mb_indx, ...]), 
+                                    (actions[1][0][mb_indx, ...],
+                                    (actions[1][1][0][mb_indx, ...], actions[1][1][1][mb_indx, ...])))
+                        print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
+                        print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
 
-                #KL Penalty
-                kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
-                kl_penalty = kl_logratio
+                    log_probs, _ = actor.get_action_prob(mb_states, mb_action)
+                    ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
-                mb_adv = reward[mb_indx, ...].reshape(-1, 1)
-                
-                #Policy gradient loss
+                    if self.train_phase:
+                        print(f"logprobs00:{log_probs[0].mean()}, {log_probs[0].shape}")
+                        print(f"logprobs10:{log_probs[1][:, 0, :, :].mean()}, {log_probs[1][:, 0, :, :].shape}")
+                        print(f"logprobs11:{log_probs[1][:, 1, :, :].mean()}, {log_probs[1][:, 1, :, :].shape}")
+                        #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
+                        log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
+                        ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
+                        ref_log_prob = ref_log_prob.detach()
+                        old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
+                        if self.model == 'mpsenet':
+                            old_log_prob = old_log_prob.squeeze(1)
+                        if self.model == 'cmgan':
+                            old_log_prob = old_log_prob.permute(0, 2, 1)
 
-                logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
-                ratio = torch.exp(logratio).reshape(-1, 1)
-                
-                print(f"Ratio:{ratio}")
-                pg_loss1 = -mb_adv * ratio
-                pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
-                pg_loss = torch.max(pg_loss1, pg_loss2)
-
-                mb_act, _, _, _ = actor.get_action(noisy_pre)
-                mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act, model=self.model)
-                mb_enhanced = mb_next_state['noisy']
-
-                mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-                mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
-
-                if self.model == 'mpsenet':
-                    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
-                    mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
-
-                supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
-                
-                pretrain_loss += supervised_loss.detach()
-
-                clip_loss = 0
-                if 'pg' in self.loss_type:
-                    clip_loss = clip_loss + pg_loss.reshape(-1, 1)
-
-                if 'mse' in self.loss_type:
-                    clip_loss = clip_loss + self.lmbda * supervised_loss.reshape(-1, 1)
-
-                if 'kl' in self.loss_type:
-                    clip_loss = clip_loss + self.beta * kl_penalty.reshape(-1, 1)
-                
-                clip_loss = clip_loss.mean()
-
-                print(f"clip_loss:{clip_loss.item()} | pg_loss:{pg_loss.mean()} | mse: {supervised_loss.mean()} | kl: {kl_penalty.mean()}")
-                wandb.log({
-                    'ratio':ratio.mean(),
-                    'pg_loss1':pg_loss1.mean(),
-                    'pg_loss2':pg_loss2.mean(),
-                })
-
-                print(f"loss:{torch.isnan(clip_loss.mean())}")
-                clip_loss = clip_loss / self.accum_grad
-                clip_loss.backward()
-        
-                #Update network
-                if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                    #torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-                    torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
-                    update=True
-                    for name, param in actor.named_parameters():
-                        print(name, torch.isfinite(param.grad).all())
-                        print(name, param.grad.max(), param.grad.min())
-                        print("="*100)
-                        #if torch.isfinite(param.grad).all()
+                    else:
+                        #ignore complex mask, just tune mag mask 
+                        raise NotImplementedError
                     
-                    a_optim.step()
-                    a_optim.zero_grad()
-                  
-                step_clip_loss += clip_loss.mean()
-                step_pg_loss += pg_loss.mean()     
-                self.t += 1
+                    print(f"log_prob:{log_prob.mean(), log_prob.shape}")
+                    print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 
-        step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
-        step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
-        pretrain_loss = pretrain_loss / (n_epochs * self.episode_len)
-        
+                    #KL Penalty
+                    kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
+                    kl_penalty = kl_logratio
+
+                    mb_adv = reward[mb_indx, ...].reshape(-1, 1)
+                    
+                    #Policy gradient loss
+
+                    logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
+                    ratio = torch.exp(logratio).reshape(-1, 1)
+                    
+                    print(f"Ratio:{ratio}")
+                    pg_loss1 = -mb_adv * ratio
+                    pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+                    pg_loss = torch.max(pg_loss1, pg_loss2)
+
+                    mb_act, _, _, _ = actor.get_action(noisy_pre)
+                    mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act, model=self.model)
+                    mb_enhanced = mb_next_state['noisy']
+
+                    mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+                    mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
+
+                    if self.model == 'mpsenet':
+                        mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
+                        mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
+
+                    supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+                    
+                    pretrain_loss += supervised_loss.detach()
+
+                    clip_loss = 0
+                    if 'pg' in self.loss_type:
+                        clip_loss = clip_loss + pg_loss.reshape(-1, 1)
+
+                    if 'mse' in self.loss_type:
+                        clip_loss = clip_loss + self.lmbda * supervised_loss.reshape(-1, 1)
+
+                    if 'kl' in self.loss_type:
+                        clip_loss = clip_loss + self.beta * kl_penalty.reshape(-1, 1)
+                    
+                    clip_loss = clip_loss.mean()
+
+                    print(f"clip_loss:{clip_loss.item()} | pg_loss:{pg_loss.mean()} | mse: {supervised_loss.mean()} | kl: {kl_penalty.mean()}")
+                    wandb.log({
+                        'ratio':ratio.mean(),
+                        'pg_loss1':pg_loss1.mean(),
+                        'pg_loss2':pg_loss2.mean(),
+                    })
+
+                    print(f"loss:{torch.isnan(clip_loss.mean())}")
+                    clip_loss = clip_loss / self.accum_grad
+                    clip_loss.backward()
+            
+                    #Update network
+                    if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
+                        #torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+                        torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
+                        update=True
+                        for name, param in actor.named_parameters():
+                            print(name, torch.isfinite(param.grad).all())
+                            print(name, param.grad.max(), param.grad.min())
+                            print("="*100)
+                            #if torch.isfinite(param.grad).all()
+                        
+                        a_optim.step()
+                        a_optim.zero_grad()
+                    
+                    step_clip_loss += clip_loss.mean()
+                    step_pg_loss += pg_loss.mean()     
+                    self.t += 1
+
+            step_clip_loss = step_clip_loss / (n_epochs * self.episode_len)
+            step_pg_loss = step_pg_loss / (n_epochs * self.episode_len)
+            pretrain_loss = pretrain_loss / (n_epochs * self.episode_len)
+            
         return (step_clip_loss, step_pg_loss, pretrain_loss), \
                (target_values.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), pesq  
 

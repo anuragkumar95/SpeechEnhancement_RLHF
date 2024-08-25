@@ -72,6 +72,7 @@ node_in = {}
 #function to generate hook function for each module
 def get_node_out(name):
   def hook(model, input, output):
+    print(input)
     node_in[name] = input.detach()
     node_out[name] = output.detach()
   return hook

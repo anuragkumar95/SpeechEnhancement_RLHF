@@ -297,7 +297,7 @@ class MPNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        with torch.autograd.detect_anomaly(check_nan=True):
+        with torch.autograd.detect_anomaly():
             noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
             
             noisy_pha = torch.angle(

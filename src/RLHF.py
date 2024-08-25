@@ -564,7 +564,7 @@ class PPO:
 
         for _ in range(n_epochs):
             indices = [t for t in range(states.shape[0])]
-            np.random.shuffle(indices)
+            #np.random.shuffle(indices)
             for t in range(0, len(indices), self.bs):
 
                 try:

@@ -178,6 +178,7 @@ class PhaseDecoder(nn.Module):
      
         self.evaluation = eval
         self.gpu_id = gpu_id
+        self.eps = 1e-10
 
     def sample(self, mu, logvar, x=None):
        
@@ -210,10 +211,9 @@ class PhaseDecoder(nn.Module):
             x_i = i_params[0]
 
         #Added code to avoid nan values in arctan2
-        epsilon = 1e-10
-        near_zeros = x_i < epsilon
+        near_zeros = x_i < self.eps
         x_i_min = x_i * (near_zeros.logical_not())
-        x_i_min = x_i_min + (near_zeros * epsilon)
+        x_i_min = x_i_min + (near_zeros * self.eps)
 
         x = torch.atan2(x_r, x_i_min)
 

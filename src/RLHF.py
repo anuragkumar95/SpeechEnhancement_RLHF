@@ -336,7 +336,12 @@ class PPO:
                     noisy_rl = noisy_rl.permute(0, 1, 3, 2)
                     clean_rl = clean_rl.permute(0, 1, 3, 2)
                     bs, ch, t, f = clean_rl.shape
-                    
+
+                    if torch.isnan(noisy_rl.mean()) or torch.isnan(clean_rl.mean()):
+                        continue 
+                    if torch.isinf(noisy_rl.mean()) or torch.isinf(clean_rl.mean()):
+                        continue 
+            
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
                     print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}, {len(action[1][1])}")
 
@@ -579,6 +584,10 @@ class PPO:
                 cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
                 noisy_pre = noisy_pre.permute(0, 1, 3, 2)
                 clean_pre = clean_pre.permute(0, 1, 3, 2)
+                if torch.isnan(noisy_pre.mean()) or torch.isnan(clean_pre.mean()):
+                    continue 
+                if torch.isinf(noisy_pre.mean()) or torch.isinf(clean_pre.mean()):
+                    continue 
             
                 #Get mini batch indices
                 mb_indx = indices[t:t + self.bs]

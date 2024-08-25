@@ -98,17 +98,17 @@ class DenseEncoder(nn.Module):
             nn.PReLU(dense_channel))
 
     def forward(self, x):
-        with torch.autograd.detect_anomaly(check_nan=True):
-            print(f"DE_inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            x = self.dense_conv_1(x)  # [b, 64, T, F]
-            print(f"DE_conv1:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            x = self.dense_block(x)   # [b, 64, T, F]
-            print(f"DE_dense_block:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            x = self.dense_conv_2(x)  # [b, 64, T, F//2]
-            print(f"DE_conv2:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            print(f"Printing forward_hooks")
-            for name in node_in.keys():
-                print(f"{name}:{torch.isnan(node_in[name].mean())}, {torch.isnan(node_out[name].mean())}")
+        
+        print(f"DE_inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        x = self.dense_conv_1(x)  # [b, 64, T, F]
+        print(f"DE_conv1:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        x = self.dense_block(x)   # [b, 64, T, F]
+        print(f"DE_dense_block:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        x = self.dense_conv_2(x)  # [b, 64, T, F//2]
+        print(f"DE_conv2:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        print(f"Printing forward_hooks")
+        for name in node_in.keys():
+            print(f"{name}:{torch.isnan(node_in[name].mean())}, {torch.isnan(node_out[name].mean())}")
         return x
 
 
@@ -297,25 +297,26 @@ class MPNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        noisy_pha = torch.angle(
-            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
-        ).unsqueeze(1)
+        with torch.autograd.detect_anomaly(check_nan=True):
+            noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+            
+            noisy_pha = torch.angle(
+                torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+            ).unsqueeze(1)
 
-        x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
-        print(f"inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        x = self.dense_encoder(x)
-        print(f"dense_encoder:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        for i in range(self.num_tscblocks):
-            x = self.TSConformer[i](x)
-        print(f"Conformer:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        print(f"isnan:{torch.isnan(x.mean())}, {torch.isnan(action[0][0].mean())}, {torch.isnan(action[1][1][0].mean())}, {torch.isnan(action[1][1][1].mean())}")
-        _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
-        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
+            x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
+            print(f"inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            x = self.dense_encoder(x)
+            print(f"dense_encoder:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            for i in range(self.num_tscblocks):
+                x = self.TSConformer[i](x)
+            print(f"Conformer:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            print(f"isnan:{torch.isnan(x.mean())}, {torch.isnan(action[0][0].mean())}, {torch.isnan(action[1][1][0].mean())}, {torch.isnan(action[1][1][1].mean())}")
+            _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
+            _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
 
-        m_logprob = m_logprob.squeeze(1)
-        c_logprob = c_logprob.permute(0, 1, 3, 2)
+            m_logprob = m_logprob.squeeze(1)
+            c_logprob = c_logprob.permute(0, 1, 3, 2)
 
         #print(f"m_log:{m_logprob.shape}, c_log:{c_logprob.shape}")
 

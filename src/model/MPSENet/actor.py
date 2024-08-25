@@ -312,6 +312,7 @@ class MPNet(nn.Module):
             x = self.TSConformer[i](x)
         print(f"Conformer:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         print(f"isnan:{torch.isnan(x.mean())}, {torch.isnan(action[0][0].mean())}, {torch.isnan(action[1][1][0].mean())}, {torch.isnan(action[1][1][1].mean())}")
+        
         _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
         _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
 

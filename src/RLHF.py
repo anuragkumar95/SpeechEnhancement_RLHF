@@ -691,12 +691,12 @@ class PPO:
                         torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
                         update=True
                         for name, param in actor.named_parameters():
-                            #print(name, torch.isfinite(param.grad).all())
-                            #print(name, param.grad.max(), param.grad.min())
-                            #print("="*100)
+                            print(name, torch.isfinite(param.grad).all())
+                            print(name, param.grad.max(), param.grad.min())
+                            print("="*100)
                             if torch.isfinite(param.grad).all():
                                 update = False
-                        
+                        print(f"UPDATE:{update}")
                         if update:
                             a_optim.step()
                         a_optim.zero_grad()

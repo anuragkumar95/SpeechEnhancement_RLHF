@@ -66,6 +66,15 @@ class DenseBlock(nn.Module):
             skip = torch.cat([x, skip], dim=1)
         return x
 
+node_out = {}
+node_in = {}
+
+#function to generate hook function for each module
+def get_node_out(name):
+  def hook(model, input, output):
+    node_in[name] = input.detach()
+    node_out[name] = output.detach()
+  return hook
 
 class DenseEncoder(nn.Module):
     def __init__(self, in_channel, dense_channel=64):
@@ -75,7 +84,12 @@ class DenseEncoder(nn.Module):
             nn.Conv2d(in_channel, dense_channel, (1, 1)),
             nn.InstanceNorm2d(dense_channel, affine=True),
             nn.PReLU(dense_channel))
+        
+        hook_handles = {}
+        for name, module in self.dense_conv_1.named_modules():
+            hook_handles[name] = module.register_forward_hook(get_node_out(name))
 
+       
         self.dense_block = DenseBlock(dense_channel, depth=4) # [b, h.dense_channel, ndim_time, h.n_fft//2+1]
 
         self.dense_conv_2 = nn.Sequential(
@@ -91,6 +105,9 @@ class DenseEncoder(nn.Module):
         print(f"DE_dense_block:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         x = self.dense_conv_2(x)  # [b, 64, T, F//2]
         print(f"DE_conv2:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        print(f"Printing forward_hooks")
+        for name in node_in.keys():
+            print(f"{name}:{torch.isnan(node_in[name].mean())}, {torch.isnan(node_out[name].mean())}")
         return x
 
 

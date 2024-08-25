@@ -694,7 +694,7 @@ class PPO:
                             print(name, torch.isfinite(param.grad).all())
                             print(name, param.grad.max(), param.grad.min())
                             print("="*100)
-                            if torch.isfinite(param.grad).all():
+                            if not torch.isfinite(param.grad).all():
                                 update = False
                         print(f"UPDATE:{update}")
                         if update:

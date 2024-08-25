@@ -98,16 +98,17 @@ class DenseEncoder(nn.Module):
             nn.PReLU(dense_channel))
 
     def forward(self, x):
-        print(f"DE_inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        x = self.dense_conv_1(x)  # [b, 64, T, F]
-        print(f"DE_conv1:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        x = self.dense_block(x)   # [b, 64, T, F]
-        print(f"DE_dense_block:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        x = self.dense_conv_2(x)  # [b, 64, T, F//2]
-        print(f"DE_conv2:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-        print(f"Printing forward_hooks")
-        for name in node_in.keys():
-            print(f"{name}:{torch.isnan(node_in[name].mean())}, {torch.isnan(node_out[name].mean())}")
+        with torch.autograd.detect_anomaly(check_nan=True):
+            print(f"DE_inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            x = self.dense_conv_1(x)  # [b, 64, T, F]
+            print(f"DE_conv1:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            x = self.dense_block(x)   # [b, 64, T, F]
+            print(f"DE_dense_block:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            x = self.dense_conv_2(x)  # [b, 64, T, F//2]
+            print(f"DE_conv2:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+            print(f"Printing forward_hooks")
+            for name in node_in.keys():
+                print(f"{name}:{torch.isnan(node_in[name].mean())}, {torch.isnan(node_out[name].mean())}")
         return x
 
 

@@ -297,26 +297,26 @@ class MPNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        with torch.autograd.detect_anomaly():
-            noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-            
-            noisy_pha = torch.angle(
-                torch.complex(x[:, 0, :, :], x[:, 1, :, :])
-            ).unsqueeze(1)
+      
+        noisy_mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+        
+        noisy_pha = torch.angle(
+            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+        ).unsqueeze(1)
 
-            x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
-            print(f"inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            x = self.dense_encoder(x)
-            print(f"dense_encoder:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            for i in range(self.num_tscblocks):
-                x = self.TSConformer[i](x)
-            print(f"Conformer:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
-            print(f"isnan:{torch.isnan(x.mean())}, {torch.isnan(action[0][0].mean())}, {torch.isnan(action[1][1][0].mean())}, {torch.isnan(action[1][1][1].mean())}")
-            _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
-            _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
+        x = torch.cat((noisy_mag, noisy_pha), dim=1) # [B, 2, T, F]
+        print(f"inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        x = self.dense_encoder(x)
+        print(f"dense_encoder:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        for i in range(self.num_tscblocks):
+            x = self.TSConformer[i](x)
+        print(f"Conformer:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
+        print(f"isnan:{torch.isnan(x.mean())}, {torch.isnan(action[0][0].mean())}, {torch.isnan(action[1][1][0].mean())}, {torch.isnan(action[1][1][1].mean())}")
+        _, m_logprob, m_entropy, _ = self.mask_decoder(x, action[0][0])
+        _, c_logprob, c_entropy, _ = self.phase_decoder(x, action[1][1])
 
-            m_logprob = m_logprob.squeeze(1)
-            c_logprob = c_logprob.permute(0, 1, 3, 2)
+        m_logprob = m_logprob.squeeze(1)
+        c_logprob = c_logprob.permute(0, 1, 3, 2)
 
         #print(f"m_log:{m_logprob.shape}, c_log:{c_logprob.shape}")
 

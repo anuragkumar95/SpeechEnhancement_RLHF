@@ -84,9 +84,13 @@ class DenseEncoder(nn.Module):
             nn.PReLU(dense_channel))
 
     def forward(self, x):
+        print(f"DE_inp:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         x = self.dense_conv_1(x)  # [b, 64, T, F]
+        print(f"DE_conv1:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         x = self.dense_block(x)   # [b, 64, T, F]
+        print(f"DE_dense_block:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         x = self.dense_conv_2(x)  # [b, 64, T, F//2]
+        print(f"DE_conv2:{torch.isnan(x.mean())}, {torch.isinf(x.mean())}")
         return x
 
 
@@ -189,10 +193,10 @@ class PhaseDecoder(nn.Module):
             x_i = i_params[0]
 
         #Added code to avoid nan values in arctan2
-        epsilon = 1e-10
-        near_zeros = x_i < epsilon
-        x_i = x_i * (near_zeros.logical_not())
-        x_i = x_i + (near_zeros * epsilon)
+        #epsilon = 1e-10
+        #near_zeros = x_i < epsilon
+        #x_i_min = x_i * (near_zeros.logical_not())
+        #x_i_min = x_i_min + (near_zeros * epsilon)
 
         x = torch.atan2(x_r, x_i)
 

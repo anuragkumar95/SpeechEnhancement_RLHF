@@ -215,7 +215,11 @@ class PhaseDecoder(nn.Module):
         x_i_min = x_i * (near_zeros.logical_not())
         x_i_min = x_i_min + (near_zeros * self.eps)
 
-        x = torch.atan2(x_r, x_i_min)
+        near_zeros = x_r < self.eps
+        x_r_min = x_r * (near_zeros.logical_not())
+        x_r_min = x_r_min + (near_zeros * self.eps)
+
+        x = torch.atan2(x_r_min, x_i_min)
 
         x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1).squeeze(2)
         x_entropy = torch.stack([x_r_entropy, x_i_entropy], dim=1).squeeze(2)

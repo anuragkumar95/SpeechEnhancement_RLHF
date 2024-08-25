@@ -187,6 +187,13 @@ class PhaseDecoder(nn.Module):
         if self.evaluation:
             x_r = r_params[0]
             x_i = i_params[0]
+
+        #Added code to avoid nan values in arctan2
+        epsilon = 1e-10
+        near_zeros = x_i < epsilon
+        x_i = x_i * (near_zeros.logical_not())
+        x_i = x_i + (near_zeros * epsilon)
+
         x = torch.atan2(x_r, x_i)
 
         x_logprob = torch.stack([x_r_logprob, x_i_logprob], dim=1).squeeze(2)

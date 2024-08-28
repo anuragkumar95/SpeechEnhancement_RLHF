@@ -490,7 +490,7 @@ class PPO:
                     [batch[0] for batch in actions],
                     [batch[1] for batch in actions]
                 )
-
+                print(f"unrol_Action:{actions[0][0].shape}")
                 actions = (
                     torch.stack(actions[0]).reshape(-1, t, f).detach(),
                     torch.stack(actions[1]).reshape(-1, t, f).detach()

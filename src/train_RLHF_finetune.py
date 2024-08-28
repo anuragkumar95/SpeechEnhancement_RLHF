@@ -261,6 +261,11 @@ class Trainer:
             'reward':0}
         #print("Running validation...")
         clean_aud, clean, noisy, _, c = batch
+        noisy_phase = None
+        if self.args.model == 'metricgan':
+            noisy_phase = c
+            c = torch.ones(noisy.shape[0], 1).to(self.gpu_id)
+
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
@@ -268,9 +273,13 @@ class Trainer:
         
         if self.expert is not None:
             ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, action)
-            ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            if self.args.model == 'cmgan':
+                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
-        log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            if self.args.model == 'metricgan':
+                ref_log_prob = ref_log_probs
+                log_prob = log_probs
 
         if ref_log_prob is not None:
             kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
@@ -278,21 +287,30 @@ class Trainer:
             kl_penalty = ratio.detach()
     
         #Apply action  to get the next state
-        next_state = self.trainer.env.get_next_state(state=inp, action=action)
+        next_state = self.trainer.env.get_next_state(state=inp, 
+                                                     phase=noisy_phase, 
+                                                     action=action, 
+                                                     model=self.args.model)
         
         #Get reward
         #r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False)
         r_state = self.trainer.env.get_NISQA_MOS_reward(audio=next_state['est_audio'], c=c)
 
-        #Supervised loss
-        mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
-        mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-        
-        mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+        #Supervised 
+        if self.args.model == 'cmgan':
+            mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
+            mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+            
+            mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
-        mag_loss = (mb_clean_mag - mb_enhanced_mag)**2
-        ri_loss = (clean - mb_enhanced) ** 2
-        supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            mag_loss = (mb_clean_mag - mb_enhanced_mag)**2
+            ri_loss = (clean - mb_enhanced) ** 2
+            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+
+        if self.args.model == 'metricgan':
+            mb_enhanced_mag = next_state['est_mag']
+            mb_clean_mag = clean
+            supervised_loss = (mb_clean_mag - mb_enhanced_mag)**2
 
         for i in range(64):
             if i >= clean_aud.shape[0]:
@@ -368,7 +386,7 @@ class Trainer:
             for i, batch in enumerate(self.test_ds['pre']):
                 
                 #Preprocess batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True)
+                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True, model=self.args.model)
                 
                 #Run validation episode
                 try:

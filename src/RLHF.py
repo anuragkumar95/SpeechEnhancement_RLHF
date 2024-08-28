@@ -668,7 +668,7 @@ class PPO:
 
                     supervised_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
                     if self.train_phase:
-                        supervised_loss = supervised_loss + ((clean_pre - mb_enhanced) ** 2).mean()
+                        supervised_loss = 0.7*supervised_loss + 0.3*((clean_pre - mb_enhanced) ** 2).mean()
                     
                     pretrain_loss += supervised_loss.detach()
 

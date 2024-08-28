@@ -109,6 +109,8 @@ class SpeechEnhancementAgent:
             print(f"est_spec:{est_spec.shape}, mag:{mag.shape}, phase:{phase.shape}")
             est_audio = transform_spec_to_wav(mag, phase)
             est_mag = est_mag.unsqueeze(1)
+            est_real = est_real.unsqueeze(1)
+            est_imag = est_imag.unsquueze(1)
 
         next_state = {}
         next_state['noisy'] = est_spec

@@ -504,7 +504,7 @@ class PPO:
         print(f"REWARDS:      :{rewards.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
         if self.model == 'metricgan':
-            print(f"ACTIONS       :{actions[0].shape}, {actions[1].shape}")
+            print(f"ACTIONS       :{actions.shape}, {actions.shape}")
         if self.model == 'cmgan':
             print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
@@ -591,8 +591,8 @@ class PPO:
 
                     if self.model == 'metricgan':
                         mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
-                        print(f"Sampled actions:{mb_action[0].mean()}, {mb_action[1].mean()}") 
-                        print(f"Sampled actions:{mb_action[0].shape}, {mb_action[1].shape}") 
+                        print(f"Sampled actions:{mb_action.mean()}") 
+                        print(f"Sampled actions:{mb_action.shape}") 
 
                     log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)

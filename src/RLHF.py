@@ -306,8 +306,9 @@ class PPO:
         #actor = actor.eval()
         actor = actor.train()
         actor.set_evaluation(False)
-        self.init_model = self.init_model.eval()
-        self.init_model.set_evaluation(True)
+        #self.init_model = self.init_model.eval()
+        self.init_model = self.init_model.train()
+        self.init_model.set_evaluation(False)
 
         rewards = []
         r_ts = []

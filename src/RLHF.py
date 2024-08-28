@@ -329,7 +329,11 @@ class PPO:
                         batch_rl = next(self._iter_['rl'])
 
                     #Preprocessed batch
-                    batch_rl = preprocess_batch(batch_rl, n_fft=self.env.n_fft, hop=self.env.hop, gpu_id=self.gpu_id, return_c=True) 
+                    batch_rl = preprocess_batch(batch_rl, 
+                                                n_fft=self.env.n_fft, 
+                                                hop=self.env.hop, 
+                                                gpu_id=self.gpu_id, 
+                                                return_c=True) 
                 
                     cl_aud_rl, clean_rl, noisy_rl, _, c_rl = batch_rl
                     noisy_rl = noisy_rl.permute(0, 1, 3, 2)
@@ -560,7 +564,11 @@ class PPO:
                 
                 with torch.autograd.detect_anomaly():
                     #Preprocessed batch
-                    batch_pre = preprocess_batch(batch_pre, gpu_id=self.gpu_id, return_c=True) 
+                    batch_pre = preprocess_batch(batch_pre, 
+                                                 n_fft=self.env.n_fft, 
+                                                 hop=self.env.hop, 
+                                                 gpu_id=self.gpu_id, 
+                                                 return_c=True) 
                 
                     cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
                     noisy_pre = noisy_pre.permute(0, 1, 3, 2)

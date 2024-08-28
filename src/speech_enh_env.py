@@ -90,7 +90,7 @@ class SpeechEnhancementAgent:
         
         if model == 'metricgan':
             print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
-            out_mag = mask.permute(0, 1, 3, 2) * mag
+            est_mag = mask.permute(0, 1, 3, 2) * mag
 
             #complex_predictions = torch.mul(
             #    mag,
@@ -103,8 +103,8 @@ class SpeechEnhancementAgent:
             #    ),
             #)
 
-            est_real = out_mag * torch.cos(noisy_phase)
-            est_imag = out_mag * torch.sin(noisy_phase)
+            est_real = est_mag * torch.cos(noisy_phase)
+            est_imag = est_mag * torch.sin(noisy_phase)
 
             complex_predictions = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
 

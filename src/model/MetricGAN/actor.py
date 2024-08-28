@@ -63,6 +63,9 @@ class Generator(nn.Module):
         
         self.Learnable_sigmoid = Learnable_sigmoid()
 
+    def set_evaluation(self, bool):
+        self.evaluation = bool
+
     def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
@@ -72,12 +75,14 @@ class Generator(nn.Module):
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)
         
-    def forward(self, x, lengths=None, action=None):
+    def forward(self, x, lengths=32000, action=None):
         # Pack sequence for LSTM padding
-        if lengths is not None:
-            x = self.pack_padded_sequence(x, lengths)
+        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2)
 
-        outputs, _ = self.lstm(x)
+        if lengths is not None:
+            mag = self.pack_padded_sequence(mag, lengths)
+
+        outputs, _ = self.lstm(mag)
 
         # Unpack the packed sequence
         if lengths is not None:
@@ -95,6 +100,22 @@ class Generator(nn.Module):
             x_out = self.Learnable_sigmoid(x)
         #return outputs
         return (x, x_out), x_logprob, x_entropy, params
+    
+    def get_action_prob(self, x, lengths=32000, action=None):
+        """
+        ARGS:
+            x : spectrogram
+            action : (Tuple) Tuple of mag and complex actions
+
+        Returns:
+            Tuple of mag and complex masks log probabilities.
+        """
+        _, x_logprob, x_entropy, _ = self.forward(x, lengths, action)
+
+        return x_logprob, x_entropy
+    
+    def get_action(self, x, lengths=32000):
+        return self.forward(x, lengths, None)    
 
     def pack_padded_sequence(self, inputs, lengths):
         lengths = lengths.cpu()

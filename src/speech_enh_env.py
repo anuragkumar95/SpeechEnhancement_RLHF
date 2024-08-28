@@ -34,20 +34,13 @@ class SpeechEnhancementAgent:
         if reward_model is not None:
             self.reward_model = reward_model
         
-
-    #def set_batch(self, batch):
-    #    self.state = batch
-    #    self.clean = batch['clean']
-    #    self.steps = batch['noisy'].shape[2]
-    #    #self.noise = OUNoise(action_dim=batch['noisy'].shape[-1], gpu_id=self.gpu_id)
-    
        
     def get_next_state(self, state, action, model='cmgan'):
         """
         Apply mask to spectrogram and return next (enhanced) state.
         ARGS:
             state : spectrograms of shape (b x 2 x f x t)
-            action: (mask, complex_mask) for spectrogram.
+            action: mask for spectrogram.
 
         Returns:
             Next state enhanced by applying mask.
@@ -55,8 +48,8 @@ class SpeechEnhancementAgent:
         x = state
         if model == 'cmgan':
             (_, mask), complex_out = action
-        if model == 'mpsenet':
-            (_, mask), (complex_out, _) = action
+        if model == 'metricgan':
+            mask = action
         
         noisy_phase = torch.angle(
             torch.complex(x[:, 0, :, :], x[:, 1, :, :])
@@ -95,27 +88,39 @@ class SpeechEnhancementAgent:
             
             est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
         
-        if model == 'mpsenet':
-            
-            denoised_mag = (mag * mask).permute(0, 3, 2, 1).squeeze(-1)
-            denoised_pha = complex_out.permute(0, 3, 2, 1).squeeze(-1)
+        if model == 'metricgan':
+            print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
+            out_mag = mask.unsqueeze(1) * mag
 
-            est_spec = torch.stack((denoised_mag*torch.cos(denoised_pha),
-                                        denoised_mag*torch.sin(denoised_pha)), dim=1)
+            #complex_predictions = torch.mul(
+            #    mag,
+            #    torch.cat(
+            #        (
+            #            torch.unsqueeze(torch.cos(noisy_phase), -1),
+            #            torch.unsqueeze(torch.sin(noisy_phase), -1),
+            #        ),
+            #        -1,
+            #    ),
+            #)
+
+            est_real = out_mag * torch.cos(noisy_phase)
+            est_imag = out_mag * torch.sin(noisy_phase)
+
+            complex_predictions = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
+
+            #complex_predictions = complex_predictions.permute(0, 2, 1, 3)
+            #complex_predictions = torch.complex(complex_predictions[..., 0], complex_predictions[..., 1])
             
-            est_real = est_spec[:, 0, :, :].unsqueeze(1)
-            est_imag = est_spec[:, 1, :, :].unsqueeze(1)
-            
-            est_mag = torch.pow(mag, (1.0/0.3))
-            
-            mag = mag.permute(0, 1, 3, 2).squeeze(1)
-            com = torch.complex(mag*torch.cos(denoised_pha), mag*torch.sin(denoised_pha))
-            est_audio = torch.istft(com, 
-                self.n_fft, 
-                hop_length=self.hop, 
-                window=window, 
-                center=True
+            est_audio = torch.istft(
+                input=complex_predictions,
+                n_fft=self.n_fft,
+                hop_length=self.hop,
+                window=window,
+                center=True,
+                onesided=True,
+                normalized=False,
             )
+            est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
 
         next_state = {}
         next_state['noisy'] = est_spec

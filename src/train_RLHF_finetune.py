@@ -4,7 +4,8 @@
 """
 
 from model.CMGAN.actor import TSCNet
-from model.MPSENet.actor import MPNet
+#from model.MPSENet.actor import MPNet
+from model.MetricGAN.actor import Generator
 #from model.critic import QNet, Critic
 from model.reward_model import RewardModel
 from RLHF import REINFORCE, PPO
@@ -105,17 +106,20 @@ class Trainer:
                  args, 
                  gpu_id):
         
-        self.n_fft = 400
-        self.hop = 100
+        if args.model == 'cmgan':
+            self.n_fft = 400
+            self.hop = 100
+        if args.model == 'metricgan':
+            self.n_fft = 512
+            self.hop = 257
+
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.ACCUM_GRAD = args.accum_grad
         
-        if args.model == 'mpsenet':
-            self.actor = MPNet(n_fft=self.n_fft, 
-                               beta=2.0, 
-                               dense_channel=64, 
-                               gpu_id=gpu_id)
+        if args.model == 'metricgan':
+            self.actor = Generator(causal=False, 
+                                   gpu_id=gpu_id)
           
         elif args.model == 'cmgan':
             self.actor = TSCNet(num_channel=64, 
@@ -130,11 +134,10 @@ class Trainer:
                 self.expert = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1,
                                 gpu_id=gpu_id)
-            #if args.model == 'mpsenet':
-            #    self.expert = MPNet(n_fft=self.n_fft, 
-            #                        beta=2.0, 
-            #                        dense_channel=64, 
-            #                        gpu_id=gpu_id)
+            
+            if args.model == 'metricgan':
+                self.expert = Generator(causal=False, 
+                                        gpu_id=gpu_id)
                 
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
 
@@ -142,11 +145,11 @@ class Trainer:
                 if args.model == 'cmgan':
                     self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
                     self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
-                #if args.model == 'mpsenet':
-                #    checkpoint = map_state_dict(expert_checkpoint['generator'])
-                #    self.actor.load_state_dict(checkpoint) 
-                #    self.expert.load_state_dict(checkpoint)
-              
+
+                if args.model == 'metricgan':
+                    self.actor.load_state_dict(expert_checkpoint['generator']) 
+                    self.expert.load_state_dict(expert_checkpoint['generator'])
+
             except KeyError as e:
                 self.actor.load_state_dict(expert_checkpoint)
                 self.expert.load_state_dict(expert_checkpoint)
@@ -198,8 +201,8 @@ class Trainer:
                                      loss_type=args.loss,
                                      reward_type=args.reward,
                                      batchsize=args.batchsize,
-                                     env_params={'n_fft':400,
-                                                 'hop':100, 
+                                     env_params={'n_fft':self.n_fft,
+                                                 'hop':self.hop, 
                                                  'args':args})
             
         if args.method == 'PPO':
@@ -227,8 +230,8 @@ class Trainer:
                                reward_type=args.reward,
                                accum_grad=args.accum_grad,
                                model=args.model,
-                               env_params={'n_fft':400,
-                                            'hop':100, 
+                               env_params={'n_fft':self.n_fft,
+                                            'hop':self.hop, 
                                             'args':args})
             
         self.gpu_id = gpu_id

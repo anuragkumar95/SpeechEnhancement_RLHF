@@ -329,7 +329,7 @@ class PPO:
                         batch_rl = next(self._iter_['rl'])
 
                     #Preprocessed batch
-                    batch_rl = preprocess_batch(batch_rl, gpu_id=self.gpu_id, return_c=True) 
+                    batch_rl = preprocess_batch(batch_rl, n_fft=self.env.n_fft, hop=self.env.hop, gpu_id=self.gpu_id, return_c=True) 
                 
                     cl_aud_rl, clean_rl, noisy_rl, _, c_rl = batch_rl
                     noisy_rl = noisy_rl.permute(0, 1, 3, 2)
@@ -343,38 +343,45 @@ class PPO:
             
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
                     print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}, {len(action[1][1])}")
-
-                    #if self.model == 'mpsenet':
-                    #    print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")
-                    #    print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
-            
-                    print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
+                    if self.model == 'cmgan':
+                        print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
+                    if self.model == 'metricgan':
+                        print(f"logprobs:{logprobs.mean()}")
                     
-                    if self.init_model is not None:
-                        init_action, _, _, _ = self.init_model.get_action(noisy_rl)
-                        ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
-                        #print(f"REF_LOG_PROBS:{ref_log_probs[0].mean()}, {ref_log_probs[1].mean()}")
-                        exp_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
-            
-                    state = self.env.get_next_state(state=noisy_rl, action=action, model=self.model)
-                    state['cl_audio'] = cl_aud_rl
-                    state['clean'] = clean_rl
-                    if self.init_model is not None:
-                        state['exp_est_audio'] = exp_state['est_audio']
-
-                    #Calculate sft output
-                    sft_action, _, _, _ = self.init_model.get_action(noisy_rl)
-                    sft_state = self.env.get_next_state(state=noisy_rl, action=sft_action, model=self.model)
+                    #if self.init_model is not None:
+                    init_action, _, _, _ = self.init_model.get_action(noisy_rl)
+                    ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
+                    #print(f"REF_LOG_PROBS:{ref_log_probs[0].mean()}, {ref_log_probs[1].mean()}")
+                    sft_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
                     sft_state['cl_audio'] = cl_aud_rl
                     sft_state['clean'] = clean_rl
 
+                    state = self.env.get_next_state(state=noisy_rl, action=action, model=self.model)
+                    state['cl_audio'] = cl_aud_rl
+                    state['clean'] = clean_rl
+                    #if self.init_model is not None:
+                    state['exp_est_audio'] = sft_state['est_audio']
+
+                    #Calculate sft output
+                    #if init_action is not None:
+                    #sft_action = init_action 
+                    #else:
+                    #sft_action, _, _, _ = self.init_model.get_action(noisy_rl)
+                    #sft_state = self.env.get_next_state(state=noisy_rl, action=sft_action, model=self.model)
+                    
                     #Calculate kl_penalty
                     ref_log_prob = None
-                    if self.init_model is not None:
+                    if self.model == 'cmgan':
                         ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                         print(f"ref_log_prob:{ref_log_prob.mean()}")
-                    log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                    print(f"log_prob:{log_prob.mean()}")
+                        log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+                        print(f"log_prob:{log_prob.mean()}")
+                    if self.model == 'metricgan':
+                        ref_log_prob = ref_log_probs#.permute(0, 2, 1)
+                        print(f"ref_log_prob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
+                        log_prob = log_probs#.permute(0, 2, 1)
+                        print(f"log_prob:{log_prob.mean()}, {ref_log_prob.shape}")
+                    
                     
                     if ref_log_prob is not None:
                         kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
@@ -473,43 +480,12 @@ class PPO:
                     (torch.stack(actions[0][0]).reshape(-1, f, t).detach(), torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                     torch.stack(actions[1]).reshape(-1, ch, t, f).detach()
                 )
+            
+            if self.model == 'metricgan':
+                actions = torch.stack(actions).reshape(-1, f, t).detach()
                 
-            #if self.model == 'mpsenet':
-            #    
-            #    actions = (
-            #        (
-            #            [batch[0][0] for batch in actions],
-            #            [batch[0][1] for batch in actions]
-            #        ),
-            #        (
-            #            [batch[1][0] for batch in actions],
-            #            (
-            #                [batch[1][1][0] for batch in actions],
-            #                [batch[1][1][1] for batch in actions]
-            #            )
-            #        )
-            #
-            #    )
-            #
-            #    actions = (
-            #        (
-            #            torch.stack(actions[0][0]).view(-1, 1, t, f).detach(),
-            #            torch.stack(actions[0][1]).view(-1, 1, t, f).detach()
-            #        ),
-            #        (
-            #            torch.stack(actions[1][0]).view(-1, 1, t, f).detach(),
-            #            (
-            #                torch.stack(actions[1][1][0]).view(-1, 1, t, f).detach(),
-            #                torch.stack(actions[1][1][1]).view(-1, 1, t, f).detach()
-            #            )
-            #        )
-            #    )
-            
-            if self.model == 'cmgan':
-                logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
-            #if self.model == 'mpsenet':
-            #    logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
-            
+            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
+                
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)
 

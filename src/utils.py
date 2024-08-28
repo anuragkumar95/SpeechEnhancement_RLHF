@@ -285,7 +285,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, ref=None, clean_istft=False, ret
     
     return clean, clean_spec, noisy_spec
 
-def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False, return_c=False):
+def preprocess_batch(batch, ref=None, n_fft=400, hop=100, gpu_id=None, clean_istft=False, return_c=False):
     """
     Converts a batch of audio waveforms and returns a batch of
     spectrograms.
@@ -304,14 +304,14 @@ def preprocess_batch(batch, ref=None, gpu_id=None, clean_istft=False, return_c=F
 
     if ref is not None:
         ref = ref.to(gpu_id)
-        clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, ref=ref, clean_istft=clean_istft)
+        clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, ref=ref, clean_istft=clean_istft)
         return (clean, clean_spec, noisy_spec, ref_spec, labels)
     
     if return_c:
-        clean, clean_spec, noisy_spec, c = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, ref=ref, clean_istft=clean_istft, return_c=return_c)
+        clean, clean_spec, noisy_spec, c = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, ref=ref, clean_istft=clean_istft, return_c=return_c)
         return (clean, clean_spec, noisy_spec, labels, c)
     
-    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=400, hop=100, clean_istft=clean_istft)
+    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, clean_istft=clean_istft)
     return (clean, clean_spec, noisy_spec, labels)
 
 def map_state_dict(checkpoint):

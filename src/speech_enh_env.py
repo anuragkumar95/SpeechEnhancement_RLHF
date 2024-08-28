@@ -53,16 +53,16 @@ class SpeechEnhancementAgent:
         if model == 'metricgan':
             mask = action
         
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-    
-        if mag.shape != mask.shape:
-            mask = mask.permute(0, 2, 1).unsqueeze(1)
-
         window = torch.hamming_window(self.n_fft)
         if self.gpu_id is not None:
             window = window.to(self.gpu_id)
 
         if model == 'cmgan':
+            mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+    
+            if mag.shape != mask.shape:
+                mask = mask.permute(0, 2, 1).unsqueeze(1)
+
             noisy_phase = torch.angle(
                 torch.complex(x[:, 0, :, :], x[:, 1, :, :])
             ).unsqueeze(1)
@@ -92,6 +92,8 @@ class SpeechEnhancementAgent:
         
         if model == 'metricgan':
             #print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
+            mag = state
+            
             est_mag = mask.permute(0, 1, 3, 2) * mag
             noisy_phase = torch.atan2(x[:, 1, :, :], x[:, 0, :, :])
             

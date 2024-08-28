@@ -651,7 +651,9 @@ class PPO:
                     #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
                     #    mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
 
-                    supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
+                    supervised_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
+                    if self.train_phase:
+                        supervised_loss = supervised_loss + ((clean_pre - mb_enhanced) ** 2).mean()
                     
                     pretrain_loss += supervised_loss.detach()
 

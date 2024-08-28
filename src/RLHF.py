@@ -489,7 +489,10 @@ class PPO:
             
             if self.model == 'metricgan':
                 print(f"unrol_Action:{actions[0].shape}")
-                actions = torch.cat(actions, dim=0).detach()
+                if len(actions) > 1:
+                    actions = torch.cat(actions, dim=0).detach()
+                else:
+                    actions = actions[0].detach()
                 
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
                 

@@ -482,8 +482,15 @@ class PPO:
                 )
             
             if self.model == 'metricgan':
-                actions = torch.stack(actions).reshape(-1, f, t).detach()
-                
+                actions = (
+                    [batch[0] for batch in actions],
+                    [batch[1] for batch in actions]
+                )
+
+                actions = {
+                    torch.stack(actions[0]).reshape(-1, f, t).detach(),
+                    torch.stack(actions[1]).reshape(-1, f, t).detach()
+                }
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
                 
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)

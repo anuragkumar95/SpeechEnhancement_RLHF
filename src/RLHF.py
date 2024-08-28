@@ -606,8 +606,10 @@ class PPO:
                         if self.model == 'cmgan':
                             raise NotImplementedError
                         log_prob = log_probs
+                        ref_log_prob = ref_log_probs
                         old_log_prob = logprobs[mb_indx, ...]
                     
+                    print(f"ref_logprob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
                     print(f"new_logprob:{log_prob.mean(), log_prob.shape}")
                     print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 

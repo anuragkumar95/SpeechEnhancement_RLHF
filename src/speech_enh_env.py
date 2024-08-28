@@ -97,7 +97,8 @@ class SpeechEnhancementAgent:
             #print(f"")
             #print(f"NEXT_STEP: MAG={mag.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             
-            est_mag = mask * mag
+            est_mag = torch.expm1(mask * mag)
+            
             #noisy_phase = torch.atan2(x[:, 1, :, :], x[:, 0, :, :])
             #print(f"NEXT_STEP: MAG={mag.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             est_real = est_mag * torch.cos(noisy_phase)

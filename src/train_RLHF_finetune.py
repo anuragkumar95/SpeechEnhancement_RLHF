@@ -447,7 +447,7 @@ class Trainer:
         #loss, best_rm_score, best_pesq = self.run_validation(0)
         loss, best_rm_score, best_pesq = 9999, 0, 0
         epochs_per_episode = self.args.ep_per_episode
-        loss, rm_score, val_pesq = self.run_validation(0)
+        #loss, rm_score, val_pesq = self.run_validation(0)
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
         best_val_loss = 99999

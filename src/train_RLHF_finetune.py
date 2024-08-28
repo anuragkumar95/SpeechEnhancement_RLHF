@@ -308,7 +308,7 @@ class Trainer:
             supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
 
         if self.args.model == 'metricgan':
-            mb_enhanced_mag = next_state['est_mag']
+            mb_enhanced_mag = next_state['est_mag'].permute(0, 1, 3, 2)
             mb_clean_mag = clean
             supervised_loss = (mb_clean_mag - mb_enhanced_mag)**2
 

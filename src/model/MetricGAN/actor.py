@@ -84,19 +84,19 @@ class Generator(nn.Module):
             mag = self.pack_padded_sequence(mag, lengths)
         print(f"FORWARD: inp:{mag.mean()}")
         outputs, _ = self.lstm(mag)
-        #print(f"FORWARD: lstm:{outputs.mean()}")
+        print(f"FORWARD: lstm:{outputs.mean()}")
         # Unpack the packed sequence
         if lengths is not None:
             outputs = self.pad_packed_sequence(outputs)
 
         outputs = self.fc1(outputs)
-        #print(f"FORWARD: fc1:{outputs.mean()}")
+        print(f"FORWARD: fc1:{outputs.mean()}")
         outputs = self.LReLU(outputs)
-        #outputs = self.fc2(outputs)
-        #outputs = self.Learnable_sigmoid(outputs)
-        #print(f"FORWARD: fc2 inp :{outputs.max(), outputs.min(), outputs.mean()}")
+        outputs = self.fc2(outputs)
+        outputs = self.Learnable_sigmoid(outputs)
+        print(f"FORWARD: fc2 inp :{outputs.max(), outputs.min(), outputs.mean()}")
         x = self.fc2(outputs)
-        #print(f"FORWARD: fc2 out :{x_mu.max(), x_mu.min(), x_mu.mean()}")
+        print(f"FORWARD: fc2 out :{x_mu.max(), x_mu.min(), x_mu.mean()}")
         x_mu = self.Learnable_sigmoid(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         if self.evaluation:

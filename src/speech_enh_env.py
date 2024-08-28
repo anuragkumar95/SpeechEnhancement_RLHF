@@ -37,7 +37,7 @@ class SpeechEnhancementAgent:
             self.reward_model = reward_model
         
        
-    def get_next_state(self, state, action, model='cmgan'):
+    def get_next_state(self, state, action, phase=None, model='cmgan'):
         """
         Apply mask to spectrogram and return next (enhanced) state.
         ARGS:
@@ -91,12 +91,12 @@ class SpeechEnhancementAgent:
             est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
         
         if model == 'metricgan':
-            #print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
+            
             mag = state
-            
+            noisy_phase = phase
             est_mag = mask.permute(0, 1, 3, 2) * mag
-            noisy_phase = torch.atan2(x[:, 1, :, :], x[:, 0, :, :])
-            
+            #noisy_phase = torch.atan2(x[:, 1, :, :], x[:, 0, :, :])
+            print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             est_real = est_mag * torch.cos(noisy_phase)
             est_imag = est_mag * torch.sin(noisy_phase)
 

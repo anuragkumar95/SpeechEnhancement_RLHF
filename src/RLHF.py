@@ -341,6 +341,12 @@ class PPO:
                     cl_aud_rl, clean_rl, noisy_rl, _, c_rl = batch_rl
                     noisy_rl = noisy_rl.permute(0, 1, 3, 2)
                     clean_rl = clean_rl.permute(0, 1, 3, 2)
+                    
+                    noisy_phase = None
+                    if self.model == 'metricgan':
+                        noisy_phase = c_rl
+                        c_rl = 1.0
+                        
                     bs, ch, t, f = clean_rl.shape
 
                     if torch.isnan(noisy_rl.mean()) or torch.isnan(clean_rl.mean()):
@@ -363,11 +369,11 @@ class PPO:
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                     #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")
 
-                    sft_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
+                    sft_state = self.env.get_next_state(state=noisy_rl, phase=noisy_phase, action=init_action, model=self.model)
                     sft_state['cl_audio'] = cl_aud_rl
                     sft_state['clean'] = clean_rl
 
-                    state = self.env.get_next_state(state=noisy_rl, action=action, model=self.model)
+                    state = self.env.get_next_state(state=noisy_rl, phase=noisy_phase, action=action, model=self.model)
                     state['cl_audio'] = cl_aud_rl
                     state['clean'] = clean_rl
                     #if self.init_model is not None:
@@ -581,6 +587,11 @@ class PPO:
                     cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
                     noisy_pre = noisy_pre.permute(0, 1, 3, 2)
                     clean_pre = clean_pre.permute(0, 1, 3, 2)
+                    noisy_phase = None
+                    if self.model == 'metricgan':
+                        noisy_phase = c_pre
+                        c_pre = 1.0
+
                     if torch.isnan(noisy_pre.mean()) or torch.isnan(clean_pre.mean()):
                         continue 
                     if torch.isinf(noisy_pre.mean()) or torch.isinf(clean_pre.mean()):
@@ -641,7 +652,7 @@ class PPO:
                     pg_loss = torch.max(pg_loss1, pg_loss2)
 
                     mb_act, _, _, _ = actor.get_action(noisy_pre)
-                    mb_next_state = self.env.get_next_state(state=noisy_pre, action=mb_act, model=self.model)
+                    mb_next_state = self.env.get_next_state(state=noisy_pre, phase=noisy_phase, action=mb_act, model=self.model)
                     mb_enhanced = mb_next_state['noisy']
 
                     mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)

@@ -138,7 +138,7 @@ class MaskDecoder(nn.Module):
         self.gpu_id = gpu_id
         self.evaluation = eval
 
-    def sample(self, mu, logvar, x=None):
+    def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
@@ -159,7 +159,7 @@ class MaskDecoder(nn.Module):
         x = self.prelu(self.norm(x))
     
         x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+        x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         if self.evaluation:
             x_out = self.prelu_out(params[0])
         else:
@@ -196,7 +196,7 @@ class ComplexDecoder(nn.Module):
         x = self.prelu(self.norm(x))
 
         x_mu = self.conv(x)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
+        x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         if self.evaluation:
             x = params[0]
             

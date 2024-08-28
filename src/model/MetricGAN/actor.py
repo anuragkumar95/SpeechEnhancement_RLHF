@@ -75,7 +75,7 @@ class Generator(nn.Module):
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)
         
-    def forward(self, x, lengths=32000, action=None):
+    def forward(self, x, lengths=None, action=None):
         # Pack sequence for LSTM padding
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2)
 
@@ -111,7 +111,6 @@ class Generator(nn.Module):
             Tuple of mag and complex masks log probabilities.
         """
         _, x_logprob, x_entropy, _ = self.forward(x, lengths, action)
-
         return x_logprob, x_entropy
     
     def get_action(self, x):

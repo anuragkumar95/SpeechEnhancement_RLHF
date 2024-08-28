@@ -367,10 +367,10 @@ def preprocess_batch(batch, ref=None, n_fft=400, hop=100, gpu_id=None, clean_ist
         noisy = noisy.to(gpu_id)
 
     if model == 'metricgan':
-        noisy_spec, noisy_phase = get_spec_and_phase(noisy, n_fft=n_fft, hop=hop, gpu_id=gpu_id) 
+        noisy_spec, _ = get_spec_and_phase(noisy, n_fft=n_fft, hop=hop, gpu_id=gpu_id) 
         clean_spec, _ = get_spec_and_phase(clean, n_fft=n_fft, hop=hop, gpu_id=gpu_id)
         print(f"INP:{noisy_spec.shape}, {clean_spec.shape}")
-        return (clean, clean_spec, noisy_spec, labels, None)       
+        return (clean, clean_spec.unsqueeze(1), noisy_spec.unsqueeze(1), labels, None)       
 
 
     if ref is not None:

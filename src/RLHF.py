@@ -492,8 +492,8 @@ class PPO:
                 )
                 print(f"unrol_Action:{actions[0][0].shape}")
                 actions = (
-                    torch.stack(actions[0], dim=0).detach(),
-                    torch.stack(actions[1], dim=0).detach()
+                    torch.cat(actions[0], dim=0).detach(),
+                    torch.cat(actions[1], dim=0).detach()
                 )
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
                 

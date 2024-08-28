@@ -101,7 +101,7 @@ class Generator(nn.Module):
         #return outputs
         return (x, x_out), x_logprob, x_entropy, params
     
-    def get_action_prob(self, x, lengths=None, action=None):
+    def get_action_prob(self, x, action=None):
         """
         ARGS:
             x : spectrogram
@@ -110,7 +110,7 @@ class Generator(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        _, x_logprob, x_entropy, _ = self.forward(x, lengths, action)
+        _, x_logprob, x_entropy, _ = self.forward(x, None, action)
         return x_logprob, x_entropy
     
     def get_action(self, x):

@@ -308,7 +308,7 @@ class PPO:
         actor.set_evaluation(False)
         #self.init_model = self.init_model.eval()
         self.init_model = self.init_model.train()
-        self.init_model.set_evaluation(False)
+        self.init_model.set_evaluation(True)
 
         rewards = []
         r_ts = []

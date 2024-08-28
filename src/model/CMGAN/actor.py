@@ -143,10 +143,8 @@ class MaskDecoder(nn.Module):
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
-        if len(x.shape) != len(mu.shape):
-            raise ValueError(f"No. of dims in action {x.shape} don't match mu {mu.shape}")
-        if x.shape[-1] != mu.shape[-1]:
-            x = x.permute(0, 1, 3, 2)
+        if x.shape != mu.shape:
+            raise ValueError(f"Dims in action {x.shape} don't match mu {mu.shape}")
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)
@@ -182,10 +180,9 @@ class ComplexDecoder(nn.Module):
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
-        if len(x.shape) != len(mu.shape):
-            raise ValueError(f"No. of dims in action {x.shape} don't match mu {mu.shape}")
-        if x.shape[-1] != mu.shape[-1]:
-            x = x.permute(0, 1, 3, 2)
+        if x.shape != mu.shape:
+            raise ValueError(f"Dims in action {x.shape} don't match mu {mu.shape}")
+        
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)

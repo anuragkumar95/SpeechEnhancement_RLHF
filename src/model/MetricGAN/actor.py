@@ -110,7 +110,7 @@ class Generator(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        _, x_logprob, x_entropy, _ = self.forward(x, None, action)
+        _, x_logprob, x_entropy, _ = self.forward(x, None, action[0])
         return x_logprob, x_entropy
     
     def get_action(self, x):

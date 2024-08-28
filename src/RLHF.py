@@ -537,11 +537,13 @@ class PPO:
         
         #Start training over the unrolled batch of trajectories
         #Set models to train
-        #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
-        #acting differently in train and eval mode. PPO seems to be stable only when actor
-        #is still in eval mode
-        #actor = actor.eval()
-        actor = actor.train()
+        if self.model == 'cmgan':
+            #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
+            #acting differently in train and eval mode. PPO seems to be stable only when actor
+            #is still in eval mode
+            actor = actor.eval()
+        if self.model == 'metricgan':
+            actor = actor.train()
 
         a_optim, _ = optimizers
         
@@ -554,7 +556,7 @@ class PPO:
 
         for _ in range(n_epochs):
             indices = [t for t in range(states.shape[0])]
-            np.random.shuffle(indices)
+            #np.random.shuffle(indices)
             for t in range(0, len(indices), self.bs):
 
                     try:
@@ -678,18 +680,18 @@ class PPO:
             
                     #Update network
                     if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
-                        #torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-                        torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
-                        update=True
-                        for name, param in actor.named_parameters():
-                            print(name, torch.isfinite(param.grad).all())
-                            print(name, param.grad.max(), param.grad.min())
-                            print("="*100)
-                            if not torch.isfinite(param.grad).all():
-                                update = False
-                        print(f"UPDATE:{update}")
-                        if update:
-                            a_optim.step()
+                        torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
+                        #torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
+                        #update=True
+                        #for name, param in actor.named_parameters():
+                        #    print(name, torch.isfinite(param.grad).all())
+                        #    print(name, param.grad.max(), param.grad.min())
+                        #    print("="*100)
+                        #    if not torch.isfinite(param.grad).all():
+                        #        update = False
+                        #print(f"UPDATE:{update}")
+                        #if update:
+                        a_optim.step()
                         a_optim.zero_grad()
                     
                     step_clip_loss += clip_loss.mean()

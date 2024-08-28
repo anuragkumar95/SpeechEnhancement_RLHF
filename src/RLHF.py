@@ -466,10 +466,7 @@ class PPO:
                         [batch[0][0] for batch in actions],
                         [batch[0][1] for batch in actions]
                     ),
-                    (
-                        [batch[1][0] for batch in actions],
-                    )
-
+                    [batch[1][0] for batch in actions],
                 )
                    
                 actions = ((torch.stack(actions[0][0]).reshape(-1, f, t).detach(), 

@@ -78,7 +78,7 @@ class Generator(nn.Module):
         
     def forward(self, x, lengths=None, action=None):
         # Pack sequence for LSTM padding
-        mag = x.squeeze(1)
+        mag = x.permute(0, 1, 3, 2).squeeze(1)
 
         if lengths is not None:
             mag = self.pack_padded_sequence(mag, lengths)

@@ -92,21 +92,21 @@ class SpeechEnhancementAgent:
         
         if model == 'metricgan':
             
-            mag = state
+            mag = state.permute(0, 1, 3, 2).squeeze(1)
             noisy_phase = phase
             print(f"")
             print(f"NEXT_STEP: MAG={mag.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             
-            est_mag = mask.permute(0, 1, 3, 2) * mag
+            est_mag = mask * mag
             #noisy_phase = torch.atan2(x[:, 1, :, :], x[:, 0, :, :])
             print(f"NEXT_STEP: MAG={mag.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             est_real = est_mag * torch.cos(noisy_phase)
             est_imag = est_mag * torch.sin(noisy_phase)
 
-            est_spec = torch.cat([est_real, est_imag], dim=1)
-            mag = est_mag.permute(0, 2, 3, 1)
-            phase = noisy_phase.permute(0, 2, 3, 1)
-            print(f"est_spec:{est_spec.shape}")
+            est_spec = torch.stack([est_real, est_imag], dim=1)
+            mag = est_mag.unsqueeze(-1).permute(0, 2, 1, 3)
+            phase = noisy_phase.unsqueeze(-1).permute(0, 2, 1, 3)
+            print(f"est_spec:{est_spec.shape}, mag:{mag.shape}, phase:{phase.shape}")
             est_audio = transform_spec_to_wav(mag, phase)
 
         next_state = {}

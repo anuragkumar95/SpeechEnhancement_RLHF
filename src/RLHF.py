@@ -576,15 +576,11 @@ class PPO:
 
                     #Get new logprobs and values for the sampled (state, action) pair
                     if self.model == 'cmgan':
-                        mb_action = ((actions[0][0][mb_indx, ...],
-                                    actions[0][1][mb_indx, ...]), 
-                                    actions[1][mb_indx, ...])
+                        mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), 
+                                     actions[1][mb_indx, ...])
 
-                    if self.model == 'mpsenet':
-                        mb_action = ((actions[0][0][mb_indx, ...], 
-                                    actions[0][1][mb_indx, ...]), 
-                                    (actions[1][0][mb_indx, ...],
-                                    (actions[1][1][0][mb_indx, ...], actions[1][1][1][mb_indx, ...])))
+                    if self.model == 'metricgan':
+                        mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
                         print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
                         print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
 

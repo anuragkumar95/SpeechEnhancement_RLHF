@@ -588,9 +588,9 @@ class PPO:
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
                     if self.train_phase:
-                        print(f"logprobs00:{log_probs[0].mean()}, {log_probs[0].shape}")
-                        print(f"logprobs10:{log_probs[1][:, 0, :, :].mean()}, {log_probs[1][:, 0, :, :].shape}")
-                        print(f"logprobs11:{log_probs[1][:, 1, :, :].mean()}, {log_probs[1][:, 1, :, :].shape}")
+                        print(f"log_prob:{log_prob.mean(), log_prob.shape}")
+                        print(f"ref_log_prob:{ref_log_prob.mean(), ref_log_prob.shape}")
+                        #print(f"logprobs:{log_probs.mean()}")
                         #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                         log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                         ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
@@ -605,7 +605,7 @@ class PPO:
                         #ignore complex mask, just tune mag mask 
                         raise NotImplementedError
                     
-                    print(f"log_prob:{log_prob.mean(), log_prob.shape}")
+                    
                     print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 
                     #KL Penalty

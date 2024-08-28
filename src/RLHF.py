@@ -631,9 +631,9 @@ class PPO:
                     mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                     mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
 
-                    if self.model == 'mpsenet':
-                        mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
-                        mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
+                    #if self.model == 'mpsenet':
+                    #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
+                    #    mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
 
                     supervised_loss = ((clean_pre - mb_enhanced) ** 2).mean() + ((mb_clean_mag - mb_enhanced_mag)**2).mean()
                     

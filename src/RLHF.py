@@ -346,16 +346,18 @@ class PPO:
                         continue 
             
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
-                    print(f"action: {len(action)}, {action[0].shape}, {action[1].shape}")
+                    print(f"action: {action.shape}")
+
                     if self.model == 'cmgan':
                         print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
-                    if self.model == 'metricgan':
-                        print(f"logprobs:{log_probs.shape}, {log_probs.mean()}")
+                    #if self.model == 'metricgan':
+                       # print(f"logprobs:{log_probs.shape}, {log_probs.mean()}")
                     
                     #if self.init_model is not None:
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
-                    #print(f"REF_LOG_PROBS:{ref_log_probs[0].mean()}, {ref_log_probs[1].mean()}")
+                    #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")
+
                     sft_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)
                     sft_state['cl_audio'] = cl_aud_rl
                     sft_state['clean'] = clean_rl
@@ -486,7 +488,7 @@ class PPO:
                 )
             
             if self.model == 'metricgan':
-                #print(f"unrol_Action:{actions[0][0].shape}")
+                print(f"unrol_Action:{actions[0].shape}")
                 actions = torch.cat(actions, dim=0).detach()
                 
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()

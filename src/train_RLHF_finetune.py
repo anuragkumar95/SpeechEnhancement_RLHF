@@ -59,7 +59,7 @@ def args():
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
     parser.add_argument("--model", type=str, default='cmgan',
-                        help="Choose between (mpsenet/cmgan).")
+                        help="Choose between (metricgan/cmgan).")
     parser.add_argument("--train_phase", action='store_true',
                         help="Phase is also finetuned using RL.")
     parser.add_argument("--scale_reward", action='store_true',
@@ -116,7 +116,7 @@ class Trainer:
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.ACCUM_GRAD = args.accum_grad
-        
+        print(f"Finetuning {args.model}")
         if args.model == 'metricgan':
             self.actor = Generator(causal=False, 
                                    gpu_id=gpu_id)

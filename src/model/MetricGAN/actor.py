@@ -40,7 +40,7 @@ class Generator(nn.Module):
     def __init__(self, causal=False, gpu_id=None, eval=False):
         super(Generator, self).__init__()
         dim = 200
-        self.lstm = nn.LSTM(257, dim, dropout=0.1, num_layers=2, bidirectional=not causal, batch_first=True)    # causal==False -> bidirectional=True
+        self.lstm = nn.LSTM(257, dim, dropout=0, num_layers=2, bidirectional=not causal, batch_first=True)    # causal==False -> bidirectional=True
         """
         Use orthogonal init for recurrent layers, xavier uniform for input layers
         Bias is 0

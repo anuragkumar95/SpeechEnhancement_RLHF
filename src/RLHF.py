@@ -608,6 +608,7 @@ class PPO:
                         log_prob = log_probs
                         old_log_prob = logprobs[mb_indx, ...]
                     
+                    print(f"new_logprob:{log_prob.mean(), log_prob.shape}")
                     print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 
                     #KL Penalty

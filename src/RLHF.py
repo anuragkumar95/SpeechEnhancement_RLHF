@@ -608,8 +608,8 @@ class PPO:
 
                     if self.model == 'metricgan':
                         mb_action = actions[mb_indx, ...]
-                        print(f"Sampled actions:{mb_action.mean()}") 
-                        print(f"Sampled actions:{mb_action.shape}") 
+                        #print(f"Sampled actions:{mb_action.mean()}") 
+                        #print(f"Sampled actions:{mb_action.shape}") 
 
                     log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
@@ -631,9 +631,9 @@ class PPO:
                             ref_log_prob = ref_log_probs
                             old_log_prob = logprobs[mb_indx, ...]
                     
-                    print(f"ref_logprob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
-                    print(f"new_logprob:{log_prob.mean(), log_prob.shape}")
-                    print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
+                    #print(f"ref_logprob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
+                    #print(f"new_logprob:{log_prob.mean(), log_prob.shape}")
+                    #print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 
                     #KL Penalty
                     kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
@@ -661,8 +661,6 @@ class PPO:
                         mb_clean_mag = clean_pre
                     if self.model == 'cmgan':
                         mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
-
-                    print(f"mb_enhanced_mag:{mb_enhanced_mag.shape}, clean_mag:{mb_clean_mag.shape}")
 
                     #if self.model == 'mpsenet':
                     #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)

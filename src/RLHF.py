@@ -488,7 +488,7 @@ class PPO:
                 )
             
             if self.model == 'metricgan':
-                print(f"unrol_Action:{actions[0].shape}")
+                print(f"unrol_action:{actions[0].mean()}, {actions[0].shape}")
                 if len(actions) > 1:
                     actions = torch.cat(actions, dim=0).detach()
                 else:
@@ -598,16 +598,10 @@ class PPO:
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
                     if self.train_phase:
-                        #print(f"log_prob:{log_probs.mean(), log_probs.shape}")
-                        #print(f"ref_log_prob:{ref_log_probs.mean(), ref_log_probs.shape}")
-                        #print(f"logprobs:{log_probs.mean()}")
-                        #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                         log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]
                         ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
                         ref_log_prob = ref_log_prob.detach()
                         old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
-                        #if self.model == 'mpsenet':
-                        #    old_log_prob = old_log_prob.squeeze(1)
                         if self.model == 'cmgan':
                             old_log_prob = old_log_prob.permute(0, 2, 1)
 

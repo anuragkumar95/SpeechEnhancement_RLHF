@@ -386,7 +386,12 @@ class Trainer:
             for i, batch in enumerate(self.test_ds['pre']):
                 
                 #Preprocess batch
-                batch = preprocess_batch(batch, gpu_id=self.gpu_id, return_c=True, model=self.args.model)
+                batch = preprocess_batch(batch, 
+                                         n_fft=self.n_fft, 
+                                         hop=self.hop, 
+                                         gpu_id=self.gpu_id, 
+                                         return_c=True, 
+                                         model=self.args.model)
                 
                 #Run validation episode
                 try:

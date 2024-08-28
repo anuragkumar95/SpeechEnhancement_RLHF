@@ -488,8 +488,8 @@ class PPO:
                 )
 
                 actions = (
-                    torch.stack(actions[0]).reshape(-1, f, t).detach(),
-                    torch.stack(actions[1]).reshape(-1, f, t).detach()
+                    torch.stack(actions[0]).reshape(-1, t, f).detach(),
+                    torch.stack(actions[1]).reshape(-1, t, f).detach()
                 )
             logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
                 
@@ -581,8 +581,8 @@ class PPO:
 
                     if self.model == 'metricgan':
                         mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
-                        print(f"Sampled actions:{mb_action[0][0].mean()}, {mb_action[0][1].mean()}, {mb_action[1][0].mean()}, {mb_action[1][1][0].mean()}, {mb_action[1][1][1].mean()}") 
-                        print(f"Sampled actions:{mb_action[0][0].shape}, {mb_action[0][1].shape}, {mb_action[1][0].shape}, {mb_action[1][1][0].shape}, {mb_action[1][1][1].shape}") 
+                        print(f"Sampled actions:{mb_action[0].mean()}, {mb_action[1].mean()}") 
+                        print(f"Sampled actions:{mb_action[0].shape}, {mb_action[1].shape}") 
 
                     log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)

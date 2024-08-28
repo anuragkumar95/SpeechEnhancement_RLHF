@@ -303,7 +303,7 @@ class PPO:
 
     def unroll_policy(self, actor):
         #Set models to eval
-        actor = actor.eval()
+        #actor = actor.eval()
         actor.set_evaluation(False)
         self.init_model = self.init_model.eval()
         self.init_model.set_evaluation(True)

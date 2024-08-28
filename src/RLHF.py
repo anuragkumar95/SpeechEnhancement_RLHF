@@ -345,7 +345,7 @@ class PPO:
                     noisy_phase = None
                     if self.model == 'metricgan':
                         noisy_phase = c_rl
-                        c_rl = torch.ones(noisy_rl.shape[0], 1).to(self.gou_id)
+                        c_rl = torch.ones(noisy_rl.shape[0], 1).to(self.gpu_id)
                         
                     bs, ch, t, f = clean_rl.shape
 

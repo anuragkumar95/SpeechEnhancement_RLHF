@@ -115,7 +115,8 @@ class Generator(nn.Module):
         return x_logprob, x_entropy
     
     def get_action(self, x):
-        return self.forward(x, None, None)    
+        action, x_logprob, x_entropy, params = self.forward(x, None, None)   
+        return action, x_logprob, x_entropy, params
 
     def pack_padded_sequence(self, inputs, lengths):
         lengths = lengths.cpu()

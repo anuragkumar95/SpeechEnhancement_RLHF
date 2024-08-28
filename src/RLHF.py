@@ -342,7 +342,7 @@ class PPO:
                         continue 
             
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
-                    print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}, {len(action[1][1])}")
+                    print(f"action: {len(action)}, {action[0].shape}, {action[1].shape}")
                     if self.model == 'cmgan':
                         print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     if self.model == 'metricgan':

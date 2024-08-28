@@ -49,7 +49,7 @@ class SpeechEnhancementAgent:
         if model == 'cmgan':
             (_, mask), complex_out = action
         if model == 'metricgan':
-            mask = action
+            (_, mask) = action
         
         noisy_phase = torch.angle(
             torch.complex(x[:, 0, :, :], x[:, 1, :, :])

@@ -655,8 +655,11 @@ class PPO:
                     mb_next_state = self.env.get_next_state(state=noisy_pre, phase=noisy_phase, action=mb_act, model=self.model)
                     mb_enhanced = mb_next_state['noisy']
 
-                    mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+                    #mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+                    mb_enhanced_mag = mb_next_state['est_mag']
                     mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
+
+                    print(f"mb_enhanced_mag:{mb_enhanced_mag.shape}, clean_mag:{mb_clean_mag.shape}")
 
                     #if self.model == 'mpsenet':
                     #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)

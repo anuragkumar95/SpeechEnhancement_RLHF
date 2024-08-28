@@ -590,7 +590,7 @@ class PPO:
                                      actions[1][mb_indx, ...])
 
                     if self.model == 'metricgan':
-                        mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
+                        mb_action = actions[mb_indx, ...]
                         print(f"Sampled actions:{mb_action.mean()}") 
                         print(f"Sampled actions:{mb_action.shape}") 
 

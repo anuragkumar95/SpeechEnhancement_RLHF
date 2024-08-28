@@ -78,11 +78,11 @@ class Generator(nn.Module):
         
     def forward(self, x, lengths=None, action=None):
         # Pack sequence for LSTM padding
-        mag = x
+        mag = x.squeeze(1)
 
         if lengths is not None:
             mag = self.pack_padded_sequence(mag, lengths)
-        print(f"FORWARD: inp:{mag.mean()}")
+        print(f"FORWARD: inp:{mag.mean()}, {mag.shape}")
         outputs, _ = self.lstm(mag)
         print(f"FORWARD: lstm:{outputs.mean()}")
         # Unpack the packed sequence

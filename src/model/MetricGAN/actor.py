@@ -96,7 +96,7 @@ class Generator(nn.Module):
         #outputs = self.Learnable_sigmoid(outputs)
         print(f"FORWARD: fc2 inp :{outputs.max(), outputs.min(), outputs.mean()}")
         x = self.fc2(outputs)
-        print(f"FORWARD: fc2 out :{x_mu.max(), x_mu.min(), x_mu.mean()}")
+        print(f"FORWARD: fc2 out :{x.max(), x.min(), x.mean()}")
         x_mu = self.Learnable_sigmoid(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         if self.evaluation:

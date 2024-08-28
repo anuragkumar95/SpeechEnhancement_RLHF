@@ -104,8 +104,8 @@ class SpeechEnhancementAgent:
             est_imag = est_mag * torch.sin(noisy_phase)
 
             est_spec = torch.stack([est_real, est_imag], dim=1)
-            mag = est_mag.unsqueeze(-1).permute(0, 2, 1, 3)
-            phase = noisy_phase.unsqueeze(-1).permute(0, 2, 1, 3)
+            mag = est_mag.permute(0, 2, 1)
+            phase = noisy_phase.permute(0, 2, 1)
             print(f"est_spec:{est_spec.shape}, mag:{mag.shape}, phase:{phase.shape}")
             est_audio = transform_spec_to_wav(mag, phase)
 

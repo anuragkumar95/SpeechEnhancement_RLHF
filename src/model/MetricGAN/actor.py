@@ -101,7 +101,7 @@ class Generator(nn.Module):
         #return outputs
         return (x, x_out), x_logprob, x_entropy, params
     
-    def get_action_prob(self, x, lengths=32000, action=None):
+    def get_action_prob(self, x, lengths=None, action=None):
         """
         ARGS:
             x : spectrogram
@@ -114,8 +114,8 @@ class Generator(nn.Module):
 
         return x_logprob, x_entropy
     
-    def get_action(self, x, lengths=32000):
-        return self.forward(x, lengths, None)    
+    def get_action(self, x):
+        return self.forward(x, None, None)    
 
     def pack_padded_sequence(self, inputs, lengths):
         lengths = lengths.cpu()

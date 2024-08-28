@@ -603,8 +603,10 @@ class PPO:
 
                     else:
                         #ignore complex mask, just tune mag mask 
-                        raise NotImplementedError
-                    
+                        if self.model == 'cmgan':
+                            raise NotImplementedError
+                        log_prob = log_probs
+                        old_log_prob = logprobs[mb_indx, ...]
                     
                     print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 

@@ -89,7 +89,7 @@ class SpeechEnhancementAgent:
             est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
         
         if model == 'metricgan':
-            print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
+            #print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             est_mag = mask.permute(0, 1, 3, 2) * mag
 
             #complex_predictions = torch.mul(

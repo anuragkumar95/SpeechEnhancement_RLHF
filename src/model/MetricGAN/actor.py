@@ -69,6 +69,7 @@ class Generator(nn.Module):
     def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
+        print(f"normal:{mu.mean(), sigma.mean()}")
         if x is None:
             x = N.rsample()
         x_logprob = N.log_prob(x)
@@ -81,7 +82,7 @@ class Generator(nn.Module):
 
         if lengths is not None:
             mag = self.pack_padded_sequence(mag, lengths)
-        #print(f"FORWARD: inp:{mag.mean()}")
+        print(f"FORWARD: inp:{mag.mean()}")
         outputs, _ = self.lstm(mag)
         #print(f"FORWARD: lstm:{outputs.mean()}")
         # Unpack the packed sequence
@@ -102,7 +103,7 @@ class Generator(nn.Module):
             x = x_mu
         return x, x_logprob, x_entropy, params
     
-    def get_action_prob(self, x, action=None):
+    def get_action_prob(self, x, action):
         """
         ARGS:
             x : spectrogram

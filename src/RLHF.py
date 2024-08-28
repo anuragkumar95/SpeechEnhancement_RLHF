@@ -346,7 +346,8 @@ class PPO:
                         continue 
                     if torch.isinf(noisy_rl.mean()) or torch.isinf(clean_rl.mean()):
                         continue 
-            
+                    
+                    print(f"ACTOR:")
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
                     print(f"action: {action.shape}")
 
@@ -356,8 +357,9 @@ class PPO:
                        # print(f"logprobs:{log_probs.shape}, {log_probs.mean()}")
                     
                     #if self.init_model is not None:
-                    init_action, _, _, _ = self.init_model.get_action(noisy_rl)
+                    print(f"EXPERT:")
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
+                    init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                     #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")
 
                     sft_state = self.env.get_next_state(state=noisy_rl, action=init_action, model=self.model)

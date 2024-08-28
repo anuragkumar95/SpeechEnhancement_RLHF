@@ -57,8 +57,6 @@ def args():
                         help="Set this flag for single gpu training.")
     parser.add_argument("--parallel", action='store_true',
                         help="Set this flag for parallel gpu training.")
-    parser.add_argument("--small", action='store_true',
-                        help="Trains a smaller CMGAN model.")
     parser.add_argument("--model", type=str, default='cmgan',
                         help="Choose between (mpsenet/cmgan).")
     parser.add_argument("--train_phase", action='store_true',
@@ -128,20 +126,15 @@ class Trainer:
         
         self.expert = None
         if args.ckpt is not None:
-            if args.model == 'cmgan':
-                if args.small:
-                    self.expert = TSCNetSmall(num_channel=64, 
-                                    num_features=self.n_fft // 2 + 1, 
-                                    gpu_id=gpu_id)
-                else:
-                    self.expert = TSCNet(num_channel=64, 
-                                    num_features=self.n_fft // 2 + 1,
-                                    gpu_id=gpu_id)
-            if args.model == 'mpsenet':
-                self.expert = MPNet(n_fft=self.n_fft, 
-                                    beta=2.0, 
-                                    dense_channel=64, 
-                                    gpu_id=gpu_id)
+            if args.model == 'cmgan':    
+                self.expert = TSCNet(num_channel=64, 
+                                num_features=self.n_fft // 2 + 1,
+                                gpu_id=gpu_id)
+            #if args.model == 'mpsenet':
+            #    self.expert = MPNet(n_fft=self.n_fft, 
+            #                        beta=2.0, 
+            #                        dense_channel=64, 
+            #                        gpu_id=gpu_id)
                 
             expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
 
@@ -149,10 +142,10 @@ class Trainer:
                 if args.model == 'cmgan':
                     self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
                     self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
-                if args.model == 'mpsenet':
-                    checkpoint = map_state_dict(expert_checkpoint['generator'])
-                    self.actor.load_state_dict(checkpoint) 
-                    self.expert.load_state_dict(checkpoint)
+                #if args.model == 'mpsenet':
+                #    checkpoint = map_state_dict(expert_checkpoint['generator'])
+                #    self.actor.load_state_dict(checkpoint) 
+                #    self.expert.load_state_dict(checkpoint)
               
             except KeyError as e:
                 self.actor.load_state_dict(expert_checkpoint)
@@ -506,7 +499,7 @@ class Trainer:
                             }
             if self.args.method == 'PPO':
                 save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                            'critic_state_dict':self.critic.state_dict(),
+                            #'critic_state_dict':self.critic.state_dict(),
                             'optim_state_dict':self.optimizer.state_dict()
                             }
             torch.save(save_dict, path)

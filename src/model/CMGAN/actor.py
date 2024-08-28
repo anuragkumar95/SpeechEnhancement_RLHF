@@ -1,11 +1,11 @@
 from model.CMGAN.conformer import ConformerBlock
 import torch
 import torch.nn as nn
-from model.critic import QNet
-import torch.nn.functional as F
+#from model.critic import QNet
+#import torch.nn.functional as F
 
-from torch.distributions import Normal, Categorical
-from torch.nn.utils import rnn
+from torch.distributions import Normal
+#from torch.nn.utils import rnn
 
 
 class DilatedDenseNet(nn.Module):
@@ -133,20 +133,12 @@ class MaskDecoder(nn.Module):
         self.conv_1 = nn.Conv2d(num_channel, out_channel, (1, 2))
         self.norm = nn.InstanceNorm2d(out_channel, affine=True)
         self.prelu = nn.PReLU(out_channel)
-        #if distribution == "Normal":
-        #    self.final_conv_mu = nn.Conv2d(out_channel, out_channel, (1, 1))
-        #    self.final_conv_var = nn.Conv2d(out_channel, out_channel, (1, 1))
-        #else:
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
         self.gpu_id = gpu_id
-        #self.dist = distribution
         self.evaluation = eval
 
     def sample(self, mu, logvar, x=None):
-        #if self.dist == 'Normal':
-        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=1.0)
-        #elif self.dist is None:
         sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
@@ -165,13 +157,7 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
-        #if self.dist == 'Normal':
-            #x_mu = self.final_conv_mu(x).permute(0, 3, 2, 1).squeeze(-1)
-            #x_var = self.final_conv_var(x).permute(0, 3, 2, 1).squeeze(-1)
-            #x, x_logprob, x_entropy, params = self.sample(x_mu, x_var, action)
-            #x_out = self.prelu_out(x)
-            
-        #elif self.dist is None:
+    
         x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
         x, x_logprob, x_entropy, params = self.sample(x_mu, None, action)
         if self.evaluation:
@@ -187,19 +173,11 @@ class ComplexDecoder(nn.Module):
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.prelu = nn.PReLU(num_channel)
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
-        #if distribution=='Normal':
-        #    self.conv_mu = nn.Conv2d(num_channel, 2, (1, 2))
-        #    self.conv_var = nn.Conv2d(num_channel, 2, (1, 2))
-        #else:
         self.conv = nn.Conv2d(num_channel, 2, (1, 2))
-        #self.out_dist = distribution
         self.gpu_id = gpu_id
         self.evaluation = eval
        
-    def sample(self, mu, logvar, x=None):
-        #if self.out_dist == 'Normal':
-        #    sigma = torch.clamp(torch.exp(logvar) + 1e-08, min=0.01)
-        #elif self.out_dist is None:
+    def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
@@ -224,105 +202,6 @@ class ComplexDecoder(nn.Module):
             
         return x, x_logprob, x_entropy, params
         
-class TSCNetSmall(nn.Module):
-    def __init__(self, num_channel=64, num_features=201, distribution=None, gpu_id=None, eval=False):
-        super(TSCNetSmall, self).__init__()
-        self.dense_encoder = DenseEncoder(in_channel=3, channels=num_channel)
-
-        self.TSCB_1 = TSCB(num_channel=num_channel, nheads=4)
-        
-        self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, distribution=distribution, gpu_id=gpu_id, eval=eval,
-        )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, distribution=distribution, gpu_id=gpu_id, eval=eval)
-        self.dist = distribution
-        self.gpu_id = gpu_id
-
-    def set_evaluation(self, bool):
-        self.mask_decoder.evaluation = bool
-        self.complex_decoder.evaluation = bool
-
-    def get_action(self, x):
-        #b, ch, t, f = x.size()
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        x_in = torch.cat([mag, x], dim=1)
-
-        out_1 = self.dense_encoder(x_in)
-        out_2 = self.TSCB_1(out_1)
-
-        #if self.dist=='Normal':
-        mask, m_logprob, m_entropy, params = self.mask_decoder(out_2)
-        complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_2)
-        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
-        
-    
-    def get_action_prob(self, x, action=None):
-        """
-        ARGS:
-            x : spectrogram
-            action : (Tuple) Tuple of mag and complex actions
-
-        Returns:
-            Tuple of mag and complex masks log probabilities.
-        """
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        x_in = torch.cat([mag, x], dim=1)
-
-        out_1 = self.dense_encoder(x_in)
-        out_2 = self.TSCB_1(out_1)
-
-        if action is not None:
-            m_action = action[0][0]
-            c_action = action[1]
-
-        _, m_logprob, m_entropy, _ = self.mask_decoder(out_2, m_action)
-        _, c_logprob, c_entropy, _ = self.complex_decoder(out_2, c_action)
-
-        return (m_logprob, c_logprob), (m_entropy, c_entropy)
-        
-        
-    def get_embedding(self, x):
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        x_in = torch.cat([mag, x], dim=1)
-        
-        out_1 = self.dense_encoder(x_in)
-        out_2 = self.TSCB_1(out_1)
-
-        return out_2
-
-    def forward(self, x):
-        b, ch, t, f = x.size() 
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        noisy_phase = torch.angle(
-            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
-        ).unsqueeze(1)
-        
-        x_in = torch.cat([mag, x], dim=1)
-        
-        out_1 = self.dense_encoder(x_in)
-        out_2 = self.TSCB_1(out_1)
-
-        #if self.dist == "Normal":
-        (_, mask), _, _, _ = self.mask_decoder(out_2)
-        complex_out, _, _, _ = self.complex_decoder(out_2)
-        
-        #if self.dist == "None":
-        #    mask = self.mask_decoder(out_2)
-        #    complex_out = self.complex_decoder(out_2)
-        
-        mask = mask.permute(0, 2, 1).unsqueeze(1)
-        out_mag = mask * mag
-        mag_real = out_mag * torch.cos(noisy_phase)
-        mag_imag = out_mag * torch.sin(noisy_phase)
-        final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
-        final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
-
-        return final_real, final_imag
-        
 
 class TSCNet(nn.Module):
     def __init__(self, num_channel=64, num_features=201, gpu_id=None, eval=False):
@@ -338,7 +217,6 @@ class TSCNet(nn.Module):
             num_features, num_channel=num_channel, out_channel=1, gpu_id=gpu_id, eval=eval
         )
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, gpu_id=gpu_id, eval=eval)
-        #self.dist = distribution
         self.gpu_id = gpu_id
 
     def set_evaluation(self, bool):
@@ -428,85 +306,3 @@ class TSCNet(nn.Module):
 
         return final_real, final_imag
  
-    
-
-class LSTMActor(nn.Module):
-    def __init__(self,
-                 generator, 
-                 n_layers, 
-                 hid_dim,
-                 in_channel, 
-                 in_dim, 
-                 out_dim, 
-                 batch_first=True,
-                 drop_out=0.05,
-                 bi_directional=False,
-                 gpu_id=None):
-        
-        self.encoder = generator
-
-        self.gru = nn.GRU(input_size=in_dim * in_channel,
-                          hid_dim=hid_dim,
-                          num_layers=n_layers,
-                          batch_first=batch_first,
-                          drop_out=drop_out,
-                          bidirectional=bi_directional)
-        
-        self.num_layers = n_layers
-        self.hidden_dim = hid_dim
-        self.bi_directional = bi_directional
-        
-        #FC layers to output a dist over K classes
-        inp_dim = hid_dim
-        if self.bi_directional:
-            inp_dim = 2 * inp_dim
-        self.final_out = nn.Linear(inp_dim, out_dim)
-
-        self.gpu_id = gpu_id
-
-    def init_hidden_state(self, h):
-        return nn.init.xavier_uniform_(h, gain=nn.init.calculate_gain('relu'))
-
-    def forward(self, inputs, lens, batch_first=False):
-        """
-        ARGS:
-            inputs : (Long.tensor) padded tensor of shape (batch,ch,t, f).
-            lens   : (List[Int]) length of time_seq for each example in the batch. 
-        """  
-        # Initializing hidden state for first input with zeros
-        num_layers = self.num_layers
-        if self.bi_directional:
-            num_layers = 2*self.num_layers
-        if batch_first:
-            h0 = torch.zeros(num_layers, inputs.shape[0], self.hidden_dim).requires_grad_()
-        else:
-            h0 = torch.zeros(inputs.shape[0], num_layers, self.hidden_dim).requires_grad_()
-        h0 = self.init_hidden_state(h0)
-
-        if self.gpu_id is not None:
-            h0 = h0.to(self.gpu_id)
-        
-        #get embeddings from the generator
-        encodings = self.encoder.get_embeddings(inputs)
-        #change (b, ch, t, f) --> (b, t, f * ch)
-        b, c, t, f = encodings.size()
-        encodings = encodings.permute(0, 2, 3, 1).contiguous().view(b, t, f*c)
-
-        #Feed-forward GRU
-        packed_inp = rnn.pack_padded_sequence(encodings, lens, batch_first=batch_first, enforce_sorted=False)
-        gru_outputs, _ = self.gru(packed_inp, h0)
-        gru_outputs, lens = rnn.pad_packed_sequence(packed_inp, batch_first=batch_first)
-
-        #Predict probs over K clusters
-        scores = self.final_out(gru_outputs)
-        probs = F.Softmax(scores, dim=-1)
-
-        return probs
-    
-
-
-
-        
-
-
-

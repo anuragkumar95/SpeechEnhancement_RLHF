@@ -345,8 +345,8 @@ class PPO:
                     print(f"action: {len(action)}, {len(action[0])}, {len(action[1])}, {len(action[1][1])}")
 
                     #if self.model == 'mpsenet':
-                        #print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")
-                        #print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
+                    #    print(f"Storing actions:{action[0][0].mean()}, {action[0][1].mean()}, {action[1][0].mean()}, {action[1][1][0].mean()}, {action[1][1][1].mean()}")
+                    #    print(f"Storing actions:{action[0][0].shape}, {action[0][1].shape}, {action[1][0].shape}, {action[1][1][0].shape}, {action[1][1][1].shape}")
             
                     print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     
@@ -476,41 +476,41 @@ class PPO:
                             torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                             torch.stack(actions[1]).reshape(-1, ch, t, f).detach())
                 
-            if self.model == 'mpsenet':
-                
-                actions = (
-                    (
-                        [batch[0][0] for batch in actions],
-                        [batch[0][1] for batch in actions]
-                    ),
-                    (
-                        [batch[1][0] for batch in actions],
-                        (
-                            [batch[1][1][0] for batch in actions],
-                            [batch[1][1][1] for batch in actions]
-                        )
-                    )
-
-                )
-
-                actions = (
-                    (
-                        torch.stack(actions[0][0]).view(-1, 1, t, f).detach(),
-                        torch.stack(actions[0][1]).view(-1, 1, t, f).detach()
-                    ),
-                    (
-                        torch.stack(actions[1][0]).view(-1, 1, t, f).detach(),
-                        (
-                            torch.stack(actions[1][1][0]).view(-1, 1, t, f).detach(),
-                            torch.stack(actions[1][1][1]).view(-1, 1, t, f).detach()
-                        )
-                    )
-                )
+            #if self.model == 'mpsenet':
+            #    
+            #    actions = (
+            #        (
+            #            [batch[0][0] for batch in actions],
+            #            [batch[0][1] for batch in actions]
+            #        ),
+            #        (
+            #            [batch[1][0] for batch in actions],
+            #            (
+            #                [batch[1][1][0] for batch in actions],
+            #                [batch[1][1][1] for batch in actions]
+            #            )
+            #        )
+            #
+            #    )
+            #
+            #    actions = (
+            #        (
+            #            torch.stack(actions[0][0]).view(-1, 1, t, f).detach(),
+            #            torch.stack(actions[0][1]).view(-1, 1, t, f).detach()
+            #        ),
+            #        (
+            #            torch.stack(actions[1][0]).view(-1, 1, t, f).detach(),
+            #            (
+            #                torch.stack(actions[1][1][0]).view(-1, 1, t, f).detach(),
+            #                torch.stack(actions[1][1][1]).view(-1, 1, t, f).detach()
+            #            )
+            #        )
+            #    )
             
             if self.model == 'cmgan':
                 logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
-            if self.model == 'mpsenet':
-                logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
+            #if self.model == 'mpsenet':
+            #    logprobs = torch.stack(logprobs).reshape(-1, 1, f, t).detach()
             
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)
@@ -619,8 +619,8 @@ class PPO:
                         ref_log_prob = ref_log_probs[0].permute(0, 2, 1) + ref_log_probs[1][:, 0, :, :] + ref_log_probs[1][:, 1, :, :]
                         ref_log_prob = ref_log_prob.detach()
                         old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
-                        if self.model == 'mpsenet':
-                            old_log_prob = old_log_prob.squeeze(1)
+                        #if self.model == 'mpsenet':
+                        #    old_log_prob = old_log_prob.squeeze(1)
                         if self.model == 'cmgan':
                             old_log_prob = old_log_prob.permute(0, 2, 1)
 

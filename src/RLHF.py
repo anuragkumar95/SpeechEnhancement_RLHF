@@ -500,8 +500,8 @@ class PPO:
         print(f"CLEAN         :{cleans.shape}")
         print(f"REWARDS:      :{rewards.shape}")
         print(f"TARGET_VALS   :{b_target.shape}")
-        if self.model == 'mpsenet':
-            print(f"ACTIONS       :{actions[0][0].shape}, {actions[0][1].shape}, {actions[1][0].shape}, {actions[1][1][0].shape}, {actions[1][1][1].shape}")
+        if self.model == 'metricgan':
+            print(f"ACTIONS       :{actions[0].shape}, {actions[1].shape}")
         if self.model == 'cmgan':
             print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")

@@ -346,7 +346,7 @@ class PPO:
                     if self.model == 'cmgan':
                         print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     if self.model == 'metricgan':
-                        print(f"logprobs:{logprobs.mean()}")
+                        print(f"logprobs:{log_probs.shape}, {log_probs.mean()}")
                     
                     #if self.init_model is not None:
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)

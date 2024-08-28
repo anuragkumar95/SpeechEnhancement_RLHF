@@ -78,7 +78,7 @@ class Generator(nn.Module):
         
     def forward(self, x, lengths=None, action=None):
         # Pack sequence for LSTM padding
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2)
+        mag = x
 
         if lengths is not None:
             mag = self.pack_padded_sequence(mag, lengths)

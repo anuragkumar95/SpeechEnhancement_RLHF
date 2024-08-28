@@ -69,7 +69,7 @@ class Generator(nn.Module):
     def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
-        print(f"normal:{mu.mean(), sigma.mean()}")
+        #print(f"normal:{mu.mean(), sigma.mean()}")
         if x is None:
             x = N.rsample()
         x_logprob = N.log_prob(x)

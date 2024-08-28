@@ -354,17 +354,17 @@ class PPO:
                     if torch.isinf(noisy_rl.mean()) or torch.isinf(clean_rl.mean()):
                         continue 
                     
-                    print(f"ACTOR:")
+                    #print(f"ACTOR:")
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
-                    print(f"action: {action.shape}")
+                    #print(f"action: {action.shape}")
 
-                    if self.model == 'cmgan':
-                        print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
+                    #if self.model == 'cmgan':
+                        #print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
                     #if self.model == 'metricgan':
                        # print(f"logprobs:{log_probs.shape}, {log_probs.mean()}")
                     
                     #if self.init_model is not None:
-                    print(f"EXPERT:")
+                    #print(f"EXPERT:")
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                     #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")

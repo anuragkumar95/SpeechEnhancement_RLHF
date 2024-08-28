@@ -303,7 +303,8 @@ class PPO:
 
     def unroll_policy(self, actor):
         #Set models to eval
-        actor = actor.eval()
+        #actor = actor.eval()
+        actor = actor.train()
         actor.set_evaluation(False)
         self.init_model = self.init_model.eval()
         self.init_model.set_evaluation(True)
@@ -609,9 +610,10 @@ class PPO:
                         #ignore complex mask, just tune mag mask 
                         if self.model == 'cmgan':
                             raise NotImplementedError
-                        log_prob = log_probs
-                        ref_log_prob = ref_log_probs
-                        old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
+                        if self.model == 'metricgan':
+                            log_prob = log_probs
+                            ref_log_prob = ref_log_probs
+                            old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
                     
                     print(f"ref_logprob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
                     print(f"new_logprob:{log_prob.mean(), log_prob.shape}")

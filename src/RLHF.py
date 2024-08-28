@@ -556,13 +556,13 @@ class PPO:
             np.random.shuffle(indices)
             for t in range(0, len(indices), self.bs):
 
-                try:
-                    batch_pre = next(self._iter_['pre'])
-                except StopIteration as e:
-                    self._iter_['pre'] = iter(self.dataloader['pre'])
-                    batch_pre = next(self._iter_['pre'])
+                    try:
+                        batch_pre = next(self._iter_['pre'])
+                    except StopIteration as e:
+                        self._iter_['pre'] = iter(self.dataloader['pre'])
+                        batch_pre = next(self._iter_['pre'])
                 
-                with torch.autograd.detect_anomaly():
+                #with torch.autograd.detect_anomaly():
                     #Preprocessed batch
                     batch_pre = preprocess_batch(batch_pre, 
                                                  n_fft=self.env.n_fft, 

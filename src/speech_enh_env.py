@@ -14,6 +14,8 @@ import soundfile as sf
 import torch.nn.functional as F
 from torch.distributions import Normal
 
+from utils import transform_spec_to_wav
+
 #import gym
 #from gym import Env, spaces
 
@@ -51,10 +53,6 @@ class SpeechEnhancementAgent:
         if model == 'metricgan':
             mask = action
         
-        noisy_phase = torch.angle(
-            torch.complex(x[:, 0, :, :], x[:, 1, :, :])
-        ).unsqueeze(1)
-
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
     
         if mag.shape != mask.shape:
@@ -64,7 +62,11 @@ class SpeechEnhancementAgent:
         if self.gpu_id is not None:
             window = window.to(self.gpu_id)
 
-        if model == 'cmgan':    
+        if model == 'cmgan':
+            noisy_phase = torch.angle(
+                torch.complex(x[:, 0, :, :], x[:, 1, :, :])
+            ).unsqueeze(1)
+    
             out_mag = mask * mag
             mag_real = out_mag * torch.cos(noisy_phase)
             mag_imag = out_mag * torch.sin(noisy_phase)
@@ -91,36 +93,16 @@ class SpeechEnhancementAgent:
         if model == 'metricgan':
             #print(f"NEXT_STEP: MAG={mag.shape}, x:{x.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             est_mag = mask.permute(0, 1, 3, 2) * mag
-
-            #complex_predictions = torch.mul(
-            #    mag,
-            #    torch.cat(
-            #        (
-            #            torch.unsqueeze(torch.cos(noisy_phase), -1),
-            #            torch.unsqueeze(torch.sin(noisy_phase), -1),
-            #        ),
-            #        -1,
-            #    ),
-            #)
-
+            noisy_phase = torch.atan2(x[:, 1, :, :], x[:, 0, :, :])
+            
             est_real = est_mag * torch.cos(noisy_phase)
             est_imag = est_mag * torch.sin(noisy_phase)
 
-            complex_predictions = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
-
-            #complex_predictions = complex_predictions.permute(0, 2, 1, 3)
-            #complex_predictions = torch.complex(complex_predictions[..., 0], complex_predictions[..., 1])
-            
-            est_audio = torch.istft(
-                input=complex_predictions,
-                n_fft=self.n_fft,
-                hop_length=self.hop,
-                window=window,
-                center=True,
-                onesided=True,
-                normalized=False,
-            )
-            est_spec = torch.stack([est_real, est_imag], dim=1).squeeze(2)
+            est_spec = torch.cat([est_real, est_imag], dim=1)
+            mag = est_mag.permute(0, 2, 3, 1)
+            phase = noisy_phase.permute(0, 2, 3, 1)
+            print(f"est_spec:{est_spec.shape}")
+            est_audio = transform_spec_to_wav(mag, phase)
 
         next_state = {}
         next_state['noisy'] = est_spec

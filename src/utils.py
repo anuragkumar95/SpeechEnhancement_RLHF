@@ -196,6 +196,69 @@ def original_pesq(pesq):
     return (pesq * 3.5) + 1
 
 
+
+def get_spec_and_phase(signal, n_fft, hop, gpu_id):
+    stft = torch.stft(
+        signal,
+        n_fft,
+        hop,
+        n_fft,
+        torch.hamming_window(512).to(gpu_id),
+        center=True,
+        pad_mode='constant',
+        normalized=False,
+        onesided=True,
+        return_complex=False,
+    )
+    stft = stft.transpose(2, 1)
+
+    phase = torch.atan2(stft[:, :, :, 1], stft[:, :, :, 0])
+    feat = spectral_magnitude(stft, power=0.5)
+    feat = torch.log1p(feat)
+    return feat, phase
+
+def spectral_magnitude(stft, power=1, log=False, eps=1e-14):
+    spectr = stft.pow(2).sum(-1)
+
+    # Add eps avoids NaN when spectr is zero
+    if power < 1:
+        spectr = spectr + eps
+    spectr = spectr.pow(power)
+
+    if log:
+        return torch.log(spectr + eps)
+    return spectr
+
+def transform_spec_to_wav(mag, phase, signal_length=None):
+    # Combine with enhanced magnitude
+    complex_predictions = torch.mul(
+        torch.unsqueeze(mag, -1),
+        torch.cat(
+            (
+                torch.unsqueeze(torch.cos(phase), -1),
+                torch.unsqueeze(torch.sin(phase), -1),
+            ),
+            -1,
+        ),
+    )
+    complex_predictions = complex_predictions.permute(0, 2, 1, 3)
+    complex_predictions = torch.complex(complex_predictions[..., 0], complex_predictions[..., 1])
+    
+    pred_wavs = torch.istft(
+        input=complex_predictions,
+        n_fft=512,
+        hop_length=256,
+        win_length=512,
+        window=torch.hamming_window(512).to(complex_predictions.device),
+        center=True,
+        onesided=True,
+        normalized=False,
+        length=signal_length,
+    )
+    return pred_wavs
+
+
+
 def get_specs(clean, noisy, gpu_id, n_fft, hop, compress=True, ref=None, clean_istft=False, return_c=False):
     """
     Create spectrograms from input waveform.
@@ -286,7 +349,7 @@ def get_specs(clean, noisy, gpu_id, n_fft, hop, compress=True, ref=None, clean_i
     
     return clean, clean_spec, noisy_spec
 
-def preprocess_batch(batch, ref=None, n_fft=400, hop=100, gpu_id=None, clean_istft=False, return_c=False):
+def preprocess_batch(batch, ref=None, n_fft=400, hop=100, gpu_id=None, clean_istft=False, return_c=False, model='cmgan'):
     """
     Converts a batch of audio waveforms and returns a batch of
     spectrograms.
@@ -302,6 +365,12 @@ def preprocess_batch(batch, ref=None, n_fft=400, hop=100, gpu_id=None, clean_ist
         if clean is not None:
             clean = clean.to(gpu_id)
         noisy = noisy.to(gpu_id)
+
+    if model == 'metricgan':
+        noisy_spec, noisy_phase = get_spec_and_phase(noisy, n_fft=n_fft, hop=hop, gpu_id=gpu_id) 
+        clean_spec, _ = get_spec_and_phase(clean, n_fft=n_fft, hop=hop, gpu_id=gpu_id)
+        return (clean, clean_spec, noisy_spec, labels, None)       
+
 
     if ref is not None:
         ref = ref.to(gpu_id)

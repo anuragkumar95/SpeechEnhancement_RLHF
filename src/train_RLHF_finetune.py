@@ -3,7 +3,7 @@
 @author: Anurag Kumar
 """
 
-from model.CMGAN.actor import TSCNet, TSCNetSmall
+from model.CMGAN.actor import TSCNet
 from model.MPSENet.actor import MPNet
 #from model.critic import QNet, Critic
 from model.reward_model import RewardModel

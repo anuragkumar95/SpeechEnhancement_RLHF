@@ -335,7 +335,8 @@ class PPO:
                                                 n_fft=self.env.n_fft, 
                                                 hop=self.env.hop, 
                                                 gpu_id=self.gpu_id, 
-                                                return_c=True) 
+                                                return_c=True,
+                                                model='metricgan') 
                 
                     cl_aud_rl, clean_rl, noisy_rl, _, c_rl = batch_rl
                     noisy_rl = noisy_rl.permute(0, 1, 3, 2)
@@ -574,7 +575,8 @@ class PPO:
                                                  n_fft=self.env.n_fft, 
                                                  hop=self.env.hop, 
                                                  gpu_id=self.gpu_id, 
-                                                 return_c=True) 
+                                                 return_c=True,
+                                                 model='metricgan') 
                 
                     cl_aud_pre, clean_pre, noisy_pre, _, c_pre = batch_pre
                     noisy_pre = noisy_pre.permute(0, 1, 3, 2)

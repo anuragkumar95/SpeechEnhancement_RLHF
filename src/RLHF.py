@@ -588,8 +588,8 @@ class PPO:
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)
 
                     if self.train_phase:
-                        print(f"log_prob:{log_prob.mean(), log_prob.shape}")
-                        print(f"ref_log_prob:{ref_log_prob.mean(), ref_log_prob.shape}")
+                        #print(f"log_prob:{log_probs.mean(), log_probs.shape}")
+                        #print(f"ref_log_prob:{ref_log_probs.mean(), ref_log_probs.shape}")
                         #print(f"logprobs:{log_probs.mean()}")
                         #entropy = entropies[0].permute(0, 2, 1) + entropies[1][:, 0, :, :] + entropies[1][:, 1, :, :]
                         log_prob = log_probs[0].permute(0, 2, 1) + log_probs[1][:, 0, :, :] + log_probs[1][:, 1, :, :]

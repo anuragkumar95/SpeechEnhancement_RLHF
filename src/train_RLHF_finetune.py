@@ -174,7 +174,8 @@ class Trainer:
         
         #Freeze complex decoder and reward model
         if not args.train_phase:
-            self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
+            if args.model == 'cmgan':
+                self.actor = freeze_layers(self.actor, ['dense_encoder', 'TSCB_1', 'complex_decoder'])
 
         if gpu_id is not None:
             self.actor = self.actor.to(gpu_id)

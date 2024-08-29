@@ -499,7 +499,6 @@ class PPO:
                 )
             
             if self.model == 'metricgan':
-                print(f"unrol_action:{actions[0].mean()}, {actions[0].shape}")
                 if len(actions) > 1:
                     actions = torch.cat(actions, dim=0).detach()
                 else:
@@ -691,23 +690,12 @@ class PPO:
                         'pg_loss2':pg_loss2.mean(),
                     })
 
-                    print(f"loss:{torch.isnan(clip_loss.mean())}")
                     clip_loss = clip_loss / self.accum_grad
                     clip_loss.backward()
             
                     #Update network
                     if not (torch.isnan(clip_loss).any() or torch.isinf(clip_loss).any()) and (self.t % self.accum_grad == 0):
                         torch.nn.utils.clip_grad_norm_(actor.parameters(), 1.0)
-                        #torch.nn.utils.clip_grad_value_(actor.parameters(), 1.0)
-                        #update=True
-                        #for name, param in actor.named_parameters():
-                        #    print(name, torch.isfinite(param.grad).all())
-                        #    print(name, param.grad.max(), param.grad.min())
-                        #    print("="*100)
-                        #    if not torch.isfinite(param.grad).all():
-                        #        update = False
-                        #print(f"UPDATE:{update}")
-                        #if update:
                         a_optim.step()
                         a_optim.zero_grad()
                     

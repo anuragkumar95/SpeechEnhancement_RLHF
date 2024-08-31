@@ -289,7 +289,7 @@ def compute_scores(clean_dir, enhance_dir, save_dir=None):
                                  enh_audio.reshape(-1).cpu().numpy(), 
                                  16000, 
                                  0)
-        print(file, values[1])
+        print(file, values)
     
         metrics['pesq'] += values[0]
         metrics['csig'] += values[1]

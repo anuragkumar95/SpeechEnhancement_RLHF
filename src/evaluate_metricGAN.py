@@ -209,59 +209,54 @@ def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, clean_dir=None, gpu_id
                                      return_c=True,
                                      model='metricgan') 
 
-            if clean_ds is None:
-                save_metrics=False
-            else:
-                save_metrics=True
             try:
                 metrics = run_enhancement_step(env=env, 
                                                batch=batch, 
                                                actor=model, 
                                                lens=length,
                                                file_id=file,
-                                               save_metrics=save_metrics,
                                                save_dir=save_dir,
                                                save_track=True)
                 
-                if save_metrics:
-                    val_metrics['pesq'].append(metrics['pesq'])
-                    val_metrics['csig'].append(metrics['csig'])
-                    val_metrics['cbak'].append(metrics['cbak'])
-                    val_metrics['covl'].append(metrics['covl'])
-                    val_metrics['ssnr'].append(metrics['ssnr'])
-                    val_metrics['stoi'].append(metrics['stoi'])
-                    val_metrics['si-sdr'].append(metrics['si-sdr'])
+            
+                val_metrics['pesq'].append(metrics['pesq'])
+                val_metrics['csig'].append(metrics['csig'])
+                val_metrics['cbak'].append(metrics['cbak'])
+                val_metrics['covl'].append(metrics['covl'])
+                val_metrics['ssnr'].append(metrics['ssnr'])
+                val_metrics['stoi'].append(metrics['stoi'])
+                val_metrics['si-sdr'].append(metrics['si-sdr'])
 
-                    step += 1
+                step += 1
 
-                    res_save_dir = os.path.join(save_dir, 'results')
-                    os.makedirs(res_save_dir, exist_ok=True)
-                    with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
-                        pickle.dump(metrics, f)
+                res_save_dir = os.path.join(save_dir, 'results')
+                os.makedirs(res_save_dir, exist_ok=True)
+                with open(os.path.join(res_save_dir, f'{file_id}_results.pickle'), 'wb') as f:
+                    pickle.dump(metrics, f)
 
 
             except Exception as e:
                 print(traceback.format_exc())
                 continue
         
-        if save_metrics:
-            val_metrics['mse'] = val_metrics['mse']/step
-            val_metrics['reward'] = val_metrics['reward']/step
-            val_metrics['pesq'] = np.asarray(val_metrics['pesq'])
-            val_metrics['csig'] = np.asarray(val_metrics['csig'])
-            val_metrics['cbak'] = np.asarray(val_metrics['cbak'])
-            val_metrics['covl'] = np.asarray(val_metrics['covl'])
-            val_metrics['ssnr'] = np.asarray(val_metrics['ssnr'])
-            val_metrics['stoi'] = np.asarray(val_metrics['stoi'])
-            val_metrics['si-sdr'] = np.asarray(val_metrics['si-sdr'])
-            
-            msg = ""
-            for key in val_metrics:
-                if key not in ['mse', 'reward']:
-                    msg += f"{key.capitalize()}:{val_metrics[key].mean()} | "
-                else:
-                    msg += f"{key.capitalize()}:{metrics[key]} | "
-            print(msg)
+        
+        val_metrics['mse'] = val_metrics['mse']/step
+        val_metrics['reward'] = val_metrics['reward']/step
+        val_metrics['pesq'] = np.asarray(val_metrics['pesq'])
+        val_metrics['csig'] = np.asarray(val_metrics['csig'])
+        val_metrics['cbak'] = np.asarray(val_metrics['cbak'])
+        val_metrics['covl'] = np.asarray(val_metrics['covl'])
+        val_metrics['ssnr'] = np.asarray(val_metrics['ssnr'])
+        val_metrics['stoi'] = np.asarray(val_metrics['stoi'])
+        val_metrics['si-sdr'] = np.asarray(val_metrics['si-sdr'])
+        
+        msg = ""
+        for key in val_metrics:
+            if key not in ['mse', 'reward']:
+                msg += f"{key.capitalize()}:{val_metrics[key].mean()} | "
+            else:
+                msg += f"{key.capitalize()}:{metrics[key]} | "
+        print(msg)
 
 def compute_scores(clean_dir, enhance_dir, save_dir=None):
 

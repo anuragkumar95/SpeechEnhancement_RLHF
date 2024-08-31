@@ -21,7 +21,6 @@ def run_enhancement_step(env,
                          lens,
                          file_id, 
                          save_dir,
-                         save_metrics=True,
                          save_track=True,
                          add_noise=False,
                          noise_std=0.01):
@@ -145,8 +144,8 @@ def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, clean_dir=None, pre=Fa
     }
 
     #Initiate speech environment
-    env = SpeechEnhancementAgent(n_fft=400,
-                                 hop=100,
+    env = SpeechEnhancementAgent(n_fft=512,
+                                 hop=257,
                                  gpu_id=gpu_id,
                                  args=None,
                                  reward_model=None)
@@ -275,7 +274,8 @@ def compute_scores(clean_dir, enhance_dir, save_dir=None):
         'stoi':[],
         'si-sdr':[],
         'mse':[],
-        'reward':[]}
+        'reward':[]
+    }
     
     num_files = len(os.listdir(enhance_dir))
 
@@ -331,8 +331,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-pt", "--model_path", type=str, default='./best_ckpt/ckpt_80',
                         help="the path where the model is saved")
-    parser.add_argument("-rpt", "--reward_path", type=str, required=False,
-                        help="the path where the model is saved")
     parser.add_argument("--noisy_dir", type=str, default=None,
                         help="noisy tracks dir to be enhanced")
     parser.add_argument("--clean_dir", type=str, default=None,
@@ -340,8 +338,6 @@ if __name__ == "__main__":
     parser.add_argument("--save_tracks", type=str, default=True, help="save predicted tracks or not")
     parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output normal dist.")
     parser.add_argument("--gpu", action='store_true', help="toggle to run models on gpu.")
-    parser.add_argument("--pre", action='store_true', help="toggle to test pretrained models")
-    parser.add_argument("--small", action='store_true', help="toggle to test small cmgan models")
     parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")
     parser.add_argument("--save_dir", type=str, default='./saved_tracks_best', help="where enhanced tracks to be saved")
     parser.add_argument("--enhance_dir", type=str, default=None, help="Path to enhanced_dir")

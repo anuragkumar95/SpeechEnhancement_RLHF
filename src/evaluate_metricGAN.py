@@ -116,14 +116,17 @@ def run_enhancement_step(env,
     
     return metrics
 
-def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, clean_dir=None, gpu_id=None):
+def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, pre=False, clean_dir=None, gpu_id=None):
     
     #Initiate models
     model = Generator(causal=False, gpu_id=gpu_id)
     
     #Load cmgan model weights
     checkpoint = torch.load(model_pt, map_location=torch.device('cpu'))
-    model.load_state_dict(checkpoint['actor_state_dict'])
+    if pre:
+        model.load_state_dict(checkpoint['generator'])
+    else:
+        model.load_state_dict(checkpoint['actor_state_dict'])
 
     if gpu_id is not None:
         model = model.to(gpu_id)
@@ -330,6 +333,7 @@ if __name__ == "__main__":
                         help="noisy tracks dir to be enhanced")
     parser.add_argument("--clean_dir", type=str, default=None,
                         help="clean tracks dir for metrics")
+    parser.add_argument("--pre", action='stor_true')
     parser.add_argument("--gpu", action='store_true', help="toggle to run models on gpu.")
     parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")
     parser.add_argument("--save_dir", type=str, default='./saved_tracks_best', help="where enhanced tracks to be saved")
@@ -356,5 +360,6 @@ if __name__ == "__main__":
                        cutlen=args.cutlen, 
                        noisy_dir=noisy_dir, 
                        clean_dir=clean_dir, 
+                       pre=args.pre,
                        save_dir=args.save_dir,
                        gpu_id=gpu_id)

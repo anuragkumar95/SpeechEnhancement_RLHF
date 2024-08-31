@@ -335,8 +335,6 @@ if __name__ == "__main__":
                         help="noisy tracks dir to be enhanced")
     parser.add_argument("--clean_dir", type=str, default=None,
                         help="clean tracks dir for metrics")
-    parser.add_argument("--save_tracks", type=str, default=True, help="save predicted tracks or not")
-    parser.add_argument("--out_dist", action='store_true', help="toggle to test models that output normal dist.")
     parser.add_argument("--gpu", action='store_true', help="toggle to run models on gpu.")
     parser.add_argument("--cutlen", type=int, default=16 * 16000, help="length of signal to be passed to model. ")
     parser.add_argument("--save_dir", type=str, default='./saved_tracks_best', help="where enhanced tracks to be saved")

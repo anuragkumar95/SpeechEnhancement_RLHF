@@ -358,7 +358,6 @@ if __name__ == "__main__":
         compute_scores(clean_dir, args.enhance_dir, args.save_dir)
     else:
         enhance_audios(model_pt=args.model_path, 
-                       reward_pt=args.reward_path, 
                        cutlen=args.cutlen, 
                        noisy_dir=noisy_dir, 
                        clean_dir=clean_dir, 

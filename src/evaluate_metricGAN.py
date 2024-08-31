@@ -264,15 +264,15 @@ def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, pre=False, clean_dir=N
 def compute_scores(clean_dir, enhance_dir, save_dir=None):
 
     metrics = {
-        'pesq':[],
-        'csig':[],
-        'cbak':[],
-        'covl':[],
-        'ssnr':[],
-        'stoi':[],
-        'si-sdr':[],
-        'mse':[],
-        'reward':[]
+        'pesq':0,
+        'csig':0,
+        'cbak':0,
+        'covl':0,
+        'ssnr':0,
+        'stoi':0,
+        'si-sdr':0,
+        'mse':0,
+        'reward':0
     }
     
     num_files = len(os.listdir(enhance_dir))
@@ -291,7 +291,7 @@ def compute_scores(clean_dir, enhance_dir, save_dir=None):
                                  0)
         print(file, values[1])
     
-        metrics['pesq'].append(values[0])
+        metrics['pesq'] += values[0]
         metrics['csig'] += values[1]
         metrics['cbak'] += values[2]
         metrics['covl'] += values[3]

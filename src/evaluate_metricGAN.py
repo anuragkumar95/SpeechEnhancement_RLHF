@@ -116,7 +116,7 @@ def run_enhancement_step(env,
     
     return metrics
 
-def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, clean_dir=None, pre=False, gpu_id=None):
+def enhance_audios(model_pt, cutlen, noisy_dir, save_dir, clean_dir=None, gpu_id=None):
     
     #Initiate models
     model = Generator(causal=False, gpu_id=gpu_id)
@@ -362,5 +362,4 @@ if __name__ == "__main__":
                        noisy_dir=noisy_dir, 
                        clean_dir=clean_dir, 
                        save_dir=args.save_dir,
-                       pre=args.pre, 
                        gpu_id=gpu_id)

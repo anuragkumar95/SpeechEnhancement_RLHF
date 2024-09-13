@@ -358,6 +358,7 @@ class PPO:
                     
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)
+                    print(f"INIT:{init_action[0].shape, init_action[1].shape}")
                     #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")
 
                     sft_state = self.env.get_next_state(state=noisy_rl, phase=noisy_phase, action=init_action, model=self.model)

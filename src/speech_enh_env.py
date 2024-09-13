@@ -59,6 +59,8 @@ class SpeechEnhancementAgent:
 
         if model == 'cmgan':
             mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
+
+            print(f"Mag:{mag.shape}, Mask:{mask.shape}")
     
             if mag.shape != mask.shape:
                 mask = mask.permute(0, 2, 1).unsqueeze(1)

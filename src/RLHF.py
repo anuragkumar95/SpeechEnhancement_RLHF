@@ -354,17 +354,8 @@ class PPO:
                     if torch.isinf(noisy_rl.mean()) or torch.isinf(clean_rl.mean()):
                         continue 
                     
-                    #print(f"ACTOR:")
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
-                    #print(f"action: {action.shape}")
-
-                    #if self.model == 'cmgan':
-                        #print(f"log_probs:{log_probs[0].mean(), log_probs[1].mean()}")
-                    #if self.model == 'metricgan':
-                       # print(f"logprobs:{log_probs.shape}, {log_probs.mean()}")
                     
-                    #if self.init_model is not None:
-                    #print(f"EXPERT:")
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)
                     #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")
@@ -378,13 +369,6 @@ class PPO:
                     state['clean'] = clean_rl
                     #if self.init_model is not None:
                     state['exp_est_audio'] = sft_state['est_audio']
-
-                    #Calculate sft output
-                    #if init_action is not None:
-                    #sft_action = init_action 
-                    #else:
-                    #sft_action, _, _, _ = self.init_model.get_action(noisy_rl)
-                    #sft_state = self.env.get_next_state(state=noisy_rl, action=sft_action, model=self.model)
                     
                     #Calculate kl_penalty
                     ref_log_prob = None
@@ -408,17 +392,11 @@ class PPO:
                     
                     rm_score = torch.tensor(0.0)
                     sft_rm_score = torch.tensor(0.0)
-                    #Store reward
                     
-                    #if 'rm_nisqa' in self.reward_type:
+                    #Store reward
                     rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
                     sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
                         
-                    #elif 'rm' in self.loss_type:
-                    #    rm_score = self.env.get_RLHF_reward(state=state['noisy'].permute(0, 1, 3, 2), 
-                    #                                   scale=self.scale_rewards)
-                    #    sft_rm_score = self.env.get_RLHF_reward(state=sft_state['noisy'].permute(0, 1, 3, 2), 
-                    #                                   scale=self.scale_rewards)
                     r_ts.append(rm_score)
 
                     mb_pesq = []
@@ -461,7 +439,6 @@ class PPO:
                     if 'kl' in self.reward_type:
                         r_t = r_t - self.beta * kl_penalty
 
-                    #print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} loss:{supervised_loss.mean()} PESQ:{mb_pesq.mean()}")
                     print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} PESQ:{mb_pesq.mean()}")
                     
                     #Store trajectory
@@ -486,15 +463,13 @@ class PPO:
             
             if self.model == 'cmgan':
                 actions = (
-                    (
-                        [batch[0][0] for batch in actions],
-                        [batch[0][1] for batch in actions]
-                    ),
+                    [batch[0] for batch in actions],
                     [batch[1] for batch in actions],
                 )
                    
                 actions = (
-                    (torch.stack(actions[0][0]).reshape(-1, f, t).detach(), torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                    #(torch.stack(actions[0][0]).reshape(-1, f, t).detach(), torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
+                    torch.stack(actions[0]).reshape(-1, f, t).detach(),
                     torch.stack(actions[1]).reshape(-1, ch, t, f).detach()
                 )
             

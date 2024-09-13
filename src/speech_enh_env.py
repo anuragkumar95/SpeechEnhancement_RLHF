@@ -49,7 +49,7 @@ class SpeechEnhancementAgent:
         """
         x = state
         if model == 'cmgan':
-            (_, mask), complex_out = action
+            mask, complex_out = action
         if model == 'metricgan':
             mask = action
         
@@ -94,8 +94,6 @@ class SpeechEnhancementAgent:
             
             mag = state.permute(0, 1, 3, 2).squeeze(1)
             noisy_phase = phase
-            #print(f"")
-            #print(f"NEXT_STEP: MAG={mag.shape}, mask:{mask.shape}, phase:{noisy_phase.shape}")
             
             est_mag = mask * mag
             
@@ -106,7 +104,6 @@ class SpeechEnhancementAgent:
 
             est_spec = torch.stack([est_real, est_imag], dim=1)
             mag = est_mag
-            phase = noisy_phase
             #print(f"est_spec:{est_spec.shape}, mag:{mag.shape}, phase:{phase.shape}")
             est_audio = transform_spec_to_wav(torch.expm1(mag), phase)
             est_mag = est_mag.unsqueeze(1)

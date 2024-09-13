@@ -155,14 +155,12 @@ class MaskDecoder(nn.Module):
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
-    
-        x_mu = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, action)
+        x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
+        x_mu = self.prelu_out(x)
         if self.evaluation:
-            x_out = self.prelu_out(params[0])
-        else:
-            x_out = self.prelu_out(x)
-        return (x, x_out), x_logprob, x_entropy, params
+            return x_mu
+        x, x_logprob, x_entropy, params = self.sample(x_mu, action)
+        return x, x_logprob, x_entropy, params
 
 class ComplexDecoder(nn.Module):
     def __init__(self, num_channel=64, gpu_id=None, eval=False):
@@ -191,12 +189,10 @@ class ComplexDecoder(nn.Module):
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
-
         x_mu = self.conv(x)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         if self.evaluation:
-            x = params[0]
-            
+            return x_mu
+        x, x_logprob, x_entropy, params = self.sample(x_mu, action)    
         return x, x_logprob, x_entropy, params
         
 
@@ -256,7 +252,7 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
       
-        _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0][0])
+        _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0])
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
@@ -291,7 +287,7 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        (_, mask), _, _, _ = self.mask_decoder(out_5)
+        mask, _, _, _ = self.mask_decoder(out_5)
         complex_out, _, _, _ = self.complex_decoder(out_5)
         
         mask = mask.permute(0, 2, 1).unsqueeze(1)

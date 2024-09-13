@@ -159,7 +159,7 @@ class MaskDecoder(nn.Module):
         x_mu = self.prelu_out(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         #print(f"Mask dec: X_MU:{x_mu.shape}")
-        if self.evaluation:
+        if self.evaluation and action is None:
             x = x_mu
         return x, x_logprob, x_entropy, params
 
@@ -192,7 +192,7 @@ class ComplexDecoder(nn.Module):
         x = self.prelu(self.norm(x))
         x_mu = self.conv(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, action) 
-        if self.evaluation:
+        if self.evaluation and action is None:
             x = x_mu
         return x, x_logprob, x_entropy, params
         

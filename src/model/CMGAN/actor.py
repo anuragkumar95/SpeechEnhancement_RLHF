@@ -159,7 +159,7 @@ class MaskDecoder(nn.Module):
         x_mu = self.prelu_out(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, action)
         if action is not None:
-            print(f"ACTION_FORWARD: action:{action.shape}")
+            print(f"ACTION_FORWARD: action:{action.mean()}")
         if self.evaluation and action is None:
             x = x_mu
         return x, x_logprob, x_entropy, params

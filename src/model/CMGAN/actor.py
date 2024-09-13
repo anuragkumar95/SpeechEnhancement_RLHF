@@ -158,7 +158,8 @@ class MaskDecoder(nn.Module):
         x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
         x_mu = self.prelu_out(x)
         x, x_logprob, x_entropy, params = self.sample(x_mu, action)
-        #print(f"Mask dec: X_MU:{x_mu.shape}")
+        if action is not None:
+            print(f"ACTION_FORWARD: action:{action.shape}")
         if self.evaluation and action is None:
             x = x_mu
         return x, x_logprob, x_entropy, params
@@ -258,6 +259,7 @@ class TSCNet(nn.Module):
       
         _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0])
         _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])
+        print(f"get_action_prob: m_logprob:{m_logprob.mean()}, comp:{c_logprob.mean()}")
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
         

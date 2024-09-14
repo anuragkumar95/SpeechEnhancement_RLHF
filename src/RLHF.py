@@ -530,9 +530,9 @@ class PPO:
             #NOTE: We don't want to set actor to train mode due to presence of layer/instance norm layers
             #acting differently in train and eval mode. PPO seems to be stable only when actor
             #is still in eval mode
-            actor = actor.eval()
+            actor.eval()
         if self.model == 'metricgan':
-            actor = actor.train()
+            actor.train()
 
         a_optim, _ = optimizers
         

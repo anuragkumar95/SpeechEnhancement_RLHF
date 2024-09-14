@@ -424,37 +424,22 @@ class Trainer:
 
         for i in range(episode_per_epoch):
             #try:
-                if self.args.method == 'reinforce': 
-                    loss, kl, reward, pesq = self.trainer.run_episode(self.actor, self.optimizer)
-
+                loss, batch_reward, pesq = self.trainer.run_episode(self.actor, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
+                    
+                if loss is not None:
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
-                        "Return":reward[1].item(),
-                        "RM_Score":reward[0].item(),
-                        "pg_loss":loss[0],
-                        "pretrain_loss":loss[1],
-                        "train_PESQ":pesq,
-                        "Episode_KL":kl,
+                        "episode_avg_kl":batch_reward[1].item(),
+                        "cumulative_G_t": batch_reward[0].item(),
+                        "episodic_avg_r": batch_reward[3].item(),
+                        "episodic_reward_model_score": batch_reward[2].item(),
+                        "clip_loss":loss[0],
+                        "pretrain_loss":loss[2],
+                        "pg_loss":loss[1],
+                        "train_pesq":pesq, 
                     })
-                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {reward[1]} | RM_Score: {reward[0]} | KL: {kl} | PESQ: {pesq}")
 
-                if self.args.method == 'PPO':
-                    loss, batch_reward, pesq = self.trainer.run_episode(self.actor, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
-                        
-                    if loss is not None:
-                        wandb.log({
-                            "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
-                            "episode_avg_kl":batch_reward[1].item(),
-                            "cumulative_G_t": batch_reward[0].item(),
-                            "episodic_avg_r": batch_reward[3].item(),
-                            "episodic_reward_model_score": batch_reward[2].item(),
-                            "clip_loss":loss[0],
-                            "pretrain_loss":loss[2],
-                            "pg_loss":loss[1],
-                            "train_pesq":pesq, 
-                        })
-
-                        print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
+                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
                 
                 if (i+1) % 10 == 0:
                 #Run validation after each episode

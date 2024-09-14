@@ -634,10 +634,12 @@ class PPO:
 
                     #mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                     mb_enhanced_mag = mb_next_state['est_mag']
+                    print(f"ENH:{mb_enhanced_mag.shape}")
                     if self.model == 'metricgan':
                         mb_clean_mag = clean_pre
                     if self.model == 'cmgan':
                         mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
+                        print(f"MAG:{mb_clean_mag.shape}")
 
                     #if self.model == 'mpsenet':
                     #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)

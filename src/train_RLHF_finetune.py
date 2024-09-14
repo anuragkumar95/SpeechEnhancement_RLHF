@@ -180,7 +180,7 @@ class Trainer:
             filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
         )
         self.c_optimizer = None
-
+        print(self.expert)
         self.trainer = PPO(loader=self.train_ds,
                             init_model=self.expert, 
                             reward_model=self.reward_model, 
@@ -327,11 +327,11 @@ class Trainer:
         #Run validation
 
         self.actor.eval()
-        if self.args.method == 'PPO':
-            self.actor.set_evaluation(True)
-            self.trainer.init_model = self.trainer.init_model.eval()
-            self.trainer.init_model.set_evaluation(True)
-            #self.critic.eval()
+        
+        self.actor.eval = True
+        self.trainer.init_model = self.trainer.init_model.eval()
+        self.trainer.init_model.eval = True
+        
         pesq = 0
         loss = 0
         val_metrics = {
@@ -403,9 +403,8 @@ class Trainer:
         }) 
         print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {reward_model_score}")
         
-        self.actor.train()
-        if self.args.method == 'PPO':
-            self.actor.set_evaluation(False)
+        #self.actor.train()
+        #self.actor.eval = False
         
         return loss, reward_model_score, np.asarray(val_metrics["pesq"]).mean()
 

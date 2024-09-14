@@ -581,8 +581,7 @@ class PPO:
 
                     #Get new logprobs and values for the sampled (state, action) pair
                     if self.model == 'cmgan':
-                        mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), 
-                                     actions[1][mb_indx, ...])
+                        mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
 
                     if self.model == 'metricgan':
                         mb_action = actions[mb_indx, ...]

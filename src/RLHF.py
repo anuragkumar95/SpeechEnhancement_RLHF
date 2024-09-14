@@ -255,10 +255,7 @@ class PPO:
         self.reward_type = reward_type
         self.loss_type = loss_type
         self.warm_up = warm_up_steps
-        self.init_model = None
-        if init_model is not None:
-            print(init_model)
-            self.init_model = init_model.eval()
+        self.init_model = init_model
         self.prev_log_probs = None
         self.val_coef = val_coef
         self.en_coef = en_coef

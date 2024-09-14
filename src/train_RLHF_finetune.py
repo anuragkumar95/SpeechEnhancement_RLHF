@@ -180,7 +180,6 @@ class Trainer:
             filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
         )
         self.c_optimizer = None
-        print(self.expert)
         self.trainer = PPO(loader=self.train_ds,
                             init_model=self.expert, 
                             reward_model=self.reward_model, 

@@ -221,8 +221,6 @@ class PPO:
                  run_steps=1, 
                  beta=0.2,
                  eps=0.01, 
-                 val_coef=0.02, 
-                 en_coef=0.01,
                  lmbda=0,  
                  discount=1.0, 
                  accum_grad=1,
@@ -248,7 +246,6 @@ class PPO:
         self.gpu_id = gpu_id
         self.accum_grad = accum_grad
         self.rlhf = True
-        #self.dist = params['env_params'].get("args").out_dist
         self.train_phase = params['train_phase']
         self.t = 0
         self.scale_rewards = scale_rewards
@@ -256,9 +253,6 @@ class PPO:
         self.loss_type = loss_type
         self.warm_up = warm_up_steps
         self.init_model = init_model
-        #self.prev_log_probs = None
-        #self.val_coef = val_coef
-        #self.en_coef = en_coef
         self.episode_len = run_steps
         self.model = model
         print(f"RLHF:{self.rlhf}")
@@ -357,13 +351,8 @@ class PPO:
                         continue 
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
-                    print(f"ACT:{action[0].min(), action[0].max(), action[0].mean()}")
-                    print(f"ACT:{action[1].min(), action[1].max(), action[1].mean()}")
-                    
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)
-                    print(f"INIT:{init_action[0].shape, init_action[1].shape}")
-                    #print(f"REF_LOG_PROBS:{ref_log_probs.mean()}")
 
                     sft_state = self.env.get_next_state(state=noisy_rl, phase=noisy_phase, action=init_action, model=self.model)
                     sft_state['cl_audio'] = cl_aud_rl
@@ -372,23 +361,18 @@ class PPO:
                     state = self.env.get_next_state(state=noisy_rl, phase=noisy_phase, action=action, model=self.model)
                     state['cl_audio'] = cl_aud_rl
                     state['clean'] = clean_rl
-                    #if self.init_model is not None:
                     state['exp_est_audio'] = sft_state['est_audio']
                     
                     #Calculate kl_penalty
                     ref_log_prob = None
                     if self.model == 'cmgan':
                         ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                        print(f"ref_log_prob:{ref_log_prob.mean()}")
                         log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                        print(f"log_prob:{log_prob.mean()}")
+                    
                     if self.model == 'metricgan':
-                        ref_log_prob = ref_log_probs#.permute(0, 2, 1)
-                        print(f"ref_log_prob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
-                        log_prob = log_probs#.permute(0, 2, 1)
-                        print(f"log_prob:{log_prob.mean()}, {ref_log_prob.shape}")
-                    
-                    
+                        ref_log_prob = ref_log_probs
+                        log_prob = log_probs
+                       
                     if ref_log_prob is not None:
                         kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
                         ep_kl_penalty += kl_penalty.mean()
@@ -619,7 +603,6 @@ class PPO:
                     mb_adv = reward[mb_indx, ...].reshape(-1, 1)
                     
                     #Policy gradient loss
-
                     logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
                     ratio = torch.exp(logratio).reshape(-1, 1)
                     
@@ -636,13 +619,12 @@ class PPO:
                         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
                     if self.model == 'metricgan':
                         mb_enhanced_mag = mb_next_state['est_mag']
-                    print(f"ENH:{mb_enhanced_mag.shape}")
+                   
                     if self.model == 'metricgan':
                         mb_clean_mag = clean_pre
                     if self.model == 'cmgan':
                         mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
-                        print(f"MAG:{mb_clean_mag.shape}")
-
+                     
                     #if self.model == 'mpsenet':
                     #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
                     #    mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)

@@ -188,8 +188,6 @@ class Trainer:
                             gpu_id=gpu_id, 
                             beta=args.beta,
                             eps=0.02,
-                            val_coef=1.0,
-                            en_coef=0,
                             lmbda=args.lmbda, 
                             discount=0.99,
                             warm_up_steps=30,

@@ -421,7 +421,7 @@ class Trainer:
         episode_per_epoch = 100
 
         for i in range(episode_per_epoch):
-            #try:
+            try:
                 loss, batch_reward, pesq = self.trainer.run_episode(self.actor, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
                     
                 if loss is not None:
@@ -453,9 +453,9 @@ class Trainer:
                     #    best_rm_score = rm_score
                     #    self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
          
-            #except Exception as e:
-            #    print(traceback.format_exc())
-            #    continue
+            except Exception as e:
+                print(traceback.format_exc())
+                continue
 
     def train(self):
         """

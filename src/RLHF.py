@@ -468,12 +468,11 @@ class PPO:
             
             if self.model == 'cmgan':
                 actions = (
-                    [batch[0] for batch in actions],
-                    [batch[1] for batch in actions],
+                    [action[0] for action in actions],
+                    [action[1] for action in actions],
                 )
                    
                 actions = (
-                    #(torch.stack(actions[0][0]).reshape(-1, f, t).detach(), torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                     torch.stack(actions[0]).reshape(-1, f, t).detach(),
                     torch.stack(actions[1]).reshape(-1, ch, t, f).detach()
                 )
@@ -496,7 +495,7 @@ class PPO:
         if self.model == 'metricgan':
             print(f"ACTIONS       :{actions.shape}, {actions.shape}")
         if self.model == 'cmgan':
-            print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
+            print(f"ACTIONS       :{actions[0].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
 
         policy_out = {

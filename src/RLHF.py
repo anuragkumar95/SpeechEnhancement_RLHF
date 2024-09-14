@@ -256,9 +256,9 @@ class PPO:
         self.loss_type = loss_type
         self.warm_up = warm_up_steps
         self.init_model = init_model
-        self.prev_log_probs = None
-        self.val_coef = val_coef
-        self.en_coef = en_coef
+        #self.prev_log_probs = None
+        #self.val_coef = val_coef
+        #self.en_coef = en_coef
         self.episode_len = run_steps
         self.model = model
         print(f"RLHF:{self.rlhf}")

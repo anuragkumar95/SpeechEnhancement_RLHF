@@ -172,7 +172,7 @@ class TSCNet(nn.Module):
         
         self.mask_decoder = MaskDecoder(num_features, num_channel=num_channel, out_channel=1)
         self.complex_decoder = ComplexDecoder(num_channel=num_channel)
-        self.eval = eval
+        self.evaluation = eval
         self.gpu_id = gpu_id
 
     def sample(self, mu, x=None):
@@ -203,7 +203,7 @@ class TSCNet(nn.Module):
         mask, m_logprob, m_entropy, m_params = self.sample(mask_mu)
         complex_out, c_logprob, c_entropy, c_params = self.sample(complex_out_mu)
 
-        if self.eval:
+        if self.evaluation:
             mask = mask_mu
             complex_out = complex_out_mu
 

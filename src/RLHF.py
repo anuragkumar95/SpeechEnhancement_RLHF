@@ -302,7 +302,6 @@ class PPO:
     def unroll_policy(self, actor):
         #Set models to eval
         if self.model == 'cmgan':
-            print(f"INIT:{self.init_model}")
             self.init_model.eval()
             actor.eval()
             

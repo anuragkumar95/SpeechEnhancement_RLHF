@@ -632,8 +632,10 @@ class PPO:
                     mb_next_state = self.env.get_next_state(state=noisy_pre, phase=noisy_phase, action=mb_act, model=self.model)
                     mb_enhanced = mb_next_state['noisy']
 
-                    #mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-                    mb_enhanced_mag = mb_next_state['est_mag']
+                    if self.model == 'cmgan':
+                        mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
+                    if self.model == 'metricgan':
+                        mb_enhanced_mag = mb_next_state['est_mag']
                     print(f"ENH:{mb_enhanced_mag.shape}")
                     if self.model == 'metricgan':
                         mb_clean_mag = clean_pre

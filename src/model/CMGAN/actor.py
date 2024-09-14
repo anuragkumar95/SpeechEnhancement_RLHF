@@ -126,7 +126,7 @@ class SPConvTranspose2d(nn.Module):
 
 
 class MaskDecoder(nn.Module):
-    def __init__(self, num_features, num_channel=64, out_channel=1, gpu_id=None, eval=False):
+    def __init__(self, num_features, num_channel=64, out_channel=1):
         super(MaskDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
@@ -135,67 +135,29 @@ class MaskDecoder(nn.Module):
         self.prelu = nn.PReLU(out_channel)
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
-        self.gpu_id = gpu_id
-        self.evaluation = eval
-
-    def sample(self, mu, x=None):
-        sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
-        N = Normal(mu, sigma)
-        if x is None:
-            x = N.rsample()
-        if x.shape != mu.shape:
-            raise ValueError(f"Dims in action {x.shape} don't match mu {mu.shape}")
-        x_logprob = N.log_prob(x)
-        x_entropy = N.entropy()
-        return x, x_logprob, x_entropy, (mu, sigma)
-
-    def forward(self, x, action=None):
        
+    def forward(self, x):
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.conv_1(x)
         x = self.prelu(self.norm(x))
         x = self.final_conv(x).permute(0, 3, 2, 1).squeeze(-1)
-        x_mu = self.prelu_out(x)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, action)
-        if action is not None:
-            print(f"ACTION_FORWARD: action:{action.mean()}")
-        if self.evaluation and action is None:
-            x = x_mu
-        return x, x_logprob, x_entropy, params
+        return self.prelu_out(x)
 
 class ComplexDecoder(nn.Module):
-    def __init__(self, num_channel=64, gpu_id=None, eval=False):
+    def __init__(self, num_channel=64):
         super(ComplexDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
         self.prelu = nn.PReLU(num_channel)
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
         self.conv = nn.Conv2d(num_channel, 2, (1, 2))
-        self.gpu_id = gpu_id
-        self.evaluation = eval
-       
-    def sample(self, mu, x=None):
-        sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
-        N = Normal(mu, sigma)
-        if x is None:
-            x = N.rsample()
-        if x.shape != mu.shape:
-            raise ValueError(f"Dims in action {x.shape} don't match mu {mu.shape}")
-        
-        x_logprob = N.log_prob(x)
-        x_entropy = N.entropy()
-        return x, x_logprob, x_entropy, (mu, sigma)
-
-    def forward(self, x, action=None):
+      
+    def forward(self, x):
         x = self.dense_block(x)
         x = self.sub_pixel(x)
         x = self.prelu(self.norm(x))
-        x_mu = self.conv(x)
-        x, x_logprob, x_entropy, params = self.sample(x_mu, action) 
-        if self.evaluation and action is None:
-            x = x_mu
-        return x, x_logprob, x_entropy, params
+        return self.conv(x)
         
 
 class TSCNet(nn.Module):
@@ -208,15 +170,19 @@ class TSCNet(nn.Module):
         self.TSCB_3 = TSCB(num_channel=num_channel, nheads=4)
         self.TSCB_4 = TSCB(num_channel=num_channel, nheads=4)
         
-        self.mask_decoder = MaskDecoder(
-            num_features, num_channel=num_channel, out_channel=1, gpu_id=gpu_id, eval=eval
-        )
-        self.complex_decoder = ComplexDecoder(num_channel=num_channel, gpu_id=gpu_id, eval=eval)
+        self.mask_decoder = MaskDecoder(num_features, num_channel=num_channel, out_channel=1)
+        self.complex_decoder = ComplexDecoder(num_channel=num_channel)
+        self.eval = eval
         self.gpu_id = gpu_id
 
-    def set_evaluation(self, bool):
-        self.mask_decoder.evaluation = bool
-        self.complex_decoder.evaluation = bool
+    def sample(self, mu, x=None):
+        sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
+        N = Normal(mu, sigma)
+        if x is None:
+            x = N.rsample()
+        x_logprob = N.log_prob(x)
+        x_entropy = N.entropy()
+        return x, x_logprob, x_entropy, (mu, sigma)
 
     def get_action(self, x):
         #b, ch, t, f = x.size()
@@ -230,15 +196,17 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        mask, m_logprob, m_entropy, params = self.mask_decoder(out_5)
-        complex_out, c_logprob, c_entropy, c_params = self.complex_decoder(out_5)
+        mask = self.mask_decoder(out_5)
+        complex_out = self.complex_decoder(out_5)
 
-        print(f"get_Action: mask:{mask.shape}, comp:{complex_out.shape}")
+        #Add gaussian noise
+        mask, m_logprob, m_entropy, m_params = self.sample(mask)
+        complex_out, c_logprob, c_entropy, c_params = self.sample(complex_out)
 
-        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (params, c_params)
+        return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (m_params, c_params)
 
     
-    def get_action_prob(self, x, action=None):
+    def get_action_prob(self, x, action):
         """
         ARGS:
             x : spectrogram
@@ -256,26 +224,14 @@ class TSCNet(nn.Module):
         out_3 = self.TSCB_2(out_2)
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
+
+        mask = self.mask_decoder(out_5)
+        complex_out = self.complex_decoder(out_5)
       
-        _, m_logprob, m_entropy, _ = self.mask_decoder(out_5, action[0])
-        _, c_logprob, c_entropy, _ = self.complex_decoder(out_5, action[1])
-        print(f"get_action_prob: m_logprob:{m_logprob.mean()}, comp:{c_logprob.mean()}")
+        _, m_logprob, m_entropy, _ = self.sample(mask, x=action[0])
+        _, c_logprob, c_entropy, _ = self.sample(complex_out, x=action[1])
 
         return (m_logprob, c_logprob), (m_entropy, c_entropy)
-        
-        
-    def get_embedding(self, x):
-        mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
-        
-        x_in = torch.cat([mag, x], dim=1)
-        
-        out_1 = self.dense_encoder(x_in)
-        out_2 = self.TSCB_1(out_1)
-        out_3 = self.TSCB_2(out_2)
-        out_4 = self.TSCB_3(out_3)
-        out_5 = self.TSCB_4(out_4)
-
-        return out_5
 
     def forward(self, x):
         #b, ch, t, f = x.size() 
@@ -293,8 +249,8 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        mask, _, _, _ = self.mask_decoder(out_5)
-        complex_out, _, _, _ = self.complex_decoder(out_5)
+        mask = self.mask_decoder(out_5)
+        complex_out = self.complex_decoder(out_5)
         
         mask = mask.permute(0, 2, 1).unsqueeze(1)
         out_mag = mask * mag

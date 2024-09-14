@@ -302,12 +302,12 @@ class PPO:
     def unroll_policy(self, actor):
         #Set models to eval
         if self.model == 'cmgan':
-            self.init_model = self.init_model.eval()
-            actor = actor.eval()
+            self.init_model.eval()
+            actor.eval()
             
         if self.model == 'metricgan':
-            self.init_model = self.init_model.train()
-            actor = actor.train()
+            self.init_model.train()
+            actor.train()
             
         self.init_model.eval = True
         actor.eval = False

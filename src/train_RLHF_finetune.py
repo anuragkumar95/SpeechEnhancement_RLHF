@@ -137,12 +137,12 @@ class Trainer:
             if args.model == 'cmgan':
                 self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
                 self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
-                self.expert = self.expert.eval()
+                self.expert.eval()
 
             if args.model == 'metricgan':
                 self.actor.load_state_dict(expert_checkpoint['generator']) 
                 self.expert.load_state_dict(expert_checkpoint['generator'])
-                self.expert = self.expert.eval()
+                self.expert.eval()
 
         except KeyError as e:
             self.actor.load_state_dict(expert_checkpoint)

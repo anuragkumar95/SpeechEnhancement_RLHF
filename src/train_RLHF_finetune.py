@@ -66,8 +66,6 @@ def args():
                         help="Scale rewards by a factor of 0.1.")
     parser.add_argument("--suffix", type=str, required=False, default='',
                         help="Save path suffix")
-    parser.add_argument("--method", type=str, default='reinforce', required=False,
-                        help="RL Algo to run. Choose between (reinforce/PPO)")
     parser.add_argument("--beta", type=float, default=0.0, required=False,
                         help="KL weight")
     parser.add_argument("--ep_per_episode", type=int, default=1, required=False,
@@ -120,45 +118,39 @@ class Trainer:
         if args.model == 'metricgan':
             self.actor = Generator(causal=False, 
                                    gpu_id=gpu_id)
-          
+            self.expert = Generator(causal=False, 
+                                        gpu_id=gpu_id)
         elif args.model == 'cmgan':
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 
                                 gpu_id=gpu_id)
-        else:
-            raise NotImplementedError
-        
-        self.expert = None
-        if args.ckpt is not None:
-            if args.model == 'cmgan':    
-                self.expert = TSCNet(num_channel=64, 
+            self.expert = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1,
                                 gpu_id=gpu_id)
             
-            if args.model == 'metricgan':
-                self.expert = Generator(causal=False, 
-                                        gpu_id=gpu_id)
+        else:
+            raise NotImplementedError
                 
-            expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
+        expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
 
-            try:
-                if args.model == 'cmgan':
-                    self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
-                    self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
+        try:
+            if args.model == 'cmgan':
+                self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
+                self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
 
-                if args.model == 'metricgan':
-                    self.actor.load_state_dict(expert_checkpoint['generator']) 
-                    self.expert.load_state_dict(expert_checkpoint['generator'])
+            if args.model == 'metricgan':
+                self.actor.load_state_dict(expert_checkpoint['generator']) 
+                self.expert.load_state_dict(expert_checkpoint['generator'])
 
-            except KeyError as e:
-                self.actor.load_state_dict(expert_checkpoint)
-                self.expert.load_state_dict(expert_checkpoint)
-           
-            #Set expert to eval and freeze all layers.
-            self.expert = freeze_layers(self.expert, 'all')
-            
-            del expert_checkpoint 
-            print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
+        except KeyError as e:
+            self.actor.load_state_dict(expert_checkpoint)
+            self.expert.load_state_dict(expert_checkpoint)
+        
+        #Set expert to eval and freeze all layers.
+        self.expert = freeze_layers(self.expert, 'all')
+        
+        del expert_checkpoint 
+        print(f"Loaded checkpoint stored at {args.ckpt}. Resuming training...") 
         
         self.reward_model = None
         if args.reward_pt is not None:
@@ -183,57 +175,34 @@ class Trainer:
                 self.expert = self.expert.to(gpu_id)
             if self.reward_model is not None:
                 self.reward_model = self.reward_model.to(gpu_id)
+            
+        self.optimizer = torch.optim.AdamW(
+            filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
+        )
+        self.c_optimizer = None
 
-        if args.method == 'reinforce':
-            
-            self.optimizer = torch.optim.AdamW(
-                filter(lambda layer:layer.requires_grad,self.actor.parameters()), lr=args.init_lr
-            )
-            
-            self.trainer = REINFORCE(loader=self.train_ds,  
-                                     init_model=self.expert,
-                                     discount=1.0,
-                                     episode_len=args.episode_steps,
-                                     train_phase=args.train_phase,
-                                     reward_model=self.reward_model,
-                                     gpu_id=gpu_id,
-                                     beta=args.beta,
-                                     lmbda=args.lmbda,
-                                     loss_type=args.loss,
-                                     reward_type=args.reward,
-                                     batchsize=args.batchsize,
-                                     env_params={'n_fft':self.n_fft,
-                                                 'hop':self.hop, 
-                                                 'args':args})
-            
-        if args.method == 'PPO':
-            self.optimizer = torch.optim.AdamW(
-                filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
-            )
-            self.c_optimizer = None
-
-            self.trainer = PPO(loader=self.train_ds,
-                               init_model=self.expert, 
-                               reward_model=self.reward_model, 
-                               gpu_id=gpu_id, 
-                               beta=args.beta,
-                               eps=0.02,
-                               val_coef=1.0,
-                               en_coef=0,
-                               lmbda=args.lmbda, 
-                               discount=0.99,
-                               warm_up_steps=30,
-                               scale_rewards=args.scale_reward,
-                               batchsize=args.batchsize, 
-                               run_steps=args.episode_steps,
-                               train_phase=args.train_phase,
-                               loss_type=args.loss,
-                               reward_type=args.reward,
-                               accum_grad=args.accum_grad,
-                               model=args.model,
-                               env_params={'n_fft':self.n_fft,
-                                            'hop':self.hop, 
-                                            'args':args})
+        self.trainer = PPO(loader=self.train_ds,
+                            init_model=self.expert, 
+                            reward_model=self.reward_model, 
+                            gpu_id=gpu_id, 
+                            beta=args.beta,
+                            eps=0.02,
+                            val_coef=1.0,
+                            en_coef=0,
+                            lmbda=args.lmbda, 
+                            discount=0.99,
+                            warm_up_steps=30,
+                            scale_rewards=args.scale_reward,
+                            batchsize=args.batchsize, 
+                            run_steps=args.episode_steps,
+                            train_phase=args.train_phase,
+                            loss_type=args.loss,
+                            reward_type=args.reward,
+                            accum_grad=args.accum_grad,
+                            model=args.model,
+                            env_params={'n_fft':self.n_fft,
+                                        'hop':self.hop, 
+                                        'args':args})
             
         self.gpu_id = gpu_id
         self.G = 0

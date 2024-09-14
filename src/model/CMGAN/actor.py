@@ -196,12 +196,16 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        mask = self.mask_decoder(out_5)
-        complex_out = self.complex_decoder(out_5)
+        mask_mu = self.mask_decoder(out_5)
+        complex_out_mu = self.complex_decoder(out_5)
 
         #Add gaussian noise
-        mask, m_logprob, m_entropy, m_params = self.sample(mask)
-        complex_out, c_logprob, c_entropy, c_params = self.sample(complex_out)
+        mask, m_logprob, m_entropy, m_params = self.sample(mask_mu)
+        complex_out, c_logprob, c_entropy, c_params = self.sample(complex_out_mu)
+
+        if self.eval:
+            mask = mask_mu
+            complex_out = complex_out_mu
 
         return (mask, complex_out), (m_logprob, c_logprob), (m_entropy, c_entropy), (m_params, c_params)
 

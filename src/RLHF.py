@@ -303,12 +303,16 @@ class PPO:
 
     def unroll_policy(self, actor):
         #Set models to eval
-        #actor = actor.eval()
-        actor = actor.train()
-        actor.set_evaluation(False)
-        #self.init_model = self.init_model.eval()
-        self.init_model = self.init_model.train()
-        self.init_model.set_evaluation(True)
+        if self.model == 'cmgan':
+            self.init_model = self.init_model.eval()
+            actor = actor.eval()
+            
+        if self.model == 'metricgan':
+            self.init_model = self.init_model.train()
+            actor = actor.train()
+            
+        self.init_model.eval = True
+        actor.eval = False
 
         rewards = []
         r_ts = []
@@ -355,6 +359,8 @@ class PPO:
                         continue 
                     
                     action, log_probs, _, _ = actor.get_action(noisy_rl)
+                    print(f"ACT:{action[0].min(), action[0].max(), action[0].mean()}")
+                    print(f"ACT:{action[1].min(), action[1].max(), action[1].mean()}")
                     
                     ref_log_probs, _ = self.init_model.get_action_prob(noisy_rl, action)
                     init_action, _, _, _ = self.init_model.get_action(noisy_rl)

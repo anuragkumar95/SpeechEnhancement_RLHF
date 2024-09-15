@@ -455,7 +455,7 @@ class PPO:
                 r_ts = r_ts.reshape(bs, -1)
                 rewards += r_ts
              
-            r_ts = r_ts.reshape(-1)
+            rm_score = rm_score.reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
             rewards = rewards.reshape(-1)
@@ -503,7 +503,7 @@ class PPO:
             'actions':actions,
             'log_probs':logprobs,
             'target_values':target_values,
-            'r_ts':(r_ts, rewards),
+            'r_ts':(rm_score, rewards),
             'ep_kl':ep_kl_penalty,
             'pesq':pesq,
             'C':C,

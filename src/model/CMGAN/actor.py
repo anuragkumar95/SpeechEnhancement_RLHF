@@ -126,7 +126,7 @@ class SPConvTranspose2d(nn.Module):
 
 
 class MaskDecoder(nn.Module):
-    def __init__(self, num_features, num_channel=64, out_channel=1, eval=False):
+    def __init__(self, num_features, num_channel=64, out_channel=1, gpu_id=None, eval=False):
         super(MaskDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
@@ -136,6 +136,7 @@ class MaskDecoder(nn.Module):
         self.final_conv = nn.Conv2d(out_channel, out_channel, (1, 1))
         self.prelu_out = nn.PReLU(num_features, init=-0.25)
         self.evaluation = eval
+        self.gpu_id = gpu_id
 
     def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
@@ -163,7 +164,7 @@ class MaskDecoder(nn.Module):
         return (x, x_out), x_logprob, x_entropy, params
 
 class ComplexDecoder(nn.Module):
-    def __init__(self, num_channel=64, eval=False):
+    def __init__(self, num_channel=64, gpu_id=None, eval=False):
         super(ComplexDecoder, self).__init__()
         self.dense_block = DilatedDenseNet(depth=4, in_channels=num_channel)
         self.sub_pixel = SPConvTranspose2d(num_channel, num_channel, (1, 3), 2)
@@ -171,6 +172,7 @@ class ComplexDecoder(nn.Module):
         self.norm = nn.InstanceNorm2d(num_channel, affine=True)
         self.conv = nn.Conv2d(num_channel, 2, (1, 2))
         self.evaluation = eval
+        self.gpu_id = gpu_id
       
     def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
@@ -207,10 +209,12 @@ class TSCNet(nn.Module):
         self.mask_decoder = MaskDecoder(num_features, 
                                         num_channel=num_channel, 
                                         out_channel=1,
-                                        eval=eval)
+                                        eval=eval,
+                                        gpu_id=gpu_id)
         
         self.complex_decoder = ComplexDecoder(num_channel=num_channel, 
-                                              eval=eval)
+                                              eval=eval,
+                                              gpu_id=gpu_id)
         self.evaluation = eval
         self.gpu_id = gpu_id
 

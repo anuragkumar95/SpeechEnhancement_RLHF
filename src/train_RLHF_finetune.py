@@ -314,12 +314,10 @@ class Trainer:
 
     def run_validation(self, episode):
         #Run validation
-
         self.actor.eval()
-        
-        self.actor.evaluation = True
-        self.trainer.init_model = self.trainer.init_model.eval()
-        self.trainer.init_model.evaluation = True
+        self.actor.set_evaluation(True)
+        self.trainer.init_model.eval()
+        self.trainer.init_model.set_evaluation(True)
         
         pesq = 0
         loss = 0

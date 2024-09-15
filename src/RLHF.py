@@ -303,8 +303,8 @@ class PPO:
             self.init_model.train()
             actor.train()
             
-        self.init_model.evaluation = True
-        actor.evaluation = False
+        self.init_model.set_evaluation(True)
+        actor.set_evaluation(False)
 
         rewards = []
         r_ts = []
@@ -574,8 +574,6 @@ class PPO:
 
                     if self.model == 'metricgan':
                         mb_action = actions[mb_indx, ...]
-                        #print(f"Sampled actions:{mb_action.mean()}") 
-                        #print(f"Sampled actions:{mb_action.shape}") 
 
                     log_probs, _ = actor.get_action_prob(mb_states, mb_action)
                     ref_log_probs, _ = self.init_model.get_action_prob(mb_states, mb_action)

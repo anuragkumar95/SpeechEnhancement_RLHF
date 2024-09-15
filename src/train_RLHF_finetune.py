@@ -265,7 +265,6 @@ class Trainer:
         #Get reward
         rl_state.append(next_state['est_audio'])
         C.append(c)
-        #r_state = self.trainer.env.get_NISQA_MOS_reward(audio=next_state['est_audio'], c=c)
 
         #Supervised 
         if self.args.model == 'cmgan':
@@ -310,7 +309,6 @@ class Trainer:
         metrics['kl_penalty'] = kl_penalty.mean()
         metrics['rl_state'] = rl_state
         metrics['C'] = C
-        #metrics['reward_model_score'] = r_state.mean()
         return metrics
     
 
@@ -367,6 +365,10 @@ class Trainer:
                     val_metrics['kl_penalty'] += metrics['kl_penalty']
                     STATE.extend(metrics['rl_state'])
                     C.extend(metrics['C'])
+
+                    print(f"Batch:{i} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{val_metrics['mse']}")
+        
+
                 except Exception as e:
                     print(traceback.format_exc())
                     continue

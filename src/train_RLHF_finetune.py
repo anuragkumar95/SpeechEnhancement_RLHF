@@ -327,9 +327,9 @@ class Trainer:
 
         self.actor.eval()
         
-        self.actor.eval = True
+        self.actor.evaluation = True
         self.trainer.init_model = self.trainer.init_model.eval()
-        self.trainer.init_model.eval = True
+        self.trainer.init_model.evaluation = True
         
         pesq = 0
         loss = 0

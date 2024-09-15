@@ -227,6 +227,10 @@ class Trainer:
             'si-sdr':[],
             'mse':0,
             'reward':0}
+        rl_state = []
+        C = []
+
+
         #print("Running validation...")
         clean_aud, clean, noisy, _, c = batch
         noisy_phase = None
@@ -238,21 +242,19 @@ class Trainer:
 
         #Forward pass through actor to get the action(mask)
         action, log_probs, _, _ = self.actor.get_action(inp)
-        
-        if self.expert is not None:
-            ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, action)
-            if self.args.model == 'cmgan':
-                ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-                log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+    
+        ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, action)
+        if self.args.model == 'cmgan':
+            ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
 
-            if self.args.model == 'metricgan':
-                ref_log_prob = ref_log_probs
-                log_prob = log_probs
-
-        if ref_log_prob is not None:
-            kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-            ratio = torch.exp(kl_penalty)
-            kl_penalty = ratio.detach()
+        if self.args.model == 'metricgan':
+            ref_log_prob = ref_log_probs
+            log_prob = log_probs
+    
+        kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+        ratio = torch.exp(kl_penalty)
+        kl_penalty = ratio.detach()
     
         #Apply action  to get the next state
         next_state = self.trainer.env.get_next_state(state=inp, 
@@ -261,8 +263,9 @@ class Trainer:
                                                      model=self.args.model)
         
         #Get reward
-        #r_state = self.trainer.env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False)
-        r_state = self.trainer.env.get_NISQA_MOS_reward(audio=next_state['est_audio'], c=c)
+        rl_state.append(next_state['est_audio'])
+        C.append(c)
+        #r_state = self.trainer.env.get_NISQA_MOS_reward(audio=next_state['est_audio'], c=c)
 
         #Supervised 
         if self.args.model == 'cmgan':
@@ -280,9 +283,9 @@ class Trainer:
             mb_clean_mag = clean
             supervised_loss = (mb_clean_mag - mb_enhanced_mag)**2
 
-        for i in range(64):
-            if i >= clean_aud.shape[0]:
-                break
+        for i in range(clean_aud.shape[0]):
+            #if i >= clean_aud.shape[0]:
+            #    break
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
                                      next_state['est_audio'][i, ...].detach().cpu().numpy(), 
                                      16000, 
@@ -302,23 +305,12 @@ class Trainer:
         supervised_loss = supervised_loss.reshape(-1, 1)
         mb_pesq = mb_pesq.reshape(-1, 1)
 
-        reward = 0
-        if 'rm' in self.args.reward:
-            reward += r_state
-
-        if 'pesq' in self.args.reward:
-            reward += self.args.lmbda * mb_pesq
-
-        if 'kl' in self.args.reward:
-            reward -= self.args.beta * kl_penalty
                   
         metrics['mse'] = supervised_loss.mean()
-        metrics['reward'] = reward.mean()
         metrics['kl_penalty'] = kl_penalty.mean()
-        metrics['reward_model_score'] = r_state.mean()
-
-        print(f"REWARD:{metrics['reward']} | RM_Score: {metrics['reward_model_score']} | KL: {metrics['kl_penalty']} | MSE: {metrics['mse']} | PESQ: {mb_pesq.mean()}")
-
+        metrics['rl_state'] = rl_state
+        metrics['C'] = C
+        #metrics['reward_model_score'] = r_state.mean()
         return metrics
     
 
@@ -341,14 +333,14 @@ class Trainer:
             'ssnr':[],
             'stoi':[],
             'si-sdr':[],
-            'reward':0,
             'mse':0,
             'kl_penalty':0,
             'reward_model_score':0
         }
 
         print(f"Running evaluation at episode:{episode}")
-
+        STATE = []
+        C = []
         num_batches = len(self.test_ds['pre'])
         with torch.no_grad():
             for i, batch in enumerate(self.test_ds['pre']):
@@ -372,17 +364,20 @@ class Trainer:
                     val_metrics['stoi'].extend(metrics['stoi'])
                     val_metrics['si-sdr'].extend(metrics['si-sdr'])
                     val_metrics['mse'] += metrics['mse']
-                    val_metrics['reward'] += metrics['reward']
                     val_metrics['kl_penalty'] += metrics['kl_penalty']
-                    val_metrics['reward_model_score'] += metrics['reward_model_score']
-
+                    STATE.extend(metrics['rl_state'])
+                    C.extend(metrics['C'])
                 except Exception as e:
                     print(traceback.format_exc())
                     continue
+            
+            #Get MOS reward
+            rm_score = self.trainer.env.get_NISQA_MOS_reward(audios=STATE, Cs=C)
+            val_metrics['reward_model_score'] = rm_score.sum()
         
         loss = val_metrics['mse']/num_batches
         kl = val_metrics['kl_penalty']/num_batches
-        reward_model_score = val_metrics['reward_model_score']/num_batches
+        reward_model_score = val_metrics['reward_model_score']/(num_batches * self.args.batchsize)
         reward = val_metrics['reward']/(num_batches * self.args.batchsize)
         
         wandb.log({ 
@@ -396,7 +391,6 @@ class Trainer:
             "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
             "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
-            "val_ovl_reward":reward,
             "val_KL":kl,
             "reward_model_score":reward_model_score
         }) 
@@ -472,15 +466,9 @@ class Trainer:
         if self.gpu_id == 0:
             checkpoint_prefix = f"{self.args.exp}_pesq_{pesq}_nmos_{mos}_loss_{loss}_episode_{episode}.pt"
             path = os.path.join(self.args.output, f"{self.args.exp}_{self.args.suffix}", checkpoint_prefix)
-            if self.args.method == 'reinforce':
-                save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                            'optim_state_dict':self.optimizer.state_dict()
-                            }
-            if self.args.method == 'PPO':
-                save_dict = {'actor_state_dict':self.actor.state_dict(), 
-                            #'critic_state_dict':self.critic.state_dict(),
-                            'optim_state_dict':self.optimizer.state_dict()
-                            }
+            save_dict = {'actor_state_dict':self.actor.state_dict(), 
+                        'optim_state_dict':self.optimizer.state_dict()
+                        }
             torch.save(save_dict, path)
     
 def ddp_setup(rank, world_size):

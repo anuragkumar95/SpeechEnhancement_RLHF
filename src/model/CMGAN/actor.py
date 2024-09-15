@@ -175,11 +175,13 @@ class TSCNet(nn.Module):
         self.evaluation = eval
         self.gpu_id = gpu_id
 
-    def sample(self, mu, x=None):
+    def sample(self, mu, x=None, range=None):
         sigma = (torch.ones(mu.shape)*0.01).to(self.gpu_id) 
         N = Normal(mu, sigma)
         if x is None:
             x = N.rsample()
+            if range is not None:
+                x = torch.clamp(x, min=range[0], max=range[1])
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
         return x, x_logprob, x_entropy, (mu, sigma)
@@ -201,7 +203,7 @@ class TSCNet(nn.Module):
 
         #Add gaussian noise
         mask, m_logprob, m_entropy, m_params = self.sample(mask_mu)
-        complex_out, c_logprob, c_entropy, c_params = self.sample(complex_out_mu)
+        complex_out, c_logprob, c_entropy, c_params = self.sample(complex_out_mu, range=[-1.01, 1.01])
 
         if self.evaluation:
             mask = mask_mu

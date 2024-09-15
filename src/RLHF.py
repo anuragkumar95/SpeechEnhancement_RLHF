@@ -387,11 +387,6 @@ class PPO:
                     rl_res.append(state['est_audio'])
                     sft_res.append(sft_state['est_audio'])
                     C.append(c_rl)
-                                   
-                    #rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
-                    #sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
-                        
-                    #r_ts.append(rm_score)
 
                     mb_pesq = []
                     for i in range(self.bs):
@@ -421,11 +416,6 @@ class PPO:
 
                     #Current step reward
                     r_t = 0
-                    #if 'rm' in self.reward_type:
-                    #    r_t = r_t + (rm_score - sft_rm_score)
-                
-                    #if 'mse' in self.reward_type:
-                    #    r_t = r_t - self.lmbda * supervised_loss
                     
                     if 'pesq' in self.reward_type:
                         r_t = r_t + (mb_pesq - mb_pesq_sft)

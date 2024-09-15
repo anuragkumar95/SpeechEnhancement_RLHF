@@ -381,9 +381,6 @@ class PPO:
                     else:
                         kl_penalty = None
                     
-                    rm_score = torch.tensor(0.0)
-                    sft_rm_score = torch.tensor(0.0)
-                    
                     rl_res.append(state['est_audio'])
                     sft_res.append(sft_state['est_audio'])
                     C.append(c_rl)
@@ -456,12 +453,15 @@ class PPO:
             
             if self.model == 'cmgan':
                 actions = (
-                    [action[0] for action in actions],
-                    [action[1] for action in actions],
+                    (
+                        [batch[0][0] for batch in actions],
+                        [batch[0][1] for batch in actions]
+                    ),
+                    [batch[1] for batch in actions],
                 )
                    
                 actions = (
-                    torch.stack(actions[0]).reshape(-1, f, t).detach(),
+                    (torch.stack(actions[0][0]).reshape(-1, f, t).detach(), torch.stack(actions[0][1]).reshape(-1, f, t).detach()),
                     torch.stack(actions[1]).reshape(-1, ch, t, f).detach()
                 )
             
@@ -569,7 +569,8 @@ class PPO:
 
                     #Get new logprobs and values for the sampled (state, action) pair
                     if self.model == 'cmgan':
-                        mb_action = (actions[0][mb_indx, ...], actions[1][mb_indx, ...])
+                        mb_action = ((actions[0][0][mb_indx, ...], actions[0][1][mb_indx, ...]), 
+                                     actions[1][mb_indx, ...])
 
                     if self.model == 'metricgan':
                         mb_action = actions[mb_indx, ...]

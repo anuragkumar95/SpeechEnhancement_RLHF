@@ -49,7 +49,7 @@ class SpeechEnhancementAgent:
         """
         x = state
         if model == 'cmgan':
-            mask, complex_out = action
+            (_, mask), complex_out = action
         if model == 'metricgan':
             mask = action
         

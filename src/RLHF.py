@@ -483,7 +483,7 @@ class PPO:
         if self.model == 'metricgan':
             print(f"ACTIONS       :{actions.shape}, {actions.shape}")
         if self.model == 'cmgan':
-            print(f"ACTIONS       :{actions[0].shape, actions[1].shape}")
+            print(f"ACTIONS       :{actions[0][0].shape, actions[0][1].shape, actions[1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
 
         policy_out = {

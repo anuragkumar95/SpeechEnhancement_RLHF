@@ -421,8 +421,8 @@ class PPO:
 
                     #Current step reward
                     r_t = 0
-                    if 'rm' in self.reward_type:
-                        r_t = r_t + (rm_score - sft_rm_score)
+                    #if 'rm' in self.reward_type:
+                    #    r_t = r_t + (rm_score - sft_rm_score)
                 
                     #if 'mse' in self.reward_type:
                     #    r_t = r_t - self.lmbda * supervised_loss
@@ -433,7 +433,7 @@ class PPO:
                     if 'kl' in self.reward_type:
                         r_t = r_t - self.beta * kl_penalty
 
-                    print(f"RM:{r_t.mean()} kl:{kl_penalty.mean()} PESQ:{mb_pesq.mean()}")
+                    print(f"kl:{kl_penalty.mean()} RL_PESQ:{mb_pesq.mean()} SFT_PESQ:{mb_pesq_sft.mean()}")
                     
                     #Store trajectory
                     states.append(noisy_rl)
@@ -444,14 +444,18 @@ class PPO:
                     logprobs.append(log_prob)
                     #logprobs.append(ref_log_prob)
 
-            #Get MOS rewards
-            rm_score = self.env.get_NISQA_MOS_reward(audios=rl_res, Cs=C)
-            sft_rm_score = self.env.get_NISQA_MOS_reward(audios=sft_res, Cs=C)
-            r_ts = rm_score - sft_rm_score
-             
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
-            #r_ts = torch.stack(r_ts).reshape(-1)
+            
+            #Get MOS rewards
+            if 'rm' in self.reward_type:
+                rm_score = self.env.get_NISQA_MOS_reward(audios=rl_res, Cs=C)
+                sft_rm_score = self.env.get_NISQA_MOS_reward(audios=sft_res, Cs=C)
+                r_ts = rm_score - sft_rm_score
+                r_ts = r_ts.reshape(bs, -1)
+                rewards += r_ts
+             
+            r_ts = r_ts.reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
             rewards = rewards.reshape(-1)

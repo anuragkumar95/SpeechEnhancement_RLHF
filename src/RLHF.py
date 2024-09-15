@@ -315,6 +315,8 @@ class PPO:
         ep_kl_penalty = 0
         pesq = 0
         C = []
+        rl_res = []
+        sft_res = []
         with torch.no_grad():
             for _ in range(self.episode_len):
 
@@ -382,11 +384,14 @@ class PPO:
                     rm_score = torch.tensor(0.0)
                     sft_rm_score = torch.tensor(0.0)
                     
-                    #Store reward
-                    rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
-                    sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
+                    rl_res.append(state['est_audio'])
+                    sft_res.append(sft_state['est_audio'])
+                    C.append(c_rl)
+                                   
+                    #rm_score = self.env.get_NISQA_MOS_reward(audio=state['est_audio'], c=c_rl)
+                    #sft_rm_score = self.env.get_NISQA_MOS_reward(audio=sft_state['est_audio'], c=c_rl)
                         
-                    r_ts.append(rm_score)
+                    #r_ts.append(rm_score)
 
                     mb_pesq = []
                     for i in range(self.bs):
@@ -439,9 +444,14 @@ class PPO:
                     logprobs.append(log_prob)
                     #logprobs.append(ref_log_prob)
 
+            #Get MOS rewards
+            rm_score = self.env.get_NISQA_MOS_reward(audios=rl_res, Cs=C)
+            sft_rm_score = self.env.get_NISQA_MOS_reward(audios=sft_res, Cs=C)
+            r_ts = rm_score - sft_rm_score
+             
             #Convert collected rewards to target_values and advantages
             rewards = torch.stack(rewards).reshape(bs, -1)
-            r_ts = torch.stack(r_ts).reshape(-1)
+            #r_ts = torch.stack(r_ts).reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
             rewards = rewards.reshape(-1)

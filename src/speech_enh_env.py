@@ -172,19 +172,20 @@ class SpeechEnhancementAgent:
         return -angle_loss 
 
 
-    def get_NISQA_MOS_reward(self, audio, c):
+    def get_NISQA_MOS_reward(self, audios, Cs):
         mos = []
         with tempfile.TemporaryDirectory() as tmpdirname:
-            c = c.reshape(-1, 1)
-            bs = c.shape[0]
-            est_audio = audio/c
-            est_audio = est_audio
-            est_audio = est_audio.detach().cpu().numpy()
-            _dir_ = os.path.join(tmpdirname, 'audios')
-            os.makedirs(_dir_, exist_ok=True)
-            for i in range(bs):
-                save_path = os.path.join(_dir_, f'batch_{i}.wav')
-                sf.write(save_path, est_audio[i], 16000)
+            for k, (audio, c) in enumerate(zip(audios, Cs)):
+                c = c.reshape(-1, 1)
+                bs = c.shape[0]
+                est_audio = audio/c
+                est_audio = est_audio
+                est_audio = est_audio.detach().cpu().numpy()
+                _dir_ = os.path.join(tmpdirname, 'audios')
+                os.makedirs(_dir_, exist_ok=True)
+                for i in range(bs):
+                    save_path = os.path.join(_dir_, f'batch_{k}_{i}.wav')
+                    sf.write(save_path, est_audio[i], 16000)
             
             cmd = f"python ~/NISQA/run_predict.py \
                    --mode predict_dir \
@@ -196,13 +197,18 @@ class SpeechEnhancementAgent:
 
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
             out, err = p.communicate() 
-            
+            mos_map_ = {}
             with open(os.path.join(tmpdirname, 'NISQA_results.csv'), 'r') as f:
                 lines = f.readlines()
                 for line in lines[1:]:
                     f, m = line.split(',')[:2]
-                    mos.append(float(m))
-        
+                    mos_map_[f] = float(m)
+
+        mos = []
+        for k in range(len(audios)):
+            for i in range(bs):
+                f = f"batch_{k}_{i}.wav"
+                mos.append(mos_map_[f])
         mos = torch.tensor(mos).to(self.gpu_id)
         mos = mos.reshape(-1, 1)
         return mos

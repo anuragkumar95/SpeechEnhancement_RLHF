@@ -380,7 +380,6 @@ class Trainer:
         loss = val_metrics['mse']/num_batches
         kl = val_metrics['kl_penalty']/num_batches
         reward_model_score = val_metrics['reward_model_score']/(num_batches * self.args.batchsize)
-        reward = val_metrics['reward']/(num_batches * self.args.batchsize)
         
         wandb.log({ 
             "episode": episode, 

@@ -375,11 +375,10 @@ class Trainer:
             
             #Get MOS reward
             rm_score = self.trainer.env.get_NISQA_MOS_reward(audios=STATE, Cs=C)
-            val_metrics['reward_model_score'] = rm_score.sum()
+            val_metrics['reward_model_score'] = rm_score.mean()
         
         loss = val_metrics['mse']/num_batches
         kl = val_metrics['kl_penalty']/num_batches
-        reward_model_score = val_metrics['reward_model_score']/(num_batches * self.args.batchsize)
         
         wandb.log({ 
             "episode": episode, 
@@ -393,14 +392,14 @@ class Trainer:
             "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
             "val_KL":kl,
-            "reward_model_score":reward_model_score
+            "reward_model_score":val_metrics['reward_model_score']
         }) 
-        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {reward_model_score}")
+        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {val_metrics['reward_model_score']}")
         
         #self.actor.train()
         #self.actor.eval = False
         
-        return loss, reward_model_score, np.asarray(val_metrics["pesq"]).mean()
+        return loss, val_metrics['reward_model_score'], np.asarray(val_metrics["pesq"]).mean()
 
     def train_one_epoch(self, epoch):       
         #Run training

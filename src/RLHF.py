@@ -408,7 +408,7 @@ class PPO:
                     mb_pesq.append(values[0])
                     pesq += values[0]
 
-                    if 'pesq' is self.reward_type:
+                    if 'pesq' in self.reward_type:
                         values = compute_metrics(mb_aud[i, ...].detach().cpu().numpy().reshape(-1), 
                                                 mb_est_sft_aud[i, ...].detach().cpu().numpy().reshape(-1), 
                                                 16000, 
@@ -416,7 +416,7 @@ class PPO:
                         
                         mb_pesq_sft.append(values[0])
 
-            if 'pesq' is self.reward_type:
+            if 'pesq' in self.reward_type:
                 mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
                 mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
                 rewards = rewards + (mb_pesq - mb_pesq_sft).reshape(-1)

@@ -317,6 +317,8 @@ class PPO:
         C = []
         rl_res = []
         sft_res = []
+        debug_rm = []
+        debug_rw = []
         with torch.no_grad():
             for _ in range(self.episode_len):
 
@@ -385,6 +387,10 @@ class PPO:
                     sft_res.append(sft_state['est_audio'])
                     C.append(c_rl)
 
+                    rm_score = self.env.get_NISQA_MOS_reward(audios=[state['est_audio']], Cs = [c_rl])
+                    sft_rm_score = self.env.get_NISQA_MOS_reward(audios=[sft_state['est_audio']], Cs=[c_rl])
+                    debug_rm.append(rm_score - sft_rm_score)
+
                     mb_pesq = []
                     for i in range(self.bs):
                         values = compute_metrics(cl_aud_rl[i, ...].detach().cpu().numpy().reshape(-1), 
@@ -413,12 +419,17 @@ class PPO:
 
                     #Current step reward
                     r_t = 0
-                    
+                    debug_r_t = 0
+                    if 'rm' in self.reward_type:
+                        debug_r_t = debug_r_t + (rm_score - sft_rm_score)
+
                     if 'pesq' in self.reward_type:
                         r_t = r_t + (mb_pesq - mb_pesq_sft)
+                        debug_r_t = debug_r_t + (mb_pesq - mb_pesq_sft)
                         
                     if 'kl' in self.reward_type:
                         r_t = r_t - self.beta * kl_penalty
+                        debug_r_t = debug_r_t - self.beta * kl_penalty
 
                     print(f"kl:{kl_penalty.mean()} RL_PESQ:{mb_pesq.mean()} SFT_PESQ:{mb_pesq_sft.mean()}")
                     
@@ -426,27 +437,33 @@ class PPO:
                     states.append(noisy_rl)
                     cleans.append(clean_rl)
                     rewards.append(r_t)
+                    debug_rw.append(debug_r_t)
 
                     actions.append(action)
                     logprobs.append(log_prob)
                     #logprobs.append(ref_log_prob)
 
             #Convert collected rewards to target_values and advantages
-            rewards = torch.stack(rewards).reshape(bs, -1)
-            
+            rewards = torch.stack(rewards).reshape(-1)
+            debug_rm = torch.stack(debug_rm).reshape(-1)
+            debug_rw = torch.stack(debug_rw).reshape(-1)
+
             #Get MOS rewards
             if 'rm' in self.reward_type:
                 rm_score = self.env.get_NISQA_MOS_reward(audios=rl_res, Cs=C)
                 sft_rm_score = self.env.get_NISQA_MOS_reward(audios=sft_res, Cs=C)
-                r_ts = rm_score - sft_rm_score
-                r_ts = r_ts.reshape(bs, -1)
-                rewards += r_ts
-             
+                r_ts = (rm_score - sft_rm_score).reshape(-1)
+                rewards = rewards + r_ts
+
+            print(f"DEBUG_RM:{debug_rm}")
+            print(f"RM:{r_ts}")
+            print(f"DEBUG_REWARDS:{debug_rw}")
+            print(f"REWARDS:{rewards}")
+
             rm_score = rm_score.reshape(-1)
             target_values = self.get_expected_return(rewards)
             b_target = target_values.reshape(-1)
-            rewards = rewards.reshape(-1)
-            print(f"REWARDS:{rewards}")
+            
             
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)

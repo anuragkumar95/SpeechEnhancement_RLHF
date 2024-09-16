@@ -306,19 +306,17 @@ class PPO:
         self.init_model.set_evaluation(True)
         actor.set_evaluation(False)
 
-        rewards = []
-        r_ts = []
         states = []
         logprobs = []
         actions = []
         cleans = []
-        ep_kl_penalty = 0
+        KL = []
         pesq = 0
         C = []
         rl_res = []
         sft_res = []
-        debug_rm = []
-        debug_rw = []
+        cl_audios = []
+
         with torch.no_grad():
             for _ in range(self.episode_len):
 
@@ -347,7 +345,7 @@ class PPO:
                         noisy_phase = c_rl
                         c_rl = torch.ones(noisy_rl.shape[0], 1).to(self.gpu_id)
                         
-                    bs, ch, t, f = clean_rl.shape
+                    _, ch, t, f = clean_rl.shape
 
                     if torch.isnan(noisy_rl.mean()) or torch.isnan(clean_rl.mean()):
                         continue 
@@ -368,7 +366,6 @@ class PPO:
                     state['exp_est_audio'] = sft_state['est_audio']
                     
                     #Calculate kl_penalty
-                    ref_log_prob = None
                     if self.model == 'cmgan':
                         ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
                         log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
@@ -377,97 +374,64 @@ class PPO:
                         ref_log_prob = ref_log_probs
                         log_prob = log_probs
                        
-                    if ref_log_prob is not None:
-                        kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
-                        ep_kl_penalty += kl_penalty.mean()
-                    else:
-                        kl_penalty = None
-                    
-                    rl_res.append(state['est_audio'])
-                    sft_res.append(sft_state['est_audio'])
-                    C.append(c_rl)
-
-                    rm_score = self.env.get_NISQA_MOS_reward(audios=[state['est_audio']], Cs = [c_rl])
-                    sft_rm_score = self.env.get_NISQA_MOS_reward(audios=[sft_state['est_audio']], Cs=[c_rl])
-                    debug_rm.append(rm_score - sft_rm_score)
-
-                    mb_pesq = []
-                    for i in range(self.bs):
-                        values = compute_metrics(cl_aud_rl[i, ...].detach().cpu().numpy().reshape(-1), 
-                                                state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                                16000, 
-                                                0)
-
-                        mb_pesq.append(values[0])
-
-                    mb_pesq_sft = []
-                    for i in range(self.bs):
-                        values = compute_metrics(cl_aud_rl[i, ...].detach().cpu().numpy().reshape(-1), 
-                                                sft_state['est_audio'][i, ...].detach().cpu().numpy().reshape(-1), 
-                                                16000, 
-                                                0)
-
-                        mb_pesq_sft.append(values[0])
-                    
-                    mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
-                    pesq += mb_pesq.sum()
-                    mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
-                    
-                    kl_penalty = kl_penalty.reshape(-1, 1)
-                    mb_pesq = mb_pesq.reshape(-1, 1)
-                    mb_pesq_sft = mb_pesq_sft.reshape(-1, 1)
-
-                    #Current step reward
-                    r_t = 0
-                    debug_r_t = 0
-                    if 'rm' in self.reward_type:
-                        debug_r_t = debug_r_t + (rm_score - sft_rm_score)
-
-                    if 'pesq' in self.reward_type:
-                        r_t = r_t + (mb_pesq - mb_pesq_sft)
-                        debug_r_t = debug_r_t + (mb_pesq - mb_pesq_sft)
-                        
-                    if 'kl' in self.reward_type:
-                        r_t = r_t - self.beta * kl_penalty
-                        debug_r_t = debug_r_t - self.beta * kl_penalty
-
-                    print(f"kl:{kl_penalty.mean()} RL_PESQ:{mb_pesq.mean()} SFT_PESQ:{mb_pesq_sft.mean()}")
-                    
+                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                    ep_kl_penalty += kl_penalty.mean()
+                 
                     #Store trajectory
                     states.append(noisy_rl)
                     cleans.append(clean_rl)
-                    rewards.append(r_t)
-                    debug_rw.append(debug_r_t)
-
                     actions.append(action)
                     logprobs.append(log_prob)
-                    #logprobs.append(ref_log_prob)
+                    rl_res.append(state['est_audio'])
+                    sft_res.append(sft_state['est_audio'])
+                    cl_audios.append(cl_aud_rl)
+                    C.append(c_rl)
+                    KL.append(kl_penalty)
 
-            #Convert collected rewards to target_values and advantages
-            rewards = torch.stack(rewards).reshape(-1)
-            debug_rm = torch.stack(debug_rm).reshape(-1)
-            debug_rw = torch.stack(debug_rw).reshape(-1)
-
+             
             #Get MOS rewards
             if 'rm' in self.reward_type:
                 rm_score = self.env.get_NISQA_MOS_reward(audios=rl_res, Cs=C)
                 sft_rm_score = self.env.get_NISQA_MOS_reward(audios=sft_res, Cs=C)
-                r_ts = (rm_score - sft_rm_score).reshape(-1)
-                rewards = rewards + r_ts
+                rewards = (rm_score - sft_rm_score).reshape(-1)
+                
+            #Get PESQ reward
+            pesq = 0
+            mb_pesq = []
+            mb_pesq_sft = []
+            for mb_aud, mb_est_aud, mb_est_sft_aud in zip(cl_audios, rl_res, sft_res):
+                for i in range(self.bs):
+                    values = compute_metrics(mb_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                            mb_est_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                            16000, 
+                                            0)
+                    mb_pesq.append(values[0])
+                    pesq += values[0]
 
-            print(f"DEBUG_RM:{debug_rm}")
-            print(f"RM:{r_ts}")
-            print(f"DEBUG_REWARDS:{debug_rw}")
+                    if 'pesq' is self.reward_type:
+                        values = compute_metrics(mb_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                                mb_est_sft_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                                                16000, 
+                                                0)
+                        
+                        mb_pesq_sft.append(values[0])
+
+            if 'pesq' is self.reward_type:
+                mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)
+                mb_pesq_sft = torch.tensor(mb_pesq_sft).to(self.gpu_id)
+                rewards = rewards + (mb_pesq - mb_pesq_sft).reshape(-1)
+
+            if 'kl' in self.reward_type:
+                KL = torch.stack(KL).reshape(-1).to(self.gpu_id)
+                rewards = rewards - self.beta * KL
+            
             print(f"REWARDS:{rewards}")
 
-            rm_score = rm_score.reshape(-1)
-            target_values = self.get_expected_return(rewards)
-            b_target = target_values.reshape(-1)
-            
-            
+            rm_score = rm_score.reshape(-1)        
             states = torch.stack(states).reshape(-1, ch, t, f)
             cleans = torch.stack(cleans).reshape(-1, ch, t, f)
-            
+            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach() 
+
             if self.model == 'cmgan':
                 actions = (
                     (
@@ -487,16 +451,14 @@ class PPO:
                     actions = torch.cat(actions, dim=0).detach()
                 else:
                     actions = actions[0].detach()
-                
-            logprobs = torch.stack(logprobs).reshape(-1, f, t).detach()
-                
+                  
             ep_kl_penalty = ep_kl_penalty / (self.episode_len * self.accum_grad)
             pesq = pesq / (self.episode_len * self.accum_grad * self.bs)
 
         print(f"STATES        :{states.shape}")
         print(f"CLEAN         :{cleans.shape}")
         print(f"REWARDS:      :{rewards.shape}")
-        print(f"TARGET_VALS   :{b_target.shape}")
+    
         if self.model == 'metricgan':
             print(f"ACTIONS       :{actions.shape}, {actions.shape}")
         if self.model == 'cmgan':
@@ -506,10 +468,8 @@ class PPO:
         policy_out = {
             'states':states,
             'cleans':cleans,
-            'b_targets':b_target,
             'actions':actions,
             'log_probs':logprobs,
-            'target_values':target_values,
             'r_ts':(rm_score, rewards),
             'ep_kl':ep_kl_penalty,
             'pesq':pesq,
@@ -523,7 +483,6 @@ class PPO:
         states = policy['states']
         actions = policy['actions']
         logprobs = policy['log_probs']
-        target_values = policy['target_values']
         ep_kl_penalty = policy['ep_kl']
         r_ts, reward = policy['r_ts']
         pesq = policy['pesq']
@@ -535,17 +494,15 @@ class PPO:
             #acting differently in train and eval mode. PPO seems to be stable only when actor
             #is still in eval mode
             actor.eval()
+
         if self.model == 'metricgan':
             actor.train()
 
         a_optim, _ = optimizers
         
         step_clip_loss = 0
-        #step_val_loss = 0
-        #step_entropy_loss = 0
         pretrain_loss = 0
         step_pg_loss = 0
-        #VALUES = torch.zeros(target_values.shape)
 
         for _ in range(n_epochs):
             indices = [t for t in range(states.shape[0])]
@@ -611,10 +568,6 @@ class PPO:
                             log_prob = log_probs
                             ref_log_prob = ref_log_probs
                             old_log_prob = logprobs[mb_indx, ...]
-                    
-                    #print(f"ref_logprob:{ref_log_prob.mean()}, {ref_log_prob.shape}")
-                    #print(f"new_logprob:{log_prob.mean(), log_prob.shape}")
-                    #print(f"old_logprob:{old_log_prob.mean(), old_log_prob.shape}")
 
                     #KL Penalty
                     kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
@@ -645,10 +598,6 @@ class PPO:
                     if self.model == 'cmgan':
                         mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
                      
-                    #if self.model == 'mpsenet':
-                    #    mb_enhanced_mag = mb_enhanced_mag.permute(0, 2, 1)
-                    #    mb_enhanced = mb_enhanced.permute(0, 1, 3, 2)
-
                     supervised_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
                     if self.train_phase:
                         supervised_loss = 0.7*supervised_loss + 0.3*((clean_pre - mb_enhanced) ** 2).mean()
@@ -692,6 +641,6 @@ class PPO:
             pretrain_loss = pretrain_loss / (n_epochs * self.episode_len)
             
         return (step_clip_loss, step_pg_loss, pretrain_loss), \
-               (target_values.mean(), ep_kl_penalty, r_ts.mean(), reward.mean()), pesq  
+               (ep_kl_penalty, r_ts.mean(), reward.mean()), pesq  
 
     

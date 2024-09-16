@@ -393,25 +393,16 @@ class Trainer:
             "reward_model_score":val_metrics['reward_model_score']
         }) 
         print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {val_metrics['reward_model_score']}")
-        
-        #self.actor.train()
-        #self.actor.eval = False
-        
+                
         return loss, val_metrics['reward_model_score'], np.asarray(val_metrics["pesq"]).mean()
 
     def train_one_epoch(self, epoch):       
-        #Run training
-        self.actor.train()
-
-        #loss, best_rm_score, best_pesq = self.run_validation(0)
         loss, best_rm_score, best_pesq = 9999, 0, 0
         epochs_per_episode = self.args.ep_per_episode
         #loss, rm_score, val_pesq = self.run_validation(0)
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
-        best_val_loss = 99999
-        episode_per_epoch = 100
-
+        episode_per_epoch = len(self.train_ds / (self.args.batchsize * self.ACCUM_GRAD)) + 1
         for i in range(episode_per_epoch):
             try:
                 loss, batch_reward, pesq = self.trainer.run_episode(self.actor, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)
@@ -419,17 +410,16 @@ class Trainer:
                 if loss is not None:
                     wandb.log({
                         "episode": (i+1) + ((epoch - 1) * episode_per_epoch),
-                        "episode_avg_kl":batch_reward[1].item(),
-                        "cumulative_G_t": batch_reward[0].item(),
-                        "episodic_avg_r": batch_reward[3].item(),
-                        "episodic_reward_model_score": batch_reward[2].item(),
+                        "episode_avg_kl":batch_reward[0].item(),
+                        "episodic_avg_r": batch_reward[2].item(),
+                        "episodic_reward_model_score": batch_reward[1].item(),
                         "clip_loss":loss[0],
                         "pretrain_loss":loss[2],
                         "pg_loss":loss[1],
                         "train_pesq":pesq, 
                     })
 
-                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[0].item()} | Values: {batch_reward[1].item()}")
+                    print(f"Epoch:{epoch} | Episode:{i+1} | Return: {batch_reward[2].item()} | RM_SCORE: {batch_reward[1].item()}")
                 
                 if (i+1) % 10 == 0:
                 #Run validation after each episode
@@ -437,14 +427,8 @@ class Trainer:
                     if val_pesq >= best_pesq or rm_score >= best_rm_score:
                         best_pesq = val_pesq
                         best_rm_score = max(best_rm_score, rm_score)
-                        #self.trainer.init_model = copy.deepcopy(self.actor)
-                        #self.trainer.init_model = self.trainer.init_model.eval()
                         self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
-                    
-                    #elif rm_score > best_rm_score:
-                    #    best_rm_score = rm_score
-                    #    self.save(loss, rm_score, val_pesq, (epoch-1) * episode_per_epoch + (i+1))
-         
+                
             except Exception as e:
                 print(traceback.format_exc())
                 continue

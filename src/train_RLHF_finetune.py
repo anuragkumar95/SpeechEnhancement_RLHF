@@ -402,7 +402,7 @@ class Trainer:
         #loss, rm_score, val_pesq = self.run_validation(0)
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
-        episode_per_epoch = len(self.train_ds / (self.args.batchsize * self.ACCUM_GRAD)) + 1
+        episode_per_epoch = (len(self.train_ds) / (self.args.batchsize * self.ACCUM_GRAD)) + 1
         for i in range(episode_per_epoch):
             try:
                 loss, batch_reward, pesq = self.trainer.run_episode(self.actor, (self.optimizer, self.c_optimizer), n_epochs=epochs_per_episode)

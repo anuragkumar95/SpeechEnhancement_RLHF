@@ -403,6 +403,8 @@ class Trainer:
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
         episode_per_epoch = (len(self.train_ds) // (self.args.batchsize * self.ACCUM_GRAD)) + 1
+        print(f"TRAIN:{len(self.train_ds)}")
+        print(f"ACCUM_GRAD:{self.ACCUM_GRAD} BATCH:{self.args.batchsize}")
         print(f"EPISODES_PER_EPOCH:{episode_per_epoch}")
         for i in range(episode_per_epoch):
             try:

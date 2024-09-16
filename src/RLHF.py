@@ -311,11 +311,12 @@ class PPO:
         actions = []
         cleans = []
         KL = []
-        pesq = 0
         C = []
         rl_res = []
         sft_res = []
         cl_audios = []
+        pesq = 0
+        ep_kl_penalty = 0
 
         with torch.no_grad():
             for _ in range(self.episode_len):
@@ -396,7 +397,6 @@ class PPO:
                 rewards = (rm_score - sft_rm_score).reshape(-1)
                 
             #Get PESQ reward
-            pesq = 0
             mb_pesq = []
             mb_pesq_sft = []
             for mb_aud, mb_est_aud, mb_est_sft_aud in zip(cl_audios, rl_res, sft_res):

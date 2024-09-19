@@ -29,7 +29,7 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
-torch.manual_seed(0)
+torch.manual_seed(123)
 
 
 class REINFORCE:
@@ -389,7 +389,6 @@ class PPO:
                     C.append(c_rl)
                     KL.append(kl_penalty)
 
-             
             #Get MOS rewards
             if 'rm' in self.reward_type:
                 rm_score = self.env.get_NISQA_MOS_reward(audios=rl_res, Cs=C)

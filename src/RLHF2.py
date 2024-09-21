@@ -187,7 +187,7 @@ class PPO:
                     ep_kl_penalty += kl_penalty.mean()
                  
                     #Store trajectory
-                    for i in range(next_state.shape[0]):
+                    for i in range(next_state[0].shape[0]):
                         states.append(noisy_rl[i, ...])
                         cleans.append(clean_rl[i, ...])
                         logprobs.append(log_prob[i])

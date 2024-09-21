@@ -36,7 +36,27 @@ class SpeechEnhancementAgent:
         if reward_model is not None:
             self.reward_model = reward_model
         
-       
+
+    def get_audio(self, state):
+        """
+        state is a tuple (real, imag) outputs
+        """
+        real, imag = state
+        window = torch.hamming_window(self.n_fft)
+        if self.gpu_id is not None:
+            window = window.to(self.gpu_id)
+
+        est_spec_uncompress = power_uncompress(real, imag).squeeze(1).permute(0, 2, 1, 3)
+        est_audio = torch.istft(
+            est_spec_uncompress,
+            self.n_fft,
+            self.hop,
+            window=window,
+            onesided=True,
+        )
+
+        return est_audio
+
     def get_next_state(self, state, action, phase=None, model='cmgan'):
         """
         Apply mask to spectrogram and return next (enhanced) state.
@@ -73,10 +93,6 @@ class SpeechEnhancementAgent:
 
             est_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
             est_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
-
-            
-            if self.gpu_id is not None:
-                window = window.to(self.gpu_id)
 
             est_mag = torch.sqrt(est_real**2 + est_imag**2)
             est_spec_uncompress = power_uncompress(est_real, est_imag).squeeze(1).permute(0, 2, 1, 3)
@@ -177,22 +193,20 @@ class SpeechEnhancementAgent:
         with tempfile.TemporaryDirectory() as tmpdirname:
             for k, (audio, c) in enumerate(zip(audios, Cs)):
                 c = c.reshape(-1, 1)
-                bs = c.shape[0]
                 est_audio = audio/c
                 est_audio = est_audio
                 est_audio = est_audio.detach().cpu().numpy()
                 _dir_ = os.path.join(tmpdirname, 'audios')
                 os.makedirs(_dir_, exist_ok=True)
-                for i in range(bs):
-                    save_path = os.path.join(_dir_, f'batch_{k}_{i}.wav')
-                    sf.write(save_path, est_audio[i], 16000)
+                save_path = os.path.join(_dir_, f'audio_{k}.wav')
+                sf.write(save_path, est_audio[i], 16000)
             
             cmd = f"python ~/NISQA/run_predict.py \
                    --mode predict_dir \
                    --pretrained_model ~/NISQA/weights/nisqa.tar \
                    --data_dir {_dir_} \
                    --num_workers 0 \
-                   --bs {bs} \
+                   --bs {10} \
                    --output_dir {tmpdirname}"
 
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
@@ -206,9 +220,8 @@ class SpeechEnhancementAgent:
 
         mos = []
         for k in range(len(audios)):
-            for i in range(bs):
-                f = f"batch_{k}_{i}.wav"
-                mos.append(mos_map_[f])
+            f = f"audio_{k}.wav"
+            mos.append(mos_map_[f])
         mos = torch.tensor(mos).to(self.gpu_id)
         mos = mos.reshape(-1, 1)
         return mos

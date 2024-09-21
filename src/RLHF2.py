@@ -172,8 +172,8 @@ class PPO:
                     if torch.isinf(noisy_rl.mean()) or torch.isinf(clean_rl.mean()):
                         continue 
                     
-                    sft_next_state, _, _, _ = self.init_model.get_action(noisy_rl)
-                    next_state, log_probs, _, _ = actor.get_action(noisy_rl)
+                    sft_next_state, _, _, = self.init_model.get_action(noisy_rl)
+                    next_state, log_probs, _ = actor.get_action(noisy_rl)
                     ref_log_probs = self.init_model.get_action_prob(noisy_rl, next_state)
 
                     sft_audio = self.env.get_audio(sft_next_state)
@@ -308,11 +308,7 @@ class PPO:
                     _, clean_pre, noisy_pre, _, c_pre = batch_pre
                     noisy_pre = noisy_pre.permute(0, 1, 3, 2)
                     clean_pre = clean_pre.permute(0, 1, 3, 2)
-                    noisy_phase = None
-                    if self.model == 'metricgan':
-                        noisy_phase = c_pre
-                        c_pre = torch.ones(noisy_pre.shape[0], 1).to(self.gpu_id)
-
+                    
                     if torch.isnan(noisy_pre.mean()) or torch.isnan(clean_pre.mean()):
                         continue 
                     if torch.isinf(noisy_pre.mean()) or torch.isinf(clean_pre.mean()):

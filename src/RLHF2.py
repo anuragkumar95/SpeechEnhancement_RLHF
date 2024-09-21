@@ -230,6 +230,7 @@ class PPO:
 
             if 'kl' in self.reward_type:
                 KL = torch.stack(KL).reshape(-1).to(self.gpu_id)
+                print(rewards.shape, KL.shape)
                 rewards = rewards - self.beta * KL
             
             print(f"REWARDS:{rewards}")

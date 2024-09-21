@@ -199,7 +199,7 @@ class SpeechEnhancementAgent:
                 _dir_ = os.path.join(tmpdirname, 'audios')
                 os.makedirs(_dir_, exist_ok=True)
                 save_path = os.path.join(_dir_, f'audio_{k}.wav')
-                sf.write(save_path, est_audio[i], 16000)
+                sf.write(save_path, est_audio, 16000)
             
             cmd = f"python ~/NISQA/run_predict.py \
                    --mode predict_dir \

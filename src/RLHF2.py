@@ -208,21 +208,20 @@ class PPO:
             mb_pesq = []
             mb_pesq_sft = []
             for mb_aud, mb_est_aud, mb_est_sft_aud in zip(cl_audios, rl_res, sft_res):
-                for i in range(self.bs):
-                    values = compute_metrics(mb_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                            mb_est_aud[i, ...].detach().cpu().numpy().reshape(-1), 
+                values = compute_metrics(mb_aud.detach().cpu().numpy().reshape(-1), 
+                                        mb_est_aud.detach().cpu().numpy().reshape(-1), 
+                                        16000, 
+                                        0)
+                mb_pesq.append(values[0])
+                pesq += values[0]
+
+                if 'pesq' in self.reward_type:
+                    values = compute_metrics(mb_aud.detach().cpu().numpy().reshape(-1), 
+                                            mb_est_sft_aud.detach().cpu().numpy().reshape(-1), 
                                             16000, 
                                             0)
-                    mb_pesq.append(values[0])
-                    pesq += values[0]
-
-                    if 'pesq' in self.reward_type:
-                        values = compute_metrics(mb_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                                mb_est_sft_aud[i, ...].detach().cpu().numpy().reshape(-1), 
-                                                16000, 
-                                                0)
-                        
-                        mb_pesq_sft.append(values[0])
+                    
+                    mb_pesq_sft.append(values[0])
 
             if 'pesq' in self.reward_type:
                 mb_pesq = torch.tensor(mb_pesq).to(self.gpu_id)

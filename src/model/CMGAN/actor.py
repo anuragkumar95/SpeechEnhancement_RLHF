@@ -362,11 +362,15 @@ class TSCNet(nn.Module):
 
 
     def get_action(self, x):
-        real, imag = self.forward(x)
+        real_mu, imag_mu = self.forward(x)
 
         #Add gaussian noise
-        real, r_logprob, r_entropy = self.sample(mu=real)
-        imag, i_logprob, i_entropy = self.sample(mu=imag)
+        real, r_logprob, r_entropy = self.sample(mu=real_mu)
+        imag, i_logprob, i_entropy = self.sample(mu=imag_mu)
+
+        if self.evaluation:
+            real = real_mu
+            imag = imag_mu
 
         return (real, imag), (r_logprob, i_logprob), (r_entropy, i_entropy)
 

@@ -4,13 +4,9 @@
 """
 
 from model.CMGAN.actor import TSCNet
-#from model.MPSENet.actor import MPNet
 from model.MetricGAN.actor import Generator
-#from model.critic import QNet, Critic
 from model.reward_model import RewardModel
-from RLHF import REINFORCE, PPO
-#import NISQA.nisqa.NISQA_lib as NL
-#from NISQA.nisqa.NISQA_model import nisqaModel
+from RLHF2 import PPO
 from compute_metrics import compute_metrics
 from torch.utils.data import DataLoader
 
@@ -119,7 +115,7 @@ class Trainer:
             self.actor = Generator(causal=False, 
                                    gpu_id=gpu_id)
             self.expert = Generator(causal=False, 
-                                        gpu_id=gpu_id)
+                                    gpu_id=gpu_id)
         elif args.model == 'cmgan':
             self.actor = TSCNet(num_channel=64, 
                                 num_features=self.n_fft // 2 + 1, 

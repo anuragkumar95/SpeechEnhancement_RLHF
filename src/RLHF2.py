@@ -127,8 +127,8 @@ class PPO:
             self.init_model.train()
             actor.train()
             
-        self.init_model.set_evaluation(True)
-        actor.set_evaluation(False)
+        self.init_model.evaluation = True
+        actor.evaluation = False
 
         states = []
         logprobs = []

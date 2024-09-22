@@ -330,28 +330,25 @@ class PPO:
                     if self.train_phase:
                         log_prob = log_probs[0]+log_probs[1]
                         ref_log_prob = (ref_log_probs[0] + ref_log_probs[1]).detach()
-                        old_log_prob = logprobs[mb_indx, ...]#.permute(0, 2, 1)
-                        if self.model == 'cmgan':
-                            old_log_prob = old_log_prob.permute(0, 2, 1)
+                        old_log_prob = logprobs[mb_indx, ...].permute(0, 2, 1)
 
                     else:
                         #ignore complex mask, just tune mag mask 
-                        if self.model == 'cmgan':
-                            raise NotImplementedError
-                        if self.model == 'metricgan':
-                            log_prob = log_probs
-                            ref_log_prob = ref_log_probs
-                            old_log_prob = logprobs[mb_indx, ...]
-
+                        raise NotImplementedError
+                        
                     #KL Penalty
                     kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2])
                     kl_penalty = kl_logratio
 
                     mb_adv = reward[mb_indx, ...].reshape(-1, 1)
                     
+                    print(f"REWARD:{mb_adv.shape}, logprob:{log_prob.shape}, old_logprob:{old_log_prob.shape}, ref_logprob:{ref_log_prob.shape}")
+
                     #Policy gradient loss
                     logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2])
                     ratio = torch.exp(logratio).reshape(-1, 1)
+
+
                     
                     print(f"Ratio:{ratio}")
                     pg_loss1 = -mb_adv * ratio

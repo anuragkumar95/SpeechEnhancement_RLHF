@@ -182,7 +182,6 @@ class PPO:
                     #Calculate kl_penalty
                     ref_log_prob = ref_log_probs[0] + ref_log_probs[1]
                     log_prob = log_probs[0] + log_probs[1]
-                    print(f"LOGPROB:{log_prob.shape}")
                     kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2, 3]).detach()
                     ep_kl_penalty += kl_penalty.mean()
                  

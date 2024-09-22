@@ -317,15 +317,15 @@ class PPO:
                     #Get mini batch indices
                     mb_indx = indices[t:t + self.bs]
                     mb_states = states[mb_indx, ...]
-                    mb_action = ([act[0] for act in actions[mb_indx]], 
-                                 [act[1] for act in actions[mb_indx]])
-                    mb_action = (torch.stack(mb_action[0]).unsqueeze(1), 
-                                 torch.stack(mb_action[1]).unsqueeze(1))
-                    print(f"action_shape:{mb_action[0].shape, mb_action[1].shape}")
+                    mb_actions = [actions[i] for i in mb_indx]
+                    mb_actions = (torch.stack([act[0] for act in mb_actions]), 
+                                  torch.stack([act[1] for act in mb_actions]))
+                   
+                    print(f"action_shape:{mb_actions[0].shape, mb_actions[1].shape}")
 
                     #Get new logprobs and values for the sampled (state, action) pair
-                    log_probs = actor.get_action_prob(mb_states, mb_action)
-                    ref_log_probs = self.init_model.get_action_prob(mb_states, mb_action)
+                    log_probs = actor.get_action_prob(mb_states, mb_actions)
+                    ref_log_probs = self.init_model.get_action_prob(mb_states, mb_actions)
 
                     if self.train_phase:
                         log_prob = log_probs[0]+log_probs[1]
@@ -359,7 +359,7 @@ class PPO:
                     pg_loss = torch.max(pg_loss1, pg_loss2)
 
                     #Pretrain loss
-                    mb_enhanced, _, _, _ = actor.get_action(noisy_pre)
+                    mb_enhanced, _, _ = actor.get_action(noisy_pre)
                     mb_enhanced_mag = torch.sqrt(mb_enhanced[0]**2 + mb_enhanced[1]**2)
                     mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
                     mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 

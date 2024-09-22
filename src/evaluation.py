@@ -53,52 +53,21 @@ def run_enhancement_step(env,
     inp = noisy.permute(0, 1, 3, 2)
 
     #Forward pass through actor to get the action(mask)
-    action, _, _, _ = actor.get_action(inp)
-
     if add_noise:
-        #add gaussian noise to action
-        m_mu = torch.zeros(action[0][1].shape)
-        m_sigma = torch.ones(action[0][1].shape) * noise_std
-        c_mu = torch.zeros(action[1].shape)
-        c_sigma = torch.ones(action[1].shape) * noise_std
-        m_dist = Normal(m_mu, m_sigma)
-        c_dist = Normal(c_mu, c_sigma)
-
-        m_noise = m_dist.sample().to(actor.gpu_id)
-        c_noise = c_dist.sample().to(actor.gpu_id)
-        
-        (x, mask), comp_out = action
-        mask += m_noise
-        comp_out += c_noise
-        
-        action = ((x, mask), comp_out)
-    
-    #Apply action  to get the next state
-    next_state = env.get_next_state(state=inp, 
-                                    action=action)
+        actor.evaluation = False
+    next_state, _, _= actor.get_action(inp)
     
     if save_metrics:
-        #Get reward
-        if env.reward_model is not None:
-            r_state = env.get_RLHF_reward(state=next_state['noisy'].permute(0, 1, 3, 2), scale=False).mean()
-            metrics['reward'] = r_state.detach().cpu().numpy()
-
         #Supervised loss
-        mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
-        
-        
-        mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+        mb_enhanced = torch.cat(next_state, dim=1)
         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-
-        supervised_loss = (0.3*(clean - mb_enhanced) ** 2) + (0.7*(mb_clean_mag - mb_enhanced_mag)**2)
-        metrics['mse'] = supervised_loss.mean().detach().cpu().numpy()
-        metrics['mse_1'] = supervised_loss[:, :, :50, :].mean().detach().cpu().numpy()
-        metrics['mse_2'] = supervised_loss[:, :, 51:100, :].mean().detach().cpu().numpy()
-        metrics['mse_3'] = supervised_loss[:, :, 101:150, :].mean().detach().cpu().numpy()
-        metrics['mse_4'] = supervised_loss[:, :, 151:, :].mean().detach().cpu().numpy()
-
+        mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+        mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
+        ri_loss = ((clean - mb_enhanced) ** 2).mean()
+        supervised_loss = 0.7*mag_loss + 0.3*ri_loss
         clean_aud = clean_aud.reshape(-1)
-        enh_audio = next_state['est_audio'].reshape(-1)
+
+        enh_audio = env.get_audio(next_state).reshape(-1)
 
         clean_aud = clean_aud[:lens].detach().cpu().numpy()
         enh_audio = enh_audio[:lens].detach().cpu().numpy()
@@ -115,6 +84,7 @@ def run_enhancement_step(env,
         metrics['ssnr'] = values[4]
         metrics['stoi'] = values[5]
         metrics['si-sdr'] = values[6]
+        metrics['mse'] = supervised_loss.mean().cpu().numpy()
 
     if save_track:
         save_dir = os.path.join(save_dir, 'audios')
@@ -135,11 +105,10 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
     
     #Initiate models
     model = TSCNet(num_channel=64, 
-                num_features=400 // 2 + 1,
-                distribution=None, 
-                gpu_id=gpu_id)
+                   num_features=400 // 2 + 1,
+                   gpu_id=gpu_id)
     
-    reward_model = RewardModel(in_channels=2)
+    #reward_model = RewardModel(in_channels=2)
     
     #model_pt = "/users/PAS2301/kumar1109/CMGAN_RLHF/cmgan_big_ppo_ep5_steps10_beta1.1e-3_lmbda1.0_mvar0.01_cvar0.01_run6_forward2/cmgan_big_loss_0.12089217454195023_episode_75.pt"
     #model_pt = "~/CMGAN_RLHF/cmgan_big_ppo_ep5_steps5_lmbda1.0_mvar0.01_cvar0.01/cmgan_big_PESQ_3.4969236850738525_epoch_1_episode_440.pt"
@@ -164,7 +133,7 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
 
     model.eval()
     reward_model.eval()
-    model.set_evaluation(True)
+    model.evaluation = True
 
     val_metrics = {
         'pesq':[],

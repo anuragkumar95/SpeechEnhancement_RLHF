@@ -237,41 +237,35 @@ class Trainer:
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
-        action, log_probs, _, _ = self.actor.get_action(inp)
+        next_state, log_probs, _ = self.actor.get_action(inp)
+        est_audio = self.trainer.env.get_audio(next_state)
     
-        ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, action)
+        ref_log_probs, _ = self.trainer.init_model.get_action_prob(inp, next_state)
         if self.args.model == 'cmgan':
-            ref_log_prob = ref_log_probs[0] + ref_log_probs[1][:, 0, :, :].permute(0, 2, 1) + ref_log_probs[1][:, 1, :, :].permute(0, 2, 1)
-            log_prob = log_probs[0] + log_probs[1][:, 0, :, :].permute(0, 2, 1) + log_probs[1][:, 1, :, :].permute(0, 2, 1)
+            ref_log_prob = ref_log_probs[0] + ref_log_probs[1]
+            log_prob = log_probs[0] + log_probs[1]
 
         if self.args.model == 'metricgan':
             ref_log_prob = ref_log_probs
             log_prob = log_probs
     
-        kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+        kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2, 3]).detach()
         ratio = torch.exp(kl_penalty)
         kl_penalty = ratio.detach()
-    
-        #Apply action  to get the next state
-        next_state = self.trainer.env.get_next_state(state=inp, 
-                                                     phase=noisy_phase, 
-                                                     action=action, 
-                                                     model=self.args.model)
         
         #Get reward
-        rl_state.append(next_state['est_audio'])
-        C.append(c)
+        for i in range(inp.shape[0]):
+            rl_state.append(est_audio[i, ...])
+            C.append(c[i, ...])
 
         #Supervised 
         if self.args.model == 'cmgan':
-            mb_enhanced = next_state['noisy'].permute(0, 1, 3, 2)
-            mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
-            
+            mb_enhanced_mag = torch.sqrt(next_state[0]**2 + next_state[1]**2)
             mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
-
-            mag_loss = (mb_clean_mag - mb_enhanced_mag)**2
-            ri_loss = (clean - mb_enhanced) ** 2
-            supervised_loss = 0.3 * torch.mean(ri_loss, dim=[1, 2, 3]) + 0.7 * torch.mean(mag_loss, dim=[1, 2])
+            mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
+            mb_enhanced = torch.cat(next_state, dim=1)
+            ri_loss = ((clean - mb_enhanced) ** 2).mean()
+            supervised_loss = 0.7*mag_loss + 0.3*ri_loss
 
         if self.args.model == 'metricgan':
             mb_enhanced_mag = next_state['est_mag'].permute(0, 1, 3, 2)
@@ -282,7 +276,7 @@ class Trainer:
             #if i >= clean_aud.shape[0]:
             #    break
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
-                                     next_state['est_audio'][i, ...].detach().cpu().numpy(), 
+                                     rl_state[i].detach().cpu().numpy(), 
                                      16000, 
                                      0)
             
@@ -311,9 +305,9 @@ class Trainer:
     def run_validation(self, episode):
         #Run validation
         self.actor.eval()
-        self.actor.set_evaluation(True)
+        self.actor.evaluation = True
         self.trainer.init_model.eval()
-        self.trainer.init_model.set_evaluation(True)
+        self.trainer.init_model.evaluation = True
         
         pesq = 0
         loss = 0
@@ -395,7 +389,7 @@ class Trainer:
     def train_one_epoch(self, epoch):       
         loss, best_rm_score, best_pesq = 9999, 0, 0
         epochs_per_episode = self.args.ep_per_episode
-        #loss, rm_score, val_pesq = self.run_validation(0)
+        loss, rm_score, val_pesq = self.run_validation(0)
         run_validation_step = 250 // (epochs_per_episode * self.args.episode_steps)
         print(f"Run validation at every step:{run_validation_step}")
         episode_per_epoch = (len(self.train_ds['pre']) // (self.args.batchsize * self.ACCUM_GRAD)) + 1

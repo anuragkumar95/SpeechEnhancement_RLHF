@@ -146,7 +146,7 @@ class PPO:
         with torch.no_grad():
             for _ in range(self.episode_len):
 
-                for _ in range(self.accum_grad):
+                for k in range(self.accum_grad):
 
                     try:
                         batch_rl = next(self._iter_['rl'])
@@ -184,6 +184,8 @@ class PPO:
                     log_prob = log_probs[0] + log_probs[1]
                     kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2, 3]).detach()
                     ep_kl_penalty += kl_penalty.mean()
+
+                    print(f"Batch {k} | KL:{kl_penalty}")
                  
                     #Store trajectory
                     for i in range(next_state[0].shape[0]):
@@ -249,7 +251,7 @@ class PPO:
         print(f"ACTIONS       :{len(actions)}, {actions[0][0].shape, actions[0][1].shape}")
         print(f"LOGPROBS      :{logprobs.shape}")
 
-        policy_out = {
+        return {
             'states':states,
             'cleans':cleans,
             'actions':actions,
@@ -259,8 +261,6 @@ class PPO:
             'pesq':pesq,
             'C':C,
         }
-        
-        return policy_out
 
     def train_on_policy(self, policy, actor, optimizers, n_epochs):
 
@@ -337,16 +337,12 @@ class PPO:
                 kl_logratio = torch.mean(log_prob - ref_log_prob, dim=[1, 2, 3])
                 kl_penalty = kl_logratio
 
-                mb_adv = reward[mb_indx, ...].reshape(-1, 1)
+                mb_adv = reward[mb_indx, ...].reshape(-1, 1)                
                 
-                print(f"REWARD:{mb_adv.shape}, logprob:{log_prob.shape}, old_logprob:{old_log_prob.shape}, ref_logprob:{ref_log_prob.shape}")
-
                 #Policy gradient loss
                 logratio = torch.mean(log_prob - old_log_prob, dim=[1, 2, 3])
                 ratio = torch.exp(logratio).reshape(-1, 1)
 
-
-                
                 print(f"Ratio:{ratio}")
                 pg_loss1 = -mb_adv * ratio
                 pg_loss2 = -mb_adv * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)

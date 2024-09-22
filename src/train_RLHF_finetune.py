@@ -261,7 +261,7 @@ class Trainer:
         #Supervised 
         if self.args.model == 'cmgan':
             mb_enhanced_mag = torch.sqrt(next_state[0]**2 + next_state[1]**2)
-            mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+            mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2).unsqueeze(1).permute(0, 1, 3, 2)
             print(f"clean:{mb_clean_mag.shape}, enh:{mb_enhanced_mag.shape}")
             mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
             mb_enhanced = torch.cat(next_state, dim=1)

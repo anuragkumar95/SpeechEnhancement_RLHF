@@ -360,6 +360,8 @@ class PPO:
                     mb_enhanced_mag = torch.sqrt(mb_enhanced[0]**2 + mb_enhanced[1]**2)
                     mb_clean_mag = torch.sqrt(clean_pre[:, 0, :, :]**2 + clean_pre[:, 1, :, :]**2)
                     mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
+                    mb_enhanced = torch.cat(mb_enhanced, dim=1)
+                    print(f"clean:{clean_pre.shape}, enh:{mb_enhanced.shape}")
                     ri_loss = ((clean_pre - mb_enhanced) ** 2).mean()
                     supervised_loss = 0.7*mag_loss + 0.3*ri_loss
 

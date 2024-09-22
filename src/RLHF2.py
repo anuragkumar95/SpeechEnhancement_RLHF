@@ -183,7 +183,7 @@ class PPO:
                     ref_log_prob = ref_log_probs[0] + ref_log_probs[1]
                     log_prob = log_probs[0] + log_probs[1]
                     print(f"LOGPROB:{log_prob.shape}")
-                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2]).detach()
+                    kl_penalty = torch.mean(log_prob - ref_log_prob, dim=[1, 2, 3]).detach()
                     ep_kl_penalty += kl_penalty.mean()
                  
                     #Store trajectory
@@ -196,7 +196,7 @@ class PPO:
                         sft_res.append(sft_audio[i, ...])
                         cl_audios.append(cl_aud_rl[i, ...])
                         C.append(c_rl[i, ...])
-                        KL.append(kl_penalty[i, ...])
+                        KL.append(kl_penalty[i])
 
             #Get MOS rewards
             if 'rm' in self.reward_type:

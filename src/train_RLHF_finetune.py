@@ -266,6 +266,7 @@ class Trainer:
             mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
             mb_enhanced = torch.cat(next_state, dim=1)
             print(f"clean:{clean.shape}, enh:{mb_enhanced.shape}")
+            clean = clean.permute(0, 1, 3, 2)
             ri_loss = ((clean - mb_enhanced) ** 2).mean()
             supervised_loss = 0.7*mag_loss + 0.3*ri_loss
 

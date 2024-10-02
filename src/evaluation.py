@@ -56,7 +56,7 @@ def run_enhancement_step(env,
     if add_noise:
         actor.evaluation = False
     next_state, _, _= actor.get_action(inp)
-    enh_audio = env.get_audio(next_state).reshape(-1)
+    enh_audio = env.get_audio(next_state)
 
     if save_metrics:
         #Supervised loss
@@ -90,11 +90,9 @@ def run_enhancement_step(env,
         os.makedirs(save_dir, exist_ok=True)
         saved_path = os.path.join(save_dir, file_id)
 
-        #est_audio = next_state['est_audio']/c.reshape(-1, 1)
-        #est_audio = est_audio.reshape(-1)
+        enh_audio = enh_audio/c.reshape(-1, 1)
+        enh_audio = enh_audio.reshape(-1)
         enh_audio = enh_audio.detach().cpu().numpy()
-
-        #est_audio = enh_audio[:clean_aud.shape[-1]] 
 
         sf.write(saved_path, enh_audio, 16000)
     

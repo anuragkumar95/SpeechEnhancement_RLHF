@@ -374,14 +374,14 @@ def preprocess_batch(batch, ref=None, n_fft=400, hop=100, gpu_id=None, clean_ist
 
     if ref is not None:
         ref = ref.to(gpu_id)
-        clean, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, ref=ref, clean_istft=clean_istft)
+        _, clean_spec, noisy_spec, ref_spec = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, ref=ref, clean_istft=clean_istft)
         return (clean, clean_spec, noisy_spec, ref_spec, labels)
     
     if return_c:
-        clean, clean_spec, noisy_spec, c = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, ref=ref, clean_istft=clean_istft, return_c=return_c)
+        _, clean_spec, noisy_spec, c = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, ref=ref, clean_istft=clean_istft, return_c=return_c)
         return (clean, clean_spec, noisy_spec, labels, c)
     
-    clean, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, clean_istft=clean_istft)
+    _, clean_spec, noisy_spec = get_specs(clean, noisy, gpu_id, n_fft=n_fft, hop=hop, clean_istft=clean_istft)
     return (clean, clean_spec, noisy_spec, labels)
 
 def map_state_dict(checkpoint):

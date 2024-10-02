@@ -344,9 +344,10 @@ class TSCNet(nn.Module):
         self.complex_decoder = ComplexDecoder(num_channel=num_channel)
         self.evaluation = eval
         self.gpu_id = gpu_id
+        self.std = 0.01
 
     def sample(self, mu, x=None):
-        sigma = (torch.ones(mu.shape) * 0.01).to(self.gpu_id) 
+        sigma = (torch.ones(mu.shape) * self.std).to(self.gpu_id) 
         
         N = Normal(mu, sigma)
         
@@ -360,21 +361,10 @@ class TSCNet(nn.Module):
 
         return x, x_logprob, x_entropy
 
-
     def get_action(self, x):
-        real_mu, imag_mu = self.forward(x)
+        real, imag, probs = self.forward(x, action=None)
+        return (real, imag), probs, None
 
-        #Add gaussian noise
-        real, r_logprob, r_entropy = self.sample(mu=real_mu)
-        imag, i_logprob, i_entropy = self.sample(mu=imag_mu)
-
-        if self.evaluation:
-            real = real_mu
-            imag = imag_mu
-
-        return (real, imag), (r_logprob, i_logprob), (r_entropy, i_entropy)
-
-    
     def get_action_prob(self, x, action):
         """
         ARGS:
@@ -384,16 +374,10 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        real_act, imag_act = action
-        real, imag = self.forward(x)
+        _, _, probs = self.forward(x, action=action)
+        return probs
 
-        #Add gaussian noise
-        _, r_logprob, _ = self.sample(mu=real, x=real_act)
-        _, i_logprob, _ = self.sample(mu=imag, x=imag_act)
-
-        return r_logprob, i_logprob
-
-    def forward(self, x):
+    def forward(self, x, action=None):
         #b, ch, t, f = x.size() 
         mag = torch.sqrt(x[:, 0, :, :] ** 2 + x[:, 1, :, :] ** 2).unsqueeze(1)
         
@@ -412,6 +396,16 @@ class TSCNet(nn.Module):
         mask = self.mask_decoder(out_5)
         complex_out = self.complex_decoder(out_5)
         
+        probs = None
+        if not self.evaluation:
+            mag, comp = None, None
+            if action is not None:
+                mag, comp = action
+            #Add gaussian noise
+            mask, r_logprob, _ = self.sample(mu=mask, x=mag)
+            complex_out, i_logprob, _ = self.sample(mu=complex_out, x=comp)
+            probs = r_logprob.permute(0, 2, 1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
+        
         mask = mask.permute(0, 2, 1).unsqueeze(1)
         out_mag = mask * mag
         mag_real = out_mag * torch.cos(noisy_phase)
@@ -419,5 +413,5 @@ class TSCNet(nn.Module):
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
-        return final_real, final_imag
+        return final_real, final_imag, probs
  

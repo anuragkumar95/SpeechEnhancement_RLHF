@@ -188,7 +188,7 @@ class SpeechEnhancementAgent:
         return -angle_loss 
 
 
-    def get_NISQA_MOS_reward(self, audios, Cs):
+    def get_NISQA_MOS_reward(self, audios, Cs, path_to_NISQA='~/NISQA', PYPATH='python'):
         mos = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             for k, (audio, c) in enumerate(zip(audios, Cs)):
@@ -201,9 +201,9 @@ class SpeechEnhancementAgent:
                 save_path = os.path.join(_dir_, f'audio_{k}.wav')
                 sf.write(save_path, est_audio, 16000)
             
-            cmd = f"python ~/NISQA/run_predict.py \
+            cmd = f"{PYPATH} {path_to_NISQA}/run_predict.py \
                    --mode predict_dir \
-                   --pretrained_model ~/NISQA/weights/nisqa.tar \
+                   --pretrained_model {path_to_NISQA}/weights/nisqa.tar \
                    --data_dir {_dir_} \
                    --num_workers 0 \
                    --bs {10} \
@@ -225,6 +225,44 @@ class SpeechEnhancementAgent:
         mos = torch.tensor(mos).to(self.gpu_id)
         mos = mos.reshape(-1, 1)
         return mos
+    
+    def get_DNS_MOS_reward(self, audios, Cs, path_to_DNS='~/NISQA', PYPATH='python'):
+        mos = []
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            for k, (audio, c) in enumerate(zip(audios, Cs)):
+                c = c.reshape(-1, 1)
+                est_audio = audio/c
+                est_audio = est_audio
+                est_audio = est_audio.detach().cpu().numpy().reshape(-1)
+                _dir_ = os.path.join(tmpdirname, 'audios')
+                os.makedirs(_dir_, exist_ok=True)
+                save_path = os.path.join(_dir_, f'audio_{k}.wav')
+                sf.write(save_path, est_audio, 16000)
+            
+            cmd = f"{PYPATH} {path_to_DNS}/dnsmos_local.py \
+                   -t {_dir_} \
+                   -o {tmpdirname}/DNSMOS_results.csv \
+                   -m {path_to_DNS}/DNSMOS"
+
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+            out, err = p.communicate() 
+            mos_map_ = {}
+            with open(os.path.join(tmpdirname, 'DNSMOS_results.csv'), 'r') as f:
+                lines = f.readlines()
+                for line in lines[1:]:
+                    line = line.split(',')
+                    f, m = line[1], line[-1]
+                    f = f.split('/')[-1]
+                    mos_map_[f] = float(m)
+
+        mos = []
+        for k in range(len(audios)):
+            f = f"audio_{k}.wav"
+            mos.append(mos_map_[f])
+        mos = torch.tensor(mos).to(self.gpu_id)
+        mos = mos.reshape(-1, 1)
+        return mos
+
 
 class replay_buffer:
     def __init__(self, max_size, gpu_id=None):

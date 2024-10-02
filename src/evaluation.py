@@ -124,15 +124,15 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
         model.load_state_dict(checkpoint['actor_state_dict'])
 
     #Load reward model weights
-    checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
-    reward_model.load_state_dict(checkpoint)
+    #checkpoint = torch.load(reward_pt, map_location=torch.device('cpu'))
+    #reward_model.load_state_dict(checkpoint)
 
     if gpu_id is not None:
         model = model.to(gpu_id)
-        reward_model = reward_model.to(gpu_id)
+        #reward_model = reward_model.to(gpu_id)
 
     model.eval()
-    reward_model.eval()
+    #reward_model.eval()
     model.evaluation = True
 
     val_metrics = {
@@ -151,8 +151,8 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
     env = SpeechEnhancementAgent(n_fft=400,
                                  hop=100,
                                  gpu_id=gpu_id,
-                                 args=None,
-                                 reward_model=reward_model)
+                                 args=None,)
+                                 #reward_model=reward_model)
 
     with torch.no_grad():
         step = 0

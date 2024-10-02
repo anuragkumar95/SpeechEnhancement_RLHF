@@ -92,7 +92,7 @@ def run_enhancement_step(env,
 
         #est_audio = next_state['est_audio']/c.reshape(-1, 1)
         #est_audio = est_audio.reshape(-1)
-        #est_audio = est_audio.detach().cpu().numpy()
+        enh_audio = enh_audio.detach().cpu().numpy()
 
         #est_audio = enh_audio[:clean_aud.shape[-1]] 
 

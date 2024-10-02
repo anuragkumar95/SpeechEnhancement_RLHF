@@ -56,7 +56,8 @@ def run_enhancement_step(env,
     if add_noise:
         actor.evaluation = False
     next_state, _, _= actor.get_action(inp)
-    
+    enh_audio = env.get_audio(next_state).reshape(-1)
+
     if save_metrics:
         #Supervised loss
         mb_enhanced = torch.cat(next_state, dim=1)
@@ -66,8 +67,6 @@ def run_enhancement_step(env,
         ri_loss = ((clean - mb_enhanced) ** 2).mean()
         supervised_loss = 0.7*mag_loss + 0.3*ri_loss
         clean_aud = clean_aud.reshape(-1)
-
-        enh_audio = env.get_audio(next_state).reshape(-1)
 
         clean_aud = clean_aud[:lens].detach().cpu().numpy()
         enh_audio = enh_audio[:lens].detach().cpu().numpy()
@@ -91,13 +90,13 @@ def run_enhancement_step(env,
         os.makedirs(save_dir, exist_ok=True)
         saved_path = os.path.join(save_dir, file_id)
 
-        est_audio = next_state['est_audio']/c.reshape(-1, 1)
-        est_audio = est_audio.reshape(-1)
-        est_audio = est_audio.detach().cpu().numpy()
+        #est_audio = next_state['est_audio']/c.reshape(-1, 1)
+        #est_audio = est_audio.reshape(-1)
+        #est_audio = est_audio.detach().cpu().numpy()
 
-        est_audio = est_audio[:clean_aud.shape[-1]] 
+        #est_audio = enh_audio[:clean_aud.shape[-1]] 
 
-        sf.write(saved_path, est_audio, 16000)
+        sf.write(saved_path, enh_audio, 16000)
     
     return metrics
 

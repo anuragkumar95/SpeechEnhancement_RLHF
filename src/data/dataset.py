@@ -148,8 +148,8 @@ class NISQA_Dataset(torch.utils.data.Dataset):
         return len(self.csv)
     
     def __getitem__(self, idx):
-        clean_file = self.csv[idx].split(',')[2]
-        noisy_file = self.csv[idx].split(',')[1]
+        clean_file = self.csv[idx].strip().split(',')[2]
+        noisy_file = self.csv[idx].strip().split(',')[1]
 
         clean_ds, _ = torchaudio.load(clean_file)
         noisy_ds, _ = torchaudio.load(noisy_file)

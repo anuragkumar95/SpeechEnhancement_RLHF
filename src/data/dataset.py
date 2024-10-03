@@ -194,7 +194,7 @@ def load_data(ds_dir, batch_size, n_cpu, cut_len, gpu=True):
     #train_ds = DemandDataset(train_dir, cut_len)
     #test_ds = DemandDataset(test_dir, cut_len)
     
-    train_csv = os.path.join(ds_dir, 'tain.csv')
+    train_csv = os.path.join(ds_dir, 'train.csv')
     test_csv = os.path.join(ds_dir, 'valid.csv')
 
     train_ds = NISQA_Dataset(csv=train_csv, cut_len=cut_len)

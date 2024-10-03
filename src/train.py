@@ -117,7 +117,7 @@ class Trainer:
         
         if log_wandb:
             wandb.login()
-            wandb.init(project=args.exp)
+            wandb.init(project=args.exp, name=args.suffix)
 
     def forward_generator_step(self, clean, noisy):
 

@@ -6,6 +6,7 @@ import random
 from natsort import natsorted
 import torchaudio.functional as F
 from torch.distributions import Normal
+import pandas as pd
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
@@ -137,7 +138,45 @@ class DemandDataset(torch.utils.data.Dataset):
         return clean_ds, noisy_ds, length
     
 
+class NISQA_Dataset(torch.utils.data.Dataset):
+    def __init__(self, csv, cut_len=32000):
+        with open(csv) as f:
+            self.csv = f.readlines()[1:]
+            self.cut_len = cut_len
 
+    def __len__(self):
+        return len(self.csv)
+    
+    def __getitem__(self, idx):
+        clean_file = self.csv[idx].split(',')[2]
+        noisy_file = self.csv[idx].split(',')[1]
+
+        clean_ds, _ = torchaudio.load(clean_file)
+        noisy_ds, _ = torchaudio.load(noisy_file)
+        clean_ds = clean_ds.squeeze()
+        noisy_ds = noisy_ds.squeeze()
+        length = len(clean_ds)
+        assert length == len(noisy_ds)
+        if length < self.cut_len:
+            units = self.cut_len // length
+            clean_ds_final = []
+            noisy_ds_final = []
+            for _ in range(units):
+                clean_ds_final.append(clean_ds)
+                noisy_ds_final.append(noisy_ds)
+            clean_ds_final.append(clean_ds[: self.cut_len % length])
+            noisy_ds_final.append(noisy_ds[: self.cut_len % length])
+            clean_ds = torch.cat(clean_ds_final, dim=-1)
+            noisy_ds = torch.cat(noisy_ds_final, dim=-1)
+        else:
+            # randomly cut 2 seconds segment
+            wav_start = random.randint(0, length - self.cut_len)
+            noisy_ds = noisy_ds[wav_start : wav_start + self.cut_len]
+            clean_ds = clean_ds[wav_start : wav_start + self.cut_len]
+        
+        return clean_ds, noisy_ds, length
+        
+        
 
     
 def get_random_batch(ds, batch_size):
@@ -149,11 +188,18 @@ def get_random_batch(ds, batch_size):
 
 def load_data(ds_dir, batch_size, n_cpu, cut_len, gpu=True):
     torchaudio.set_audio_backend("sox_io")  # in linux
-    train_dir = os.path.join(ds_dir, "train")
-    test_dir = os.path.join(ds_dir, "test")
+    #train_dir = os.path.join(ds_dir, "train")
+    #test_dir = os.path.join(ds_dir, "test")
 
-    train_ds = DemandDataset(train_dir, cut_len)
-    test_ds = DemandDataset(test_dir, cut_len)
+    #train_ds = DemandDataset(train_dir, cut_len)
+    #test_ds = DemandDataset(test_dir, cut_len)
+    
+    train_csv = os.path.join(ds_dir, 'tain.csv')
+    test_csv = os.path.join(ds_dir, 'valid.csv')
+
+    train_ds = NISQA_Dataset(csv=train_csv, cut_len=cut_len)
+    test_ds = NISQA_Dataset(csv=test_csv, cut_len=cut_len)
+    
     if gpu:
         train_dataset = torch.utils.data.DataLoader(
             dataset=train_ds,

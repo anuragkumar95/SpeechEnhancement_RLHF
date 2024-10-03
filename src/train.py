@@ -21,7 +21,6 @@ parser.add_argument("--epochs", type=int, default=120, help="number of epochs of
 parser.add_argument("--parallel", action='store_true', help="Set this falg to run parallel gpu training.")
 parser.add_argument("--gpu", action='store_true', help="Set this falg to run single gpu training.")
 parser.add_argument("--batch_size", type=int, default=4)
-parser.add_argument("--K", type=int, required=False, help="K for categorical dist.")
 parser.add_argument("--exp", type=str, default='default', help='Experiment name')
 parser.add_argument("--suffix", type=str, default='', help='Experiment suffix name')
 
@@ -63,31 +62,21 @@ def ddp_setup(rank, world_size):
 
 
 class Trainer:
-    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, K=None, small=False, resume_pt=None):
+    def __init__(self, train_ds, test_ds, batchsize, log_wandb=False, parallel=False, gpu_id=None, accum_grad=1, resume_pt=None):
         
         self.n_fft = 400
         self.hop = 100
         self.train_ds = train_ds
         self.test_ds = test_ds
         self.ACCUM_GRAD = accum_grad
-        
-        if small:
-            self.model = TSCNetSmall(num_channel=64, 
+    
+        self.model = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            distribution="Normal",
-                            K=K,
                             gpu_id=gpu_id)
-        else:
-            self.model = TSCNet(num_channel=64, 
-                                num_features=self.n_fft // 2 + 1, 
-                                distribution="Normal",
-                                K=K,
-                                gpu_id=gpu_id)
         self.batchsize = batchsize
         
         self.log_wandb = log_wandb
         self.gpu_id = gpu_id
-        self.dist = "Normal"
         self.discriminator = Discriminator(ndf=16)
 
         self.ce_loss = K_way_CrossEntropy()
@@ -467,8 +456,6 @@ def main(rank: int, world_size: int, args):
                       batchsize=args.batch_size, 
                       parallel=args.parallel, 
                       gpu_id=rank,
-                      K=args.K, 
-                      small=args.small,
                       accum_grad=args.accum_grad, 
                       resume_pt=args.ckpt,
                       log_wandb=args.wandb)

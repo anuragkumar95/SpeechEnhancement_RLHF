@@ -156,7 +156,7 @@ class NISQA_Dataset(torch.utils.data.Dataset):
         clean_ds = clean_ds.squeeze()
         noisy_ds = noisy_ds.squeeze()
         length = len(clean_ds)
-        assert length == len(noisy_ds)
+        assert length == len(noisy_ds), f"clean:{length}, noisy:{len(noisy_ds)}"
         if length < self.cut_len:
             units = self.cut_len // length
             clean_ds_final = []

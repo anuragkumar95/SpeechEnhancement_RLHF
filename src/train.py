@@ -1,4 +1,4 @@
-from model.CMGAN.actor import TSCNet, TSCNetSmall
+from model.CMGAN.actor import TSCNet
 from model.critic import Discriminator
 import os
 from data import dataset as dataloader
@@ -72,14 +72,15 @@ class Trainer:
     
         self.model = TSCNet(num_channel=64, 
                             num_features=self.n_fft // 2 + 1, 
-                            gpu_id=gpu_id)
+                            gpu_id=gpu_id,
+                            eval=True)
         self.batchsize = batchsize
         
         self.log_wandb = log_wandb
         self.gpu_id = gpu_id
         self.discriminator = Discriminator(ndf=16)
 
-        self.ce_loss = K_way_CrossEntropy()
+       
 
         if gpu_id is not None:
             self.model = self.model.to(gpu_id)
@@ -148,7 +149,7 @@ class Trainer:
         clean_real = clean_spec[:, 0, :, :].unsqueeze(1)
         clean_imag = clean_spec[:, 1, :, :].unsqueeze(1)
 
-        est_real, est_imag = self.model(noisy_spec)
+        est_real, est_imag, _ = self.model(noisy_spec)
         
         est_real, est_imag = est_real.permute(0, 1, 3, 2), est_imag.permute(0, 1, 3, 2)
         est_mag = torch.sqrt(est_real**2 + est_imag**2)
@@ -313,11 +314,10 @@ class Trainer:
             return None, None
      
         loss = loss / self.ACCUM_GRAD
-
-        self.optimizer.zero_grad()
         loss.backward()
         if step % self.ACCUM_GRAD == 0 or step == len(self.train_ds):
             self.optimizer.step()
+            self.optimizer.zero_grad()
 
         # Train Discriminator
         discrim_loss_metric, pesq = self.calculate_discriminator_loss(generator_outputs)

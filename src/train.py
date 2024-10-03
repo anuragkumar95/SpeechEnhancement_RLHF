@@ -107,7 +107,7 @@ class Trainer:
                 epoch = name.split('_')[-1]
                 self.start_epoch = int(epoch)
             except Exception:
-                self.start_epoch = int(resume_pt[-4])
+                self.start_epoch = 0
             self.load_checkpoint(resume_pt)
 
         if parallel:

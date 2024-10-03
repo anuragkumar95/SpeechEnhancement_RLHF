@@ -437,7 +437,7 @@ class Trainer:
 
 
 def main(rank: int, world_size: int, args):
-    #ddp_setup(rank, world_size)
+    ddp_setup(rank, world_size)
     if rank == 0:
         print(args)
         available_gpus = [

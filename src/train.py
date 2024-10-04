@@ -382,6 +382,7 @@ class Trainer:
             gen_loss_total += loss
             disc_loss_total += disc_loss
             val_pesq += pesq
+            print(f'STEP:{idx} | VAL_PESQ:{pesq} | GEN_LOSS:{loss} | DISC_LOSS:{disc_loss}')
         gen_loss_avg = gen_loss_total / step
         disc_loss_avg = disc_loss_total / step
         val_pesq = val_pesq / step

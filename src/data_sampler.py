@@ -37,9 +37,11 @@ class DataSampler:
         noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
         noisy = noisy.repeat(self.K, 1, 1, 1)
+        print(f"Before_loop: noisy={noisy.shape}")
         c = c.repeat(self.K)
         with torch.no_grad():
             noisy_ref = noisy[:bs, ...]
+            print(f"noisy_ref={noisy_ref.shape}")
             #Set evaluation to True to deactivate sampling layer.
             #This is our reference enhanced output
             self.model.evaluation = True
@@ -48,8 +50,10 @@ class DataSampler:
 
             #Set evaluation to False to activate sampling layer.
             #These are the sampled enhanced outputs
+            noisy_rl = noisy[bs:, ...]
+            print(f"noisy_rl={noisy_rl.shape}")
             self.model.evaluation = False
-            next_state, _, _ = self.model.get_action(noisy[bs:, ...])
+            next_state, _, _ = self.model.get_action(noisy_rl)
             est_audio = self.env.get_audio(next_state)
 
         est_audio = torch.cat([ref_est_audio, est_audio], dim=0)

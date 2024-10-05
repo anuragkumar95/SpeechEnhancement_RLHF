@@ -89,6 +89,9 @@ class DataSampler:
         return audios[idx]
     
     def generate_triplets(self):
+
+        print(f"Generating triplets with current best checkpoint...")
+
         for batch in tqdm(self.dataloader):
             _, noisy, filenames = batch
             audios, c = self.sample_batch(batch)

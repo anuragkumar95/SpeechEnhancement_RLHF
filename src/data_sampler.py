@@ -139,8 +139,8 @@ if __name__ == '__main__':
                              args=None,
                              reward_model=None)
     
-    sampler = DataSampler(root="~/NISQA_Corpus", 
+    sampler = DataSampler(root="/users/PAS2301/kumar1109/NISQA_Corpus", 
                           model=model_pre, 
                           env=env, 
-                          save_dir="~/NISQA_Corpus", 
+                          save_dir="/users/PAS2301/kumar1109/NISQA_Corpus", 
                           K=25, cut_len=32000)

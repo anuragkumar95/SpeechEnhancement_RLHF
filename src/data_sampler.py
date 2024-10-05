@@ -16,7 +16,7 @@ class DataSampler:
         self.K = K
         self.t_low = -15
         self.t_high = 15
-        self.dataloader, _ = load_data(root, 1, 1, cut_len, gpu = False)
+        self.dataloader, _ = load_data(root, 16, 1, cut_len, gpu = False)
         self.save_dir = save_dir
         os.makedirs(f"{self.save_dir}", exist_ok=True)
         os.makedirs(f"{self.save_dir}/noisy", exist_ok=True)

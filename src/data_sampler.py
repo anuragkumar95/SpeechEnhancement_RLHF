@@ -61,8 +61,8 @@ class DataSampler:
     
     def get_best_audio(self, audios, c):
         #Get MOS scores for all sampled audios
-        nmos = self.env.get_NISQA_MOS_reward(audios, c)
-        dmos = self.env.get_DNS_MOS_reward(audios, c)
+        nmos = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
+        dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
 
         #reference audios
         n0, d0 = nmos[0], dmos[0]

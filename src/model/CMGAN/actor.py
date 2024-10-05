@@ -407,7 +407,7 @@ class TSCNet(nn.Module):
 
             print(r_logprob.shape, i_logprob.shape)
 
-            probs = r_logprob.squueze(1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
+            probs = r_logprob.squeeze(1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
         
         
         out_mag = mask * mag

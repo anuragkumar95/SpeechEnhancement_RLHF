@@ -12,11 +12,12 @@ import soundfile as sf
 class DataSampler:
     def __init__(self, root, model, env, save_dir, K=25, cut_len=32000):
         self.model = model
+        self.model.eval()
         self.env = env
         self.K = K
         self.t_low = -15
         self.t_high = 15
-        self.dataloader, _ = load_data(root, 16, 1, cut_len, gpu = False)
+        self.dataloader, _ = load_data(root, 4, 1, cut_len, gpu = False)
         self.save_dir = save_dir
         os.makedirs(f"{self.save_dir}", exist_ok=True)
         os.makedirs(f"{self.save_dir}/noisy", exist_ok=True)

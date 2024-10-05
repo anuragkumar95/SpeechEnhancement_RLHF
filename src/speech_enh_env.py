@@ -239,7 +239,7 @@ class SpeechEnhancementAgent:
                 save_path = os.path.join(_dir_, f'audio_{k}.wav')
                 sf.write(save_path, est_audio, 16000)
             
-            cmd = f"{PYPATH} {path_to_DNS}/dnsmos_local.py \
+            cmd = f"{PYPATH} {path_to_DNS}/dnsmos_local1.py \
                    -t {_dir_} \
                    -o {tmpdirname}/DNSMOS_results.csv \
                    -m {path_to_DNS}/DNSMOS"

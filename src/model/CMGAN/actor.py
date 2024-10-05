@@ -395,17 +395,18 @@ class TSCNet(nn.Module):
 
         mask = self.mask_decoder(out_5)
         complex_out = self.complex_decoder(out_5)
-        
+        mask = mask.permute(0, 2, 1).unsqueeze(1)
+
         probs = None
         if not self.evaluation:
             if action is not None:
                 mag, comp = action
             #Add gaussian noise
-            mask, r_logprob, _ = self.sample(mu=mask.unsqueeze(1), x=mag)
+            mask, r_logprob, _ = self.sample(mu=mask, x=mag)
             complex_out, i_logprob, _ = self.sample(mu=complex_out, x=comp)
             probs = r_logprob.permute(0, 2, 1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
         
-        mask = mask.permute(0, 2, 1).unsqueeze(1)
+        
         out_mag = mask * mag
         mag_real = out_mag * torch.cos(noisy_phase)
         mag_imag = out_mag * torch.sin(noisy_phase)

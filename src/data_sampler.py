@@ -126,7 +126,7 @@ class DataSampler:
     
 if __name__ == '__main__':
 
-    pre_pt = "~/CMGAN/src/best_ckpt/ckpt"
+    pre_pt = "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt"
     model_pre = TSCNet(num_channel=64, num_features=201, gpu_id=None, eval=False)
     pre_checkpoint = torch.load(pre_pt, map_location=torch.device('cpu'))
     model_pre.load_state_dict(pre_checkpoint)

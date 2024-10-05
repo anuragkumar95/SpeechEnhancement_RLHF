@@ -398,7 +398,6 @@ class TSCNet(nn.Module):
         
         probs = None
         if not self.evaluation:
-            mag, comp = None, None
             if action is not None:
                 mag, comp = action
             #Add gaussian noise

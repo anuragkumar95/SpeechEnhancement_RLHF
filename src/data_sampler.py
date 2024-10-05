@@ -144,3 +144,5 @@ if __name__ == '__main__':
                           env=env, 
                           save_dir="/users/PAS2301/kumar1109/NISQA_Corpus", 
                           K=25, cut_len=32000)
+    
+    sampler.generate_triplets()

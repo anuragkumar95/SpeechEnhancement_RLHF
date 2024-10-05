@@ -403,8 +403,9 @@ class TSCNet(nn.Module):
                 mag, complex_out = action
             #Add gaussian noise
             mask, r_logprob, _ = self.sample(mu=mask, x=mag)
+            r_logprob = r_logprob.squeeze(1)
+            
             complex_out, i_logprob, _ = self.sample(mu=complex_out, x=complex_out)
-            print(r_logprob.shape, i_logprob.shape)
             probs = r_logprob.permute(0, 2, 1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
         
         

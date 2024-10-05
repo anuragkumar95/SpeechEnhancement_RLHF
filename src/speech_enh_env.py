@@ -209,7 +209,7 @@ class SpeechEnhancementAgent:
                    --bs {10} \
                    --output_dir {tmpdirname}"
 
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
             out, err = p.communicate() 
             mos_map_ = {}
             with open(os.path.join(tmpdirname, 'NISQA_results.csv'), 'r') as f:
@@ -244,7 +244,7 @@ class SpeechEnhancementAgent:
                    -o {tmpdirname}/DNSMOS_results.csv \
                    -m {path_to_DNS}/DNSMOS"
 
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env={"OMP_NUM_THREADS":"8"})
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, env={"OMP_NUM_THREADS":"8"})
             out, err = p.communicate() 
             mos_map_ = {}
             with open(os.path.join(tmpdirname, 'DNSMOS_results.csv'), 'r') as f:

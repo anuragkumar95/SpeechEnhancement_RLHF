@@ -226,7 +226,7 @@ class SpeechEnhancementAgent:
         mos = mos.reshape(-1, 1)
         return mos
     
-    def get_DNS_MOS_reward(self, audios, Cs, path_to_DNS='~/NISQA', PYPATH='python'):
+    def get_DNS_MOS_reward(self, audios, Cs, path_to_DNS='~/DNS-Challenge/DNSMOS', PYPATH='python'):
         mos = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             for k, (audio, c) in enumerate(zip(audios, Cs)):

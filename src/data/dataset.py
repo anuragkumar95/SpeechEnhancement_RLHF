@@ -150,6 +150,7 @@ class NISQA_Dataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         clean_file = self.csv[idx].strip().split(',')[2]
         noisy_file = self.csv[idx].strip().split(',')[1]
+        noisy_file_name = self.csv[idx].strip().split('/')[-1]
 
         clean_ds, _ = torchaudio.load(clean_file)
         noisy_ds, _ = torchaudio.load(noisy_file)
@@ -179,10 +180,8 @@ class NISQA_Dataset(torch.utils.data.Dataset):
             noisy_ds = noisy_ds[wav_start : wav_start + self.cut_len]
             clean_ds = clean_ds[wav_start : wav_start + self.cut_len]
         
-        return clean_ds, noisy_ds, length
+        return clean_ds, noisy_ds, noisy_file_name
         
-        
-
     
 def get_random_batch(ds, batch_size):
     random_index = np.random.choice(len(ds), batch_size, replace=False)

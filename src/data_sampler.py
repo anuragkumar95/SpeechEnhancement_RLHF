@@ -33,6 +33,7 @@ class DataSampler:
                                  model='cmgan')
     
         _, _, noisy, _, c = batch
+        noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
         noisy = noisy.repeat(self.K, 1, 1, 1)
         c = c.repeat(self.K)

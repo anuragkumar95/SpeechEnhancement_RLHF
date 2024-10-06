@@ -151,6 +151,7 @@ class NISQA_Dataset(torch.utils.data.Dataset):
         clean_file = self.csv[idx].strip().split(',')[2]
         noisy_file = self.csv[idx].strip().split(',')[1]
         noisy_file_name = self.csv[idx].strip().split('/')[-1]
+        noisy_file_name = noisy_file_name[:-len(".wav")]
 
         clean_ds, _ = torchaudio.load(clean_file)
         noisy_ds, _ = torchaudio.load(noisy_file)

@@ -18,11 +18,17 @@ class DataSampler:
         self.t_low = -15
         self.t_high = 15
         self.dataloader, _ = load_data(root, 4, 1, cut_len, gpu = False)
-        self.save_dir = save_dir
-        os.makedirs(f"{self.save_dir}", exist_ok=True)
-        os.makedirs(f"{self.save_dir}/noisy", exist_ok=True)
-        os.makedirs(f"{self.save_dir}/ypos", exist_ok=True)
-        os.makedirs(f"{self.save_dir}/yneg", exist_ok=True)
+        
+        self.sample_dir = f"{save_dir}/enhanced"
+        self.x_dir = f"{save_dir}/noisy"
+        self.y_pos_dir = f"{save_dir}/ypos"
+        self.y_neg_dir = f"{save_dir}/yneg"
+
+        os.makedirs(save_dir, exist_ok=True)
+        os.makedirs(self.x_dir, exist_ok=True)
+        os.makedirs(self.sample_dir, exist_ok=True)
+        os.makedirs(self.y_pos_dir, exist_ok=True)
+        os.makedirs(self.y_neg_dir, exist_ok=True)
         
     def sample_batch(self, batch):
 
@@ -94,42 +100,65 @@ class DataSampler:
         idx = torch.argmax(mag)  
         return audios[idx]
     
-    def generate_triplets(self):
-
-        print(f"Generating triplets with current best checkpoint...")
-
-        for batch in tqdm(self.dataloader):
+    def generate_samples(self):
+         for batch in tqdm(self.dataloader):
             _, noisy, filenames = batch
             audios, c = self.sample_batch(batch)
-
+            a_map = {}
             batchsize = noisy.shape[0]
-            y_pos = []
-            y_neg = []
-            for k in range(batchsize):
-                audios_i = audios[k::batchsize, ...]
-                c_i = c[k::batchsize]
+            for i, fname in enumerate(filenames):
+                audios_i = audios[i::batchsize, ...]
+                c_i = c[i::batchsize]
+                audios_i = audios_i / c_i
+                a_map[fname] = {
+                    'samples':audios,
+                    'x':noisy[i, ...]
+                }
+                self.save(a_map)
+    
+    def generate_triplets(self):
+        #Read each sample dir
+        #Do angle,mag processing to get best audio
+        #Save ypos, yneg
+        pass
 
-                y_pos_i = self.get_best_audio(audios_i, c_i) / c_i[0]
-                y_neg_i = audios_i[0, ...] / c_i[0]
+    def save(self, audio_map):
+        for fname in audio_map.keys():
+            #Save samples if they exist
+            samples = audio_map[fname].get('samples', None)
+            if samples is not None:
+                s_dir = os.path.join(self.sample_dir, fname)
+                os.makedirs(s_dir, exist_ok=True)
+                for i, sample in enumerate(samples):
+                    sample = sample.detach().cpu().numpy().reshape(-1)
+                    s_path = os.path.join(s_dir, f"sample_{i}.wav")
+                    sf.write(s_path, sample, 16000)
                 
-                y_pos.append(y_pos_i)
-                y_neg.append(y_neg_i)
+                #Save noisy
+                x = audio_map[fname]
+                x - x.get('x').detach().cpu().numpy().reshape(-1)
+                x_path = os.path.join(self.x_dir, fname)
+                sf.write(x_path, x, 16000)
+            else:
+                #Save ypos and yneg
+                ypos = audio_map['fname'].get('ypos')
+                yneg = audio_map['fname'].get('yneg')
 
-            self.save(noisy, y_pos, y_neg, filenames)
+                ypos_path = os.path.join(self.y_pos_dir, fname)
+                yneg_path = os.path.join(self.y_neg_dir, fname)
 
-    def save(self, x, ypos, yneg, filenames):
-        for fname in filenames:
-            x_path = os.path.join(self.save_dir, 'noisy', fname)
-            ypos_path = os.path.join(self.save_dir, 'ypos', fname)
-            yneg_path = os.path.join(self.save_dir, 'yneg', fname)
+                ypos = ypos.detach().cpu().numpy().reshape(-1)
+                yneg = yneg.detach().cpu().numpy().reshape(-1)
+
+                sf.write(ypos_path, ypos, 16000)
+                sf.write(yneg_path, yneg, 16000)   
+
+
+
+
+       
             
-            x = x.detach().cpu().numpy().reshape(-1)
-            ypos = ypos.detach().cpu().numpy().reshape(-1)
-            yneg = yneg.detach().cpu().numpy().reshape(-1)
 
-            sf.write(x_path, x, 16000)
-            sf.write(ypos_path, ypos, 16000)
-            sf.write(yneg_path, yneg, 16000)
 
 
     
@@ -154,4 +183,4 @@ if __name__ == '__main__':
                           save_dir="/users/PAS2301/kumar1109/NISQA_Corpus", 
                           K=25, cut_len=32000)
     
-    sampler.generate_triplets()
+    sampler.generate_samples()

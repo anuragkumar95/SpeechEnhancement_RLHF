@@ -244,7 +244,7 @@ class SpeechEnhancementAgent:
                    -o {tmpdirname}/DNSMOS_results.csv \
                    -m {path_to_DNS}/DNSMOS"
 
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, env={"OMP_NUM_THREADS":"8"})
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, env={"OMP_NUM_THREADS":"8", "NUMBA_DISABLE_INTEL_SVML":"1"})
             out, err = p.communicate() 
             mos_map_ = {}
             with open(os.path.join(tmpdirname, 'DNSMOS_results.csv'), 'r') as f:

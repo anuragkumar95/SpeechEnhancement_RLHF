@@ -1,7 +1,9 @@
 import os
 import torch
 import numpy as np
+import torchaudio
 from model.CMGAN.actor import TSCNet
+from dns_mos import ComputeScore
 from data.dataset import load_data
 from utils import preprocess_batch
 from speech_enh_env import SpeechEnhancementAgent
@@ -29,6 +31,10 @@ class DataSampler:
         os.makedirs(self.sample_dir, exist_ok=True)
         os.makedirs(self.y_pos_dir, exist_ok=True)
         os.makedirs(self.y_neg_dir, exist_ok=True)
+
+        #p808_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
+        #primary_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovrl.onnx"
+        #self.dns_mos = ComputeScore(primary_model_path, p808_model_path)
         
     def sample_batch(self, batch):
 
@@ -115,12 +121,7 @@ class DataSampler:
                     'x':noisy[i, ...]
                 }
                 self.save(a_map)
-    
-    def generate_triplets(self):
-        #Read each sample dir
-        #Do angle,mag processing to get best audio
-        #Save ypos, yneg
-        pass
+
 
     def save(self, audio_map):
         for fname in audio_map.keys():
@@ -152,15 +153,6 @@ class DataSampler:
 
                 sf.write(ypos_path, ypos, 16000)
                 sf.write(yneg_path, yneg, 16000)   
-
-
-
-
-       
-            
-
-
-
     
 if __name__ == '__main__':
 

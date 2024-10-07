@@ -19,7 +19,7 @@ class DataSampler:
         self.K = K
         self.t_low = -15
         self.t_high = 15
-        self.dataloader, _ = load_data(root, 4, 1, cut_len, gpu = False)
+        self.dataloader, _ = load_data(root, 5, 1, cut_len, gpu = False)
         
         self.sample_dir = f"{save_dir}/enhanced"
         self.x_dir = f"{save_dir}/noisy"
@@ -49,11 +49,9 @@ class DataSampler:
         noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
         noisy = noisy.repeat(self.K, 1, 1, 1)
-        print(f"Before_loop: noisy={noisy.shape}")
         c = c.repeat(self.K)
         with torch.no_grad():
             noisy_ref = noisy[:bs, ...]
-            print(f"noisy_ref={noisy_ref.shape}")
             #Set evaluation to True to deactivate sampling layer.
             #This is our reference enhanced output
             self.model.evaluation = True
@@ -63,7 +61,6 @@ class DataSampler:
             #Set evaluation to False to activate sampling layer.
             #These are the sampled enhanced outputs
             noisy_rl = noisy[bs:, ...]
-            print(f"noisy_rl={noisy_rl.shape}")
             self.model.evaluation = False
             next_state, _, _ = self.model.get_action(noisy_rl)
             est_audio = self.env.get_audio(next_state)
@@ -172,7 +169,7 @@ if __name__ == '__main__':
     sampler = DataSampler(root="/users/PAS2301/kumar1109/NISQA_Corpus", 
                           model=model_pre, 
                           env=env, 
-                          save_dir="/users/PAS2301/kumar1109/NISQA_Corpus", 
+                          save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                           K=25, cut_len=32000)
     
     sampler.generate_samples()

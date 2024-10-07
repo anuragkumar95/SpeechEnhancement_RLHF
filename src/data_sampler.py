@@ -115,6 +115,7 @@ class DataSampler:
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
+                print(audios_i.shape, c_i.shape, c_i)
                 audios_i = audios_i / c_i
                 a_map[fname] = {
                     'samples':audios,

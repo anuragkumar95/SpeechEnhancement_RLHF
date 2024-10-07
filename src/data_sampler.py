@@ -32,9 +32,9 @@ class DataSampler:
         os.makedirs(self.y_pos_dir, exist_ok=True)
         os.makedirs(self.y_neg_dir, exist_ok=True)
 
-        #p808_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
-        #primary_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovrl.onnx"
-        #self.dns_mos = ComputeScore(primary_model_path, p808_model_path)
+        p808_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
+        primary_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovrl.onnx"
+        self.dns_mos = ComputeScore(primary_model_path, p808_model_path)
         
     def sample_batch(self, batch):
 
@@ -71,7 +71,8 @@ class DataSampler:
     def get_best_audio(self, audios, c):
         #Get MOS scores for all sampled audios
         nmos = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
-        dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
+        #dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
+        dmos = self.dns_mos.get_scores(audios, False, desired_fs=16000)
 
         #reference audios
         n0, d0 = nmos[0], dmos[0]
@@ -110,17 +111,18 @@ class DataSampler:
                 audios, c = self.sample_batch(batch)
             except ValueError as e:
                 continue
-            a_map = {}
-            batchsize = noisy.shape[0]
-            for i, fname in enumerate(filenames):
-                audios_i = audios[i::batchsize, ...]
-                c_i = c[i::batchsize]
-                audios_i = audios_i / c_i[0]
-                a_map[fname] = {
-                    'samples':audios,
-                    'x':noisy[i, ...]
-                }
-                self.save(a_map)
+            audio = self.get_best_audio(audios, c)
+            #a_map = {}
+            #batchsize = noisy.shape[0]
+            #for i, fname in enumerate(filenames):
+            #    audios_i = audios[i::batchsize, ...]
+            #    c_i = c[i::batchsize]
+            #    audios_i = audios_i / c_i[0]
+            #    a_map[fname] = {
+            #        'samples':audios,
+            #        'x':noisy[i, ...]
+            #    }
+            #    self.save(a_map)
 
 
     def save(self, audio_map):

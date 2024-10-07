@@ -106,7 +106,10 @@ class DataSampler:
     def generate_samples(self):
          for batch in tqdm(self.dataloader):
             _, noisy, filenames = batch
-            audios, c = self.sample_batch(batch)
+            try:
+                audios, c = self.sample_batch(batch)
+            except ValueError as e:
+                continue
             a_map = {}
             batchsize = noisy.shape[0]
             for i, fname in enumerate(filenames):

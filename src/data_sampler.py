@@ -136,8 +136,8 @@ class DataSampler:
                     sf.write(s_path, sample, 16000)
                 
                 #Save noisy
-                x = audio_map[fname]
-                x - x.get('x').detach().cpu().numpy().reshape(-1)
+                x = audio_map[fname].get('x', None)
+                x = x.detach().cpu().numpy().reshape(-1)
                 x_path = os.path.join(self.x_dir, fname)
                 sf.write(x_path, x, 16000)
             else:

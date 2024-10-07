@@ -138,7 +138,7 @@ class DataSampler:
                 #Save noisy
                 x = audio_map[fname].get('x', None)
                 x = x.detach().cpu().numpy().reshape(-1)
-                x_path = os.path.join(self.x_dir, fname)
+                x_path = os.path.join(self.x_dir, f"{fname}.wav")
                 sf.write(x_path, x, 16000)
             else:
                 #Save ypos and yneg

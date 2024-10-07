@@ -19,7 +19,7 @@ class DataSampler:
         self.K = K
         self.t_low = -15
         self.t_high = 15
-        self.dataloader, _ = load_data(root, 12, 1, cut_len, gpu = False)
+        self.dataloader, _ = load_data(root, 4, 1, cut_len, gpu = False)
         
         self.sample_dir = f"{save_dir}/enhanced"
         self.x_dir = f"{save_dir}/noisy"

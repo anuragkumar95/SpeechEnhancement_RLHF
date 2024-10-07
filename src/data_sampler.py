@@ -170,6 +170,6 @@ if __name__ == '__main__':
                           model=model_pre, 
                           env=env, 
                           save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
-                          K=25, cut_len=32000)
+                          K=10, cut_len=32000)
     
     sampler.generate_samples()

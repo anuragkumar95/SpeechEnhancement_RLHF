@@ -112,7 +112,7 @@ class DataSampler:
             except ValueError as e:
                 continue
             a_map = {}
-            batchsize = noisy.shape[0]
+            batchsize = noisy.shape[0] // self.K
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]

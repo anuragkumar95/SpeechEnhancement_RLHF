@@ -118,7 +118,7 @@ class DataSampler:
                 c_i = c[i::batchsize]
                 audios_i = audios_i / c_i[0]
                 print(audios_i.shape)
-                ypos, yneg = self.get_best_audio(audios, c)
+                ypos, yneg = self.get_best_audio(audios_i, c)
                 a_map[fname] = {
                     'x':noisy[i, ...],
                     'ypos':ypos,

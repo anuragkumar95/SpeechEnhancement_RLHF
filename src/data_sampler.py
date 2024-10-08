@@ -145,8 +145,8 @@ class DataSampler:
                 sf.write(x_path, x, 16000)
             else:
                 #Save ypos and yneg
-                ypos = audio_map['fname'].get('ypos')
-                yneg = audio_map['fname'].get('yneg')
+                ypos = audio_map[fname].get('ypos')
+                yneg = audio_map[fname].get('yneg')
 
                 ypos_path = os.path.join(self.y_pos_dir, fname)
                 yneg_path = os.path.join(self.y_neg_dir, fname)

@@ -12,14 +12,16 @@ import soundfile as sf
 
 
 class DataSampler:
-    def __init__(self, root, model, env, save_dir, K=25, cut_len=32000):
+    def __init__(self, dataloader, model, env, save_dir, num_samples=100, K=25, cut_len=32000):
         self.model = model
         self.model.eval()
         self.env = env
         self.K = K
+        self.n = num_samples
         self.t_low = -15
         self.t_high = 15
-        self.dataloader, _ = load_data(root, 10, 1, cut_len, gpu = False)
+        self.dl = dataloader
+        self._iter_ = iter(self.dl)
         
         self.sample_dir = f"{save_dir}/enhanced"
         self.x_dir = f"{save_dir}/noisy"
@@ -105,12 +107,20 @@ class DataSampler:
         return (audios[idx], audios[0])
     
     def generate_samples(self):
-         for batch in tqdm(self.dataloader):
+         for _ in tqdm(range(self.n)):
+            try:
+                batch = next(self._iter_)
+            except StopIteration as e:
+                self._iter_ = iter(self.dl)
+                batch = next(self._iter_)
+
             _, noisy, filenames = batch
+
             try:
                 audios, c = self.sample_batch(batch)
             except ValueError as e:
                 continue
+
             a_map = {}
             batchsize = noisy.shape[0]
             for i, fname in enumerate(filenames):
@@ -118,7 +128,7 @@ class DataSampler:
                 c_i = c[i::batchsize]
                 audios_i = audios_i / c_i[0]
                 print(audios_i.shape)
-                ypos, yneg = self.get_best_audio(audios_i, c)
+                ypos, yneg = self.get_best_audio(audios_i, c_i)
                 a_map[fname] = {
                     'x':noisy[i, ...],
                     'ypos':ypos,
@@ -166,6 +176,9 @@ if __name__ == '__main__':
     model_pre.load_state_dict(pre_checkpoint)
     model_pre = model_pre.to(0)
 
+    ds, _ = load_data("/users/PAS2301/kumar1109/NISQA_Corpus", 
+                      10, 1, 
+                      32000, gpu = False)
 
     env = SpeechEnhancementAgent(n_fft=400,
                              hop=100,
@@ -173,10 +186,10 @@ if __name__ == '__main__':
                              args=None,
                              reward_model=None)
     
-    sampler = DataSampler(root="/users/PAS2301/kumar1109/NISQA_Corpus", 
+    sampler = DataSampler(ds, 
                           model=model_pre, 
                           env=env, 
                           save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
-                          K=10, cut_len=32000)
+                          K=10, num_samples=100, cut_len=32000)
     
     sampler.generate_samples()

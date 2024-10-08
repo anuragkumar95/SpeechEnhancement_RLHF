@@ -89,7 +89,7 @@ class DataSampler:
         #Get the average point for filtered mos values
         navg = nmos.mean()
         davg = dmos.mean()
-        angle_avg = np.rad2deg(np.arctan(navg / davg))
+        angle_avg = torch.rad2deg(torch.arctan(navg / davg))
 
         #Get the angle relative to the average values
         angle = torch.rad2deg(torch.atan(nmos / dmos)) - angle_avg

@@ -127,7 +127,6 @@ class DataSampler:
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
                 audios_i = audios_i / c_i[0]
-                print(audios_i.shape)
                 ypos, yneg = self.get_best_audio(audios_i, c_i)
                 a_map[fname] = {
                     'x':noisy[i, ...],
@@ -177,7 +176,7 @@ if __name__ == '__main__':
     model_pre = model_pre.to(0)
 
     ds, _ = load_data("/users/PAS2301/kumar1109/NISQA_Corpus", 
-                      10, 1, 
+                      4, 1, 
                       32000, gpu = False)
 
     env = SpeechEnhancementAgent(n_fft=400,
@@ -190,6 +189,6 @@ if __name__ == '__main__':
                           model=model_pre, 
                           env=env, 
                           save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
-                          K=10, num_samples=100, cut_len=32000)
+                          K=25, num_samples=100, cut_len=32000)
     
     sampler.generate_samples()

@@ -148,8 +148,8 @@ class DataSampler:
                 ypos = audio_map[fname].get('ypos')
                 yneg = audio_map[fname].get('yneg')
 
-                ypos_path = os.path.join(self.y_pos_dir, fname)
-                yneg_path = os.path.join(self.y_neg_dir, fname)
+                ypos_path = os.path.join(self.y_pos_dir, f"{fname}.wav")
+                yneg_path = os.path.join(self.y_neg_dir, f"{fname}.wav")
 
                 ypos = ypos.detach().cpu().numpy().reshape(-1)
                 yneg = yneg.detach().cpu().numpy().reshape(-1)

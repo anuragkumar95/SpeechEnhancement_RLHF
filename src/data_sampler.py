@@ -111,13 +111,13 @@ class DataSampler:
                 audios, c = self.sample_batch(batch)
             except ValueError as e:
                 continue
-            audio = self.get_best_audio(audios, c)
-            #a_map = {}
-            #batchsize = noisy.shape[0]
-            #for i, fname in enumerate(filenames):
-            #    audios_i = audios[i::batchsize, ...]
-            #    c_i = c[i::batchsize]
-            #    audios_i = audios_i / c_i[0]
+            a_map = {}
+            batchsize = noisy.shape[0]
+            for i, fname in enumerate(filenames):
+                audios_i = audios[i::batchsize, ...]
+                c_i = c[i::batchsize]
+                audios_i = audios_i / c_i[0]
+                audio_i = self.get_best_audio(audios, c)
             #    a_map[fname] = {
             #        'samples':audios,
             #        'x':noisy[i, ...]

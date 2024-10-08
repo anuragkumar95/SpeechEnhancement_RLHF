@@ -104,6 +104,7 @@ class ComputeScore:
 
     def get_scores(self, clips, is_personalized_eval, desired_fs=16000):
         rows = []
+        clips = [aud.detach().cpu().numpy() for aud in clips]
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_url = {executor.submit(self.__call__, clip, desired_fs, is_personalized_eval): clip for clip in clips}
             for future in tqdm(concurrent.futures.as_completed(future_to_url)):

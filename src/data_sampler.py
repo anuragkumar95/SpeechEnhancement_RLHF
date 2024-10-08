@@ -19,7 +19,7 @@ class DataSampler:
         self.K = K
         self.t_low = -15
         self.t_high = 15
-        self.dataloader, _ = load_data(root, 4, 1, cut_len, gpu = False)
+        self.dataloader, _ = load_data(root, 10, 1, cut_len, gpu = False)
         
         self.sample_dir = f"{save_dir}/enhanced"
         self.x_dir = f"{save_dir}/noisy"
@@ -102,7 +102,7 @@ class DataSampler:
 
         #Return the audio with the biggest magnitude
         idx = torch.argmax(mag)  
-        return audios[idx]
+        return (audios[idx], audios[0])
     
     def generate_samples(self):
          for batch in tqdm(self.dataloader):
@@ -117,12 +117,13 @@ class DataSampler:
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
                 audios_i = audios_i / c_i[0]
-                audio_i = self.get_best_audio(audios, c)
-            #    a_map[fname] = {
-            #        'samples':audios,
-            #        'x':noisy[i, ...]
-            #    }
-            #    self.save(a_map)
+                ypos, yneg = self.get_best_audio(audios, c)
+                a_map[fname] = {
+                    'x':noisy[i, ...],
+                    'ypos':ypos,
+                    'yneg':yneg
+                }
+                self.save(a_map)
 
 
     def save(self, audio_map):

@@ -48,13 +48,13 @@ class ComputeScore:
 
         return sig_poly, bak_poly, ovr_poly
 
-    def __call__(self, fpath, sampling_rate, is_personalized_MOS):
-        aud, input_fs = sf.read(fpath)
+    def __call__(self, aud, sampling_rate, is_personalized_MOS):
+        #aud, input_fs = sf.read(fpath)
         fs = sampling_rate
-        if input_fs != fs:
-            audio = librosa.resample(aud, input_fs, fs)
-        else:
-            audio = aud
+        #if input_fs != fs:
+        #    audio = librosa.resample(aud, input_fs, fs)
+        #else:
+        audio = aud
         actual_audio_len = len(audio)
         len_samples = int(INPUT_LENGTH*fs)
         while len(audio) < len_samples:

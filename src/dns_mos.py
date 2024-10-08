@@ -102,19 +102,19 @@ class ComputeScore:
         return clip_dict
     
 
-def get_scores(self, clips, is_personalized_eval, desired_fs=16000):
-    rows = []
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_to_url = {executor.submit(self.__call__, clip, desired_fs, is_personalized_eval): clip for clip in clips}
-        for future in tqdm(concurrent.futures.as_completed(future_to_url)):
-            clip = future_to_url[future]    
-            try:
-                data = future.result()
-            except Exception as exc:
-                print('%r generated an exception: %s' % (clip, exc))
-            else:
-                rows.append(data)
-    return rows
+    def get_scores(self, clips, is_personalized_eval, desired_fs=16000):
+        rows = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_url = {executor.submit(self.__call__, clip, desired_fs, is_personalized_eval): clip for clip in clips}
+            for future in tqdm(concurrent.futures.as_completed(future_to_url)):
+                clip = future_to_url[future]    
+                try:
+                    data = future.result()
+                except Exception as exc:
+                    print('%r generated an exception: %s' % (clip, exc))
+                else:
+                    rows.append(data)
+        return rows
 
 
 def main(args):

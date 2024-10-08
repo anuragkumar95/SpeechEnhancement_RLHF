@@ -123,7 +123,8 @@ class DataSampler:
 
             a_map = {}
             batchsize = noisy.shape[0]
-            print(f"BS:{batchsize}")
+            print(f"BS:{batchsize}, {len(filenames)}")
+            print(f"FILES:{filenames}")
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
@@ -191,6 +192,6 @@ if __name__ == '__main__':
                           model=model_pre, 
                           env=env, 
                           save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
-                          K=25, num_samples=100)
+                          K=15, num_samples=100)
     
     sampler.generate_samples()

@@ -12,7 +12,7 @@ import soundfile as sf
 
 
 class DataSampler:
-    def __init__(self, dataloader, model, env, save_dir, num_samples=100, K=25, cut_len=32000):
+    def __init__(self, dataloader, model, env, save_dir, num_samples=100, K=25):
         self.model = model
         self.model.eval()
         self.env = env
@@ -123,6 +123,7 @@ class DataSampler:
 
             a_map = {}
             batchsize = noisy.shape[0]
+            print(f"BS:{batchsize}")
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
@@ -133,6 +134,7 @@ class DataSampler:
                     'ypos':ypos,
                     'yneg':yneg
                 }
+                print(f"{i}, Filename:{fname}")
                 self.save(a_map)
 
 
@@ -189,6 +191,6 @@ if __name__ == '__main__':
                           model=model_pre, 
                           env=env, 
                           save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
-                          K=25, num_samples=100, cut_len=32000)
+                          K=25, num_samples=100)
     
     sampler.generate_samples()

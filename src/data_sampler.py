@@ -32,8 +32,8 @@ class DataSampler:
         os.makedirs(self.y_pos_dir, exist_ok=True)
         os.makedirs(self.y_neg_dir, exist_ok=True)
 
-        p808_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
-        primary_model_path = "~/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovrl.onnx"
+        p808_model_path = "/users/PAS2301/kumar1109/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
+        primary_model_path = "/users/PAS2301/kumar1109/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovrl.onnx"
         self.dns_mos = ComputeScore(primary_model_path, p808_model_path)
         
     def sample_batch(self, batch):

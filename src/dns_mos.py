@@ -49,7 +49,7 @@ class ComputeScore:
 
         return sig_poly, bak_poly, ovr_poly
 
-    def __call__(self, aud, sampling_rate=16000):
+    def __call__(self, aud, sampling_rate=16000, gpu_id=None):
         fs = sampling_rate
         audio = aud
         len_samples = int(INPUT_LENGTH*fs)
@@ -72,14 +72,16 @@ class ComputeScore:
 
         mos = np.mean(predicted_p808_mos)
         mos = torch.tensor(mos).reshape(-1, 1)
+        if gpu_id is not None:
+            mos = mos.to(gpu_id)
         return mos
     
 
-    def get_scores(self, clips, desired_fs=16000):
+    def get_scores(self, clips, desired_fs=16000, gpu_id=None):
         mos = []
         clips = [aud.detach().cpu().numpy() for aud in clips]
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            future_to_url = {executor.submit(self.__call__, clip, desired_fs): clip for clip in clips}
+            future_to_url = {executor.submit(self.__call__, clip, desired_fs, gpu_id): clip for clip in clips}
             for future in tqdm(concurrent.futures.as_completed(future_to_url)):
                 clip = future_to_url[future]    
                 try:

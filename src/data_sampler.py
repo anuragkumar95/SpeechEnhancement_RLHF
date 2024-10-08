@@ -72,7 +72,7 @@ class DataSampler:
         #Get MOS scores for all sampled audios
         nmos = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
         #dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
-        dmos = self.dns_mos.get_scores(audios, desired_fs=16000)
+        dmos = self.dns_mos.get_scores(audios, desired_fs=16000, gpu_id=0)
 
         #reference audios
         n0, d0 = nmos[0], dmos[0]

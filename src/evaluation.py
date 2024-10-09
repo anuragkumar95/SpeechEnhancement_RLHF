@@ -77,10 +77,11 @@ def run_enhancement_step(env,
         min_len = min(clean_aud.shape[-1], enh_audio.shape[-1])
         clean_aud = clean_aud[:, :min_len]
         enh_audio = enh_audio[:, :min_len]
+        enh_audio = enh_audio/c.reshape(-1, 1)
 
         print(f"MAG_LOSS:{mag_loss}, RI_LOSS:{ri_loss}, SUP_LOSS:{supervised_loss}")
-        values = compute_metrics(clean_aud, 
-                                 enh_audio, 
+        values = compute_metrics(clean_aud.reshape(-1), 
+                                 enh_audio.reshape(-1), 
                                 16000, 
                                 0)
     
@@ -97,8 +98,6 @@ def run_enhancement_step(env,
         save_dir = os.path.join(save_dir, 'audios')
         os.makedirs(save_dir, exist_ok=True)
         saved_path = os.path.join(save_dir, file_id)
-
-        enh_audio = enh_audio/c.reshape(-1, 1)
         enh_audio = enh_audio.reshape(-1)
         enh_audio = enh_audio.detach().cpu().numpy()
 

@@ -403,7 +403,7 @@ class Trainer:
         for epoch in range(self.start_epoch+1, args.epochs):
             self.model.train()
             self.discriminator.train()
-            #gen_loss, disc_loss, val_pesq = self.test()
+            gen_loss, disc_loss, val_pesq = self.test()
             for idx, batch in enumerate(self.train_ds):
                 clean, noisy, _ = batch
                 if torch.isnan(clean).any() or torch.isnan(noisy).any():

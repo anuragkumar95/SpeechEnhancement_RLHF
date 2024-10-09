@@ -65,8 +65,6 @@ def run_enhancement_step(env,
         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
 
-        print(f"mag:{mb_clean_mag.shape, mb_enhanced_mag.shape}, enh:{mb_enhanced.shape}, clean:{clean.shape}")
-
         mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
         ri_loss = ((clean - mb_enhanced) ** 2).mean()
         supervised_loss = 0.7*mag_loss + 0.3*ri_loss
@@ -79,8 +77,7 @@ def run_enhancement_step(env,
         clean_aud = clean_aud[:min_len]
         enh_audio = enh_audio[:min_len]
 
-        print(f"CLEAN:{clean_aud.shape}, ENG:{enh_audio.shape}")
-
+        print(f"MAG_LOSS:{mag_loss}, RI_LOSS:{ri_loss}, SUP_LOSS:{supervised_loss}")
         values = compute_metrics(clean_aud, 
                                  enh_audio, 
                                 16000, 

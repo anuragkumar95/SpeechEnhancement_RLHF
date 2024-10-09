@@ -60,6 +60,7 @@ def run_enhancement_step(env,
 
     if save_metrics:
         #Supervised loss
+        clean = clean.permute(0, 1, 3, 2)
         mb_enhanced = torch.cat(next_state, dim=1)
         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)

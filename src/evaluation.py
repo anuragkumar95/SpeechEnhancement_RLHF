@@ -51,7 +51,7 @@ def run_enhancement_step(env,
     
     clean_aud, clean, noisy, _, c = batch
     inp = noisy.permute(0, 1, 3, 2)
-
+    c = c.detach().cpu().numpy()
     #Forward pass through actor to get the action(mask)
     if add_noise:
         actor.evaluation = False
@@ -72,12 +72,12 @@ def run_enhancement_step(env,
         supervised_loss = 0.7*mag_loss + 0.3*ri_loss
         clean_aud = clean_aud.reshape(-1)
 
-        clean_aud = clean_aud.detach().cpu().numpy().reshape(-1)
-        enh_audio = enh_audio.detach().cpu().numpy().reshape(-1)
+        clean_aud = clean_aud.detach().cpu().numpy()
+        enh_audio = enh_audio.detach().cpu().numpy()
 
-        min_len = min(clean_aud.shape[0], enh_audio.shape[0])
-        clean_aud = clean_aud[:min_len]
-        enh_audio = enh_audio[:min_len]
+        min_len = min(clean_aud.shape[-1], enh_audio.shape[-1])
+        clean_aud = clean_aud[:, :min_len]
+        enh_audio = enh_audio[:, :min_len]
 
         print(f"MAG_LOSS:{mag_loss}, RI_LOSS:{ri_loss}, SUP_LOSS:{supervised_loss}")
         values = compute_metrics(clean_aud, 

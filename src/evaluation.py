@@ -138,9 +138,9 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
         model = model.to(gpu_id)
         #reward_model = reward_model.to(gpu_id)
 
-    model.eval()
+    #model.eval()
     #reward_model.eval()
-    model.evaluation = True
+    #model.evaluation = True
 
     val_metrics = {
         'pesq':[],

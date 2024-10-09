@@ -365,8 +365,8 @@ class Trainer:
         return loss, discrim_loss_metric, original_pesq(pesq)
 
     def test(self):
-        self.model.eval()
-        self.discriminator.eval()
+        #self.model.eval()
+        #self.discriminator.eval()
         gen_loss_total = 0.0
         disc_loss_total = 0.0
         val_pesq = 0.0

@@ -113,7 +113,8 @@ def enhance_audios(model_pt, reward_pt, cutlen, noisy_dir, save_dir, clean_dir=N
     #Initiate models
     model = TSCNet(num_channel=64, 
                    num_features=400 // 2 + 1,
-                   gpu_id=gpu_id)
+                   gpu_id=gpu_id, 
+                   eval=True)
     
     #reward_model = RewardModel(in_channels=2)
     

@@ -99,7 +99,7 @@ def run_enhancement_step(env,
         os.makedirs(save_dir, exist_ok=True)
         saved_path = os.path.join(save_dir, file_id)
         enh_audio = enh_audio.reshape(-1)
-        enh_audio = enh_audio.detach().cpu().numpy()
+        #enh_audio = enh_audio.detach().cpu().numpy()
 
         sf.write(saved_path, enh_audio, 16000)
     

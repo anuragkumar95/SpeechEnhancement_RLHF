@@ -82,8 +82,8 @@ def run_enhancement_step(env,
         print(f"MAG_LOSS:{mag_loss}, RI_LOSS:{ri_loss}, SUP_LOSS:{supervised_loss}")
         values = compute_metrics(clean_aud.reshape(-1), 
                                  enh_audio.reshape(-1), 
-                                16000, 
-                                0)
+                                 16000, 
+                                 0)
     
         metrics['pesq'] = values[0]
         metrics['csig'] = values[1]
@@ -93,6 +93,7 @@ def run_enhancement_step(env,
         metrics['stoi'] = values[5]
         metrics['si-sdr'] = values[6]
         metrics['mse'] = supervised_loss.mean().cpu().numpy()
+        print(f"PESQ:{values[0]}")
 
     if save_track:
         save_dir = os.path.join(save_dir, 'audios')

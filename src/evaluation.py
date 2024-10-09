@@ -72,8 +72,12 @@ def run_enhancement_step(env,
         supervised_loss = 0.7*mag_loss + 0.3*ri_loss
         clean_aud = clean_aud.reshape(-1)
 
-        clean_aud = clean_aud[:lens].detach().cpu().numpy()
-        enh_audio = enh_audio[:lens].detach().cpu().numpy()
+        clean_aud = clean_aud.detach().cpu().numpy().reshape(-1)
+        enh_audio = enh_audio.detach().cpu().numpy().reshape(-1)
+
+        min_len = min(clean_aud.shape[0], enh_audio.shape[0])
+        clean_aud = clean_aud[:min_len]
+        enh_audio = enh_audio[:min_len]
 
         print(f"CLEAN:{clean_aud.shape}, ENG:{enh_audio.shape}")
 

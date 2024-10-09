@@ -63,6 +63,9 @@ def run_enhancement_step(env,
         mb_enhanced = torch.cat(next_state, dim=1)
         mb_enhanced_mag = torch.sqrt(mb_enhanced[:, 0, :, :]**2 + mb_enhanced[:, 1, :, :]**2)
         mb_clean_mag = torch.sqrt(clean[:, 0, :, :]**2 + clean[:, 1, :, :]**2)
+
+        print(f"mag:{mb_clean_mag.shape, mb_enhanced_mag.shape}, enh:{mb_enhanced.shape}, clean:{clean.shape}")
+
         mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
         ri_loss = ((clean - mb_enhanced) ** 2).mean()
         supervised_loss = 0.7*mag_loss + 0.3*ri_loss

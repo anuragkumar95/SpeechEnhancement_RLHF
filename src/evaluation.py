@@ -75,8 +75,10 @@ def run_enhancement_step(env,
         clean_aud = clean_aud[:lens].detach().cpu().numpy()
         enh_audio = enh_audio[:lens].detach().cpu().numpy()
 
+        print(f"CLEAN:{clean_aud.shape}, ENG:{enh_audio.shape}")
+
         values = compute_metrics(clean_aud, 
-                                enh_audio, 
+                                 enh_audio, 
                                 16000, 
                                 0)
     

@@ -361,7 +361,7 @@ class Trainer:
             discrim_loss_metric = torch.tensor([0.0])
         
 
-        return loss, discrim_loss_metric, pesq
+        return loss, discrim_loss_metric, original_pesq(pesq)
 
     def test(self):
         self.model.eval()

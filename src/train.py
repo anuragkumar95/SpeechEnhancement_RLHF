@@ -316,6 +316,7 @@ class Trainer:
         loss = loss / self.ACCUM_GRAD
         loss.backward()
         if step % self.ACCUM_GRAD == 0 or step == len(self.train_ds):
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5.0)
             self.optimizer.step()
             self.optimizer.zero_grad()
 
@@ -402,7 +403,7 @@ class Trainer:
         for epoch in range(self.start_epoch+1, args.epochs):
             self.model.train()
             self.discriminator.train()
-            gen_loss, disc_loss, val_pesq = self.test()
+            #gen_loss, disc_loss, val_pesq = self.test()
             for idx, batch in enumerate(self.train_ds):
                 clean, noisy, _ = batch
                 if torch.isnan(clean).any() or torch.isnan(noisy).any():

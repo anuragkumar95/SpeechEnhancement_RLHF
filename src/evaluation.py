@@ -56,6 +56,8 @@ def run_enhancement_step(env,
     if add_noise:
         actor.evaluation = False
     next_state, _, _= actor.get_action(inp)
+    print(torch.isinf(inp).any(), torch.isnan(inp).sum().any())
+    print(torch.isinf(next_state[0]).any(), torch.isnan(next_state[0]).sum().any(), torch.isinf(next_state[1]).any(), torch.isnan(next_state[1]).sum().any())
     enh_audio = env.get_audio(next_state)
 
     if save_metrics:

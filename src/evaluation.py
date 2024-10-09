@@ -70,8 +70,7 @@ def run_enhancement_step(env,
         mag_loss = ((mb_clean_mag - mb_enhanced_mag)**2).mean() 
         ri_loss = ((clean - mb_enhanced) ** 2).mean()
         supervised_loss = 0.7*mag_loss + 0.3*ri_loss
-        clean_aud = clean_aud.reshape(-1)
-
+    
         clean_aud = clean_aud.detach().cpu().numpy()
         enh_audio = enh_audio.detach().cpu().numpy()
 

@@ -132,9 +132,8 @@ class DPOTrainer:
         expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
 
         try:
-            if args.model == 'cmgan':
-                self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
-                self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
+            self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
+            self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
 
         except KeyError as e:
             self.actor.load_state_dict(expert_checkpoint)

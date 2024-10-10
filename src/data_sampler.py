@@ -9,7 +9,6 @@ from utils import preprocess_batch
 from speech_enh_env import SpeechEnhancementAgent
 from tqdm import tqdm
 import soundfile as sf
-import shutil
 
 
 class DataSampler:
@@ -165,7 +164,10 @@ class DataSampler:
 
     def delete(self):
         for _dir_ in os.listdir(self.root):
-            shutil.rmtree(os.path.join(self.root, _dir_))
+            subdir = os.path.join(self.root, _dir_)
+            for wav in os.listdir(subdir):
+                wav = os.path.join(subdir, wav)
+                os.remove(wav)
 
     def save(self, audio_map):
         for fname in audio_map.keys():

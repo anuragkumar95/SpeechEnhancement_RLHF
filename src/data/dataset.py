@@ -184,7 +184,7 @@ class NISQA_Dataset(torch.utils.data.Dataset):
         return clean_ds, noisy_ds, noisy_file_name
     
 
-class NISQAPreferenceDataset(torch.utils.dataset):
+class NISQAPreferenceDataset(torch.utils.data.Dataset):
     def __init__(self, root):
         self.ypos_path = os.path.join(root, 'ypos')
         self.yneg_path = os.path.join(root, 'yneg')

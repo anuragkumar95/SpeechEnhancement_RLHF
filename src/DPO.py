@@ -64,7 +64,11 @@ class DPO:
         ref_mu = torch.cat([ref_mu[0], ref_mu[1]], dim=1)
         y_mu = torch.cat([y_mu[0], y_mu[1]], dim=1)
 
+        ypos = ypos.permute(0, 1, 3, 2)
+        yneg = yneg.permute(0, 1, 3, 2)
+
         print(f"REF:{ref_mu.shape}, Y:{y_mu.shape}")
+        print(f"ypos:{ypos.shape}, yneg:{yneg.shape}")
 
         ref_pos_logprob = self.get_logprob(ref_mu, ypos)
         ref_neg_logprob = self.get_logprob(ref_mu, yneg)

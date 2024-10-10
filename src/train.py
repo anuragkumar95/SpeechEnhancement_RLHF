@@ -393,12 +393,12 @@ class Trainer:
         return gen_loss_avg, disc_loss_avg, val_pesq
 
     def train(self):
-        scheduler_G = torch.optim.lr_scheduler.StepLR(
-            self.optimizer, step_size=args.decay_epoch, gamma=0.5
-        )
-        scheduler_D = torch.optim.lr_scheduler.StepLR(
-            self.optimizer_disc, step_size=args.decay_epoch, gamma=0.5
-        )
+        #scheduler_G = torch.optim.lr_scheduler.StepLR(
+        #    self.optimizer, step_size=args.decay_epoch, gamma=0.5
+        #)
+        #scheduler_D = torch.optim.lr_scheduler.StepLR(
+        #    self.optimizer_disc, step_size=args.decay_epoch, gamma=0.5
+        #)
         for epoch in range(self.start_epoch+1, args.epochs):
             self.model.train()
             self.discriminator.train()
@@ -434,8 +434,8 @@ class Trainer:
                             exp=f"{args.exp}_{args.suffix}",
                             epoch=epoch,
                             pesq=original_pesq(val_pesq))
-            scheduler_G.step()
-            scheduler_D.step()
+            #scheduler_G.step()
+            #scheduler_D.step()
 
 
 def main(rank: int, world_size: int, args):

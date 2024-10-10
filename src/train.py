@@ -101,8 +101,6 @@ class Trainer:
 
         self.start_epoch = 0
         if resume_pt is not None:
-            if not resume_pt.endswith('.pt'):
-                raise ValueError("Incorrect path to the checkpoint..")
             try:
                 name = resume_pt[:-3]
                 epoch = name.split('_')[-1]
@@ -370,20 +368,21 @@ class Trainer:
         gen_loss_total = 0.0
         disc_loss_total = 0.0
         val_pesq = 0.0
-        for idx, batch in enumerate(self.test_ds):
-            step = idx + 1
-            try:
-                loss, disc_loss, pesq = self.test_step(batch)
-            except Exception as e:
-                print(e)
-                continue
-            
-            if torch.isnan(loss).any() or torch.isinf(loss).any():
-                continue
-            gen_loss_total += loss
-            disc_loss_total += disc_loss
-            val_pesq += pesq
-            print(f'STEP:{idx} | VAL_PESQ:{pesq} | GEN_LOSS:{loss} | DISC_LOSS:{disc_loss}')
+        with torch.no_grad():
+            for idx, batch in enumerate(self.test_ds):
+                step = idx + 1
+                try:
+                    loss, disc_loss, pesq = self.test_step(batch)
+                except Exception as e:
+                    print(e)
+                    continue
+                
+                if torch.isnan(loss).any() or torch.isinf(loss).any():
+                    continue
+                gen_loss_total += loss
+                disc_loss_total += disc_loss
+                val_pesq += pesq
+                print(f'STEP:{idx} | VAL_PESQ:{pesq} | GEN_LOSS:{loss} | DISC_LOSS:{disc_loss}')
         gen_loss_avg = gen_loss_total / step
         disc_loss_avg = disc_loss_total / step
         val_pesq = val_pesq / step

@@ -145,7 +145,7 @@ class DataSampler:
 
     def generate_triplets(self):
         #Remove previous stored data
-        self.delete()
+        #self.delete()
 
         #Generate new data
         self.generate_samples()
@@ -181,11 +181,6 @@ class DataSampler:
                     s_path = os.path.join(s_dir, f"sample_{i}.wav")
                     sf.write(s_path, sample, 16000)
                 
-                #Save noisy
-                x = audio_map[fname].get('x', None)
-                x = x.detach().cpu().numpy().reshape(-1)
-                x_path = os.path.join(self.x_dir, f"{fname}.wav")
-                sf.write(x_path, x, 16000)
             else:
                 #Save ypos and yneg
                 ypos = audio_map[fname].get('ypos')
@@ -198,7 +193,13 @@ class DataSampler:
                 yneg = yneg.detach().cpu().numpy().reshape(-1)
 
                 sf.write(ypos_path, ypos, 16000)
-                sf.write(yneg_path, yneg, 16000)   
+                sf.write(yneg_path, yneg, 16000)  
+
+            #Save noisy
+            x = audio_map[fname].get('x', None)
+            x = x.detach().cpu().numpy().reshape(-1)
+            x_path = os.path.join(self.x_dir, f"{fname}.wav")
+            sf.write(x_path, x, 16000) 
     
 if __name__ == '__main__':
 

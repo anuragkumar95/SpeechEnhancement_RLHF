@@ -175,7 +175,7 @@ class DPOTrainer:
                        beta=0.1)
         
     def train(self):
-
+        print("Start training...")
         train_dl = self.data_sampler.generate_triplets()
 
         for epoch in range(self.args.epochs):

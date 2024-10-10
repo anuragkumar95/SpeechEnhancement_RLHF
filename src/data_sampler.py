@@ -145,7 +145,7 @@ class DataSampler:
 
     def generate_triplets(self):
         #Remove previous stored data
-        #self.delete()
+        self.delete()
 
         #Generate new data
         self.generate_samples()

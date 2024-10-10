@@ -203,7 +203,7 @@ class DPOTrainer:
                 print(f"STEP:{step}|DPO_LOSS:{loss}")
         
                 #Update network
-                if not (torch.isnan(loss).any() or torch.isinf(loss).any()) and ((step+1) % self.accum_grad == 0):
+                if not (torch.isnan(loss).any() or torch.isinf(loss).any()) and ((step+1) % self.args.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
                     self.optimizer.step()
                     self.optimizer.zero_grad()
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                                   32000, gpu = False)
     
     class Args:
-        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs):
+        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs, accum_grad):
             self.batchsize = batchsize
             self.ckpt = ckpt
             self.n_fft = n_fft
@@ -224,8 +224,9 @@ if __name__ == '__main__':
             self.gpu_id = gpu_id
             self.epochs = epochs
             self.init_lr = init_lr
+            self.accum_grad = accum_grad
 
-    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 1e-05, 5)
+    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 1e-05, 5, 1)
     
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
     trainer.train()

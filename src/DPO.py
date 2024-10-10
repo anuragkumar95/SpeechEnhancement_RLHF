@@ -199,14 +199,15 @@ if __name__ == '__main__':
                                   32000, gpu = False)
     
     class Args:
-        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id):
+        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, epochs):
             self.batchsize = batchsize
             self.ckpt = ckpt
             self.n_fft = n_fft
             self.hop = hop
             self.gpu_id = gpu_id
+            self.epochs = epochs
 
-    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0)
+    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 5)
     
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
 

@@ -172,7 +172,7 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                                         K=15, 
-                                        num_samples=3)
+                                        num_samples=2)
         self.DPO = DPO(loader=train_ds,
                        sft_model=self.expert,
                        model=self.actor,   

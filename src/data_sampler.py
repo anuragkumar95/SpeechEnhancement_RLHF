@@ -9,6 +9,7 @@ from utils import preprocess_batch
 from speech_enh_env import SpeechEnhancementAgent
 from tqdm import tqdm
 import soundfile as sf
+import shutil
 
 
 class DataSampler:
@@ -144,7 +145,10 @@ class DataSampler:
                 self.save(a_map)
 
     def generate_triplets(self):
+        #Remove previous stored data
+        self.delete()
 
+        #Generate new data
         self.generate_samples()
 
         ds = NISQAPreferenceDataset(root=self.root)
@@ -156,9 +160,12 @@ class DataSampler:
             drop_last=False,
             num_workers=1,
         )
+
         return dl
 
-
+    def delete(self):
+        for _dir_ in os.listdir(self.root):
+            shutil.rmtree(os.path.join(self.root, _dir_))
 
     def save(self, audio_map):
         for fname in audio_map.keys():

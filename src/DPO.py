@@ -28,6 +28,14 @@ import torch.nn.functional as F
 
 torch.manual_seed(123)
 
+
+"""
+TODO:
+1. Add wandb logs.
+2. Add validation loop
+3. Implement proper argparsing.
+"""
+
 class DPO:
     def __init__(self,
                  sft_model,

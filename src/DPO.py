@@ -76,8 +76,8 @@ class DPO:
         yneg_relative_logps = torch.mean((y_neg_logprob - ref_neg_logprob).sum(1), dim=[1, 2])
 
         print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
-        print(f"REF:{ref_pos_logprob.mean()}, {ref_neg_logprob.mean()}")
-        print(f"RL:{y_pos_logprob.mean()}, {y_neg_logprob.mean()}")
+        print(f"REF:{torch.mean(ref_pos_logprob, dim=[1, 2, 3])}, {torch.mean(ref_neg_logprob, dim=[1, 2, 3])}")
+        print(f"RL:{torch.mean(y_pos_logprob, dim=[1, 2, 3])}, {torch.mean(y_neg_logprob, dim=[1, 2, 3])}")
         print(f"REL_POS:{ypos_relative_logps}")
         print(f"REL_NEG:{yneg_relative_logps}")
         scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
@@ -186,6 +186,7 @@ class DPOTrainer:
                                         save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                                         K=25, 
                                         num_samples=3)
+        
         self.DPO = DPO(sft_model=self.expert,
                        model=self.actor,   
                        gpu_id=gpu_id, 

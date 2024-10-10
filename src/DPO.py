@@ -222,7 +222,7 @@ if __name__ == '__main__':
             self.init_lr = init_lr
             self.accum_grad = accum_grad
 
-    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 1e-05, 15, 1)
+    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 0.001, 15, 1)
     
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
     trainer.train()

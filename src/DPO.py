@@ -197,7 +197,7 @@ class DPOTrainer:
                 
                 #Get DPO loss
                 loss = self.DPO.forward_step(x, ypos, yneg)
-                loss = loss / self.accum_grad
+                loss = loss / self.args.accum_grad
                 loss.backward()
 
                 print(f"STEP:{step}|DPO_LOSS:{loss}")

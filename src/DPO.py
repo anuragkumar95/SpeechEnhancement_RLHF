@@ -42,7 +42,7 @@ class DPO:
                  model,   
                  gpu_id=None, 
                  beta=0.2,
-                 **params):
+                 ):
         
         self.ref_model = sft_model
         self.ref_model.eval()
@@ -50,8 +50,6 @@ class DPO:
         self.gpu_id = gpu_id 
         self.std = 0.01
         self.beta = beta
-        self.n_fft = params.get("n_fft")
-        self.hop = params.get("hop")
 
 
     def get_logprob(self, mu, x):
@@ -76,7 +74,7 @@ class DPO:
         return -log_scores
 
     
-    def spec(self, noisy, ypos, yneg):
+    def spec(self, noisy, ypos, yneg, n_fft=400, hop=100):
         # Normalization
         c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
         noisy = torch.transpose(noisy, 0, 1)
@@ -88,23 +86,23 @@ class DPO:
 
         noisy_spec = torch.stft(
             noisy,
-            self.n_fft,
-            self.hop,
-            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            n_fft,
+            hop,
+            window=torch.hamming_window(n_fft).to(self.gpu_id),
             onesided=True,
         )
         ypos_spec = torch.stft(
             ypos,
-            self.n_fft,
-            self.hop,
-            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            n_fft,
+            hop,
+            window=torch.hamming_window(n_fft).to(self.gpu_id),
             onesided=True,
         )
         yneg_spec = torch.stft(
             yneg,
-            self.n_fft,
-            self.hop,
-            window=torch.hamming_window(self.n_fft).to(self.gpu_id),
+            n_fft,
+            hop,
+            window=torch.hamming_window(n_fft).to(self.gpu_id),
             onesided=True,
         )
 
@@ -172,7 +170,7 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                                         K=15, 
-                                        num_samples=2)
+                                        num_samples=1)
         self.DPO = DPO(loader=train_ds,
                        sft_model=self.expert,
                        model=self.actor,   

@@ -148,6 +148,7 @@ class DataSampler:
         self.delete()
 
         #Generate new data
+        print(f"Generating {self.n} triplets")
         self.generate_samples()
 
         ds = NISQAPreferenceDataset(root=self.root)

@@ -122,10 +122,12 @@ class DPOTrainer:
         self.args = args
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.args.n_fft // 2 + 1, 
-                            gpu_id=gpu_id)
+                            gpu_id=gpu_id,
+                            eval=True)
         self.expert = TSCNet(num_channel=64, 
                             num_features=self.args.n_fft // 2 + 1,
-                            gpu_id=gpu_id)
+                            gpu_id=gpu_id,
+                            eval=True)
         
         expert_checkpoint = torch.load(args.ckpt, map_location=torch.device('cpu'))
 
@@ -133,7 +135,6 @@ class DPOTrainer:
             if args.model == 'cmgan':
                 self.actor.load_state_dict(expert_checkpoint['generator_state_dict']) 
                 self.expert.load_state_dict(expert_checkpoint['generator_state_dict'])
-                self.expert.eval()
 
         except KeyError as e:
             self.actor.load_state_dict(expert_checkpoint)

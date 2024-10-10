@@ -73,10 +73,10 @@ class DPO:
         y_neg_logprob = self.get_logprob(y_mu, yneg).sum(1).mean()
 
         print(f"REF| YPOS:{ref_pos_logprob}, YNEG:{ref_neg_logprob}")
-        print(f"REF| YPOS:{y_pos_logprob}, YNEG:{y_neg_logprob}")
+        print(f"RL | YPOS:{y_pos_logprob}, YNEG:{y_neg_logprob}")
 
         scores = self.beta * ((y_pos_logprob - ref_pos_logprob) - (y_neg_logprob - ref_neg_logprob)) 
-        log_scores = torch.log(F.sigmoid(scores)).mean()
+        log_scores = F.logsigmoid(scores).mean()
 
         return -log_scores
 

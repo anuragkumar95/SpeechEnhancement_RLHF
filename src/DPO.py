@@ -168,8 +168,7 @@ class DPOTrainer:
                                         save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                                         K=15, 
                                         num_samples=1)
-        self.DPO = DPO(loader=train_ds,
-                       sft_model=self.expert,
+        self.DPO = DPO(sft_model=self.expert,
                        model=self.actor,   
                        gpu_id=gpu_id, 
                        beta=0.1)

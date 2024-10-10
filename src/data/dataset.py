@@ -193,7 +193,7 @@ class NISQAPreferenceDataset(torch.utils.data.Dataset):
         self.x_files = os.listdir(self.x_path)
 
     def __len__(self):
-        return len(self.x_path)
+        return len(self.x_files)
     
     def __getitem__(self, idx):
         x_file = self.x_files[idx]

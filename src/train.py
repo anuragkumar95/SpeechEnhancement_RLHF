@@ -187,25 +187,30 @@ class Trainer:
         except Exception as e:
             state_dict = torch.load(path, map_location=torch.device(self.gpu_id))
             
-            gen_state_dict = OrderedDict()
-            for name, params in state_dict['generator_state_dict'].items():
-                name = name[7:]
-                gen_state_dict[name] = params        
-            self.model.load_state_dict(gen_state_dict)
-            del gen_state_dict
-            
-            disc_state_dict = OrderedDict()
-            for name, params in state_dict['discriminator_state_dict'].items():
-                name = name[7:]
-                disc_state_dict[name] = params
-            self.discriminator.load_state_dict(disc_state_dict)
-            del disc_state_dict
-            
-            self.optimizer.load_state_dict(state_dict['optimizer_G_state_dict'])
-            self.optimizer_disc.load_state_dict(state_dict['optimizer_D_state_dict'])
-            self.scheduler_G.load_state_dict(state_dict['scheduler_G_state_dict'])
-            self.scheduler_D.load_state_dict(state_dict['scheduler_D_state_dict'])
-            
+            if 'generator_state_dict' in state_dict.keys():
+                gen_state_dict = OrderedDict()
+                for name, params in state_dict['generator_state_dict'].items():
+                    name = name[7:]
+                    gen_state_dict[name] = params        
+                self.model.load_state_dict(gen_state_dict)
+                del gen_state_dict
+                
+                disc_state_dict = OrderedDict()
+                for name, params in state_dict['discriminator_state_dict'].items():
+                    name = name[7:]
+                    disc_state_dict[name] = params
+                self.discriminator.load_state_dict(disc_state_dict)
+                del disc_state_dict
+                
+                self.optimizer.load_state_dict(state_dict['optimizer_G_state_dict'])
+                self.optimizer_disc.load_state_dict(state_dict['optimizer_D_state_dict'])
+                self.scheduler_G.load_state_dict(state_dict['scheduler_G_state_dict'])
+                self.scheduler_D.load_state_dict(state_dict['scheduler_D_state_dict'])
+            else:
+                try:
+                    self.model.load_state_dict(state_dict)
+                except:
+                    raise ValueError(f"Incorrect checkpoint path.")
             print(f"Loaded checkpoint saved at {path} starting at epoch {self.start_epoch}")
             del state_dict
     

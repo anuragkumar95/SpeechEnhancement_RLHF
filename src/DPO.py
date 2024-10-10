@@ -197,15 +197,14 @@ class DPOTrainer:
                 #Get DPO loss
                 loss = self.DPO.forward_step(x, ypos, yneg)
                 loss = loss / self.args.accum_grad
-                loss.backward()
-
-                print(f"STEP:{step}|DPO_LOSS:{loss}")
-        
-                #Update network
-                if (not (torch.isnan(loss).any() or torch.isinf(loss).any())) and ((step+1) % self.args.accum_grad == 0):
-                    torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+                if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
+                    loss.backward()
+                    print(f"STEP:{step}|DPO_LOSS:{loss}")
+                    #Update network
+                    if (step+1) % self.args.accum_grad == 0:
+                        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
+                        self.optimizer.step()
+                        self.optimizer.zero_grad()
 
 
 if __name__ == '__main__':

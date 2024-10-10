@@ -181,7 +181,7 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                                         K=15, 
-                                        num_samples=5)
+                                        num_samples=1)
         self.DPO = DPO(sft_model=self.expert,
                        model=self.actor,   
                        gpu_id=gpu_id, 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
             self.init_lr = init_lr
             self.accum_grad = accum_grad
 
-    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 0.00001, 15, 1)
+    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 0.00001, 50, 1)
     
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
     trainer.train()

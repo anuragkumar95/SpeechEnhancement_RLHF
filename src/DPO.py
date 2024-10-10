@@ -66,11 +66,14 @@ class DPO:
         ypos = ypos.permute(0, 1, 3, 2)
         yneg = yneg.permute(0, 1, 3, 2)
 
-        ref_pos_logprob = self.get_logprob(ref_mu, ypos)
-        ref_neg_logprob = self.get_logprob(ref_mu, yneg)
+        ref_pos_logprob = self.get_logprob(ref_mu, ypos).sum(1).mean()
+        ref_neg_logprob = self.get_logprob(ref_mu, yneg).sum(1).mean()
 
-        y_pos_logprob = self.get_logprob(y_mu, ypos)
-        y_neg_logprob = self.get_logprob(y_mu, yneg)
+        y_pos_logprob = self.get_logprob(y_mu, ypos).sum(1).mean()
+        y_neg_logprob = self.get_logprob(y_mu, yneg).sum(1).mean()
+
+        print(f"REF| YPOS:{ref_pos_logprob}, YNEG:{ref_neg_logprob}")
+        print(f"REF| YPOS:{y_pos_logprob}, YNEG:{y_neg_logprob}")
 
         scores = self.beta * ((y_pos_logprob - ref_pos_logprob) - (y_neg_logprob - ref_neg_logprob)) 
         log_scores = torch.log(F.sigmoid(scores)).mean()
@@ -199,7 +202,7 @@ class DPOTrainer:
                 print(f"STEP:{step}|DPO_LOSS:{loss}")
         
                 #Update network
-                if not (torch.isnan(loss).any() or torch.isinf(loss).any()) and ((step+1) % self.args.accum_grad == 0):
+                if (not (torch.isnan(loss).any() or torch.isinf(loss).any())) and ((step+1) % self.args.accum_grad == 0):
                     torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
                     self.optimizer.step()
                     self.optimizer.zero_grad()

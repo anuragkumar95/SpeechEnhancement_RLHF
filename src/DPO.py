@@ -76,6 +76,10 @@ class DPO:
         yneg_relative_logps = torch.mean((y_neg_logprob - ref_neg_logprob).sum(1), dim=[1, 2])
 
         print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
+        print(f"REF:{ref_pos_logprob.mean()}, {ref_neg_logprob.mean()}")
+        print(f"RL:{y_pos_logprob.mean()}, {y_neg_logprob.mean()}")
+        print(f"REL_POS:{ypos_relative_logps}")
+        print(f"REL_NEG:{yneg_relative_logps}")
         scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
         print(f"SCORES: {scores}, {scores.shape}")
         log_scores = F.logsigmoid(scores).mean()

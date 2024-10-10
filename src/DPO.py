@@ -44,7 +44,6 @@ class DPO:
                  beta=0.2,):
         
         self.ref_model = sft_model
-        self.ref_model.eval()
         self.model = model
         self.gpu_id = gpu_id 
         self.std = 0.01
@@ -66,9 +65,6 @@ class DPO:
 
         ypos = ypos.permute(0, 1, 3, 2)
         yneg = yneg.permute(0, 1, 3, 2)
-
-        print(f"REF:{ref_mu.shape}, Y:{y_mu.shape}")
-        print(f"ypos:{ypos.shape}, yneg:{yneg.shape}")
 
         ref_pos_logprob = self.get_logprob(ref_mu, ypos)
         ref_neg_logprob = self.get_logprob(ref_mu, yneg)
@@ -181,7 +177,7 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                                         K=15, 
-                                        num_samples=1)
+                                        num_samples=5)
         self.DPO = DPO(sft_model=self.expert,
                        model=self.actor,   
                        gpu_id=gpu_id, 

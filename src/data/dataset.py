@@ -182,6 +182,35 @@ class NISQA_Dataset(torch.utils.data.Dataset):
             clean_ds = clean_ds[wav_start : wav_start + self.cut_len]
         
         return clean_ds, noisy_ds, noisy_file_name
+    
+
+class NISQAPreferenceDataset(torch.utils.dataset):
+    def __init__(self, root):
+        self.ypos_path = os.path.join(root, 'ypos')
+        self.yneg_path = os.path.join(root, 'yneg')
+        self.x_path = os.path.join(root, 'noisy')
+
+        self.x_files = os.listdir(self.x_path)
+
+    def __len__(self):
+        return len(self.x_path)
+    
+    def __getitem__(self, idx):
+        x_file = self.x_files[idx]
+        x_path = os.path.join(self.x_path, x_file)
+        ypos_path = os.path.join(self.ypos_path, x_file)
+        yneg_path = os.path.join(self.yneg_path, x_file)
+
+        x_ds, _ = torchaudio.load(x_path)
+        ypos_ds, _ = torchaudio.load(ypos_path)
+        yneg_ds, _ = torchaudio.load(yneg_path)
+        
+        x = x_ds.squeeze()
+        ypos = ypos_ds.squeeze()
+        yneg = yneg_ds.squeeze()
+
+        assert x.shape[0] == ypos.shape[0] == yneg.shape[0] , f"X:{x.shape}, YPOS:{ypos.shape}, YNEG:{yneg.shape}.Shapes don't match."
+        return x, ypos, yneg
         
     
 def get_random_batch(ds, batch_size):

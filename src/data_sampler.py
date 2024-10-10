@@ -4,7 +4,7 @@ import numpy as np
 import torchaudio
 from model.CMGAN.actor import TSCNet
 from dns_mos import ComputeScore
-from data.dataset import load_data
+from data.dataset import load_data, NISQAPreferenceDataset
 from utils import preprocess_batch
 from speech_enh_env import SpeechEnhancementAgent
 from tqdm import tqdm
@@ -12,10 +12,9 @@ import soundfile as sf
 
 
 class DataSampler:
-    def __init__(self, dataloader, model, env, save_dir, num_samples=100, K=25):
+    def __init__(self, dataloader, model, save_dir, num_samples=100, K=25):
         self.model = model
         self.model.eval()
-        self.env = env
         self.K = K
         self.n = num_samples
         self.t_low = -15
@@ -23,12 +22,13 @@ class DataSampler:
         self.dl = dataloader
         self._iter_ = iter(self.dl)
         
+        self.root = save_dir
         self.sample_dir = f"{save_dir}/enhanced"
         self.x_dir = f"{save_dir}/noisy"
         self.y_pos_dir = f"{save_dir}/ypos"
         self.y_neg_dir = f"{save_dir}/yneg"
 
-        os.makedirs(save_dir, exist_ok=True)
+        os.makedirs(self.root, exist_ok=True)
         os.makedirs(self.x_dir, exist_ok=True)
         os.makedirs(self.sample_dir, exist_ok=True)
         os.makedirs(self.y_pos_dir, exist_ok=True)
@@ -37,6 +37,12 @@ class DataSampler:
         p808_model_path = "/users/PAS2301/kumar1109/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
         primary_model_path = "/users/PAS2301/kumar1109/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovr.onnx"
         self.dns_mos = ComputeScore(primary_model_path, p808_model_path)
+
+        self.env = SpeechEnhancementAgent(n_fft=400,
+                                          hop=100,
+                                          gpu_id=0,
+                                          args=None,
+                                          reward_model=None)
         
     def sample_batch(self, batch):
 
@@ -123,8 +129,7 @@ class DataSampler:
 
             a_map = {}
             batchsize = noisy.shape[0]
-            print(f"BS:{batchsize}, {len(filenames)}")
-            print(f"FILES:{filenames}")
+            
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
@@ -135,8 +140,24 @@ class DataSampler:
                     'ypos':ypos,
                     'yneg':yneg
                 }
-                print(f"{i}, Filename:{fname}")
+                
                 self.save(a_map)
+
+    def generate_triplets(self):
+
+        self.generate_samples()
+
+        ds = NISQAPreferenceDataset(root=self.root)
+        dl = torch.utils.data.DataLoader(
+            dataset=ds,
+            batch_size=4,
+            pin_memory=True,
+            shuffle=True,
+            drop_last=False,
+            num_workers=1,
+        )
+        return dl
+
 
 
     def save(self, audio_map):
@@ -181,16 +202,9 @@ if __name__ == '__main__':
     ds, _ = load_data("/users/PAS2301/kumar1109/NISQA_Corpus", 
                       4, 1, 
                       32000, gpu = False)
-
-    env = SpeechEnhancementAgent(n_fft=400,
-                             hop=100,
-                             gpu_id=0,
-                             args=None,
-                             reward_model=None)
     
     sampler = DataSampler(ds, 
                           model=model_pre, 
-                          env=env, 
                           save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
                           K=15, num_samples=100)
     

@@ -113,6 +113,11 @@ class DPO:
 
 
     def forward_step(self, x, ypos, yneg):
+        if self.gpu_id is not None:
+            x = x.to(self.gpu_id)
+            ypos = ypos.to(self.gpu_id)
+            yneg = yneg.to(self.gpu_id)
+
         x, ypos, yneg = self.spec(x, ypos, yneg)
         dpo_loss = self.dpo_loss(x, ypos, yneg)
         return dpo_loss
@@ -185,6 +190,8 @@ class DPOTrainer:
                 loss = self.DPO.forward_step(x, ypos, yneg)
                 loss = loss / self.accum_grad
                 loss.backward()
+
+                print(f"STEP:{step}|DPO_LOSS:{loss}")
         
                 #Update network
                 if not (torch.isnan(loss).any() or torch.isinf(loss).any()) and ((step+1) % self.accum_grad == 0):

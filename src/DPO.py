@@ -41,8 +41,7 @@ class DPO:
                  sft_model,
                  model,   
                  gpu_id=None, 
-                 beta=0.2,
-                 ):
+                 beta=0.2,):
         
         self.ref_model = sft_model
         self.ref_model.eval()
@@ -159,12 +158,10 @@ class DPOTrainer:
             filter(lambda layer:layer.requires_grad, self.actor.parameters()), lr=args.init_lr
         )     
 
-        self.DPO = DPO(loader=train_ds,
-                       sft_model=self.expert,
+        self.DPO = DPO(sft_model=self.expert,
                        model=self.actor,   
                        gpu_id=gpu_id, 
-                       beta=0.1, 
-                       params={'n_fft':400, 'hop':100})
+                       beta=0.1, )
         
         self.data_sampler = DataSampler(dataloader=train_ds, 
                                         model=self.expert, 

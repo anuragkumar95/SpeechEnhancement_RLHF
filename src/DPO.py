@@ -66,18 +66,19 @@ class DPO:
         ypos = ypos.permute(0, 1, 3, 2)
         yneg = yneg.permute(0, 1, 3, 2)
 
-        ref_pos_logprob = self.get_logprob(ref_mu, ypos).sum(1).mean()
-        ref_neg_logprob = self.get_logprob(ref_mu, yneg).sum(1).mean()
+        ref_pos_logprob = self.get_logprob(ref_mu, ypos)
+        ref_neg_logprob = self.get_logprob(ref_mu, yneg)
 
-        y_pos_logprob = self.get_logprob(y_mu, ypos).sum(1).mean()
-        y_neg_logprob = self.get_logprob(y_mu, yneg).sum(1).mean()
+        y_pos_logprob = self.get_logprob(y_mu, ypos)
+        y_neg_logprob = self.get_logprob(y_mu, yneg)
 
-        print(f"REF| YPOS:{ref_pos_logprob}, YNEG:{ref_neg_logprob}")
-        print(f"RL | YPOS:{y_pos_logprob}, YNEG:{y_neg_logprob}")
+        ypos_relative_logps = torch.mean((y_pos_logprob - ref_pos_logprob).sum(1), dim=[1, 2])
+        yneg_relative_logps = torch.mean((y_neg_logprob - ref_neg_logprob).sum(1), dim=[1, 2])
 
-        scores = self.beta * ((y_pos_logprob - ref_pos_logprob) - (y_neg_logprob - ref_neg_logprob)) 
+        print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
+        scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
+        print(f"SCORES: {scores}, {scores.shape}")
         log_scores = F.logsigmoid(scores).mean()
-
         return -log_scores
 
     

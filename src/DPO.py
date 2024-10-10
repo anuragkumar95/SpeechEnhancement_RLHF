@@ -210,6 +210,7 @@ if __name__ == '__main__':
     args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 1e-05, 5)
     
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
+    trainer.train()
 
  
             

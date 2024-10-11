@@ -192,7 +192,8 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/VCTK", 
                                         K=25, 
-                                        num_samples=3)
+                                        num_samples=3,
+                                        gpu_id=gpu_id)
         
         if args.wandb:
             wandb.init(project=args.exp, name=args.suffix)

@@ -206,7 +206,7 @@ class DataSampler:
                     pickle.dump({
                         'DNSMOS':dmos.detach().cpu().numpy(),
                         'NISQA':nmos.detach().cpu().numpy(),
-                        'idx': idx
+                        'idx': idx.detach().cpu().numpy()
                     }, fp)
 
             #Save noisy

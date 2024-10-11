@@ -12,7 +12,7 @@ import soundfile as sf
 import pickle
 
 class DataSampler:
-    def __init__(self, dataloader, model, save_dir, num_samples=100, K=25, gpu_id=False):
+    def __init__(self, dataloader, model, save_dir, num_samples=100, K=25, gpu_id=None):
         self.model = model
         self.model.eval()
         self.K = K

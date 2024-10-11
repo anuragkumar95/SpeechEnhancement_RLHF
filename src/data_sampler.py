@@ -12,7 +12,7 @@ import soundfile as sf
 import pickle
 
 class DataSampler:
-    def __init__(self, dataloader, model, save_dir, num_samples=100, K=25):
+    def __init__(self, dataloader, model, save_dir, num_samples=100, K=25, gpu_id=False):
         self.model = model
         self.model.eval()
         self.K = K
@@ -42,7 +42,7 @@ class DataSampler:
 
         self.env = SpeechEnhancementAgent(n_fft=400,
                                           hop=100,
-                                          gpu_id=0,
+                                          gpu_id=gpu_id,
                                           args=None,
                                           reward_model=None)
         
@@ -59,7 +59,7 @@ class DataSampler:
         noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
         #noisy = noisy.repeat(self.K, 1, 1, 1)
-        noisy = torch.concatenate([noisy for i in range(self.K)], dim=0)
+        noisy = torch.stack([noisy for i in range(self.K)], dim=0)
         print(f"NOISY:{noisy.shape}")
         c = c.repeat(self.K)
         with torch.no_grad():

@@ -59,8 +59,8 @@ class DataSampler:
         _, _, noisy, _, c = batch
         noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
-        #noisy = noisy.repeat(self.K, 1, 1, 1)
-        noisy = torch.stack([noisy for i in range(self.K)], dim=0).squeeze(1)
+        noisy = noisy.repeat(self.K, 1, 1, 1)
+        #noisy = torch.stack([noisy for i in range(self.K)], dim=0).squeeze(1)
         print(f"NOISY:{noisy.shape}")
 
         c = c.repeat(self.K)
@@ -71,7 +71,7 @@ class DataSampler:
             self.model.evaluation = True
             ref_next_state, _, _ = self.model.get_action(noisy_ref)
             ref_est_audio = self.env.get_audio(ref_next_state)
-            print(f"Ref done...")
+            #print(f"Ref done...")
 
             #Set evaluation to False to activate sampling layer.
             #These are the sampled enhanced outputs
@@ -79,7 +79,7 @@ class DataSampler:
             self.model.evaluation = False
             next_state, _, _ = self.model.get_action(noisy_rl)
             est_audio = self.env.get_audio(next_state)
-            print(f"RL done...")
+            #print(f"RL done...")
 
         est_audio = torch.cat([ref_est_audio, est_audio], dim=0)
         return est_audio, c

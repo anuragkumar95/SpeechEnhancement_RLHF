@@ -382,8 +382,6 @@ class TSCNet(nn.Module):
         ).unsqueeze(1)
         
         x_in = torch.cat([mag, x], dim=1)
-
-        #print(f"X_IN:{torch.isnan(x_in).any(), torch.isinf(x_in).any()}")
         
         out_1 = self.dense_encoder(x_in)
         out_2 = self.TSCB_1(out_1)
@@ -391,13 +389,9 @@ class TSCNet(nn.Module):
         out_4 = self.TSCB_3(out_3)
         out_5 = self.TSCB_4(out_4)
 
-        #print(f"out5:{torch.isnan(out_5).any(), torch.isinf(out_5).any()}")
-
         mask = self.mask_decoder(out_5)
         complex_out = self.complex_decoder(out_5)
         mask = mask.permute(0, 2, 1).unsqueeze(1)
-
-        #print(f"cmask:{torch.isnan(complex_out).any(), torch.isinf(complex_out).any()}")
 
         probs = None
         if not self.evaluation:

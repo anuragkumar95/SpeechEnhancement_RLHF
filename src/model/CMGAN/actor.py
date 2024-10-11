@@ -353,10 +353,8 @@ class TSCNet(nn.Module):
             x = N.rsample()
         else:
             assert x.shape == mu.shape, f"Dims in action {x.shape} don't match mu {mu.shape}"
-          
         x_logprob = N.log_prob(x)
         x_entropy = N.entropy()
-
         return x, x_logprob, x_entropy
 
     def get_action(self, x):
@@ -406,8 +404,8 @@ class TSCNet(nn.Module):
             if action is not None:
                 mag, complex_out = action
             #Add gaussian noise
-            mask, r_logprob, _ = self.sample(mu=mask, x=mag)
-            complex_out, i_logprob, _ = self.sample(mu=complex_out, x=complex_out)
+            mask, r_logprob, _ = self.sample(mu=mask)
+            complex_out, i_logprob, _ = self.sample(mu=complex_out)
             probs = r_logprob.squeeze(1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
           
         out_mag = mask * mag

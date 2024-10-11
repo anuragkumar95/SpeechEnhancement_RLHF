@@ -80,15 +80,15 @@ class DataSampler:
     
     def get_best_audio(self, audios, c):
         #Get MOS scores for all sampled audios
-        nmos = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
+        nmos_orig = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
         #dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
-        dmos = self.dns_mos.get_scores(audios, desired_fs=16000, gpu_id=0)
+        dmos_orig = self.dns_mos.get_scores(audios, desired_fs=16000, gpu_id=0)
 
         #reference audios
-        n0, d0 = nmos[0], dmos[0]
+        n0, d0 = nmos_orig[0], dmos_orig[0]
 
-        nmos = nmos - n0
-        dmos = dmos - d0
+        nmos = nmos_orig - n0
+        dmos = dmos_orig - d0
 
         #Mask out mos values so that only those values with both 
         #higher nmos and dmos are considered.
@@ -113,7 +113,7 @@ class DataSampler:
         #Return the audio with the biggest magnitude
         idx = torch.argmax(mag)  
         print(f"Best audio index:{idx}")
-        return (audios[idx], audios[0]), (dmos, nmos, idx)
+        return (audios[idx], audios[0]), (dmos_orig, nmos_orig, idx)
     
     def generate_samples(self):
          for _ in tqdm(range(self.n)):

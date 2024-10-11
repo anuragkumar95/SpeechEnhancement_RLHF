@@ -218,7 +218,7 @@ class DPOTrainer:
 
 if __name__ == '__main__':
 
-    train_ds, test_ds = load_data("/users/PAS2301/kumar1109/NISQA_Corpus", 
+    train_ds, test_ds = load_data("/users/PAS2301/kumar1109/speech-datasets/VoiceBank/", 
                                   4, 1, 
                                   32000, gpu = False)
     

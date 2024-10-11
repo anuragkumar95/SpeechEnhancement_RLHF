@@ -110,7 +110,8 @@ class DataSampler:
 
         #Return the audio with the biggest magnitude
         idx = torch.argmax(mag)  
-        return (audios[idx], audios[0])
+        print(f"Best audio index:{idx}")
+        return (audios[idx], audios[0]), ((dmos[idx], nmos[idx]), (dmos[0], nmos[0]))
     
     def generate_samples(self):
          for _ in tqdm(range(self.n)):
@@ -129,19 +130,20 @@ class DataSampler:
 
             a_map = {}
             batchsize = noisy.shape[0]
-            
+            SCORES = []
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
                 audios_i = audios_i / c_i[0]
-                ypos, yneg = self.get_best_audio(audios_i, c_i)
+                (ypos, yneg), scores = self.get_best_audio(audios_i, c_i)
                 a_map[fname] = {
                     'x':noisy[i, ...],
                     'ypos':ypos,
                     'yneg':yneg
                 }
-                
+                SCORES.append(scores)
                 self.save(a_map)
+            return SCORES
 
     def generate_triplets(self):
         #Remove previous stored data
@@ -149,7 +151,7 @@ class DataSampler:
 
         #Generate new data
         print(f"Generating {self.n} triplets")
-        self.generate_samples()
+        MOS_SCORES = self.generate_samples()
 
         ds = NISQAPreferenceDataset(root=self.root)
         dl = torch.utils.data.DataLoader(

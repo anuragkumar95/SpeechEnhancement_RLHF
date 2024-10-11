@@ -4,18 +4,16 @@
 """
 
 from model.CMGAN.actor import TSCNet
-import os
 from data.dataset import load_data
 from data_sampler import DataSampler
 import torch.nn.functional as F
 import torch
-from utils import power_compress, batch_pesq, copy_weights, freeze_layers
+from utils import power_compress, preprocess_batch, freeze_layers
 
 import argparse
 import wandb
 import numpy as np
-#import traceback
-from speech_enh_env import  SpeechEnhancementAgent
+
 import torch
 import wandb
 #import copy
@@ -27,13 +25,12 @@ import torch.multiprocessing as mp
 import torch.nn.functional as F
 
 #torch.manual_seed(123)
-
-
 """
 TODO:
 1. Add wandb logs.
 2. Add validation loop
 3. Implement proper argparsing.
+4. Implement checkpoint saving and loading if resume training. 
 """
 
 class DPO:
@@ -41,7 +38,8 @@ class DPO:
                  sft_model,
                  model,   
                  gpu_id=None, 
-                 beta=0.2,):
+                 beta=0.2,
+                 wandb=False):
         
         self.ref_model = sft_model
         self.model = model
@@ -84,7 +82,7 @@ class DPO:
         scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
         print(f"SCORES: {scores}, {scores.shape}")
         log_scores = F.logsigmoid(scores).mean()
-        return -log_scores
+        return -log_scores, (ypos_relative_logps.mean(), yneg_relative_logps.mean())
 
     
     def spec(self, noisy, ypos, yneg, n_fft=400, hop=100):
@@ -133,7 +131,15 @@ class DPO:
             yneg = yneg.to(self.gpu_id)
 
         x, ypos, yneg = self.spec(x, ypos, yneg)
-        dpo_loss = self.dpo_loss(x, ypos, yneg)
+        dpo_loss, ypos_logps, yneg_logps = self.dpo_loss(x, ypos, yneg)
+
+        if self.wandb:
+            wandb.log({
+                'dpo_loss':dpo_loss,
+                'yposlogps':ypos_logps,
+                'yneglogps':yneg_logps
+            })
+
         return dpo_loss
 
 
@@ -188,11 +194,153 @@ class DPOTrainer:
                                         K=25, 
                                         num_samples=3)
         
+        if args.wandb:
+            wandb.init(project=args.exp, name=args.suffix)
+        
         self.DPO = DPO(sft_model=self.expert,
                        model=self.actor,   
                        gpu_id=gpu_id, 
-                       beta=0.1)
+                       beta=0.1,
+                       wandb=args.wandb)
+    '''
+    def run_validation_step(self, batch):
+        """
+        Runs a vlidation loop for a batch.
+        Predict mask for each frame one at a time 
+        and return pesq score of the enhances batch of 
+        spectrograms.
+        """
+        metrics = {
+            'pesq':[],
+            'csig':[],
+            'cbak':[],
+            'covl':[],
+            'ssnr':[],
+            'stoi':[],
+            'si-sdr':[],
+            'mse':0,
+            'reward':0}
+        rl_state = []
+        C = []
+
+
+        #print("Running validation...")
+        clean_aud, clean, noisy, _, c = batch
         
+        inp = noisy.permute(0, 1, 3, 2)
+
+        #Forward pass through actor to get the action(mask)
+        next_state, log_probs, _ = self.actor.get_action(inp)
+        est_audio = self.trainer.env.get_audio(next_state)
+        
+        #Get reward
+        for i in range(inp.shape[0]):
+            rl_state.append(est_audio[i, ...])
+            C.append(c[i, ...])
+
+        for i in range(clean_aud.shape[0]):
+            #if i >= clean_aud.shape[0]:
+            #    break
+            values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
+                                     rl_state[i].detach().cpu().numpy(), 
+                                     16000, 
+                                     0)
+            
+            metrics['pesq'].append(values[0])
+            metrics['csig'].append(values[1])
+            metrics['cbak'].append(values[2])
+            metrics['covl'].append(values[3])
+            metrics['ssnr'].append(values[4])
+            metrics['stoi'].append(values[5])
+            metrics['si-sdr'].append(values[6])
+
+        mb_pesq = torch.tensor(metrics['pesq']).to(self.gpu_id)
+        mb_pesq = mb_pesq.reshape(-1, 1)
+        metrics['rl_state'] = rl_state
+        metrics['C'] = C
+        return metrics
+    
+
+    def run_validation(self, epoch):
+        #Run validation
+        self.actor.evaluation = True
+        pesq = 0
+        loss = 0
+        val_metrics = {
+            'pesq':[],
+            'csig':[],
+            'cbak':[],
+            'covl':[],
+            'ssnr':[],
+            'stoi':[],
+            'si-sdr':[],
+            'mse':0,
+            'kl_penalty':0,
+            'reward_model_score':0
+        }
+
+        print(f"Running evaluation at epoch:{epoch}")
+        STATE = []
+        C = []
+        num_batches = len(self.test_ds)
+        with torch.no_grad():
+            for i, batch in enumerate(self.test_ds):
+                
+                #Preprocess batch
+                batch = preprocess_batch(batch, 
+                                         n_fft=self.n_fft, 
+                                         hop=self.hop, 
+                                         gpu_id=self.gpu_id, 
+                                         return_c=True, 
+                                         model=self.args.model)
+                
+                #Run validation episode
+                try:
+                    metrics = self.run_validation_step(batch)
+                    val_metrics['pesq'].extend(metrics['pesq'])
+                    val_metrics['csig'].extend(metrics['csig'])
+                    val_metrics['cbak'].extend(metrics['cbak'])
+                    val_metrics['covl'].extend(metrics['covl'])
+                    val_metrics['ssnr'].extend(metrics['ssnr'])
+                    val_metrics['stoi'].extend(metrics['stoi'])
+                    val_metrics['si-sdr'].extend(metrics['si-sdr'])
+                    val_metrics['mse'] += metrics['mse']
+                    val_metrics['kl_penalty'] += metrics['kl_penalty']
+                    STATE.extend(metrics['rl_state'])
+                    C.extend(metrics['C'])
+
+                    print(f"Batch:{i} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{val_metrics['mse']}")
+        
+
+                except Exception as e:
+                    print(traceback.format_exc())
+                    continue
+            
+            #Get MOS reward
+            rm_score = self.trainer.env.get_NISQA_MOS_reward(audios=STATE, Cs=C)
+            val_metrics['reward_model_score'] = rm_score.mean()
+        
+        
+        wandb.log({ 
+            "epoch": epoch, 
+            "val_scaled_pesq":pesq,
+            "val_pretrain_loss":loss,
+            "val_pesq":np.asarray(val_metrics["pesq"]).mean(),
+            "val_csig":np.asarray(val_metrics["csig"]).mean(),
+            "val_cbak":np.asarray(val_metrics["cbak"]).mean(),
+            "val_covl":np.asarray(val_metrics["covl"]).mean(),
+            "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
+            "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
+            "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
+            "val_KL":kl,
+            "reward_model_score":val_metrics['reward_model_score']
+        }) 
+        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {val_metrics['reward_model_score']}")
+                
+        return loss, val_metrics['reward_model_score'], np.asarray(val_metrics["pesq"]).mean()
+
+
+    '''
     def train(self):
         print("Start training...")
         train_dl = self.data_sampler.generate_triplets()
@@ -201,7 +349,6 @@ class DPOTrainer:
         for epoch in range(self.args.epochs):
             for step, batch in enumerate(train_dl):
                 x, ypos, yneg = batch
-                
                 #Get DPO loss
                 loss = self.DPO.forward_step(x, ypos, yneg)
                 loss = loss / self.args.accum_grad

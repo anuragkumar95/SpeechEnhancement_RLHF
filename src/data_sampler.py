@@ -21,6 +21,7 @@ class DataSampler:
         self.t_high = 15
         self.dl = dataloader
         self._iter_ = iter(self.dl)
+        self.gpu_id = gpu_id
         
         self.root = save_dir
         self.sample_dir = f"{save_dir}/enhanced"
@@ -87,7 +88,7 @@ class DataSampler:
         #Get MOS scores for all sampled audios
         nmos_orig = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
         #dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
-        dmos_orig = self.dns_mos.get_scores(audios, desired_fs=16000, gpu_id=0)
+        dmos_orig = self.dns_mos.get_scores(audios, desired_fs=16000, gpu_id=self.gpu_id)
 
         #reference audios
         n0, d0 = nmos_orig[0], dmos_orig[0]

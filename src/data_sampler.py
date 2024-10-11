@@ -9,7 +9,7 @@ from utils import preprocess_batch
 from speech_enh_env import SpeechEnhancementAgent
 from tqdm import tqdm
 import soundfile as sf
-
+import pickle
 
 class DataSampler:
     def __init__(self, dataloader, model, save_dir, num_samples=100, K=25):
@@ -27,6 +27,7 @@ class DataSampler:
         self.x_dir = f"{save_dir}/noisy"
         self.y_pos_dir = f"{save_dir}/ypos"
         self.y_neg_dir = f"{save_dir}/yneg"
+        self.score_dir = f"{save_dir}/scores"
 
         os.makedirs(self.root, exist_ok=True)
         os.makedirs(self.x_dir, exist_ok=True)
@@ -111,7 +112,7 @@ class DataSampler:
         #Return the audio with the biggest magnitude
         idx = torch.argmax(mag)  
         print(f"Best audio index:{idx}")
-        return (audios[idx], audios[0]), ((dmos[idx], nmos[idx]), (dmos[0], nmos[0]))
+        return (audios[idx], audios[0]), (dmos, nmos, idx)
     
     def generate_samples(self):
          for _ in tqdm(range(self.n)):
@@ -130,7 +131,7 @@ class DataSampler:
 
             a_map = {}
             batchsize = noisy.shape[0]
-            SCORES = []
+          
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
@@ -139,11 +140,12 @@ class DataSampler:
                 a_map[fname] = {
                     'x':noisy[i, ...],
                     'ypos':ypos,
-                    'yneg':yneg
+                    'yneg':yneg,
+                    'scores':scores
                 }
-                SCORES.append(scores)
+             
                 self.save(a_map)
-            return SCORES
+            return
 
     def generate_triplets(self):
         #Remove previous stored data
@@ -151,7 +153,7 @@ class DataSampler:
 
         #Generate new data
         print(f"Generating {self.n} triplets")
-        MOS_SCORES = self.generate_samples()
+        self.generate_samples()
 
         ds = NISQAPreferenceDataset(root=self.root)
         dl = torch.utils.data.DataLoader(
@@ -197,6 +199,14 @@ class DataSampler:
 
                 sf.write(ypos_path, ypos, 16000)
                 sf.write(yneg_path, yneg, 16000)  
+
+                nmos, dmos, idx = audio_map[fname].get('scores')
+                with open(os.path.join(self.score_dir, f"{fname}.pickle"), 'wb') as fp:
+                    pickle.dump({
+                        'DNSMOS':dmos.detach().cpu().numpy(),
+                        'NISQA':nmos.detach().cpu().numpy(),
+                        'idx': idx
+                    }, fp)
 
             #Save noisy
             x = audio_map[fname].get('x', None)

@@ -131,7 +131,7 @@ class DPO:
             yneg = yneg.to(self.gpu_id)
 
         x, ypos, yneg = self.spec(x, ypos, yneg)
-        dpo_loss, ypos_logps, yneg_logps = self.dpo_loss(x, ypos, yneg)
+        dpo_loss, (ypos_logps, yneg_logps) = self.dpo_loss(x, ypos, yneg)
 
         if self.wandb:
             wandb.log({

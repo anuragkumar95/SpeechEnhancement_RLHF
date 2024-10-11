@@ -66,18 +66,18 @@ class DPO:
         ypos = ypos.permute(0, 1, 3, 2)
         yneg = yneg.permute(0, 1, 3, 2)
 
-        ref_pos_logprob = self.get_logprob(ref_mu, ypos)
-        ref_neg_logprob = self.get_logprob(ref_mu, yneg)
+        ref_pos_logprob = torch.mean(self.get_logprob(ref_mu, ypos), dim=[1, 2, 3])
+        ref_neg_logprob = torch.mean(self.get_logprob(ref_mu, yneg), dim=[1, 2, 3])
 
-        y_pos_logprob = self.get_logprob(y_mu, ypos)
-        y_neg_logprob = self.get_logprob(y_mu, yneg)
+        y_pos_logprob = torch.mean(self.get_logprob(y_mu, ypos), dim=[1, 2, 3])
+        y_neg_logprob = torch.mean(self.get_logprob(y_mu, yneg), dim=[1, 2, 3])
 
-        ypos_relative_logps = torch.mean((y_pos_logprob - ref_pos_logprob).sum(1), dim=[1, 2])
-        yneg_relative_logps = torch.mean((y_neg_logprob - ref_neg_logprob).sum(1), dim=[1, 2])
+        ypos_relative_logps = y_pos_logprob - ref_pos_logprob
+        yneg_relative_logps = y_neg_logprob - ref_neg_logprob
 
         print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
-        print(f"REF:{torch.mean(ref_pos_logprob, dim=[1, 2, 3])}, {torch.mean(ref_neg_logprob, dim=[1, 2, 3])}")
-        print(f"RL:{torch.mean(y_pos_logprob, dim=[1, 2, 3])}, {torch.mean(y_neg_logprob, dim=[1, 2, 3])}")
+        print(f"REF:{ref_pos_logprob}, {ref_neg_logprob}")
+        print(f"RL:{y_pos_logprob}, {y_neg_logprob}")
         print(f"REL_POS:{ypos_relative_logps}")
         print(f"REL_NEG:{yneg_relative_logps}")
         scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 

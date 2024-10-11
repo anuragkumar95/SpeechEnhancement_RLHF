@@ -58,6 +58,9 @@ class DPO:
 
     def dpo_loss(self, x, ypos, yneg):
 
+        ypos = ypos.permute(0, 1, 3, 2)
+        yneg = yneg.permute(0, 1, 3, 2)
+
         with torch.no_grad():
             ref_mu = self.ref_model(x)
             ref_mu = torch.cat([ref_mu[0], ref_mu[1]], dim=1)
@@ -66,8 +69,6 @@ class DPO:
         
         y_mu = self.model(x)
         y_mu = torch.cat([y_mu[0], y_mu[1]], dim=1)
-        ypos = ypos.permute(0, 1, 3, 2)
-        yneg = yneg.permute(0, 1, 3, 2)
 
         y_pos_logprob = torch.mean(self.get_logprob(y_mu, ypos), dim=[1, 2, 3])
         y_neg_logprob = torch.mean(self.get_logprob(y_mu, yneg), dim=[1, 2, 3])

@@ -57,17 +57,17 @@ class DPO:
         return x_logprob 
 
     def dpo_loss(self, x, ypos, yneg):
-        ref_mu = self.ref_model(x)
+
+        with torch.no_grad():
+            ref_mu = self.ref_model(x)
+            ref_mu = torch.cat([ref_mu[0], ref_mu[1]], dim=1)
+            ref_pos_logprob = torch.mean(self.get_logprob(ref_mu, ypos), dim=[1, 2, 3])
+            ref_neg_logprob = torch.mean(self.get_logprob(ref_mu, yneg), dim=[1, 2, 3])
+        
         y_mu = self.model(x)
-
-        ref_mu = torch.cat([ref_mu[0], ref_mu[1]], dim=1)
         y_mu = torch.cat([y_mu[0], y_mu[1]], dim=1)
-
         ypos = ypos.permute(0, 1, 3, 2)
         yneg = yneg.permute(0, 1, 3, 2)
-
-        ref_pos_logprob = torch.mean(self.get_logprob(ref_mu, ypos), dim=[1, 2, 3])
-        ref_neg_logprob = torch.mean(self.get_logprob(ref_mu, yneg), dim=[1, 2, 3])
 
         y_pos_logprob = torch.mean(self.get_logprob(y_mu, ypos), dim=[1, 2, 3])
         y_neg_logprob = torch.mean(self.get_logprob(y_mu, yneg), dim=[1, 2, 3])
@@ -195,7 +195,8 @@ class DPOTrainer:
     def train(self):
         print("Start training...")
         train_dl = self.data_sampler.generate_triplets()
-
+        self.actor.train()
+        self.expert.train()
         for epoch in range(self.args.epochs):
             for step, batch in enumerate(train_dl):
                 x, ypos, yneg = batch

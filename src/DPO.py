@@ -44,7 +44,7 @@ class DPO:
         self.ref_model = sft_model
         self.model = model
         self.gpu_id = gpu_id 
-        self.std = 1.0
+        self.std = 0.1
         self.beta = beta
         self.wandb = wandb
 

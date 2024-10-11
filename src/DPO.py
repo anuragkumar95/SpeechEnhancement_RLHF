@@ -184,7 +184,7 @@ class DPOTrainer:
         
         self.data_sampler = DataSampler(dataloader=train_ds, 
                                         model=self.expert, 
-                                        save_dir="/fs/scratch/PAS2301/kumar1109/NISQA_Corpus", 
+                                        save_dir="/fs/scratch/PAS2301/kumar1109/VCTK", 
                                         K=25, 
                                         num_samples=3)
         

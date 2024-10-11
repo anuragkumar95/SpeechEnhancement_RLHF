@@ -370,7 +370,7 @@ if __name__ == '__main__':
                                   32000, gpu = False)
     
     class Args:
-        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs, accum_grad):
+        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs, accum_grad, wandb=False):
             self.batchsize = batchsize
             self.ckpt = ckpt
             self.n_fft = n_fft
@@ -379,6 +379,7 @@ if __name__ == '__main__':
             self.epochs = epochs
             self.init_lr = init_lr
             self.accum_grad = accum_grad
+            self.wandb = wandb
 
     args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 0.0001, 50, 1)
     

@@ -47,7 +47,7 @@ class DataSampler:
                                           reward_model=None)
         
     def sample_batch(self, batch):
-        print(f"GPU_ID":self.env.gpu_id)
+        print(f"GPU_ID:{self.env.gpu_id}")
         batch = preprocess_batch(batch, 
                                  n_fft=self.env.n_fft, 
                                  hop=self.env.hop, 

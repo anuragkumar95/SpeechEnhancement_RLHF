@@ -46,6 +46,7 @@ class DPO:
         self.gpu_id = gpu_id 
         self.std = 1.0
         self.beta = beta
+        self.wandb = wandb
 
 
     def get_logprob(self, mu, x):

@@ -58,7 +58,9 @@ class DataSampler:
         _, _, noisy, _, c = batch
         noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
-        noisy = noisy.repeat(self.K, 1, 1, 1)
+        #noisy = noisy.repeat(self.K, 1, 1, 1)
+        noisy = torch.concatenate([noisy for i in range(self.K)], dim=0)
+        print(f"NOISY:{noisy.shape}")
         c = c.repeat(self.K)
         with torch.no_grad():
             noisy_ref = noisy[:bs, ...]

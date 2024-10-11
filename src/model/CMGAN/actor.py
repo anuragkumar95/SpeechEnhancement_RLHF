@@ -348,9 +348,7 @@ class TSCNet(nn.Module):
 
     def sample(self, mu, x=None):
         sigma = (torch.ones(mu.shape) * self.std).to(self.gpu_id) 
-        
         N = Normal(mu, sigma)
-        
         if x is None:
             x = N.rsample()
         else:
@@ -363,7 +361,7 @@ class TSCNet(nn.Module):
 
     def get_action(self, x):
         real, imag, probs = self.forward(x, action=None)
-        return (real, imag), probs, None
+        return (real, imag), probs, None#
 
     def get_action_prob(self, x, action):
         """

@@ -453,7 +453,7 @@ def main(rank: int, world_size: int, args):
         print(available_gpus)
 
     train_ds, test_ds = dataloader.load_data(
-            args.data_dir, args.batch_size, 1, args.cut_len, gpu=False,
+            args.data_dir, args.batch_size, 1, args.cut_len, gpu=False, ds='NISQA'
         )
 
 

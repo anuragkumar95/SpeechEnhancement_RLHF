@@ -220,19 +220,21 @@ def get_random_batch(ds, batch_size):
     
 
 
-def load_data(ds_dir, batch_size, n_cpu, cut_len, gpu=True):
+def load_data(ds_dir, batch_size, n_cpu, cut_len, gpu=True, ds='VCTK'):
     torchaudio.set_audio_backend("sox_io")  # in linux
-    train_dir = os.path.join(ds_dir, "train")
-    test_dir = os.path.join(ds_dir, "test")
+    if ds == 'VCTK':
+        train_dir = os.path.join(ds_dir, "train")
+        test_dir = os.path.join(ds_dir, "test")
 
-    train_ds = DemandDataset(train_dir, cut_len)
-    test_ds = DemandDataset(test_dir, cut_len)
+        train_ds = DemandDataset(train_dir, cut_len)
+        test_ds = DemandDataset(test_dir, cut_len)
     
-    #train_csv = os.path.join(ds_dir, 'train.csv')
-    #test_csv = os.path.join(ds_dir, 'valid.csv')
+    if ds == 'NISQA':
+        train_csv = os.path.join(ds_dir, 'train.csv')
+        test_csv = os.path.join(ds_dir, 'valid.csv')
 
-    #train_ds = NISQA_Dataset(csv=train_csv, cut_len=cut_len)
-    #test_ds = NISQA_Dataset(csv=test_csv, cut_len=cut_len)
+        train_ds = NISQA_Dataset(csv=train_csv, cut_len=cut_len)
+        test_ds = NISQA_Dataset(csv=test_csv, cut_len=cut_len)
     
     if gpu:
         train_dataset = torch.utils.data.DataLoader(

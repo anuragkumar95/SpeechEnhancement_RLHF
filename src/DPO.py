@@ -139,7 +139,8 @@ class DPO:
             wandb.log({
                 'dpo_loss':dpo_loss,
                 'yposlogps':ypos_logps,
-                'yneglogps':yneg_logps
+                'yneglogps':yneg_logps,
+                'rewards': ypos_logps - yneg_logps, 
             })
 
         return dpo_loss

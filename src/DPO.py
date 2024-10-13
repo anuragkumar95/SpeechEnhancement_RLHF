@@ -84,7 +84,7 @@ class DPO:
         scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
         #print(f"SCORES: {scores}, {scores.shape}")
         log_scores = F.logsigmoid(scores).mean()
-        return -log_scores, (ypos_relative_logps.mean(), yneg_relative_logps.mean())
+        return -log_scores, (y_pos_logprob.mean(), y_neg_logprob.mean())
 
     
     def spec(self, noisy, ypos, yneg, n_fft=400, hop=100):

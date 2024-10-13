@@ -9,14 +9,15 @@ from data_sampler import DataSampler
 import torch.nn.functional as F
 import torch
 from utils import power_compress, preprocess_batch, freeze_layers
-
+import os
 import argparse
 import wandb
 import numpy as np
 
 import torch
 import wandb
-#import copy
+import traceback 
+
 from torch.distributions import Normal
 
 from compute_metrics import compute_metrics
@@ -75,13 +76,13 @@ class DPO:
         ypos_relative_logps = y_pos_logprob - ref_pos_logprob
         yneg_relative_logps = y_neg_logprob - ref_neg_logprob
 
-        print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
-        print(f"REF:{ref_pos_logprob}, {ref_neg_logprob}")
-        print(f"RL:{y_pos_logprob}, {y_neg_logprob}")
-        print(f"REL_POS:{ypos_relative_logps}")
-        print(f"REL_NEG:{yneg_relative_logps}")
+        #print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
+        #print(f"REF:{ref_pos_logprob}, {ref_neg_logprob}")
+        #print(f"RL:{y_pos_logprob}, {y_neg_logprob}")
+        #print(f"REL_POS:{ypos_relative_logps}")
+        #print(f"REL_NEG:{yneg_relative_logps}")
         scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
-        print(f"SCORES: {scores}, {scores.shape}")
+        #print(f"SCORES: {scores}, {scores.shape}")
         log_scores = F.logsigmoid(scores).mean()
         return -log_scores, (ypos_relative_logps.mean(), yneg_relative_logps.mean())
 
@@ -151,6 +152,8 @@ class DPOTrainer:
                  args, 
                  gpu_id):
         self.args = args
+        self.train_ds = train_ds
+        self.test_ds = test_ds
         self.actor = TSCNet(num_channel=64, 
                             num_features=self.args.n_fft // 2 + 1, 
                             gpu_id=gpu_id,
@@ -204,7 +207,26 @@ class DPOTrainer:
                        gpu_id=gpu_id, 
                        beta=0.1,
                        wandb=args.wandb)
-    '''
+    
+    def save_model(self, path_root, exp, epoch, pesq):
+        """
+        Save model at path_root
+        """
+        checkpoint_prefix = f"{exp}_PESQ_{pesq}_epoch_{epoch}.pt"
+        path = os.path.join(path_root, exp)
+        os.makedirs(path, exist_ok=True)
+        path = os.path.join(path, checkpoint_prefix)
+        if self.gpu_id == 0:
+            save_dict = {
+                'generator_state_dict':self.actor.state_dict(), 
+                'optimizer':self.optimizer.state_dict(),
+                'epoch':epoch,
+                'pesq':pesq
+            }
+            
+            torch.save(save_dict, path)
+            print(f"checkpoint:{checkpoint_prefix} saved at {path}")
+
     def run_validation_step(self, batch):
         """
         Runs a vlidation loop for a batch.
@@ -334,35 +356,35 @@ class DPOTrainer:
             "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
             "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
-            "val_KL":kl,
             "reward_model_score":val_metrics['reward_model_score']
         }) 
-        print(f"Episode:{episode} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {val_metrics['reward_model_score']}")
+        print(f"Episode:{epoch} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {val_metrics['reward_model_score']}")
                 
         return loss, val_metrics['reward_model_score'], np.asarray(val_metrics["pesq"]).mean()
 
 
-    '''
+    
     def train(self):
         print("Start training...")
-        train_dl = self.data_sampler.generate_triplets()
-        self.actor.train()
-        self.expert.train()
-        for epoch in range(self.args.epochs):
-            for step, batch in enumerate(train_dl):
-                x, ypos, yneg = batch
-                #Get DPO loss
-                loss = self.DPO.forward_step(x, ypos, yneg)
-                loss = loss / self.args.accum_grad
-                if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
-                    loss.backward()
-                    print(f"STEP:{step}|DPO_LOSS:{loss}")
-                    print("="*100)
-                    #Update network
-                    if (step+1) % self.args.accum_grad == 0:
-                        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
-                        self.optimizer.step()
-                        self.optimizer.zero_grad()
+        for N in range(5):
+            train_dl = self.data_sampler.generate_triplets()
+            self.actor.train()
+            self.expert.train()
+            for epoch in range(self.args.epochs):
+                for step, batch in enumerate(train_dl):
+                    x, ypos, yneg = batch
+                    #Get DPO loss
+                    loss = self.DPO.forward_step(x, ypos, yneg)
+                    loss = loss / self.args.accum_grad
+                    if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
+                        loss.backward()
+                        print(f"STEP:{step}|DPO_LOSS:{loss}")
+                        print("="*100)
+                        #Update network
+                        if (step+1) % self.args.accum_grad == 0:
+                            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
+                            self.optimizer.step()
+                            self.optimizer.zero_grad()
 
 
 if __name__ == '__main__':
@@ -372,7 +394,7 @@ if __name__ == '__main__':
                                   32000, gpu = False)
     
     class Args:
-        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs, accum_grad, wandb=False):
+        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs, accum_grad, exp='DPO', suffix='debug', wandb=True):
             self.batchsize = batchsize
             self.ckpt = ckpt
             self.n_fft = n_fft
@@ -382,9 +404,10 @@ if __name__ == '__main__':
             self.init_lr = init_lr
             self.accum_grad = accum_grad
             self.wandb = wandb
+            self.exp = exp
+            self.suffix = suffix
 
     args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 0.0001, 50, 1)
-    
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
     trainer.train()
 

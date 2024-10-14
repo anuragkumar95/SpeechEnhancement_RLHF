@@ -345,8 +345,6 @@ class DPOTrainer:
                     val_metrics['ssnr'].extend(metrics['ssnr'])
                     val_metrics['stoi'].extend(metrics['stoi'])
                     val_metrics['si-sdr'].extend(metrics['si-sdr'])
-                    val_metrics['mse'] += metrics['mse']
-                    val_metrics['kl_penalty'] += metrics['kl_penalty']
                     STATE.extend(metrics['rl_state'])
                     C.extend(metrics['C'])
 
@@ -388,6 +386,7 @@ class DPOTrainer:
         print("Start training...")
         for N in range(5):
             train_dl = self.data_sampler.generate_triplets()
+            print(f"New_dataset length:{len(train_dl)}")
             self.actor.train()
             self.expert.train()
             for epoch in range(self.args.epochs):

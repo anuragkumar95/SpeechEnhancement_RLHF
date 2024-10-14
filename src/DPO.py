@@ -74,6 +74,9 @@ class DPO:
         y_pos_logprob = torch.mean(self.get_logprob(y_mu, ypos), dim=[1, 2, 3])
         y_neg_logprob = torch.mean(self.get_logprob(y_mu, yneg), dim=[1, 2, 3])
 
+        print(f"Y_POS:{y_pos_logprob.mean()} | Y_NEG:{y_neg_logprob.mean()}|")
+        print(f"R_POS:{ref_pos_logprob.mean()} | R_NEG:{ref_neg_logprob.mean()}")
+
         ypos_relative_logps = y_pos_logprob - ref_pos_logprob
         yneg_relative_logps = y_neg_logprob - ref_neg_logprob
 

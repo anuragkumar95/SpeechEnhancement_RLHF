@@ -404,7 +404,7 @@ class DPOTrainer:
                             self.optimizer.zero_grad()
 
                 #Run validation
-                if epoch % 10 == 0:
+                if (epoch+1) % 10 == 0:
                     epoch_nisqa, epoch_dnsmos = self.run_validation(epoch)
                     curr_mos = (epoch_nisqa + epoch_dnsmos) / 2
                     

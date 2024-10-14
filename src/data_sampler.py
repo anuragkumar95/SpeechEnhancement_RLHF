@@ -52,7 +52,7 @@ class DataSampler:
         
     def load_expert_model(self, model):
         self.model = model
-        
+
         #Set expert to eval and freeze all layers.
         self.model = freeze_layers(self.model, 'all')
 
@@ -162,7 +162,6 @@ class DataSampler:
                 }
              
                 self.save(a_map)
-            return
 
     def generate_triplets(self):
         #Remove previous stored data

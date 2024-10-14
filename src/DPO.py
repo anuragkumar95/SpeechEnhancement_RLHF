@@ -425,8 +425,6 @@ class DPOTrainer:
             self.data_sampler.load_expert_model(new_expert)
 
 
-
-
 if __name__ == '__main__':
 
     train_ds, test_ds = load_data("/users/PAS2301/kumar1109/speech-datasets/VoiceBank/", 
@@ -451,7 +449,16 @@ if __name__ == '__main__':
             self.exp = exp
             self.suffix = suffix
 
-    args = Args(4, "/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 400, 100, 0, 0.0001, 50, 1)
+    args = Args(batchsize=4, 
+                ckpt="/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 
+                save_dir='',
+                n_fft=400, 
+                hop=100, 
+                gpu_id=0, 
+                init_lr=0.0001, 
+                epochs=50, 
+                accum_grad=1)
+    
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
     trainer.train()
 

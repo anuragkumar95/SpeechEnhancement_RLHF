@@ -192,7 +192,7 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/VCTK", 
                                         K=25, 
-                                        num_samples=10,
+                                        num_samples=args.n_sample,
                                         gpu_id=gpu_id)
         
         if args.wandb:
@@ -271,9 +271,7 @@ class DPOTrainer:
         rl_state = []
         C = []
 
-        print("Running validation...")
-        clean_aud, _, noisy, _, c = batch
-        
+        clean_aud, _, noisy, _, c = batch    
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
@@ -406,19 +404,20 @@ class DPOTrainer:
                             self.optimizer.zero_grad()
 
                 #Run validation
-                epoch_nisqa, epoch_dnsmos = self.run_validation(epoch)
-                curr_mos = (epoch_nisqa + epoch_dnsmos) / 2
-                
-                if curr_mos >= best_mos:
-                    best_mos = curr_mos
-                    self.save_model(self.args.save_dir, self.args.exp, epoch, best_mos)
+                if epoch % 10 == 0:
+                    epoch_nisqa, epoch_dnsmos = self.run_validation(epoch)
+                    curr_mos = (epoch_nisqa + epoch_dnsmos) / 2
+                    
+                    if curr_mos >= best_mos:
+                        best_mos = curr_mos
+                        self.save_model(self.args.save_dir, self.args.exp, epoch, best_mos)
                 
             #Change the model to sample new data from
             new_expert = TSCNet(num_channel=64, 
                                 num_features=self.args.n_fft // 2 + 1, 
                                 gpu_id=self.gpu_id,
                                 eval=True)
-            
+            #TODO: Load the best checkpoint so far instead of the actor's checkoint.
             exp_state_dict = self.actor.state_dict()
             new_expert.load_state_dict(exp_state_dict)
             self.data_sampler.load_expert_model(new_expert)
@@ -434,9 +433,10 @@ if __name__ == '__main__':
                                   ds = 'VCTK')
     
     class Args:
-        def __init__(self, batchsize, ckpt, save_dir, n_fft, hop, gpu_id, init_lr, epochs, accum_grad, exp='DPO', suffix='debug', wandb=True):
+        def __init__(self, batchsize, ckpt, save_dir, n_fft, hop, n_sample, init_lr, epochs, accum_grad, exp='DPO', suffix='debug', wandb=True, gpu_id=None):
             self.batchsize = batchsize
             self.save_dir = save_dir
+            self.n_sample = n_sample
             self.ckpt = ckpt
             self.n_fft = n_fft
             self.hop = hop
@@ -451,6 +451,7 @@ if __name__ == '__main__':
     args = Args(batchsize=4, 
                 ckpt="/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 
                 save_dir='',
+                n_sample=15,
                 n_fft=400, 
                 hop=100, 
                 gpu_id=0, 

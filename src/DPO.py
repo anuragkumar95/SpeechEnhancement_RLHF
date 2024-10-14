@@ -451,7 +451,7 @@ if __name__ == '__main__':
     args = Args(batchsize=4, 
                 ckpt="/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 
                 save_dir='/users/PAS2301/kumar1109/CMGAN_DPO',
-                n_sample=15,
+                n_sample=10,
                 n_fft=400, 
                 hop=100, 
                 gpu_id=0, 
@@ -459,7 +459,7 @@ if __name__ == '__main__':
                 epochs=50, 
                 accum_grad=1,
                 exp='DPO_VCTK',
-                suffix=f'N_15_STD_0.1')
+                suffix=f'N_10_STD_0.1_debug')
     
     trainer = DPOTrainer(train_ds, test_ds, args=args, gpu_id=0)
     trainer.train()

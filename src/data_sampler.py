@@ -5,7 +5,7 @@ import torchaudio
 from model.CMGAN.actor import TSCNet
 from dns_mos import ComputeScore
 from data.dataset import load_data, NISQAPreferenceDataset
-from utils import preprocess_batch
+from utils import preprocess_batch, freeze_layers
 from speech_enh_env import SpeechEnhancementAgent
 from tqdm import tqdm
 import soundfile as sf
@@ -37,6 +37,9 @@ class DataSampler:
         os.makedirs(self.y_neg_dir, exist_ok=True)
         os.makedirs(self.score_dir, exist_ok=True)
 
+        #Set expert to eval and freeze all layers.
+        self.model = freeze_layers(self.model, 'all')
+
         p808_model_path = "/users/PAS2301/kumar1109/DNS-Challenge/DNSMOS/DNSMOS/model_v8.onnx"
         primary_model_path = "/users/PAS2301/kumar1109/DNS-Challenge/DNSMOS/DNSMOS/sig_bak_ovr.onnx"
         self.dns_mos = ComputeScore(primary_model_path, p808_model_path)
@@ -46,6 +49,13 @@ class DataSampler:
                                           gpu_id=gpu_id,
                                           args=None,
                                           reward_model=None)
+        
+    def load_expert_model(self, model):
+        self.model = model
+        
+        #Set expert to eval and freeze all layers.
+        self.model = freeze_layers(self.model, 'all')
+
         
     def sample_batch(self, batch):
         print(f"GPU_ID:{self.env.gpu_id}")

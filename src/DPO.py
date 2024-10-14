@@ -24,6 +24,7 @@ from compute_metrics import compute_metrics
 
 import torch.multiprocessing as mp
 import torch.nn.functional as F
+from collections import OrderedDict
 
 #torch.manual_seed(123)
 """
@@ -76,15 +77,11 @@ class DPO:
         ypos_relative_logps = y_pos_logprob - ref_pos_logprob
         yneg_relative_logps = y_neg_logprob - ref_neg_logprob
 
-        #print(f"SHAPES:{ypos_relative_logps.shape}, {yneg_relative_logps.shape}")
-        #print(f"REF:{ref_pos_logprob}, {ref_neg_logprob}")
-        #print(f"RL:{y_pos_logprob}, {y_neg_logprob}")
-        #print(f"REL_POS:{ypos_relative_logps}")
-        #print(f"REL_NEG:{yneg_relative_logps}")
-        scores = self.beta * (ypos_relative_logps - yneg_relative_logps) 
-        #print(f"SCORES: {scores}, {scores.shape}")
-        log_scores = F.logsigmoid(scores).mean()
-        return -log_scores, (y_pos_logprob.mean(), y_neg_logprob.mean())
+        acc = (ypos_relative_logps > yneg_relative_logps).float()
+        scores = ypos_relative_logps - yneg_relative_logps
+        log_scores = F.logsigmoid(self.beta * scores)
+        
+        return -log_scores.mean(), ypos_relative_logps.mean(), yneg_relative_logps.mean(), acc.mean(), scores.mean()
 
     
     def spec(self, noisy, ypos, yneg, n_fft=400, hop=100):
@@ -133,14 +130,15 @@ class DPO:
             yneg = yneg.to(self.gpu_id)
 
         x, ypos, yneg = self.spec(x, ypos, yneg)
-        dpo_loss, (ypos_logps, yneg_logps) = self.dpo_loss(x, ypos, yneg)
+        dpo_loss, ypos_logps, yneg_logps, acc, margins = self.dpo_loss(x, ypos, yneg)
 
         if self.wandb:
             wandb.log({
                 'dpo_loss':dpo_loss,
-                'yposlogps':ypos_logps,
-                'yneglogps':yneg_logps,
-                'rewards': ypos_logps - yneg_logps, 
+                'ypos_logps':ypos_logps,
+                'yneg_logps':yneg_logps,
+                'rewards': margins, 
+                'accuracy': acc
             })
 
         return dpo_loss
@@ -174,9 +172,6 @@ class DPOTrainer:
             self.actor.load_state_dict(expert_checkpoint)
             self.expert.load_state_dict(expert_checkpoint)
         
-        #Set expert to eval and freeze all layers.
-        self.expert = freeze_layers(self.expert, 'all')
-        
         del expert_checkpoint 
         print(f"Loaded checkpoint stored at {args.ckpt}.")
         
@@ -197,7 +192,7 @@ class DPOTrainer:
                                         model=self.expert, 
                                         save_dir="/fs/scratch/PAS2301/kumar1109/VCTK", 
                                         K=25, 
-                                        num_samples=5,
+                                        num_samples=10,
                                         gpu_id=gpu_id)
         
         if args.wandb:
@@ -208,12 +203,14 @@ class DPOTrainer:
                        gpu_id=gpu_id, 
                        beta=0.1,
                        wandb=args.wandb)
+        
+        self.gpu_id = gpu_id
     
-    def save_model(self, path_root, exp, epoch, pesq):
+    def save_model(self, path_root, exp, epoch, mos):
         """
         Save model at path_root
         """
-        checkpoint_prefix = f"{exp}_PESQ_{pesq}_epoch_{epoch}.pt"
+        checkpoint_prefix = f"{exp}_MOS_{mos}_epoch_{epoch}.pt"
         path = os.path.join(path_root, exp)
         os.makedirs(path, exist_ok=True)
         path = os.path.join(path, checkpoint_prefix)
@@ -222,11 +219,37 @@ class DPOTrainer:
                 'generator_state_dict':self.actor.state_dict(), 
                 'optimizer':self.optimizer.state_dict(),
                 'epoch':epoch,
-                'pesq':pesq
+                'MOS':mos
             }
             
             torch.save(save_dict, path)
             print(f"checkpoint:{checkpoint_prefix} saved at {path}")
+
+    def load_checkpoint(self, path):
+        try:
+            state_dict = torch.load(path, map_location=torch.device(self.gpu_id))
+            self.actor.load_state_dict(state_dict['generator_state_dict'])
+            self.optimizer.load_state_dict(state_dict['optimizer'])
+            print(f"Loaded checkpoint saved at {path} starting at epoch {self.start_epoch}")
+            del state_dict
+            
+        except Exception as e:
+            state_dict = torch.load(path, map_location=torch.device(self.gpu_id))
+            if 'generator_state_dict' in state_dict.keys():
+                gen_state_dict = OrderedDict()
+                for name, params in state_dict['generator_state_dict'].items():
+                    name = name[7:]
+                    gen_state_dict[name] = params        
+                self.actor.load_state_dict(gen_state_dict)
+                del gen_state_dict
+                self.optimizer.load_state_dict(state_dict['optimizer'])
+            else:
+                try:
+                    self.model.load_state_dict(state_dict)
+                except:
+                    raise ValueError(f"Incorrect checkpoint path.")
+            print(f"Loaded checkpoint saved at {path} starting at epoch {self.start_epoch}")
+            del state_dict
 
     def run_validation_step(self, batch):
         """
@@ -248,15 +271,14 @@ class DPOTrainer:
         rl_state = []
         C = []
 
-
-        #print("Running validation...")
-        clean_aud, clean, noisy, _, c = batch
+        print("Running validation...")
+        clean_aud, _, noisy, _, c = batch
         
         inp = noisy.permute(0, 1, 3, 2)
 
         #Forward pass through actor to get the action(mask)
-        next_state, log_probs, _ = self.actor.get_action(inp)
-        est_audio = self.trainer.env.get_audio(next_state)
+        next_state, _, _ = self.actor.get_action(inp)
+        est_audio = self.data_sampler.env.get_audio(next_state)
         
         #Get reward
         for i in range(inp.shape[0]):
@@ -264,8 +286,6 @@ class DPOTrainer:
             C.append(c[i, ...])
 
         for i in range(clean_aud.shape[0]):
-            #if i >= clean_aud.shape[0]:
-            #    break
             values = compute_metrics(clean_aud[i, ...].detach().cpu().numpy(), 
                                      rl_state[i].detach().cpu().numpy(), 
                                      16000, 
@@ -290,7 +310,6 @@ class DPOTrainer:
         #Run validation
         self.actor.evaluation = True
         pesq = 0
-        loss = 0
         val_metrics = {
             'pesq':[],
             'csig':[],
@@ -299,25 +318,22 @@ class DPOTrainer:
             'ssnr':[],
             'stoi':[],
             'si-sdr':[],
-            'mse':0,
-            'kl_penalty':0,
-            'reward_model_score':0
         }
 
         print(f"Running evaluation at epoch:{epoch}")
         STATE = []
         C = []
-        num_batches = len(self.test_ds)
+        
         with torch.no_grad():
             for i, batch in enumerate(self.test_ds):
                 
                 #Preprocess batch
                 batch = preprocess_batch(batch, 
-                                         n_fft=self.n_fft, 
-                                         hop=self.hop, 
+                                         n_fft=self.args.n_fft, 
+                                         hop=self.args.hop, 
                                          gpu_id=self.gpu_id, 
                                          return_c=True, 
-                                         model=self.args.model)
+                                         model='cmgan')
                 
                 #Run validation episode
                 try:
@@ -334,7 +350,7 @@ class DPOTrainer:
                     STATE.extend(metrics['rl_state'])
                     C.extend(metrics['C'])
 
-                    print(f"Batch:{i} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{val_metrics['mse']}")
+                    print(f"Batch:{i} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()}")
         
 
                 except Exception as e:
@@ -342,14 +358,15 @@ class DPOTrainer:
                     continue
             
             #Get MOS reward
-            rm_score = self.trainer.env.get_NISQA_MOS_reward(audios=STATE, Cs=C)
-            val_metrics['reward_model_score'] = rm_score.mean()
+            nisqa_score = self.data_sampler.env.get_NISQA_MOS_reward(audios=STATE, Cs=C)
+            dnsmos_score = self.data_sampler.dns_mos.get_scores(STATE, desired_fs=16000, gpu_id=self.gpu_id)
+            val_metrics['NISQA_score'] = nisqa_score.mean()
+            val_metrics['DNSMOS_score'] = dnsmos_score.mean()
         
         
         wandb.log({ 
             "epoch": epoch, 
             "val_scaled_pesq":pesq,
-            "val_pretrain_loss":loss,
             "val_pesq":np.asarray(val_metrics["pesq"]).mean(),
             "val_csig":np.asarray(val_metrics["csig"]).mean(),
             "val_cbak":np.asarray(val_metrics["cbak"]).mean(),
@@ -357,15 +374,17 @@ class DPOTrainer:
             "val_ssnr":np.asarray(val_metrics["ssnr"]).mean(),
             "val_stoi":np.asarray(val_metrics["stoi"]).mean(),
             "val_si-sdr":np.asarray(val_metrics["si-sdr"]).mean(),
-            "reward_model_score":val_metrics['reward_model_score']
+            "val_NISQA":val_metrics['NISQA_score'],
+            "val_DNSMOS":val_metrics['DNSMOS_score']
         }) 
-        print(f"Episode:{epoch} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | VAL_LOSS:{loss} | RM_SCORE: {val_metrics['reward_model_score']}")
-                
-        return loss, val_metrics['reward_model_score'], np.asarray(val_metrics["pesq"]).mean()
+        print(f"Epoch:{epoch} | VAL_PESQ:{np.asarray(val_metrics['pesq']).mean()} | NISQA_SCORE: {val_metrics['NISQA_score']} | DNSMOS_SCORE: {val_metrics['DNSMOS_score']}")        
+        return val_metrics['NISQA_score'], val_metrics['DNSMOS_score']
 
 
     
     def train(self):
+        best_mos = 0
+
         print("Start training...")
         for N in range(5):
             train_dl = self.data_sampler.generate_triplets()
@@ -387,16 +406,40 @@ class DPOTrainer:
                             self.optimizer.step()
                             self.optimizer.zero_grad()
 
+                #Run validation
+                epoch_nisqa, epoch_dnsmos = self.run_validation(epoch)
+                curr_mos = (epoch_nisqa + epoch_dnsmos) / 2
+                
+                if curr_mos >= best_mos:
+                    best_mos = curr_mos
+                    self.save_model(self.args.save_dir, self.args.exp, epoch, best_mos)
+                
+            #Change the model to sample new data from
+            new_expert = TSCNet(num_channel=64, 
+                                num_features=self.args.n_fft // 2 + 1, 
+                                gpu_id=self.gpu_id,
+                                eval=True)
+            
+            exp_state_dict = self.actor.state_dict()
+            new_expert.load_state_dict(exp_state_dict)
+            self.data_sampler.load_expert_model(new_expert)
+
+
+
 
 if __name__ == '__main__':
 
     train_ds, test_ds = load_data("/users/PAS2301/kumar1109/speech-datasets/VoiceBank/", 
-                                  4, 1, 
-                                  32000, gpu = False)
+                                  4, 
+                                  1, 
+                                  32000, 
+                                  gpu = False,
+                                  ds = 'VCTK')
     
     class Args:
-        def __init__(self, batchsize, ckpt, n_fft, hop, gpu_id, init_lr, epochs, accum_grad, exp='DPO', suffix='debug', wandb=True):
+        def __init__(self, batchsize, ckpt, save_dir, n_fft, hop, gpu_id, init_lr, epochs, accum_grad, exp='DPO', suffix='debug', wandb=True):
             self.batchsize = batchsize
+            self.save_dir = save_dir
             self.ckpt = ckpt
             self.n_fft = n_fft
             self.hop = hop

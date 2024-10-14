@@ -46,7 +46,7 @@ class DPO:
         self.ref_model = sft_model
         self.model = model
         self.gpu_id = gpu_id 
-        self.std = 0.1
+        self.std = 1.0
         self.beta = beta
         self.wandb = wandb
 
@@ -396,7 +396,6 @@ class DPOTrainer:
                     if not (torch.isnan(loss).any() or torch.isinf(loss).any()):
                         loss.backward()
                         print(f"STEP:{step}|DPO_LOSS:{loss}")
-                        print("="*100)
                         #Update network
                         if (step+1) % self.args.accum_grad == 0:
                             torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)

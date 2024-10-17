@@ -328,7 +328,6 @@ class DPOTrainer:
     
     def train(self):
         best_mos = 0
-
         print("Start training...")
         for N in range(5):
             train_dl = self.data_sampler.generate_triplets()
@@ -367,6 +366,7 @@ class DPOTrainer:
             #TODO: Load the best checkpoint so far instead of the actor's checkoint.
             exp_state_dict = self.actor.state_dict()
             new_expert.load_state_dict(exp_state_dict)
+            new_expert = new_expert.to(self.gpu_id)
             self.data_sampler.load_expert_model(new_expert)
 
 
@@ -398,12 +398,12 @@ if __name__ == '__main__':
     args = Args(batchsize=4, 
                 ckpt="/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 
                 save_dir='/users/PAS2301/kumar1109/CMGAN_DPO',
-                n_sample=10,
+                n_sample=1,
                 n_fft=400, 
                 hop=100, 
                 gpu_id=0, 
                 init_lr=0.0001, 
-                epochs=50, 
+                epochs=1, 
                 accum_grad=1,
                 exp='DPO_VCTK',
                 suffix=f'N_10_STD_0.1_debug')

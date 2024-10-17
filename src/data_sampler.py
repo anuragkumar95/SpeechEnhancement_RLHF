@@ -61,13 +61,6 @@ class DataSampler:
         
     def sample_batch(self, batch):
         print(f"GPU_ID:{self.env.gpu_id}")
-        batch = preprocess_batch(batch, 
-                                 n_fft=self.env.n_fft, 
-                                 hop=self.env.hop, 
-                                 gpu_id=self.env.gpu_id, 
-                                 return_c=True, 
-                                 model='cmgan')
-    
         _, _, noisy, _, c = batch
         noisy = noisy.permute(0, 1, 3, 2)
         bs = noisy.shape[0]
@@ -104,7 +97,6 @@ class DataSampler:
     def get_best_audio(self, audios, c):
         #Get MOS scores for all sampled audios
         nmos_orig = self.env.get_NISQA_MOS_reward(audios.clone(), c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
-        #dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
         dmos_orig = self.dns_mos.get_scores(audios.clone(), desired_fs=16000, gpu_id=self.gpu_id)
 
         #reference audios
@@ -147,12 +139,19 @@ class DataSampler:
                 batch = next(self._iter_)
 
             _, noisy, filenames = batch
-
+            batch = preprocess_batch(batch, 
+                                     n_fft=self.env.n_fft, 
+                                     hop=self.env.hop, 
+                                     gpu_id=self.env.gpu_id, 
+                                     return_c=True, 
+                                     model='cmgan')
+    
+            _, _, noisy, _, c = batch
             try:
                 audios, c, actions = self.sample_batch(batch)
             except ValueError as e:
                 continue
-
+            
             batchsize = noisy.shape[0]
           
             for i, fname in enumerate(filenames):

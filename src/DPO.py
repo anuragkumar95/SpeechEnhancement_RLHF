@@ -75,6 +75,10 @@ class DPO:
             ypos = (ypos[0].to(self.gpu_id), ypos[1].to(self.gpu_id))
             yneg = (yneg[0].to(self.gpu_id), yneg[1].to(self.gpu_id))
 
+        print(f"X:{x.shape}")
+        print(f"YPOS:{ypos[0].shape}, {ypos[1].shape}")
+        print(f"YNEG:{yneg[0].shape}, {yneg[1].shape}")
+        
         dpo_loss, ypos_logps, yneg_logps, acc, margins = self.dpo_loss(x, ypos, yneg)
 
         if self.wandb:

@@ -370,7 +370,7 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
-        _, _, probs = self.forward(x, action=action)
+        _, _, probs, _ = self.forward(x, action=action)
         return probs
 
     def forward(self, x, action=None):
@@ -393,8 +393,6 @@ class TSCNet(nn.Module):
         complex_out = self.complex_decoder(out_5)
         mask = mask.permute(0, 2, 1).unsqueeze(1)
 
-        print(f"MASK1:{mask.shape}, COMP1:{complex_out.shape}")
-
         probs = None
         if not self.evaluation:
             m_act, c_act = None, None
@@ -403,7 +401,6 @@ class TSCNet(nn.Module):
             #Add gaussian noise
             mask, r_logprob, _ = self.sample(mu=mask, x=m_act)
             complex_out, i_logprob, _ = self.sample(mu=complex_out, x=c_act)
-            print(f"MASK2:{mask.shape}, COMP2:{complex_out.shape}")
             probs = r_logprob.squeeze(1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
           
         out_mag = mask * mag

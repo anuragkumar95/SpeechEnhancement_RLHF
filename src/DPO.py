@@ -72,8 +72,8 @@ class DPO:
     def forward_step(self, x, ypos, yneg):
         if self.gpu_id is not None:
             x = x.to(self.gpu_id)
-            ypos = ypos.to(self.gpu_id)
-            yneg = yneg.to(self.gpu_id)
+            ypos = (ypos[0].to(self.gpu_id), ypos[1].to(self.gpu_id))
+            yneg = (yneg[0].to(self.gpu_id), yneg[1].to(self.gpu_id))
 
         dpo_loss, ypos_logps, yneg_logps, acc, margins = self.dpo_loss(x, ypos, yneg)
 

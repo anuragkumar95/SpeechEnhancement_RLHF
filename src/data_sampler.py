@@ -179,7 +179,7 @@ class DataSampler:
                 )
                 
                 self.a_map[fname] = {
-                    'x':noisy[i, ...].detach().cpu(),
+                    'x':noisy[i, ...].permute(0, 1, 3, 2).detach().cpu(),
                     'ypos':ypos,
                     'yneg':yneg,
                     'scores':scores

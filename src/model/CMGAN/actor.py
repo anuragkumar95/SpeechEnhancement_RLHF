@@ -358,9 +358,8 @@ class TSCNet(nn.Module):
         return x, x_logprob, x_entropy
 
     def get_action(self, x):
-        real, imag, probs = self.forward(x, action=None)
-        print(f"REAL:{real.shape}, IMAG:{imag.shape}")
-        return (real, imag), probs, None
+        real, imag, probs, actions = self.forward(x, action=None)
+        return (real, imag), probs, actions
 
     def get_action_prob(self, x, action):
         """
@@ -413,5 +412,5 @@ class TSCNet(nn.Module):
         final_real = mag_real + complex_out[:, 0, :, :].unsqueeze(1)
         final_imag = mag_imag + complex_out[:, 1, :, :].unsqueeze(1)
 
-        return final_real, final_imag, probs
+        return final_real, final_imag, probs, (mag, complex_out)
  

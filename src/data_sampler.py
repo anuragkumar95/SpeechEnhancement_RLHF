@@ -74,7 +74,7 @@ class DataSampler:
             #Set evaluation to True to deactivate sampling layer.
             #This is our reference enhanced output
             self.model.evaluation = True
-            ref_next_state, _, _ = self.model.get_action(noisy_ref)
+            ref_next_state, _, ref_actions = self.model.get_action(noisy_ref)
             ref_est_audio = self.env.get_audio(ref_next_state)
             #print(f"Ref done...")
 
@@ -82,18 +82,18 @@ class DataSampler:
             #These are the sampled enhanced outputs
             noisy_rl = noisy[bs:, ...]
             self.model.evaluation = False
-            next_state, _, _ = self.model.get_action(noisy_rl)
+            next_state, _, actions = self.model.get_action(noisy_rl)
             est_audio = self.env.get_audio(next_state)
             #print(f"RL done...")
 
         est_audio = torch.cat([ref_est_audio, est_audio], dim=0)
 
-        print(f"REF_STATES:{ref_next_state[0].shape, ref_next_state[1].shape}")
-        print(f"Y_STATES:{next_state[0].shape, next_state[1].shape}")
+        print(f"REF_STATES:{ref_actions[0].shape, ref_actions[1].shape}")
+        print(f"Y_STATES:{actions[0].shape, actions[1].shape}")
 
         actions = (
-            torch.cat([ref_next_state[0], next_state[0]], dim=0), 
-            torch.cat([ref_next_state[1], next_state[1]], dim=0)
+            torch.cat([ref_actions[0], actions[0]], dim=0), 
+            torch.cat([ref_actions[1], actions[1]], dim=0)
         )
         
         print(f"ACTIONS:{actions[0].shape, actions[1].shape}")

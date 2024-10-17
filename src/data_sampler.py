@@ -87,11 +87,17 @@ class DataSampler:
             #print(f"RL done...")
 
         est_audio = torch.cat([ref_est_audio, est_audio], dim=0)
+
+        print(f"REF_STATES:{ref_next_state[0].shape, ref_next_state[1].shape}")
+        print(f"Y_STATES:{next_state[0].shape, next_state[1].shape}")
+
         actions = (
             torch.cat([ref_next_state[0], next_state[0]], dim=0), 
             torch.cat([ref_next_state[1], next_state[1]], dim=0)
         )
         
+        print(f"ACTIONS:{actions[0].shape, actions[1].shape}")
+
         return est_audio, c, actions
     
     def get_best_audio(self, audios, c):

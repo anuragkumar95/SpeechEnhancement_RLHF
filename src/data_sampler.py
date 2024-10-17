@@ -164,13 +164,20 @@ class DataSampler:
                 scores, idx = self.get_best_audio(audios_i, c_i)
 
                 #Collect a_pos and a_neg
-                ypos = (actions[0][idx, ...], actions[1][idx, ...])
-                yneg = (actions[0][0, ...], actions[0][idx, ...])
+                ypos = (
+                    actions[0][idx, ...].detach().cpu(), 
+                    actions[1][idx, ...].detach().cpu()
+                )
+
+                yneg = (
+                    actions[0][0, ...].detach().cpu(), 
+                    actions[0][idx, ...].detach().cpu()
+                )
                 
                 self.a_map[fname] = {
                     'x':noisy[i, ...].detach().cpu(),
-                    'ypos':ypos.detach().cpu(),
-                    'yneg':yneg.detach().cpu(),
+                    'ypos':ypos,
+                    'yneg':yneg,
                     'scores':scores.detach().cpu()
                 }
 

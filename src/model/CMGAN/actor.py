@@ -359,6 +359,7 @@ class TSCNet(nn.Module):
 
     def get_action(self, x):
         real, imag, probs = self.forward(x, action=None)
+        print(f"REAL:{real.shape}, IMAG:{imag.shape}")
         return (real, imag), probs, None
 
     def get_action_prob(self, x, action):

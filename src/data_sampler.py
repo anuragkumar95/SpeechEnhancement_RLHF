@@ -50,6 +50,8 @@ class DataSampler:
                                           args=None,
                                           reward_model=None)
         
+        self.a_map = {}
+        
     def load_expert_model(self, model):
         self.model = model
 
@@ -92,13 +94,18 @@ class DataSampler:
             #print(f"RL done...")
 
         est_audio = torch.cat([ref_est_audio, est_audio], dim=0)
-        return est_audio, c
+        actions = (
+            torch.cat([ref_next_state[0], next_state[0]], dim=0), 
+            torch.cat([ref_next_state[1], next_state[1]], dim=0)
+        )
+        
+        return est_audio, c, actions
     
     def get_best_audio(self, audios, c):
         #Get MOS scores for all sampled audios
-        nmos_orig = self.env.get_NISQA_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
+        nmos_orig = self.env.get_NISQA_MOS_reward(audios.clone(), c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
         #dmos = self.env.get_DNS_MOS_reward(audios, c, PYPATH="~/.conda/envs/rlhf-se/bin/python")
-        dmos_orig = self.dns_mos.get_scores(audios, desired_fs=16000, gpu_id=self.gpu_id)
+        dmos_orig = self.dns_mos.get_scores(audios.clone(), desired_fs=16000, gpu_id=self.gpu_id)
 
         #reference audios
         n0, d0 = nmos_orig[0], dmos_orig[0]
@@ -129,7 +136,7 @@ class DataSampler:
         #Return the audio with the biggest magnitude
         idx = torch.argmax(mag)  
         print(f"Best audio index:{idx}")
-        return (audios[idx], audios[0]), (dmos_orig, nmos_orig, idx)
+        return (dmos_orig, nmos_orig), idx
     
     def generate_samples(self):
          for _ in tqdm(range(self.n)):
@@ -142,36 +149,40 @@ class DataSampler:
             _, noisy, filenames = batch
 
             try:
-                audios, c = self.sample_batch(batch)
+                audios, c, actions = self.sample_batch(batch)
             except ValueError as e:
                 continue
 
-            a_map = {}
             batchsize = noisy.shape[0]
           
             for i, fname in enumerate(filenames):
                 audios_i = audios[i::batchsize, ...]
                 c_i = c[i::batchsize]
                 audios_i = audios_i / c_i[0]
-                (ypos, yneg), scores = self.get_best_audio(audios_i, c_i)
-                a_map[fname] = {
+                
+                #Get best index
+                scores, idx = self.get_best_audio(audios_i, c_i)
+
+                #Collect a_pos and a_neg
+                ypos = (actions[0][idx, ...], actions[1][idx, ...])
+                yneg = (actions[0][0, ...], actions[0][idx, ...])
+                
+                self.a_map[fname] = {
                     'x':noisy[i, ...],
                     'ypos':ypos,
                     'yneg':yneg,
                     'scores':scores
                 }
-             
-                self.save(a_map)
 
     def generate_triplets(self):
         #Remove previous stored data
-        self.delete()
+        self.reset()
 
         #Generate new data
         print(f"Generating {self.n} triplets")
         self.generate_samples()
 
-        ds = NISQAPreferenceDataset(root=self.root)
+        ds = NISQAPreferenceDataset(data=self.a_map)
         dl = torch.utils.data.DataLoader(
             dataset=ds,
             batch_size=4,
@@ -183,52 +194,8 @@ class DataSampler:
 
         return dl
 
-    def delete(self):
-        for _dir_ in os.listdir(self.root):
-            subdir = os.path.join(self.root, _dir_)
-            for wav in os.listdir(subdir):
-                wav = os.path.join(subdir, wav)
-                os.remove(wav)
-
-    def save(self, audio_map):
-        for fname in audio_map.keys():
-            #Save samples if they exist
-            samples = audio_map[fname].get('samples', None)
-            if samples is not None:
-                s_dir = os.path.join(self.sample_dir, fname)
-                os.makedirs(s_dir, exist_ok=True)
-                for i, sample in enumerate(samples):
-                    sample = sample.detach().cpu().numpy().reshape(-1)
-                    s_path = os.path.join(s_dir, f"sample_{i}.wav")
-                    sf.write(s_path, sample, 16000)
-                
-            else:
-                #Save ypos and yneg
-                ypos = audio_map[fname].get('ypos')
-                yneg = audio_map[fname].get('yneg')
-
-                ypos_path = os.path.join(self.y_pos_dir, f"{fname}.wav")
-                yneg_path = os.path.join(self.y_neg_dir, f"{fname}.wav")
-
-                ypos = ypos.detach().cpu().numpy().reshape(-1)
-                yneg = yneg.detach().cpu().numpy().reshape(-1)
-
-                sf.write(ypos_path, ypos, 16000)
-                sf.write(yneg_path, yneg, 16000)  
-
-                nmos, dmos, idx = audio_map[fname].get('scores')
-                with open(os.path.join(self.score_dir, f"{fname}.pickle"), 'wb') as fp:
-                    pickle.dump({
-                        'DNSMOS':dmos.detach().cpu().numpy(),
-                        'NISQA':nmos.detach().cpu().numpy(),
-                        'idx': idx.detach().cpu().numpy()
-                    }, fp)
-
-            #Save noisy
-            x = audio_map[fname].get('x', None)
-            x = x.detach().cpu().numpy().reshape(-1)
-            x_path = os.path.join(self.x_dir, f"{fname}.wav")
-            sf.write(x_path, x, 16000) 
+    def reset(self):
+        self.a_map = {}
     
 if __name__ == '__main__':
 

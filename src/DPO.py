@@ -44,33 +44,17 @@ class DPO:
         self.ref_model = sft_model
         self.model = model
         self.gpu_id = gpu_id 
-        self.std = 1.0
         self.beta = beta
         self.wandb = wandb
 
-
-    def get_logprob(self, mu, x):
-        std = (torch.ones(mu.shape) * self.std).to(self.gpu_id)
-        N = Normal(mu, std)
-        x_logprob = N.log_prob(x)
-        return x_logprob 
-
     def dpo_loss(self, x, ypos, yneg):
 
-        ypos = ypos.permute(0, 1, 3, 2)
-        yneg = yneg.permute(0, 1, 3, 2)
-
         with torch.no_grad():
-            ref_mu = self.ref_model(x)
-            ref_mu = torch.cat([ref_mu[0], ref_mu[1]], dim=1)
-            ref_pos_logprob = torch.mean(self.get_logprob(ref_mu, ypos), dim=[1, 2, 3])
-            ref_neg_logprob = torch.mean(self.get_logprob(ref_mu, yneg), dim=[1, 2, 3])
-        
-        y_mu = self.model(x)
-        y_mu = torch.cat([y_mu[0], y_mu[1]], dim=1)
+            ref_pos_logprob = self.ref_model.get_action_prob(x, ypos)
+            ref_neg_logprob = self.ref_model.get_action_prob(x, yneg)
 
-        y_pos_logprob = torch.mean(self.get_logprob(y_mu, ypos), dim=[1, 2, 3])
-        y_neg_logprob = torch.mean(self.get_logprob(y_mu, yneg), dim=[1, 2, 3])
+        y_pos_logprob = self.model.get_action_prob(x, ypos)
+        y_neg_logprob = self.model.get_action_prob(x, yneg)
 
         print(f"Y_POS:{y_pos_logprob.mean()} | Y_NEG:{y_neg_logprob.mean()}|")
         print(f"R_POS:{ref_pos_logprob.mean()} | R_NEG:{ref_neg_logprob.mean()}")
@@ -84,45 +68,6 @@ class DPO:
         
         return -log_scores.mean(), ypos_relative_logps.mean(), yneg_relative_logps.mean(), acc.mean(), scores.mean()
 
-    
-    def spec(self, noisy, ypos, yneg, n_fft=400, hop=100):
-        # Normalization
-        c = torch.sqrt(noisy.size(-1) / torch.sum((noisy**2.0), dim=-1))
-        noisy = torch.transpose(noisy, 0, 1)
-        ypos = torch.transpose(ypos, 0, 1) 
-        yneg = torch.transpose(yneg, 0, 1)
-        noisy = torch.transpose(noisy * c, 0, 1)
-        ypos = torch.transpose(ypos * c, 0, 1)
-        yneg = torch.transpose(yneg * c, 0, 1)
-
-        noisy_spec = torch.stft(
-            noisy,
-            n_fft,
-            hop,
-            window=torch.hamming_window(n_fft).to(self.gpu_id),
-            onesided=True,
-        )
-        ypos_spec = torch.stft(
-            ypos,
-            n_fft,
-            hop,
-            window=torch.hamming_window(n_fft).to(self.gpu_id),
-            onesided=True,
-        )
-        yneg_spec = torch.stft(
-            yneg,
-            n_fft,
-            hop,
-            window=torch.hamming_window(n_fft).to(self.gpu_id),
-            onesided=True,
-        )
-
-        noisy_spec = power_compress(noisy_spec).permute(0, 1, 3, 2)
-        ypos_spec = power_compress(ypos_spec)
-        yneg_spec = power_compress(yneg_spec)
-        
-        return noisy_spec, ypos_spec, yneg_spec
-
 
     def forward_step(self, x, ypos, yneg):
         if self.gpu_id is not None:
@@ -130,7 +75,6 @@ class DPO:
             ypos = ypos.to(self.gpu_id)
             yneg = yneg.to(self.gpu_id)
 
-        x, ypos, yneg = self.spec(x, ypos, yneg)
         dpo_loss, ypos_logps, yneg_logps, acc, margins = self.dpo_loss(x, ypos, yneg)
 
         if self.wandb:
@@ -390,7 +334,7 @@ class DPOTrainer:
             self.expert.train()
             for epoch in range(self.args.epochs):
                 for step, batch in enumerate(train_dl):
-                    x, ypos, yneg = batch
+                    x, ypos, yneg, _ = batch
                     #Get DPO loss
                     loss = self.DPO.forward_step(x, ypos, yneg)
                     loss = loss / self.args.accum_grad

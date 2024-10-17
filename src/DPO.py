@@ -398,7 +398,7 @@ if __name__ == '__main__':
     args = Args(batchsize=4, 
                 ckpt="/users/PAS2301/kumar1109/CMGAN/src/best_ckpt/ckpt", 
                 save_dir='/users/PAS2301/kumar1109/CMGAN_DPO',
-                n_sample=1,
+                n_sample=10,
                 n_fft=400, 
                 hop=100, 
                 gpu_id=0, 

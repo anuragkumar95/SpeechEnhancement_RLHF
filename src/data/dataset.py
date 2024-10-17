@@ -199,7 +199,6 @@ class NISQAPreferenceDataset(torch.utils.data.Dataset):
         yneg = self.data[fname]['yneg']
         scores = self.data[fname]['scores']
 
-        assert ypos.shape == yneg.shape , f"X:{x.shape}, YPOS:{ypos.shape}, YNEG:{yneg.shape}.Shapes don't match."
         return x, ypos, yneg, scores
         
     

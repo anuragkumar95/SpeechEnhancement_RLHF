@@ -176,7 +176,7 @@ class DataSampler:
 
                 yneg = (
                     actions[0][0, ...].detach().cpu(), 
-                    actions[0][idx, ...].detach().cpu()
+                    actions[1][0, ...].detach().cpu()
                 )
 
                 scores = (

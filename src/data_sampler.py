@@ -164,13 +164,13 @@ class DataSampler:
 
                 #Collect a_pos and a_neg
                 ypos = (
-                    actions[0][idx, ...].detach().cpu(), 
-                    actions[1][idx, ...].detach().cpu()
+                    actions[0][idx, ...].unsqueeze(0).detach().cpu(), 
+                    actions[1][idx, ...].unsqueeze(0).detach().cpu()
                 )
 
                 yneg = (
-                    actions[0][0, ...].detach().cpu(), 
-                    actions[0][idx, ...].detach().cpu()
+                    actions[0][0, ...].unsqueeze(0).detach().cpu(), 
+                    actions[0][idx, ...].unsqueeze(0).detach().cpu()
                 )
 
                 scores = (
@@ -179,7 +179,7 @@ class DataSampler:
                 )
                 
                 self.a_map[fname] = {
-                    'x':noisy[i, ...].permute(0, 1, 3, 2).detach().cpu(),
+                    'x':noisy[i, ...].unsqueeze(0).permute(0, 1, 3, 2).detach().cpu(),
                     'ypos':ypos,
                     'yneg':yneg,
                     'scores':scores

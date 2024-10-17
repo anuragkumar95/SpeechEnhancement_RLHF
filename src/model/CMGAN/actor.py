@@ -370,7 +370,13 @@ class TSCNet(nn.Module):
         Returns:
             Tuple of mag and complex masks log probabilities.
         """
+        _set_ = False
+        if self.evaluation is False:
+            self.evaluation = True
+            _set_ = True
         _, _, probs, _ = self.forward(x, action=action)
+        if _set_ :
+            self.evaluation = False
         return probs
 
     def forward(self, x, action=None):

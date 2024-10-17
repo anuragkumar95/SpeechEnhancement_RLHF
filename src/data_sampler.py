@@ -173,12 +173,17 @@ class DataSampler:
                     actions[0][0, ...].detach().cpu(), 
                     actions[0][idx, ...].detach().cpu()
                 )
+
+                scores = (
+                    scores[0].detach().cpu(),
+                    scores[1].detach().cpu(),
+                )
                 
                 self.a_map[fname] = {
                     'x':noisy[i, ...].detach().cpu(),
                     'ypos':ypos,
                     'yneg':yneg,
-                    'scores':scores.detach().cpu()
+                    'scores':scores
                 }
 
     def generate_triplets(self):

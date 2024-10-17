@@ -168,10 +168,10 @@ class DataSampler:
                 yneg = (actions[0][0, ...], actions[0][idx, ...])
                 
                 self.a_map[fname] = {
-                    'x':noisy[i, ...],
-                    'ypos':ypos,
-                    'yneg':yneg,
-                    'scores':scores
+                    'x':noisy[i, ...].detach().cpu(),
+                    'ypos':ypos.detach().cpu(),
+                    'yneg':yneg.detach().cpu(),
+                    'scores':scores.detach().cpu()
                 }
 
     def generate_triplets(self):

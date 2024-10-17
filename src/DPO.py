@@ -29,10 +29,8 @@ from collections import OrderedDict
 #torch.manual_seed(123)
 """
 TODO:
-1. Add wandb logs.
-2. Add validation loop
-3. Implement proper argparsing.
-4. Implement checkpoint saving and loading if resume training. 
+1. Implement proper argparsing.
+2. Debug model logprobs.
 """
 
 class DPO:

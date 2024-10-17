@@ -359,7 +359,7 @@ class TSCNet(nn.Module):
 
     def get_action(self, x):
         real, imag, probs = self.forward(x, action=None)
-        return (real, imag), probs, None#
+        return (real, imag), probs, None
 
     def get_action_prob(self, x, action):
         """
@@ -395,11 +395,12 @@ class TSCNet(nn.Module):
 
         probs = None
         if not self.evaluation:
+            m_act, c_act = None, None
             if action is not None:
-                mag, complex_out = action
+                m_act, c_act = action
             #Add gaussian noise
-            mask, r_logprob, _ = self.sample(mu=mask)
-            complex_out, i_logprob, _ = self.sample(mu=complex_out)
+            mask, r_logprob, _ = self.sample(mu=mask, action=m_act)
+            complex_out, i_logprob, _ = self.sample(mu=complex_out, action=c_act)
             probs = r_logprob.squeeze(1) + i_logprob[:, 0, :, :] + i_logprob[:, 1, :, :]
           
         out_mag = mask * mag

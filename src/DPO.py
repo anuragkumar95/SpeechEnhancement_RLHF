@@ -56,11 +56,10 @@ class DPO:
         y_pos_logprob = self.model.get_action_prob(x, ypos)
         y_neg_logprob = self.model.get_action_prob(x, yneg)
 
-        print(f"Y_POS:{y_pos_logprob.mean()} | Y_NEG:{y_neg_logprob.mean()}|")
-        print(f"R_POS:{ref_pos_logprob.mean()} | R_NEG:{ref_neg_logprob.mean()}")
-
         ypos_relative_logps = y_pos_logprob - ref_pos_logprob
         yneg_relative_logps = y_neg_logprob - ref_neg_logprob
+
+        print(f"Y_POS:{ypos_relative_logps.mean()} | Y_NEG:{yneg_relative_logps.mean()}|")
 
         acc = (ypos_relative_logps > yneg_relative_logps).float()
         scores = ypos_relative_logps - yneg_relative_logps
@@ -78,7 +77,7 @@ class DPO:
         print(f"X:{x.shape}")
         print(f"YPOS:{ypos[0].shape}, {ypos[1].shape}")
         print(f"YNEG:{yneg[0].shape}, {yneg[1].shape}")
-        
+
         dpo_loss, ypos_logps, yneg_logps, acc, margins = self.dpo_loss(x, ypos, yneg)
 
         if self.wandb:

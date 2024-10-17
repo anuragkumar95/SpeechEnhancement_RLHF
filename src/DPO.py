@@ -59,8 +59,6 @@ class DPO:
         ypos_relative_logps = y_pos_logprob - ref_pos_logprob
         yneg_relative_logps = y_neg_logprob - ref_neg_logprob
 
-        print(f"Y_POS:{ypos_relative_logps.mean()} | Y_NEG:{yneg_relative_logps.mean()}|")
-
         acc = (ypos_relative_logps > yneg_relative_logps).float()
         scores = ypos_relative_logps - yneg_relative_logps
         log_scores = F.logsigmoid(self.beta * scores)
@@ -74,10 +72,7 @@ class DPO:
             ypos = (ypos[0].to(self.gpu_id), ypos[1].to(self.gpu_id))
             yneg = (yneg[0].to(self.gpu_id), yneg[1].to(self.gpu_id))
 
-        print(f"X:{x.shape}")
-        print(f"YPOS:{ypos[0].shape}, {ypos[1].shape}")
-        print(f"YNEG:{yneg[0].shape}, {yneg[1].shape}")
-
+       
         dpo_loss, ypos_logps, yneg_logps, acc, margins = self.dpo_loss(x, ypos, yneg)
 
         if self.wandb:
